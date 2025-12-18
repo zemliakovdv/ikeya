@@ -52,6 +52,10 @@ a {
     color: #181818;
 }
 
+button{
+    border: none;
+}
+
 h2 {
     font-size: 24px;
     line-height: 32px;
@@ -260,6 +264,11 @@ h2 {
 
 .header-panel-item:last-child span {
     right: 5%;
+}
+
+.panel-item-button{
+    background-color: transparent;
+    border: none;
 }
 
 .header-bottom {
