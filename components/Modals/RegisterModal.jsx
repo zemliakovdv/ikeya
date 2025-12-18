@@ -23,7 +23,7 @@ export default function RegisterModal() {
                                 <span className="flag-icon"><img src="assets/img/icons/rb.svg" alt=""/></span>
                                 <span>+375</span>
                             </div>
-                            <input type="tel" className="phone-input" id="phoneInput" placeholder="25 895 26 84"
+                            <input type="tel" className="phone-input" id="phoneInputreg" placeholder="25 895 26 84"
                                 inputMode="numeric" maxLength="9" required/>
                         </div>
                         <div className="form-floating the-mail">
