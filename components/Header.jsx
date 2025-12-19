@@ -83,17 +83,17 @@ export default function Header() {
                     <div className="row">
                         <div className="col-12">
                             <div className="header-bottom-inner">
-                                <a href="catalog.html">Диваны</a>
-                                <a href="catalog.html">Кресла</a>
-                                <a href="catalog.html">Кровати</a>
-                                <a href="catalog.html">Матрасы</a>
-                                <a href="catalog.html">Текстиль</a>
-                                <a href="catalog.html">Освещение</a>
-                                <a href="catalog.html">Посуда</a>
-                                <a href="catalog.html">Кухонная утварь</a>
-                                <a href="catalog.html">Украшения</a>
-                                <a href="catalog.html">Системы хранения</a>
-                                <a href="catalog.html">Комоды и тумбочки</a>
+                                <a href="/catalog">Диваны</a>
+                                <a href="/catalog">Кресла</a>
+                                <a href="/catalog">Кровати</a>
+                                <a href="/catalog">Матрасы</a>
+                                <a href="/catalog">Текстиль</a>
+                                <a href="/catalog">Освещение</a>
+                                <a href="/catalog">Посуда</a>
+                                <a href="/catalog">Кухонная утварь</a>
+                                <a href="/catalog">Украшения</a>
+                                <a href="/catalog">Системы хранения</a>
+                                <a href="/catalog">Комоды и тумбочки</a>
                             </div>
                         </div>
                     </div>
