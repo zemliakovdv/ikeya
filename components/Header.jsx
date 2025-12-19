@@ -1,6 +1,24 @@
+// components/layout/Header.jsx
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 export default function Header() {
+    const router = useRouter();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            router.push(`/catalog/search?q=${encodeURIComponent(searchQuery)}`);
+        }
+    };
+
     return (
         <header className="header">
+            {/* Header Top */}
             <div className="header-top">
                 <div className="container">
                     <div className="row">
@@ -8,16 +26,16 @@ export default function Header() {
                             <div className="header-top-inner">
                                 <div className="header-top-menu">
                                     <ul>
-                                        <li><a href="#">О компании</a></li>
-                                        <li><a href="#">Доставка</a></li>
-                                        <li><a href="#">Оплата</a></li>
-                                        <li><a href="#">Пункты выдачи</a></li>
-                                        <li><a href="#">Сотрудничество</a></li>
+                                        <li><Link href="/about">О компании</Link></li>
+                                        <li><Link href="/delivery">Доставка</Link></li>
+                                        <li><Link href="/payment">Оплата</Link></li>
+                                        <li><Link href="/pickup">Пункты выдачи</Link></li>
+                                        <li><Link href="/cooperation">Сотрудничество</Link></li>
                                     </ul>
                                 </div>
                                 <div className="header-top-phone">
                                     <a href="tel:2626">
-                                        <img src="assets/img/icons/header-short-phone.svg" alt="Телефон"/>
+                                        <img src="/assets/img/icons/header-short-phone.svg" alt="Телефон"/>
                                         2626
                                     </a>
                                 </div>
@@ -27,49 +45,64 @@ export default function Header() {
                 </div>
             </div>
 
+            {/* Header Middle */}
             <div className="header-middle">
                 <div className="container">
                     <div className="row">
                         <div className="col-12">
                             <div className="header-middle-inner">
                                 <div className="header-middle-start">
-                                    <a href="index.html" className="logo">
-                                        <img src="assets/img/logo.svg" alt="Логотип"/>
-                                    </a>
+                                    <Link href="/" className="logo">
+                                        <img src="/assets/img/logo.svg" alt="Логотип"/>
+                                    </Link>
                                     <button id="catalogButton" className="catalog-btn">
-                                        <img src="assets/img/icons/catalog-button.svg" alt="Каталог"/>
+                                        <img src="/assets/img/icons/catalog-button.svg" alt="Каталог"/>
                                         <p>Каталог</p>
                                     </button>
-                                    <a href="#">Услуги</a>
+                                    <Link href="/services">Услуги</Link>
                                 </div>
+                                
                                 <div className="header-middle-search">
-                                    <div className="middle-searh-inner">
-                                        <input type="search" placeholder="Поиск по названию, артикулу" id="search-form"/>
-                                        <button type="submit" className="search-but"><img
-                                                src="assets/img/icons/header-search.svg" alt="Поиск"/></button>
-                                    </div>
+                                    <form className="middle-searh-inner" onSubmit={handleSearch}>
+                                        <input 
+                                            type="search" 
+                                            placeholder="Поиск по названию, артикулу" 
+                                            id="search-form"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
+                                        <button type="submit" className="search-but">
+                                            <img src="/assets/img/icons/header-search.svg" alt="Поиск"/>
+                                        </button>
+                                    </form>
                                 </div>
+                                
                                 <div className="header-middle-panel">
                                     <div className="header-panel-item">
-                                        <a href="panel-item-button">
-                                            <img src="assets/img/icons/header-favorite.svg" alt="Избранное"/>
+                                        <Link href="/favorites" className="panel-item-button">
+                                            <img src="/assets/img/icons/header-favorite.svg" alt="Избранное"/>
                                             <p>Избранное</p>
                                             <span>0</span>
-                                        </a>
+                                        </Link>
                                     </div>
                                     <div className="header-panel-item">
-                                        <a href="panel-item-button" data-bs-toggle="modal" data-bs-target="#loginModal">
-                                            <img src="assets/img/icons/header-profile.svg" alt="Профиль"/>
+                                        <a 
+                                            href="#" 
+                                            className="panel-item-button" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#loginModal"
+                                        >
+                                            <img src="/assets/img/icons/header-profile.svg" alt="Профиль"/>
                                             <p>Войти</p>
                                             <span>0</span>
                                         </a>
                                     </div>
                                     <div className="header-panel-item">
-                                        <a href="panel-item-button">
-                                            <img src="assets/img/icons/header-card.svg" alt="Корзина"/>
+                                        <Link href="/cart" className="panel-item-button">
+                                            <img src="/assets/img/icons/header-card.svg" alt="Корзина"/>
                                             <p>Корзина</p>
                                             <span>14</span>
-                                        </a>
+                                        </Link>
                                     </div>
                                 </div>
                             </div>
@@ -78,22 +111,23 @@ export default function Header() {
                 </div>
             </div>
 
+            {/* Header Bottom - Категории */}
             <div className="header-bottom">
                 <div className="container">
                     <div className="row">
                         <div className="col-12">
                             <div className="header-bottom-inner">
-                                <a href="/catalog">Диваны</a>
-                                <a href="/catalog">Кресла</a>
-                                <a href="/catalog">Кровати</a>
-                                <a href="/catalog">Матрасы</a>
-                                <a href="/catalog">Текстиль</a>
-                                <a href="/catalog">Освещение</a>
-                                <a href="/catalog">Посуда</a>
-                                <a href="/catalog">Кухонная утварь</a>
-                                <a href="/catalog">Украшения</a>
-                                <a href="/catalog">Системы хранения</a>
-                                <a href="/catalog">Комоды и тумбочки</a>
+                                <Link href="/catalog">Диваны</Link>
+                                <Link href="/catalog">Кресла</Link>
+                                <Link href="/catalog">Кровати</Link>
+                                <Link href="/catalog">Матрасы</Link>
+                                <Link href="/catalog">Текстиль</Link>
+                                <Link href="/catalog">Освещение</Link>
+                                <Link href="/catalog">Посуда</Link>
+                                <Link href="/catalog">Кухонная утварь</Link>
+                                <Link href="/cataloga">Украшения</Link>
+                                <Link href="/catalog">Системы хранения</Link>
+                                <Link href="/catalog">Комоды и тумбочки</Link>
                             </div>
                         </div>
                     </div>
