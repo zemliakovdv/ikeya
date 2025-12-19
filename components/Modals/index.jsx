@@ -11,7 +11,7 @@ export default function Modals() {
             <LoginModal />
             <RegisterModal />
             <SmsCodeModal />
-            <SuccessModal />
+            <SuccessModal userName="Дмитрий" userEmail="dmitry@example.com" />
         </>
     );
 }
