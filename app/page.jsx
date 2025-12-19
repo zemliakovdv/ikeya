@@ -1,5 +1,4 @@
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { Header, Footer } from '@/components/layout';
 import StartSlider from '@/components/StartSlider';
 import PopularCategory from '@/components/PopularCategory';
 import ProductsTabs from '@/components/ProductsTabs/ProductsTabs';

@@ -1,6 +1,5 @@
 // app/catalog/[category]/page.js
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { Header, Footer } from '@/components/layout';
 import Modals from '@/components/Modals';
 import Breadcrumbs from '@/components/Catalog/Breadcrumbs';
 import CatalogCategories from '@/components/Catalog/CatalogCategories';
