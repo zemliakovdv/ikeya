@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-export default function Header() {
+export default function Header({ isAuthenticated = false }) {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -85,18 +85,31 @@ export default function Header() {
                                             <span>0</span>
                                         </Link>
                                     </div>
+
+                                    {/* Профиль / Войти - условный рендеринг */}
                                     <div className="header-panel-item">
-                                        <a 
-                                            href="#" 
-                                            className="panel-item-button" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#loginModal"
-                                        >
-                                            <img src="/assets/img/icons/header-profile.svg" alt="Профиль"/>
-                                            <p>Войти</p>
-                                            <span>0</span>
-                                        </a>
+                                        {isAuthenticated ? (
+                                            // Авторизован - ссылка на профиль
+                                            <Link href="/profile" className="panel-item-button">
+                                                <img src="/assets/img/icons/header-profile.svg" alt="Профиль"/>
+                                                <p>Профиль</p>
+                                                <span>0</span>
+                                            </Link>
+                                        ) : (
+                                            // Не авторизован - модалка входа
+                                            <a 
+                                                href="#" 
+                                                className="panel-item-button" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#loginModal"
+                                            >
+                                                <img src="/assets/img/icons/header-profile.svg" alt="Профиль"/>
+                                                <p>Войти</p>
+                                                <span>0</span>
+                                            </a>
+                                        )}
                                     </div>
+
                                     <div className="header-panel-item">
                                         <Link href="/cart" className="panel-item-button">
                                             <img src="/assets/img/icons/header-card.svg" alt="Корзина"/>
@@ -125,7 +138,7 @@ export default function Header() {
                                 <Link href="/catalog">Освещение</Link>
                                 <Link href="/catalog">Посуда</Link>
                                 <Link href="/catalog">Кухонная утварь</Link>
-                                <Link href="/cataloga">Украшения</Link>
+                                <Link href="/catalog">Украшения</Link>
                                 <Link href="/catalog">Системы хранения</Link>
                                 <Link href="/catalog">Комоды и тумбочки</Link>
                             </div>
