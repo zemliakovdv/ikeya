@@ -55,6 +55,8 @@ jobs:
             cd /home/deploy/apps/ikea_front
             export BASE_PATH=/ikea_front
             export NODE_ENV=production
+            # Очистка старых конфликтующих роутов (если есть)
+            find app/catalog -type d -name '[level3]' -exec rm -rf {} + 2>/dev/null || true
             npm ci --production=false
             npm run build
             pm2 restart ikea_front || pm2 start ecosystem.config.js
