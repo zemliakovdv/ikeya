@@ -65,7 +65,7 @@ export default function RootLayout({ children }) {
         {/* Main JS */}
         <Script
           src="/assets/js/main.js"
-          strategy="lazyOnload"
+          strategy="afterInteractive"
         />
 
 
