@@ -16,39 +16,57 @@ export default function PromoBlock() {
   const swiperRef = useRef(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Swiper) {
-      const swiperEl = document.querySelector('.promo-card-inner');
-      const paginationEl = document.querySelector('.promo-cards-slider__pagination');
-      const prevEl = document.querySelector('.promo-cards-slider__nav-prev');
-      const nextEl = document.querySelector('.promo-cards-slider__nav-next');
+    // ✅ Задержка для гарантии загрузки
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        const swiperEl = document.querySelector('.promo-card-inner');
+        const paginationEl = document.querySelector('.promo-cards-slider__pagination');
+        const prevEl = document.querySelector('.promo-cards-slider__nav-prev');
+        const nextEl = document.querySelector('.promo-cards-slider__nav-next');
 
-      if (swiperEl && !swiperRef.current) {
-        swiperRef.current = new window.Swiper(swiperEl, {
-          slidesPerView: 3,
-          spaceBetween: 20,
-          loop: false,
-          speed: 600,
-          watchOverflow: true,
-          navigation: {
-            nextEl: nextEl,
-            prevEl: prevEl,
-          },
-          pagination: {
-            el: paginationEl,
-            clickable: true,
-          },
-          breakpoints: {
-            320: { slidesPerView: 1, spaceBetween: 15 },
-            768: { slidesPerView: 2, spaceBetween: 15 },
-            992: { slidesPerView: 2, spaceBetween: 20 },
-            1200: { slidesPerView: 3, spaceBetween: 20 },
-          },
-          on: {
-            init: () => console.log('PromoBlock слайдер готов!'),
+        if (swiperEl) {
+          // ✅ Уничтожаем старый экземпляр перед созданием нового
+          if (swiperRef.current) {
+            swiperRef.current.destroy(true, true);
+            swiperRef.current = null;
           }
-        });
+
+          swiperRef.current = new window.Swiper(swiperEl, {
+            slidesPerView: 3,
+            spaceBetween: 20,
+            loop: false,
+            speed: 600,
+            watchOverflow: true,
+            navigation: {
+              nextEl: nextEl,
+              prevEl: prevEl,
+            },
+            pagination: {
+              el: paginationEl,
+              clickable: true,
+            },
+            breakpoints: {
+              320: { slidesPerView: 1, spaceBetween: 15 },
+              768: { slidesPerView: 2, spaceBetween: 15 },
+              992: { slidesPerView: 2, spaceBetween: 20 },
+              1200: { slidesPerView: 3, spaceBetween: 20 },
+            },
+            on: {
+              init: () => console.log('PromoBlock слайдер инициализирован'),
+            }
+          });
+        }
       }
-    }
+    }, 150); // ✅ Задержка 150ms
+
+    return () => {
+      clearTimeout(timer);
+      // ✅ Очистка при размонтировании компонента
+      if (swiperRef.current) {
+        swiperRef.current.destroy(true, true);
+        swiperRef.current = null;
+      }
+    };
   }, []);
 
   return (
@@ -57,6 +75,7 @@ export default function PromoBlock() {
         <div className="row">
           <div className="col-12">
             <div className="promo-block-inner">
+              
               {/* Левый баннер */}
               <div className="promo-block-info">
                 <a href="#">

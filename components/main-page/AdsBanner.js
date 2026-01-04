@@ -19,22 +19,16 @@ const bannerSlides = [
 
 export default function AdsBanner() {
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Swiper) {
-      const initSlider = () => {
+    // ✅ Задержка 250ms (уникальная для этого слайдера)
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && window.Swiper) {
         const swiperEl = document.querySelector('.ads-banner-inner');
         const prevEl = document.querySelector('.ads-banner-slider__nav-prev');
         const nextEl = document.querySelector('.ads-banner-slider__nav-next');
         const paginationEl = document.querySelector('.ads-banner-slider__pagination');
 
-        console.log('AdsBanner элементы:', {
-          swiperEl: !!swiperEl,
-          prevEl: !!prevEl,
-          nextEl: !!nextEl,
-          paginationEl: !!paginationEl
-        });
-
         if (swiperEl) {
-          // Уничтожаем старый свайпер если есть
+          // ✅ Уничтожаем старый экземпляр
           if (swiperEl.swiper) {
             swiperEl.swiper.destroy(true, true);
           }
@@ -53,18 +47,14 @@ export default function AdsBanner() {
               prevEl: prevEl,
             },
             on: {
-              init: function() {
-                console.log('✅ AdsBanner: 3 слайда × 2 баннера 50/50 готовы!');
-              }
+              init: () => console.log('AdsBanner слайдер инициализирован'),
             }
           });
         }
-      };
+      }
+    }, 250); // ✅ Задержка 250ms
 
-      // Ждем полной загрузки DOM
-      const timeoutId = setTimeout(initSlider, 300);
-      return () => clearTimeout(timeoutId);
-    }
+    return () => clearTimeout(timer);
   }, []);
 
   return (

@@ -1,66 +1,79 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export default function WeRecommend() {
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
+    // ✅ Задержка для гарантии загрузки Swiper
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        
+        // ✅ Инициализация главного слайдера карточек (только для recomended-tabs)
+        const productSliders = document.querySelectorAll('.recomended-tabs .products-slider');
+        
+        productSliders.forEach((slider) => {
+          // Проверка, не инициализирован ли уже
+          if (slider.swiper) {
+            slider.swiper.destroy(true, true);
+          }
 
-    if (typeof window !== 'undefined' && window.Swiper) {
-      // Инициализация слайдеров карточек для каждой вкладки
-      const productSliders = document.querySelectorAll('.recomended-tabs .products-slider');
-      productSliders.forEach((slider) => {
-        new window.Swiper(slider, {
-          slidesPerView: 1,
-          spaceBetween: 20,
-          speed: 500,
-          navigation: {
-            nextEl: slider.querySelector('.products-slider__nav-next'),
-            prevEl: slider.querySelector('.products-slider__nav-prev'),
-          },
-          pagination: {
-            el: slider.querySelector('.products-slider__pagination'),
-            clickable: true,
-          },
-          breakpoints: {
-            768: { slidesPerView: 1 },
-          },
-        });
-      });
-
-      // Инициализация галерей товаров
-      const galleries = document.querySelectorAll('.recomended-tabs .product-gallery-main');
-      galleries.forEach((mainGallery) => {
-        const galleryId = mainGallery.getAttribute('data-gallery');
-        const thumbsGallery = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
-
-        let thumbsSwiper = null;
-        if (thumbsGallery) {
-          thumbsSwiper = new window.Swiper(thumbsGallery, {
-            spaceBetween: 10,
-            slidesPerView: 4,
-            freeMode: true,
-            watchSlidesProgress: true,
+          new window.Swiper(slider, {
+            slidesPerView: 1,
+            spaceBetween: 20,
+            speed: 500,
+            navigation: {
+              nextEl: slider.querySelector('.products-slider__nav-next'),
+              prevEl: slider.querySelector('.products-slider__nav-prev'),
+            },
+            pagination: {
+              el: slider.querySelector('.products-slider__pagination'),
+              clickable: true,
+            },
+            breakpoints: {
+              768: { slidesPerView: 1 },
+            },
           });
-        }
-
-        new window.Swiper(mainGallery, {
-          spaceBetween: 10,
-          navigation: {
-            nextEl: mainGallery.querySelector('.swiper-button-next'),
-            prevEl: mainGallery.querySelector('.swiper-button-prev'),
-          },
-          thumbs: { swiper: thumbsSwiper },
         });
-      });
-    }
-  }, []);
 
-  if (!mounted) {
-    return null; // Не рендерим на сервере
-  }
+        // ✅ Инициализация галерей товаров (только для recomended-tabs)
+        const galleries = document.querySelectorAll('.recomended-tabs .product-gallery-main');
+        
+        galleries.forEach((mainGallery) => {
+          const galleryId = mainGallery.getAttribute('data-gallery');
+          const thumbsGallery = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
+
+          // Уничтожаем старые экземпляры
+          if (mainGallery.swiper) {
+            mainGallery.swiper.destroy(true, true);
+          }
+          if (thumbsGallery && thumbsGallery.swiper) {
+            thumbsGallery.swiper.destroy(true, true);
+          }
+
+          let thumbsSwiper = null;
+          if (thumbsGallery) {
+            thumbsSwiper = new window.Swiper(thumbsGallery, {
+              spaceBetween: 10,
+              slidesPerView: 4,
+              freeMode: true,
+              watchSlidesProgress: true,
+            });
+          }
+
+          new window.Swiper(mainGallery, {
+            spaceBetween: 10,
+            navigation: {
+              nextEl: mainGallery.querySelector('.swiper-button-next'),
+              prevEl: mainGallery.querySelector('.swiper-button-prev'),
+            },
+            thumbs: { swiper: thumbsSwiper },
+          });
+        });
+      }
+    }, 200); // ✅ Задержка 200ms (больше, чем у других слайдеров)
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section className="products-tabs recomended-tabs">

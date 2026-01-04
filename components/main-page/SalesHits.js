@@ -4,54 +4,75 @@ import { useEffect } from 'react';
 
 export default function SalesHits() {
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Swiper) {
-      // Инициализация слайдеров карточек для каждой вкладки
-      const productSliders = document.querySelectorAll('.saleshits-tabs .products-slider');
-      productSliders.forEach((slider) => {
-        new window.Swiper(slider, {
-          slidesPerView: 1,
-          spaceBetween: 20,
-          speed: 500,
-          navigation: {
-            nextEl: slider.querySelector('.products-slider__nav-next'),
-            prevEl: slider.querySelector('.products-slider__nav-prev'),
-          },
-          pagination: {
-            el: slider.querySelector('.products-slider__pagination'),
-            clickable: true,
-          },
-          breakpoints: {
-            768: { slidesPerView: 1 },
-          },
-        });
-      });
+    // ✅ Задержка для гарантии загрузки Swiper
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        
+        // ✅ Инициализация главного слайдера карточек (только для saleshits-tabs)
+        const productSliders = document.querySelectorAll('.saleshits-tabs .products-slider');
+        
+        productSliders.forEach((slider) => {
+          // Проверка, не инициализирован ли уже
+          if (slider.swiper) {
+            slider.swiper.destroy(true, true);
+          }
 
-      // Инициализация галерей товаров
-      const galleries = document.querySelectorAll('.saleshits-tabs .product-gallery-main');
-      galleries.forEach((mainGallery) => {
-        const galleryId = mainGallery.getAttribute('data-gallery');
-        const thumbsGallery = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
-
-        let thumbsSwiper = null;
-        if (thumbsGallery) {
-          thumbsSwiper = new window.Swiper(thumbsGallery, {
-            spaceBetween: 10,
-            slidesPerView: 4,
-            freeMode: true,
-            watchSlidesProgress: true,
+          new window.Swiper(slider, {
+            slidesPerView: 1,
+            spaceBetween: 20,
+            speed: 500,
+            navigation: {
+              nextEl: slider.querySelector('.products-slider__nav-next'),
+              prevEl: slider.querySelector('.products-slider__nav-prev'),
+            },
+            pagination: {
+              el: slider.querySelector('.products-slider__pagination'),
+              clickable: true,
+            },
+            breakpoints: {
+              768: { slidesPerView: 1 },
+            },
           });
-        }
-
-        new window.Swiper(mainGallery, {
-          spaceBetween: 10,
-          navigation: {
-            nextEl: mainGallery.querySelector('.swiper-button-next'),
-            prevEl: mainGallery.querySelector('.swiper-button-prev'),
-          },
-          thumbs: { swiper: thumbsSwiper },
         });
-      });
-    }
+
+        // ✅ Инициализация галерей товаров (только для saleshits-tabs)
+        const galleries = document.querySelectorAll('.saleshits-tabs .product-gallery-main');
+        
+        galleries.forEach((mainGallery) => {
+          const galleryId = mainGallery.getAttribute('data-gallery');
+          const thumbsGallery = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
+
+          // Уничтожаем старые экземпляры
+          if (mainGallery.swiper) {
+            mainGallery.swiper.destroy(true, true);
+          }
+          if (thumbsGallery && thumbsGallery.swiper) {
+            thumbsGallery.swiper.destroy(true, true);
+          }
+
+          let thumbsSwiper = null;
+          if (thumbsGallery) {
+            thumbsSwiper = new window.Swiper(thumbsGallery, {
+              spaceBetween: 10,
+              slidesPerView: 4,
+              freeMode: true,
+              watchSlidesProgress: true,
+            });
+          }
+
+          new window.Swiper(mainGallery, {
+            spaceBetween: 10,
+            navigation: {
+              nextEl: mainGallery.querySelector('.swiper-button-next'),
+              prevEl: mainGallery.querySelector('.swiper-button-prev'),
+            },
+            thumbs: { swiper: thumbsSwiper },
+          });
+        });
+      }
+    }, 100); // ✅ Задержка 100ms
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -64,32 +85,88 @@ export default function SalesHits() {
             {/* Табы навигации */}
             <ul className="nav products-tabs__nav" id="salesHitsTabs" role="tablist">
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link active" id="beds-tab" data-bs-toggle="tab"
-                  data-bs-target="#beds" type="button" role="tab" aria-selected="true" tabIndex={0}>Кровати и матрасы</button>
+                <button 
+                  className="nav-link products-tabs__link active" 
+                  id="beds-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#beds" 
+                  type="button" 
+                  role="tab"
+                >
+                  Кровати и матрасы
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="sofas-tab" data-bs-toggle="tab"
-                  data-bs-target="#sofas" type="button" role="tab" aria-selected="false" tabIndex={-1}>Диваны и кресла</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="sofas-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#sofas" 
+                  type="button" 
+                  role="tab"
+                >
+                  Диваны и кресла
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="lighting-tab" data-bs-toggle="tab"
-                  data-bs-target="#lighting" type="button" role="tab" aria-selected="false" tabIndex={-1}>Освещение</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="lighting-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#lighting" 
+                  type="button" 
+                  role="tab"
+                >
+                  Освещение
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="wardrobes-tab" data-bs-toggle="tab"
-                  data-bs-target="#wardrobes" type="button" role="tab" aria-selected="false" tabIndex={-1}>Шкафы</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="wardrobes-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#wardrobes" 
+                  type="button" 
+                  role="tab"
+                >
+                  Шкафы
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="dressers-tab" data-bs-toggle="tab"
-                  data-bs-target="#dressers" type="button" role="tab" aria-selected="false" tabIndex={-1}>Комоды и тумбочки</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="dressers-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#dressers" 
+                  type="button" 
+                  role="tab"
+                >
+                  Комоды и тумбочки
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="storage-tab" data-bs-toggle="tab"
-                  data-bs-target="#storage" type="button" role="tab" aria-selected="false" tabIndex={-1}>Системы хранения</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="storage-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#storage" 
+                  type="button" 
+                  role="tab"
+                >
+                  Системы хранения
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="garden-tab" data-bs-toggle="tab"
-                  data-bs-target="#garden" type="button" role="tab" aria-selected="false" tabIndex={-1}>Сад и балкон</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="garden-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#garden" 
+                  type="button" 
+                  role="tab"
+                >
+                  Сад и балкон
+                </button>
               </li>
             </ul>
 
@@ -97,7 +174,7 @@ export default function SalesHits() {
             <div className="tab-content products-tabs__content" id="salesHitsTabsContent">
               
               {/* Таб 1: Кровати и матрасы */}
-              <div className="tab-pane fade show active" id="beds" role="tabpanel" aria-labelledby="beds-tab">
+              <div className="tab-pane fade show active" id="beds" role="tabpanel">
                 <div className="products-card-slider">
                   <div className="products-slider swiper" data-slider="saleshits">
                     <div className="swiper-wrapper">
@@ -133,7 +210,6 @@ export default function SalesHits() {
                                   <div className="swiper-button-prev"></div>
                                 </div>
 
-                                {/* ✅ ИСПРАВЛЕНО: thumbsSlider → data-thumbs-slider */}
                                 <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-1">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
@@ -191,7 +267,6 @@ export default function SalesHits() {
                                   <div className="swiper-button-prev"></div>
                                 </div>
 
-                                {/* ✅ ИСПРАВЛЕНО */}
                                 <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-2">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
@@ -237,7 +312,6 @@ export default function SalesHits() {
                                     </div>
                                   </div>
                                 </div>
-                                {/* ✅ ИСПРАВЛЕНО */}
                                 <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-3">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
@@ -263,7 +337,7 @@ export default function SalesHits() {
                             </div>
                           </div>
 
-                          {/* Карточки 4-5 аналогично - БЕЗ thumbsSlider, так как там нет атрибута */}
+                          {/* Карточка 4 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
@@ -299,6 +373,7 @@ export default function SalesHits() {
                             </div>
                           </div>
 
+                          {/* Карточка 5 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
@@ -397,22 +472,22 @@ export default function SalesHits() {
               </div>
 
               {/* Остальные табы */}
-              <div className="tab-pane fade" id="sofas" role="tabpanel" aria-labelledby="sofas-tab">
+              <div className="tab-pane fade" id="sofas" role="tabpanel">
                 <p>Диваны и кресла - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="lighting" role="tabpanel" aria-labelledby="lighting-tab">
+              <div className="tab-pane fade" id="lighting" role="tabpanel">
                 <p>Освещение - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="wardrobes" role="tabpanel" aria-labelledby="wardrobes-tab">
+              <div className="tab-pane fade" id="wardrobes" role="tabpanel">
                 <p>Шкафы - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="dressers" role="tabpanel" aria-labelledby="dressers-tab">
+              <div className="tab-pane fade" id="dressers" role="tabpanel">
                 <p>Комоды - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="storage" role="tabpanel" aria-labelledby="storage-tab">
+              <div className="tab-pane fade" id="storage" role="tabpanel">
                 <p>Системы хранения - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="garden" role="tabpanel" aria-labelledby="garden-tab">
+              <div className="tab-pane fade" id="garden" role="tabpanel">
                 <p>Сад и балкон - содержимое</p>
               </div>
               

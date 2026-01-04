@@ -94,25 +94,36 @@ const blogSlides = [
 
 export default function BlogSection() {
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Swiper) {
-      const blogSwiper = document.querySelector('.blog-inner');
-      if (blogSwiper) {
-        new window.Swiper(blogSwiper, {
-          slidesPerView: 1,
-          spaceBetween: 20,
-          speed: 500,
-          loop: true,
-          navigation: {
-            nextEl: '.blog-slider__nav-next',
-            prevEl: '.blog-slider__nav-prev',
-          },
-          pagination: {
-            el: '.blog-slider__pagination',
-            clickable: true,
-          },
-        });
+    // ✅ Задержка 350ms (последняя, самая большая)
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        const blogSwiper = document.querySelector('.blog-inner');
+        
+        if (blogSwiper) {
+          // ✅ Уничтожаем старый экземпляр
+          if (blogSwiper.swiper) {
+            blogSwiper.swiper.destroy(true, true);
+          }
+
+          new window.Swiper(blogSwiper, {
+            slidesPerView: 1,
+            spaceBetween: 20,
+            speed: 500,
+            loop: true,
+            navigation: {
+              nextEl: '.blog-slider__nav-next',
+              prevEl: '.blog-slider__nav-prev',
+            },
+            pagination: {
+              el: '.blog-slider__pagination',
+              clickable: true,
+            },
+          });
+        }
       }
-    }
+    }, 350); // ✅ Задержка 350ms
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (

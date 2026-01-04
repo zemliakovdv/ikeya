@@ -1,66 +1,79 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export default function NewProducts() {
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
+    // ✅ Задержка 300ms (уникальная для этого слайдера)
+    const timer = setTimeout(() => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        
+        // ✅ ВАЖНО: Селектор только для new-tabs, чтобы не трогать другие слайдеры!
+        const productSliders = document.querySelectorAll('.new-tabs .products-slider');
+        
+        productSliders.forEach((slider) => {
+          // Проверка, не инициализирован ли уже
+          if (slider.swiper) {
+            slider.swiper.destroy(true, true);
+          }
 
-    if (typeof window !== 'undefined' && window.Swiper) {
-      // Инициализация слайдеров карточек
-      const productSliders = document.querySelectorAll('.products-slider');
-      productSliders.forEach((slider) => {
-        new window.Swiper(slider, {
-          slidesPerView: 1,
-          spaceBetween: 20,
-          speed: 500,
-          navigation: {
-            nextEl: slider.querySelector('.products-slider__nav-next'),
-            prevEl: slider.querySelector('.products-slider__nav-prev'),
-          },
-          pagination: {
-            el: slider.querySelector('.products-slider__pagination'),
-            clickable: true,
-          },
-          breakpoints: {
-            768: { slidesPerView: 1 },
-          },
-        });
-      });
-
-      // Инициализация галерей товаров
-      const galleries = document.querySelectorAll('.product-gallery-main');
-      galleries.forEach((mainGallery) => {
-        const galleryId = mainGallery.getAttribute('data-gallery');
-        const thumbsGallery = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
-
-        let thumbsSwiper = null;
-        if (thumbsGallery) {
-          thumbsSwiper = new window.Swiper(thumbsGallery, {
-            spaceBetween: 10,
-            slidesPerView: 4,
-            freeMode: true,
-            watchSlidesProgress: true,
+          new window.Swiper(slider, {
+            slidesPerView: 1,
+            spaceBetween: 20,
+            speed: 500,
+            navigation: {
+              nextEl: slider.querySelector('.products-slider__nav-next'),
+              prevEl: slider.querySelector('.products-slider__nav-prev'),
+            },
+            pagination: {
+              el: slider.querySelector('.products-slider__pagination'),
+              clickable: true,
+            },
+            breakpoints: {
+              768: { slidesPerView: 1 },
+            },
           });
-        }
-
-        new window.Swiper(mainGallery, {
-          spaceBetween: 10,
-          navigation: {
-            nextEl: mainGallery.querySelector('.swiper-button-next'),
-            prevEl: mainGallery.querySelector('.swiper-button-prev'),
-          },
-          thumbs: { swiper: thumbsSwiper },
         });
-      });
-    }
-  }, []);
 
-  if (!mounted) {
-    return null; // Не рендерим на сервере
-  }
+        // ✅ Инициализация галерей товаров (только для new-tabs)
+        const galleries = document.querySelectorAll('.new-tabs .product-gallery-main');
+        
+        galleries.forEach((mainGallery) => {
+          const galleryId = mainGallery.getAttribute('data-gallery');
+          const thumbsGallery = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
+
+          // Уничтожаем старые экземпляры
+          if (mainGallery.swiper) {
+            mainGallery.swiper.destroy(true, true);
+          }
+          if (thumbsGallery && thumbsGallery.swiper) {
+            thumbsGallery.swiper.destroy(true, true);
+          }
+
+          let thumbsSwiper = null;
+          if (thumbsGallery) {
+            thumbsSwiper = new window.Swiper(thumbsGallery, {
+              spaceBetween: 10,
+              slidesPerView: 4,
+              freeMode: true,
+              watchSlidesProgress: true,
+            });
+          }
+
+          new window.Swiper(mainGallery, {
+            spaceBetween: 10,
+            navigation: {
+              nextEl: mainGallery.querySelector('.swiper-button-next'),
+              prevEl: mainGallery.querySelector('.swiper-button-prev'),
+            },
+            thumbs: { swiper: thumbsSwiper },
+          });
+        });
+      }
+    }, 300); // ✅ Задержка 300ms
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section className="products-tabs new-tabs">
@@ -72,32 +85,88 @@ export default function NewProducts() {
             {/* Табы */}
             <ul className="nav products-tabs__nav" id="productsTabs" role="tablist">
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link active" id="beds-tab" data-bs-toggle="tab"
-                  data-bs-target="#beds" type="button" role="tab">Освещение</button>
+                <button 
+                  className="nav-link products-tabs__link active" 
+                  id="beds-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#beds" 
+                  type="button" 
+                  role="tab"
+                >
+                  Освещение
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="sofas-tab" data-bs-toggle="tab"
-                  data-bs-target="#sofas" type="button" role="tab">Диваны и кресла</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="sofas-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#sofas" 
+                  type="button" 
+                  role="tab"
+                >
+                  Диваны и кресла
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="lighting-tab" data-bs-toggle="tab"
-                  data-bs-target="#lighting" type="button" role="tab">Освещение</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="lighting-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#lighting" 
+                  type="button" 
+                  role="tab"
+                >
+                  Освещение
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="wardrobes-tab" data-bs-toggle="tab"
-                  data-bs-target="#wardrobes" type="button" role="tab">Шкафы</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="wardrobes-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#wardrobes" 
+                  type="button" 
+                  role="tab"
+                >
+                  Шкафы
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="dressers-tab" data-bs-toggle="tab"
-                  data-bs-target="#dressers" type="button" role="tab">Комоды и тумбочки</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="dressers-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#dressers" 
+                  type="button" 
+                  role="tab"
+                >
+                  Комоды и тумбочки
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="storage-tab" data-bs-toggle="tab"
-                  data-bs-target="#storage" type="button" role="tab">Системы хранения</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="storage-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#storage" 
+                  type="button" 
+                  role="tab"
+                >
+                  Системы хранения
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="garden-tab" data-bs-toggle="tab"
-                  data-bs-target="#garden" type="button" role="tab">Сад и балкон</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="garden-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#garden" 
+                  type="button" 
+                  role="tab"
+                >
+                  Сад и балкон
+                </button>
               </li>
             </ul>
 
@@ -205,7 +274,7 @@ export default function NewProducts() {
                             </div>
                           </div>
 
-                          {/* Карточки 3-5 */}
+                          {/* Карточка 3 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
@@ -240,6 +309,7 @@ export default function NewProducts() {
                             </div>
                           </div>
 
+                          {/* Карточка 4 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
@@ -274,6 +344,7 @@ export default function NewProducts() {
                             </div>
                           </div>
 
+                          {/* Карточка 5 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
