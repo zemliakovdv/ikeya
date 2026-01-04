@@ -19,7 +19,7 @@ const products = [
     title: 'SLATTUM',
     description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
     thumbImages: [
       '/assets/img/main-page/sales-hist/hits-1.png',
       '/assets/img/main-page/sales-hist/hits-1.png',
@@ -34,7 +34,7 @@ const products = [
     title: 'GRÄDVIS',
     description: 'Стакан, прозрачное стекло, 21 cl',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -43,8 +43,8 @@ const products = [
     title: 'NÖSUND',
     description: 'Потолочный светильник, белый, 44 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -52,7 +52,7 @@ const products = [
     title: 'PELARBJÖRK',
     description: 'Набор из 2 декоративных подушек, серый, 14 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card4.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_4.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -61,7 +61,7 @@ const products = [
     title: 'VALEVÅG',
     description: 'Матрас пружинный, средней жесткости, белый, 140x200 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card5.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_5.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -70,8 +70,8 @@ const products = [
     title: 'NYMNE',
     description: 'Гардина, 2 шт, белый, 33 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card6.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_6.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -79,8 +79,8 @@ const products = [
     title: 'SÖDERHAMN',
     description: 'Диван трехместный, серый',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card7.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_7.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -88,7 +88,7 @@ const products = [
     title: 'HEMNES',
     description: 'Комод с 8 ящиками, белый',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card8.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_8.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -97,7 +97,7 @@ const products = [
     title: 'KALLAX',
     description: 'Стеллаж, белый, 77x147 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card9.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_9.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -106,8 +106,8 @@ const products = [
     title: 'BILLY',
     description: 'Книжный шкаф, белый, 80x28x202 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card10.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_10.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -115,8 +115,8 @@ const products = [
     title: 'MALM',
     description: 'Каркас кровати, высокий, белый, 160x200 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card11.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_11.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -124,8 +124,8 @@ const products = [
     title: 'POÄNG',
     description: 'Кресло, березовый шпон, Knisa светло-бежевый',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card12.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_12.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -133,7 +133,7 @@ const products = [
     title: 'MICKE',
     description: 'Письменный стол, белый, 105x50 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card13.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_13.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -142,7 +142,7 @@ const products = [
     title: 'EKTORP',
     description: 'Трехместный диван, Lofallet бежевый',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card14.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_14.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -151,7 +151,7 @@ const products = [
     title: 'LACK',
     description: 'Журнальный столик, белый, 90x55 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card15.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_15.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -160,7 +160,7 @@ const products = [
     title: 'NORDLI',
     description: 'Комод с 6 ящиками, белый, 120x99 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card16.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_16.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -169,7 +169,7 @@ const products = [
     title: 'STUVA',
     description: 'Комбинация для хранения, белый/береза, 60x50x192 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card17.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_17.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -178,7 +178,7 @@ const products = [
     title: 'JANSJÖ',
     description: 'Настольная лампа, черный',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card18.png'),
+    images: Array(5).fill('/assets/img/catalog-page/card/card_18.png'),
     thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
@@ -187,8 +187,8 @@ const products = [
     title: 'VEDBO',
     description: 'Кресло, Gunnared бежевый',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card19.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_19.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -196,8 +196,8 @@ const products = [
     title: 'TRYSIL',
     description: 'Гардероб, белый, 118x61x202 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card20.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_20.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -205,8 +205,8 @@ const products = [
     title: 'SKUBB',
     description: 'Коробка для обуви, белый, 22x34x16 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card21.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_21.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -214,8 +214,8 @@ const products = [
     title: 'RÖNNINGE',
     description: 'Стул, береза',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card22.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_22.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -223,8 +223,8 @@ const products = [
     title: 'LISABO',
     description: 'Стол, ясеневый шпон, 140x78 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card23.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_23.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
   {
@@ -232,8 +232,8 @@ const products = [
     title: 'HEMNES',
     description: 'Шкаф с 2 дверями, белая морилка, 90x197 см',
     price: '135',
-    images: Array(5).fill('/assets/img/catalog-page/card/card24.png'),
-    thumbImages: ['/assets/img/catalog-page/card/mini/cardmini5.png', '/assets/img/catalog-page/card/mini/cardmini6.png', '/assets/img/catalog-page/card/mini/cardmini7.png', '/assets/img/catalog-page/card/mini/cardmini7.png', '/assets/img/catalog-page/card/mini/cardmini7.png'],
+    images: Array(5).fill('/assets/img/catalog-page/card/card_24.png'),
+    thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_5.png', '/assets/img/catalog-page/card/mini/card_mini_6.png', '/assets/img/catalog-page/card/mini/card_mini_7.png', '/assets/img/catalog-page/card/mini/card_mini_7.png', '/assets/img/catalog-page/card/mini/card_mini_7.png'],
     badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
   },
 ];
@@ -244,7 +244,7 @@ const products = [
 
   return (
     <>
-        <main class="main catalog-inner">
+        <main className="main catalog-inner">
 
        
       <Breadcrumbs items={breadcrumbItems} />

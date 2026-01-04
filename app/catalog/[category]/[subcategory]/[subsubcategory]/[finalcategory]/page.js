@@ -27,7 +27,7 @@ export default function FourthLevelPage({ params }) {
             title: 'SLATTUM',
             description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
         },
@@ -36,7 +36,7 @@ export default function FourthLevelPage({ params }) {
             title: 'GRÄDVIS',
             description: 'Стакан, прозрачное стекло, 21 cl',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { new: 'Новинка' }
         },
@@ -45,8 +45,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
         {
@@ -54,8 +54,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
                 {
@@ -63,7 +63,7 @@ export default function FourthLevelPage({ params }) {
             title: 'SLATTUM',
             description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
         },
@@ -72,7 +72,7 @@ export default function FourthLevelPage({ params }) {
             title: 'GRÄDVIS',
             description: 'Стакан, прозрачное стекло, 21 cl',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { new: 'Новинка' }
         },
@@ -81,8 +81,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
         {
@@ -90,8 +90,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
                 {
@@ -99,7 +99,7 @@ export default function FourthLevelPage({ params }) {
             title: 'SLATTUM',
             description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
         },
@@ -108,7 +108,7 @@ export default function FourthLevelPage({ params }) {
             title: 'GRÄDVIS',
             description: 'Стакан, прозрачное стекло, 21 cl',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { new: 'Новинка' }
         },
@@ -117,8 +117,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
         {
@@ -126,8 +126,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
                 {
@@ -135,7 +135,7 @@ export default function FourthLevelPage({ params }) {
             title: 'SLATTUM',
             description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
         },
@@ -144,7 +144,7 @@ export default function FourthLevelPage({ params }) {
             title: 'GRÄDVIS',
             description: 'Стакан, прозрачное стекло, 21 cl',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { new: 'Новинка' }
         },
@@ -153,8 +153,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
         {
@@ -162,8 +162,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
                 {
@@ -171,7 +171,7 @@ export default function FourthLevelPage({ params }) {
             title: 'SLATTUM',
             description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
         },
@@ -180,7 +180,7 @@ export default function FourthLevelPage({ params }) {
             title: 'GRÄDVIS',
             description: 'Стакан, прозрачное стекло, 21 cl',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { new: 'Новинка' }
         },
@@ -189,8 +189,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
         {
@@ -198,8 +198,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
                 {
@@ -207,7 +207,7 @@ export default function FourthLevelPage({ params }) {
             title: 'SLATTUM',
             description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
         },
@@ -216,7 +216,7 @@ export default function FourthLevelPage({ params }) {
             title: 'GRÄDVIS',
             description: 'Стакан, прозрачное стекло, 21 cl',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { new: 'Новинка' }
         },
@@ -225,8 +225,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
         {
@@ -234,8 +234,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
                 {
@@ -243,7 +243,7 @@ export default function FourthLevelPage({ params }) {
             title: 'SLATTUM',
             description: 'Каркас кровати с обивкой, Vissle темно-серый, 140x200 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card1.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_1.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { hit: 'Хит продаж', discount: '-10% промокод IKEYA' }
         },
@@ -252,7 +252,7 @@ export default function FourthLevelPage({ params }) {
             title: 'GRÄDVIS',
             description: 'Стакан, прозрачное стекло, 21 cl',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card2.png'),
+            images: Array(5).fill('/assets/img/catalog-page/card/card_2.png'),
             thumbImages: Array(5).fill('/assets/img/main-page/sales-hist/hits-1.png'),
             badges: { new: 'Новинка' }
         },
@@ -261,8 +261,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         },
         {
@@ -270,8 +270,8 @@ export default function FourthLevelPage({ params }) {
             title: 'NÖSUND',
             description: 'Потолочный светильник, белый, 44 см',
             price: '135',
-            images: Array(5).fill('/assets/img/catalog-page/card/card3.png'),
-            thumbImages: ['/assets/img/catalog-page/card/mini/cardmini1.png', '/assets/img/catalog-page/card/mini/cardmini2.png', '/assets/img/catalog-page/card/mini/cardmini3.png'],
+            images: Array(5).fill('/assets/img/catalog-page/card/card_3.png'),
+            thumbImages: ['/assets/img/catalog-page/card/mini/card_mini_1.png', '/assets/img/catalog-page/card/mini/card_mini_2.png', '/assets/img/catalog-page/card/mini/card_mini_3.png'],
             badges: { hit: 'Хит продаж' }
         }
     ];
