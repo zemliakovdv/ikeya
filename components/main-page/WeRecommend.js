@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function WeRecommend() {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
+
     if (typeof window !== 'undefined' && window.Swiper) {
       // Инициализация слайдеров карточек для каждой вкладки
       const productSliders = document.querySelectorAll('.recomended-tabs .products-slider');
@@ -54,6 +58,10 @@ export default function WeRecommend() {
     }
   }, []);
 
+  if (!mounted) {
+    return null; // Не рендерим на сервере
+  }
+
   return (
     <section className="products-tabs recomended-tabs">
       <div className="container">
@@ -64,32 +72,88 @@ export default function WeRecommend() {
             {/* Табы навигации */}
             <ul className="nav products-tabs__nav" id="recommendTabs" role="tablist">
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link active" id="svet-tab" data-bs-toggle="tab"
-                  data-bs-target="#svet" type="button" role="tab">Освещение</button>
+                <button 
+                  className="nav-link products-tabs__link active" 
+                  id="svet-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#svet" 
+                  type="button" 
+                  role="tab"
+                >
+                  Освещение
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="divans-tab" data-bs-toggle="tab"
-                  data-bs-target="#divans" type="button" role="tab">Диваны и кресла</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="divans-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#divans" 
+                  type="button" 
+                  role="tab"
+                >
+                  Диваны и кресла
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="lightings-tab" data-bs-toggle="tab"
-                  data-bs-target="#lightings" type="button" role="tab">Освещение</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="lightings-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#lightings" 
+                  type="button" 
+                  role="tab"
+                >
+                  Освещение
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="shkafi-tab" data-bs-toggle="tab"
-                  data-bs-target="#shkafi" type="button" role="tab">Шкафы</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="shkafi-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#shkafi" 
+                  type="button" 
+                  role="tab"
+                >
+                  Шкафы
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="komodi-tab" data-bs-toggle="tab"
-                  data-bs-target="#komodi" type="button" role="tab">Комоды и тумбочки</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="komodi-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#komodi" 
+                  type="button" 
+                  role="tab"
+                >
+                  Комоды и тумбочки
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="hranenie-tab" data-bs-toggle="tab"
-                  data-bs-target="#hranenie" type="button" role="tab">Системы хранения</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="hranenie-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#hranenie" 
+                  type="button" 
+                  role="tab"
+                >
+                  Системы хранения
+                </button>
               </li>
               <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="balkon-tab" data-bs-toggle="tab"
-                  data-bs-target="#balkon" type="button" role="tab">Сад и балкон</button>
+                <button 
+                  className="nav-link products-tabs__link" 
+                  id="balkon-tab" 
+                  data-bs-toggle="tab"
+                  data-bs-target="#balkon" 
+                  type="button" 
+                  role="tab"
+                >
+                  Сад и балкон
+                </button>
               </li>
             </ul>
 
@@ -133,7 +197,7 @@ export default function WeRecommend() {
                                   <div className="swiper-button-prev"></div>
                                 </div>
 
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="recommend-1">
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="recommend-1">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/sales-hist/hits-1.png" alt="Миниатюра" />
@@ -190,7 +254,7 @@ export default function WeRecommend() {
                                   <div className="swiper-button-prev"></div>
                                 </div>
 
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="recommend-2">
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="recommend-2">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/we-recomend/recomend-2.png" alt="Миниатюра" />
@@ -223,7 +287,7 @@ export default function WeRecommend() {
                             </div>
                           </div>
 
-                          {/* Карточки 3-5 */}
+                          {/* Карточка 3 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
@@ -235,7 +299,7 @@ export default function WeRecommend() {
                                     </div>
                                   </div>
                                 </div>
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="recommend-3">
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="recommend-3">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/we-recomend/recomend-3.png" alt="Миниатюра" />
@@ -260,6 +324,7 @@ export default function WeRecommend() {
                             </div>
                           </div>
 
+                          {/* Карточка 4 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
@@ -295,6 +360,7 @@ export default function WeRecommend() {
                             </div>
                           </div>
 
+                          {/* Карточка 5 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">

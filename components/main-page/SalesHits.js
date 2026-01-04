@@ -65,31 +65,31 @@ export default function SalesHits() {
             <ul className="nav products-tabs__nav" id="salesHitsTabs" role="tablist">
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link active" id="beds-tab" data-bs-toggle="tab"
-                  data-bs-target="#beds" type="button" role="tab" aria-selected="true">Кровати и матрасы</button>
+                  data-bs-target="#beds" type="button" role="tab" aria-selected="true" tabIndex={0}>Кровати и матрасы</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="sofas-tab" data-bs-toggle="tab"
-                  data-bs-target="#sofas" type="button" role="tab" aria-selected="false">Диваны и кресла</button>
+                  data-bs-target="#sofas" type="button" role="tab" aria-selected="false" tabIndex={-1}>Диваны и кресла</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="lighting-tab" data-bs-toggle="tab"
-                  data-bs-target="#lighting" type="button" role="tab" aria-selected="false">Освещение</button>
+                  data-bs-target="#lighting" type="button" role="tab" aria-selected="false" tabIndex={-1}>Освещение</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="wardrobes-tab" data-bs-toggle="tab"
-                  data-bs-target="#wardrobes" type="button" role="tab" aria-selected="false">Шкафы</button>
+                  data-bs-target="#wardrobes" type="button" role="tab" aria-selected="false" tabIndex={-1}>Шкафы</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="dressers-tab" data-bs-toggle="tab"
-                  data-bs-target="#dressers" type="button" role="tab" aria-selected="false">Комоды и тумбочки</button>
+                  data-bs-target="#dressers" type="button" role="tab" aria-selected="false" tabIndex={-1}>Комоды и тумбочки</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="storage-tab" data-bs-toggle="tab"
-                  data-bs-target="#storage" type="button" role="tab" aria-selected="false">Системы хранения</button>
+                  data-bs-target="#storage" type="button" role="tab" aria-selected="false" tabIndex={-1}>Системы хранения</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="garden-tab" data-bs-toggle="tab"
-                  data-bs-target="#garden" type="button" role="tab" aria-selected="false">Сад и балкон</button>
+                  data-bs-target="#garden" type="button" role="tab" aria-selected="false" tabIndex={-1}>Сад и балкон</button>
               </li>
             </ul>
 
@@ -97,7 +97,7 @@ export default function SalesHits() {
             <div className="tab-content products-tabs__content" id="salesHitsTabsContent">
               
               {/* Таб 1: Кровати и матрасы */}
-              <div className="tab-pane fade show active" id="beds" role="tabpanel">
+              <div className="tab-pane fade show active" id="beds" role="tabpanel" aria-labelledby="beds-tab">
                 <div className="products-card-slider">
                   <div className="products-slider swiper" data-slider="saleshits">
                     <div className="swiper-wrapper">
@@ -397,22 +397,22 @@ export default function SalesHits() {
               </div>
 
               {/* Остальные табы */}
-              <div className="tab-pane fade" id="sofas" role="tabpanel">
+              <div className="tab-pane fade" id="sofas" role="tabpanel" aria-labelledby="sofas-tab">
                 <p>Диваны и кресла - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="lighting" role="tabpanel">
+              <div className="tab-pane fade" id="lighting" role="tabpanel" aria-labelledby="lighting-tab">
                 <p>Освещение - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="wardrobes" role="tabpanel">
+              <div className="tab-pane fade" id="wardrobes" role="tabpanel" aria-labelledby="wardrobes-tab">
                 <p>Шкафы - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="dressers" role="tabpanel">
+              <div className="tab-pane fade" id="dressers" role="tabpanel" aria-labelledby="dressers-tab">
                 <p>Комоды - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="storage" role="tabpanel">
+              <div className="tab-pane fade" id="storage" role="tabpanel" aria-labelledby="storage-tab">
                 <p>Системы хранения - содержимое</p>
               </div>
-              <div className="tab-pane fade" id="garden" role="tabpanel">
+              <div className="tab-pane fade" id="garden" role="tabpanel" aria-labelledby="garden-tab">
                 <p>Сад и балкон - содержимое</p>
               </div>
               

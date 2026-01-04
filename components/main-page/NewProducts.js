@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function NewProducts() {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
+
     if (typeof window !== 'undefined' && window.Swiper) {
       // Инициализация слайдеров карточек
       const productSliders = document.querySelectorAll('.products-slider');
@@ -53,6 +57,10 @@ export default function NewProducts() {
       });
     }
   }, []);
+
+  if (!mounted) {
+    return null; // Не рендерим на сервере
+  }
 
   return (
     <section className="products-tabs new-tabs">
@@ -127,7 +135,7 @@ export default function NewProducts() {
                                   <div className="swiper-button-prev"></div>
                                 </div>
 
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="beds-1">
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="beds-1">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/news/new-1.png" alt="Миниатюра" />
@@ -173,7 +181,7 @@ export default function NewProducts() {
                                     </div>
                                   </div>
                                 </div>
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="beds-2">
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="beds-2">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/news/new-2.png" alt="Миниатюра" />
@@ -344,7 +352,7 @@ export default function NewProducts() {
 
                     </div>
 
-                    {/* ✅ КНОПКИ ВНУТРИ SWIPER */}
+                    {/* Навигация */}
                     <div className="products-slider__nav products-slider__nav-prev">
                       <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
                         <path d="M6 1L1 6L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
