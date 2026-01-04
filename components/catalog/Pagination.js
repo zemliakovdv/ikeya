@@ -1,5 +1,6 @@
 export default function Pagination({ 
   currentPage = 1, 
+  totalPages = 16,
   itemsPerPage = 20,
   totalItems = 320 
 }) {

@@ -191,7 +191,7 @@ export default function ProductPage({ params }) {
     }
   ];
 
-  const itemsData = Array(8).fill(null).map(() => ({
+  const itemsData = Array(8).fill(null).map((_, i) => ({
     image: '/assets/img/catalog-card/place-hold.png',
     title: 'VIMLE',
     description: '2-местный диван, Гуннаред средний серый',

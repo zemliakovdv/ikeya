@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const router = useRouter();
-  const [isLoggedIn] = useState(false); // состояние авторизации (зарезервировано для будущего использования)
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // состояние авторизации
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e) => {
