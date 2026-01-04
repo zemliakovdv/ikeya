@@ -603,6 +603,7 @@ main {
 }
 
 .product-card-inner {
+    min-width: 293px;
     max-width: 293px;
     margin-top: 0;
     max-height: 497px;
@@ -5018,6 +5019,7 @@ body.modal-open {
     }
 
     .product-card-inner {
+        min-width: 258px;
         max-width: 258px;
     }
 
