@@ -16,8 +16,8 @@ export default function PromoBlock() {
   const swiperRef = useRef(null);
 
   useEffect(() => {
-    // ✅ Задержка для гарантии загрузки
-    const timer = setTimeout(() => {
+    // ✅ Функция инициализации слайдера
+    const initSlider = () => {
       if (typeof window !== 'undefined' && window.Swiper) {
         const swiperEl = document.querySelector('.promo-card-inner');
         const paginationEl = document.querySelector('.promo-cards-slider__pagination');
@@ -57,7 +57,21 @@ export default function PromoBlock() {
           });
         }
       }
-    }, 150); // ✅ Задержка 150ms
+    };
+
+    // ✅ Ожидание готовности Swiper с повторными попытками
+    let attempts = 0;
+    const maxAttempts = 50; // 5 секунд максимум
+    const checkSwiper = () => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        initSlider();
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(checkSwiper, 100);
+      }
+    };
+
+    const timer = setTimeout(checkSwiper, 100);
 
     return () => {
       clearTimeout(timer);

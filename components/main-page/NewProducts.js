@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 
 export default function NewProducts() {
   useEffect(() => {
-    // ✅ Задержка 300ms (уникальная для этого слайдера)
-    const timer = setTimeout(() => {
+    // ✅ Функция ожидания готовности Swiper
+    const initSliders = () => {
       if (typeof window !== 'undefined' && window.Swiper) {
         
         // ✅ ВАЖНО: Селектор только для new-tabs, чтобы не трогать другие слайдеры!
@@ -70,7 +70,21 @@ export default function NewProducts() {
           });
         });
       }
-    }, 300); // ✅ Задержка 300ms
+    };
+
+    // ✅ Ожидание готовности Swiper с повторными попытками
+    let attempts = 0;
+    const maxAttempts = 50; // 5 секунд максимум
+    const checkSwiper = () => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        initSliders();
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(checkSwiper, 100);
+      }
+    };
+
+    const timer = setTimeout(checkSwiper, 100);
 
     return () => clearTimeout(timer);
   }, []);

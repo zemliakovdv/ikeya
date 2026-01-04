@@ -94,8 +94,8 @@ const blogSlides = [
 
 export default function BlogSection() {
   useEffect(() => {
-    // ✅ Задержка 350ms (последняя, самая большая)
-    const timer = setTimeout(() => {
+    // ✅ Функция инициализации слайдера
+    const initSlider = () => {
       if (typeof window !== 'undefined' && window.Swiper) {
         const blogSwiper = document.querySelector('.blog-inner');
         
@@ -121,7 +121,21 @@ export default function BlogSection() {
           });
         }
       }
-    }, 350); // ✅ Задержка 350ms
+    };
+
+    // ✅ Ожидание готовности Swiper с повторными попытками
+    let attempts = 0;
+    const maxAttempts = 50; // 5 секунд максимум
+    const checkSwiper = () => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        initSlider();
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(checkSwiper, 100);
+      }
+    };
+
+    const timer = setTimeout(checkSwiper, 100);
 
     return () => clearTimeout(timer);
   }, []);

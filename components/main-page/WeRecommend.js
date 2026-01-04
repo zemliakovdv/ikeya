@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 
 export default function WeRecommend() {
   useEffect(() => {
-    // ✅ Задержка для гарантии загрузки Swiper
-    const timer = setTimeout(() => {
+    // ✅ Функция ожидания готовности Swiper
+    const initSliders = () => {
       if (typeof window !== 'undefined' && window.Swiper) {
         
         // ✅ Инициализация главного слайдера карточек (только для recomended-tabs)
@@ -70,7 +70,21 @@ export default function WeRecommend() {
           });
         });
       }
-    }, 200); // ✅ Задержка 200ms (больше, чем у других слайдеров)
+    };
+
+    // ✅ Ожидание готовности Swiper с повторными попытками
+    let attempts = 0;
+    const maxAttempts = 50; // 5 секунд максимум
+    const checkSwiper = () => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        initSliders();
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(checkSwiper, 100);
+      }
+    };
+
+    const timer = setTimeout(checkSwiper, 100);
 
     return () => clearTimeout(timer);
   }, []);

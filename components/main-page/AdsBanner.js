@@ -19,8 +19,8 @@ const bannerSlides = [
 
 export default function AdsBanner() {
   useEffect(() => {
-    // ✅ Задержка 250ms (уникальная для этого слайдера)
-    const timer = setTimeout(() => {
+    // ✅ Функция инициализации слайдера
+    const initSlider = () => {
       if (typeof window !== 'undefined' && window.Swiper) {
         const swiperEl = document.querySelector('.ads-banner-inner');
         const prevEl = document.querySelector('.ads-banner-slider__nav-prev');
@@ -52,7 +52,21 @@ export default function AdsBanner() {
           });
         }
       }
-    }, 250); // ✅ Задержка 250ms
+    };
+
+    // ✅ Ожидание готовности Swiper с повторными попытками
+    let attempts = 0;
+    const maxAttempts = 50; // 5 секунд максимум
+    const checkSwiper = () => {
+      if (typeof window !== 'undefined' && window.Swiper) {
+        initSlider();
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(checkSwiper, 100);
+      }
+    };
+
+    const timer = setTimeout(checkSwiper, 100);
 
     return () => clearTimeout(timer);
   }, []);
