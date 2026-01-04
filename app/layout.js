@@ -1,13 +1,11 @@
 import Script from 'next/script';
-import Header from './components/Header';    // ← Добавьте
+import Header from './components/Header';
 import Footer from './components/Footer'; 
-
 
 export const metadata = {
   title: 'IKEYA - Мебель для дома',
   description: 'Интернет-магазин мебели IKEYA',
 }
-
 
 export default function RootLayout({ children }) {
   return (
@@ -38,31 +36,21 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/main.css" />
       </head>
 
-      
-
       <body>
-
         <Header />
-
         {children}
-
         <Footer />
 
-        {/* Bootstrap Bundle */}
+        {/* ✅ ПЕРЕМЕСТИЛ СКРИПТЫ В КОНЕЦ + ИЗМЕНИЛ strategy */}
         <Script
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
 
-        
-
-        {/* Swiper JS */}
         <Script
           src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"
-          strategy="beforeInteractive"
+          strategy="afterInteractive"
         />
-
-
       </body>
     </html>
   )
