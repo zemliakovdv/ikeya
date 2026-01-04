@@ -3,23 +3,29 @@ setTimeout(() => {
 
 
 // Модальное окно
-// Получаем элементы
-const catalogBtn = document.getElementById('catalogBtn');
+// Получаем элементы (с правильными id и проверкой существования)
+const catalogBtn = document.getElementById('catalogButton'); // Исправлено: catalogButton вместо catalogBtn
 const catalogModal = document.getElementById('catalogModal');
 const catalogOverlay = document.getElementById('catalogOverlay');
 const header = document.querySelector('header');
 
 // Проверяем, что элементы найдены
-console.log('Кнопка:', catalogBtn);
-console.log('Модалка:', catalogModal);
-console.log('Overlay:', catalogOverlay);
-console.log('Header:', header);
+if (!catalogBtn || !catalogModal || !catalogOverlay || !header) {
+    console.warn('Каталог модалка: некоторые элементы не найдены', {
+        catalogBtn: !!catalogBtn,
+        catalogModal: !!catalogModal,
+        catalogOverlay: !!catalogOverlay,
+        header: !!header
+    });
+}
 
 // Сохраняем позицию скролла
 let scrollPosition = 0;
 
 // Функция открытия модального окна
 function openCatalog() {
+    if (!catalogModal || !catalogOverlay || !header) return;
+    
     console.log('Открываем модалку');
     
     // Сохраняем текущую позицию скролла
@@ -40,6 +46,8 @@ function openCatalog() {
 
 // Функция закрытия модального окна
 function closeCatalog() {
+    if (!catalogModal || !catalogOverlay) return;
+    
     console.log('Закрываем модалку');
     
     // Убираем модалку
@@ -54,37 +62,39 @@ function closeCatalog() {
     window.scrollTo(0, scrollPosition);
 }
 
-// Открытие по клику на кнопку
-catalogBtn.addEventListener('click', function(e) {
-    console.log('Клик по кнопке');
-    e.stopPropagation();
-    
-    if (catalogModal.classList.contains('active')) {
+// Открытие по клику на кнопку (только если элементы существуют)
+if (catalogBtn && catalogModal && catalogOverlay) {
+    catalogBtn.addEventListener('click', function(e) {
+        console.log('Клик по кнопке');
+        e.stopPropagation();
+        
+        if (catalogModal.classList.contains('active')) {
+            closeCatalog();
+        } else {
+            openCatalog();
+        }
+    });
+
+    // Закрытие по клику на overlay
+    catalogOverlay.addEventListener('click', function() {
         closeCatalog();
-    } else {
-        openCatalog();
-    }
-});
+    });
 
-// Закрытие по клику на overlay
-catalogOverlay.addEventListener('click', function() {
-    closeCatalog();
-});
+    // Закрытие по нажатию Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && catalogModal.classList.contains('active')) {
+            closeCatalog();
+        }
+    });
 
-// Закрытие по нажатию Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && catalogModal.classList.contains('active')) {
-        closeCatalog();
-    }
-});
-
-// Пересчет при изменении размера окна
-window.addEventListener('resize', function() {
-    if (catalogModal.classList.contains('active')) {
-        const headerHeight = header.offsetHeight;
-        catalogModal.style.top = headerHeight + 'px';
-    }
-});
+    // Пересчет при изменении размера окна
+    window.addEventListener('resize', function() {
+        if (catalogModal.classList.contains('active') && header) {
+            const headerHeight = header.offsetHeight;
+            catalogModal.style.top = headerHeight + 'px';
+        }
+    });
+}
 
 
 document.addEventListener('DOMContentLoaded', function () {
