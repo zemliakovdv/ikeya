@@ -2,133 +2,88 @@
 setTimeout(() => {
 
 
-document.addEventListener('DOMContentLoaded', function () {
-    const catalogButton = document.getElementById('catalogButton');
-    const catalogModal = document.getElementById('catalogModal');
-    const catalogModalBody = catalogModal?.querySelector('.catalog-modal-body');
-    const ANIMATION_DURATION = 350; // миллисекунды (под fade)
+// Модальное окно
+// Получаем элементы
+const catalogBtn = document.getElementById('catalogBtn');
+const catalogModal = document.getElementById('catalogModal');
+const catalogOverlay = document.getElementById('catalogOverlay');
+const header = document.querySelector('header');
 
-    if (!catalogButton || !catalogModal) {
-        console.error('Не найдены необходимые элементы');
-        return;
+// Проверяем, что элементы найдены
+console.log('Кнопка:', catalogBtn);
+console.log('Модалка:', catalogModal);
+console.log('Overlay:', catalogOverlay);
+console.log('Header:', header);
+
+// Сохраняем позицию скролла
+let scrollPosition = 0;
+
+// Функция открытия модального окна
+function openCatalog() {
+    console.log('Открываем модалку');
+    
+    // Сохраняем текущую позицию скролла
+    scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Получаем высоту header
+    const headerHeight = header.offsetHeight;
+    catalogModal.style.top = headerHeight + 'px';
+    
+    // Показываем модалку
+    catalogModal.classList.add('active');
+    catalogOverlay.classList.add('active');
+    
+    // Блокируем прокрутку body
+    document.body.classList.add('no-scroll');
+    document.body.style.top = `-${scrollPosition}px`;
+}
+
+// Функция закрытия модального окна
+function closeCatalog() {
+    console.log('Закрываем модалку');
+    
+    // Убираем модалку
+    catalogModal.classList.remove('active');
+    catalogOverlay.classList.remove('active');
+    
+    // Возвращаем прокрутку body
+    document.body.classList.remove('no-scroll');
+    document.body.style.top = '';
+    
+    // Восстанавливаем позицию скролла
+    window.scrollTo(0, scrollPosition);
+}
+
+// Открытие по клику на кнопку
+catalogBtn.addEventListener('click', function(e) {
+    console.log('Клик по кнопке');
+    e.stopPropagation();
+    
+    if (catalogModal.classList.contains('active')) {
+        closeCatalog();
+    } else {
+        openCatalog();
     }
-
-    function isModalOpen() {
-        return catalogModal.classList.contains('active');
-    }
-
-    function openModal() {
-        catalogModal.style.display = 'block';
-        document.body.style.overflow = 'hidden';
-
-        // Принудительный reflow для корректной работы transition
-        catalogModal.offsetHeight;
-
-        requestAnimationFrame(() => {
-            catalogModal.classList.add('active');
-            catalogButton.classList.add('active');
-        });
-
-        console.log('Модальное окно открыто');
-    }
-
-    function closeModal() {
-        catalogModal.classList.remove('active');
-        catalogButton.classList.remove('active');
-
-        setTimeout(() => {
-            catalogModal.style.display = 'none';
-            document.body.style.overflow = '';
-        }, ANIMATION_DURATION);
-
-        console.log('Модальное окно закрыто');
-    }
-
-    function toggleCatalogModal() {
-        isModalOpen() ? closeModal() : openModal();
-    }
-
-    // Обработчик клика по кнопке
-    catalogButton.addEventListener('click', function (e) {
-        e.stopPropagation();
-        toggleCatalogModal();
-    });
-
-    // Закрытие при клике вне modal-body
-    catalogModal.addEventListener('click', function (e) {
-        // Проверяем, что клик был по фону, а не по содержимому
-        if (e.target === catalogModal ||
-            e.target.classList.contains('container') ||
-            e.target.classList.contains('row') ||
-            e.target.classList.contains('col-12')) {
-            closeModal();
-        }
-    });
-
-    // Предотвращаем закрытие при клике внутри modal-body
-    if (catalogModalBody) {
-        catalogModalBody.addEventListener('click', function (e) {
-            e.stopPropagation();
-        });
-    }
-
-    // Закрытие по Escape
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && isModalOpen()) {
-            closeModal();
-        }
-    });
-
-    catalogButton.classList.add('toggle-btn');
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-    // Элементы меню
-    const menuItems = document.querySelectorAll('.div .item, .div .item-2');
-    const categoryGroups = document.querySelectorAll('.category-group');
+// Закрытие по клику на overlay
+catalogOverlay.addEventListener('click', function() {
+    closeCatalog();
+});
 
-    // Функция для показа категории
-    function showCategory(categoryId) {
-        // Скрываем все категории
-        categoryGroups.forEach(group => {
-            group.classList.remove('active');
-            group.style.display = 'none';
-        });
-
-        // Показываем нужную категорию
-        const targetCategory = document.querySelector(`.category-group[data-category="${categoryId}"]`);
-        if (targetCategory) {
-            targetCategory.classList.add('active');
-            targetCategory.style.display = 'block';
-        }
-
-        // Обновляем активный пункт меню
-        menuItems.forEach(item => {
-            item.classList.remove('active');
-            if (item.getAttribute('data-category') === categoryId) {
-                item.classList.add('active');
-            }
-        });
+// Закрытие по нажатию Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && catalogModal.classList.contains('active')) {
+        closeCatalog();
     }
+});
 
-    // Обработчики событий для пунктов меню
-    menuItems.forEach(item => {
-        const categoryId = item.getAttribute('data-category');
-
-        // Наведение мыши
-        item.addEventListener('mouseenter', function () {
-            showCategory(categoryId);
-        });
-
-        // Клик (если нужно по клику)
-        item.addEventListener('click', function (e) {
-            e.preventDefault();
-            showCategory(categoryId);
-        });
-    });
-
-    // Показываем категорию "sad-i-balkon" по умолчанию
-    showCategory('sad-i-balkon');
+// Пересчет при изменении размера окна
+window.addEventListener('resize', function() {
+    if (catalogModal.classList.contains('active')) {
+        const headerHeight = header.offsetHeight;
+        catalogModal.style.top = headerHeight + 'px';
+    }
 });
 
 

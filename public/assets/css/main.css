@@ -3244,7 +3244,7 @@ body.modal-open {
 
 .reg-start {
     --bs-modal-width: 492px;
-    top: 30%;
+    top: 10%;
 }
 
 .reg-start .modal-header {

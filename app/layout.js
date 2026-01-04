@@ -1,6 +1,10 @@
 import Script from 'next/script';
 import Header from './components/Header';
 import Footer from './components/Footer'; 
+import LoginModal from '../modals/LoginModal';
+import CodeModal from '../modals/CodeModal';
+import RegModal from '../modals/RegModal';
+import SuccessModal from '../modals/SuccessModal';
 
 export const metadata = {
   title: 'IKEYA - Мебель для дома',
@@ -40,6 +44,12 @@ export default function RootLayout({ children }) {
         <Header />
         {children}
         <Footer />
+
+        {/* Модалки */}
+        <LoginModal />
+        <CodeModal phoneNumber="+375 29 570 67 31" />
+        <RegModal />
+        <SuccessModal userName="Имя" userEmail="example@mail.ru" />
 
         {/* ✅ ПЕРЕМЕСТИЛ СКРИПТЫ В КОНЕЦ + ИЗМЕНИЛ strategy */}
         <Script
