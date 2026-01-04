@@ -65,31 +65,31 @@ export default function SalesHits() {
             <ul className="nav products-tabs__nav" id="salesHitsTabs" role="tablist">
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link active" id="beds-tab" data-bs-toggle="tab"
-                  data-bs-target="#beds" type="button" role="tab">Кровати и матрасы</button>
+                  data-bs-target="#beds" type="button" role="tab" aria-selected="true">Кровати и матрасы</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="sofas-tab" data-bs-toggle="tab"
-                  data-bs-target="#sofas" type="button" role="tab">Диваны и кресла</button>
+                  data-bs-target="#sofas" type="button" role="tab" aria-selected="false">Диваны и кресла</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="lighting-tab" data-bs-toggle="tab"
-                  data-bs-target="#lighting" type="button" role="tab">Освещение</button>
+                  data-bs-target="#lighting" type="button" role="tab" aria-selected="false">Освещение</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="wardrobes-tab" data-bs-toggle="tab"
-                  data-bs-target="#wardrobes" type="button" role="tab">Шкафы</button>
+                  data-bs-target="#wardrobes" type="button" role="tab" aria-selected="false">Шкафы</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="dressers-tab" data-bs-toggle="tab"
-                  data-bs-target="#dressers" type="button" role="tab">Комоды и тумбочки</button>
+                  data-bs-target="#dressers" type="button" role="tab" aria-selected="false">Комоды и тумбочки</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="storage-tab" data-bs-toggle="tab"
-                  data-bs-target="#storage" type="button" role="tab">Системы хранения</button>
+                  data-bs-target="#storage" type="button" role="tab" aria-selected="false">Системы хранения</button>
               </li>
               <li className="nav-item" role="presentation">
                 <button className="nav-link products-tabs__link" id="garden-tab" data-bs-toggle="tab"
-                  data-bs-target="#garden" type="button" role="tab">Сад и балкон</button>
+                  data-bs-target="#garden" type="button" role="tab" aria-selected="false">Сад и балкон</button>
               </li>
             </ul>
 
@@ -133,7 +133,8 @@ export default function SalesHits() {
                                   <div className="swiper-button-prev"></div>
                                 </div>
 
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-1">
+                                {/* ✅ ИСПРАВЛЕНО: thumbsSlider → data-thumbs-slider */}
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-1">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/sales-hist/hits-1.png" alt="Миниатюра" />
@@ -190,7 +191,8 @@ export default function SalesHits() {
                                   <div className="swiper-button-prev"></div>
                                 </div>
 
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-2">
+                                {/* ✅ ИСПРАВЛЕНО */}
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-2">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/sales-hist/hits-2.png" alt="Миниатюра" />
@@ -223,7 +225,7 @@ export default function SalesHits() {
                             </div>
                           </div>
 
-                          {/* Карточки 3-5 */}
+                          {/* Карточка 3 */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
@@ -235,7 +237,8 @@ export default function SalesHits() {
                                     </div>
                                   </div>
                                 </div>
-                                <div thumbsSlider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-3">
+                                {/* ✅ ИСПРАВЛЕНО */}
+                                <div data-thumbs-slider="" className="swiper product-gallery-thumbs" data-gallery-thumbs="saleshits-3">
                                   <div className="swiper-wrapper">
                                     <div className="swiper-slide">
                                       <img src="assets/img/main-page/sales-hist/hits-3.png" alt="Миниатюра" />
@@ -260,6 +263,7 @@ export default function SalesHits() {
                             </div>
                           </div>
 
+                          {/* Карточки 4-5 аналогично - БЕЗ thumbsSlider, так как там нет атрибута */}
                           <div className="col product-card-inner">
                             <div className="product-card">
                               <div className="product-card__gallery">
