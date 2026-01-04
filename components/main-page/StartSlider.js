@@ -14,7 +14,22 @@ export default function StartSlider() {
         const prevEl = document.querySelector('.start-slider__nav-prev');
         const nextEl = document.querySelector('.start-slider__nav-next');
 
+        // ✅ Отладка: логируем найденные элементы
+        console.log('[StartSlider] Элементы найдены:', {
+          swiperEl: !!swiperEl,
+          paginationEl: !!paginationEl,
+          prevEl: !!prevEl,
+          nextEl: !!nextEl,
+          Swiper: !!window.Swiper,
+          swiperRefCurrent: !!swiperRef.current
+        });
+
         if (swiperEl && window.Swiper && !swiperRef.current) {
+          console.log('[StartSlider] Инициализация Swiper с навигацией:', {
+            prevEl: prevEl ? 'найден' : 'НЕ НАЙДЕН',
+            nextEl: nextEl ? 'найден' : 'НЕ НАЙДЕН'
+          });
+
           swiperRef.current = new window.Swiper(swiperEl, {
             loop: true,
             slidesPerView: 1,
@@ -34,11 +49,45 @@ export default function StartSlider() {
             },
             on: {
               init: function () {
-                console.log('StartSlider инициализирован!'); // ← проверка в консоли
+                console.log('[StartSlider] Swiper инициализирован!', {
+                  navigation: this.navigation,
+                  nextButton: this.navigation?.nextEl,
+                  prevButton: this.navigation?.prevEl
+                });
               },
+              slideChange: function () {
+                console.log('[StartSlider] Слайд изменен, текущий индекс:', this.activeIndex);
+              }
             }
           });
+
+          // ✅ Дополнительная отладка: проверяем, что кнопки привязаны
+          if (nextEl) {
+            console.log('[StartSlider] nextEl элемент:', nextEl);
+            nextEl.addEventListener('click', function(e) {
+              console.log('[StartSlider] Клик по nextEl кнопке!', e);
+            });
+          } else {
+            console.warn('[StartSlider] ⚠️ nextEl не найден!');
+          }
+
+          if (prevEl) {
+            console.log('[StartSlider] prevEl элемент:', prevEl);
+            prevEl.addEventListener('click', function(e) {
+              console.log('[StartSlider] Клик по prevEl кнопке!', e);
+            });
+          } else {
+            console.warn('[StartSlider] ⚠️ prevEl не найден!');
+          }
+        } else {
+          console.warn('[StartSlider] Условие инициализации не выполнено:', {
+            swiperEl: !!swiperEl,
+            Swiper: !!window.Swiper,
+            swiperRefCurrent: !!swiperRef.current
+          });
         }
+      } else {
+        console.warn('[StartSlider] Swiper не доступен');
       }
     };
 
