@@ -7,7 +7,7 @@ export default function ProductCard({
   price, 
   images = [],
   thumbImages = [],
-  badges = {} // { hit: 'Хит продаж', discount: '-10% промокод IKEYA', new: 'Новинка' }
+  badges = {} 
 }) {
   const galleryId = `beds-${id}`;
   
@@ -35,7 +35,7 @@ export default function ProductCard({
 
           {/* Слайдер миниатюр */}
           <div 
-            thumbsSlider="" 
+            data-thumbs-slider=""  // ✅ ИСПРАВЛЕНО! data-атрибут
             className="swiper product-gallery-thumbs" 
             data-gallery-thumbs={galleryId}
             style={{opacity: 0}}
