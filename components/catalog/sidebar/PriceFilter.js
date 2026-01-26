@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function PriceFilter({ min = 19.99, max = 4999, onChange }) {
   const [minValue, setMinValue] = useState(min);
@@ -8,17 +8,19 @@ export default function PriceFilter({ min = 19.99, max = 4999, onChange }) {
   const sliderRef = useRef(null);
   const fillRef = useRef(null);
 
-  useEffect(() => {
-    updateSliderFill();
-  }, [minValue, maxValue]);
-
-  const updateSliderFill = () => {
+  // ✅ Вынесли функцию ВЫШЕ useEffect с useCallback
+  const updateSliderFill = useCallback(() => {
     if (!fillRef.current) return;
     const percentMin = ((minValue - min) / (max - min)) * 100;
     const percentMax = ((maxValue - min) / (max - min)) * 100;
     fillRef.current.style.left = `${percentMin}%`;
     fillRef.current.style.width = `${percentMax - percentMin}%`;
-  };
+  }, [minValue, maxValue, min, max]); // Добавили все зависимости
+
+  // ✅ Теперь useEffect может безопасно использовать updateSliderFill
+  useEffect(() => {
+    updateSliderFill();
+  }, [updateSliderFill]); // Зависим от updateSliderFill
 
   const handleMinChange = (e) => {
     const value = Math.min(Number(e.target.value), maxValue - 1);

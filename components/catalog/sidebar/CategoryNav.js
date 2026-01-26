@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 export default function CategoryNav({ categories = [], level = 0 }) {
   const renderSubcategories = (subcategories) => {
     if (!subcategories || subcategories.length === 0) return null;
@@ -11,9 +13,9 @@ export default function CategoryNav({ categories = [], level = 0 }) {
             key={subcat.id}
             className={`subcategory-item ${subcat.active ? 'active' : ''}`}
           >
-            <a href={subcat.url} className="subcategory-link">
+            <Link href={subcat.url} className="subcategory-link">
               {subcat.name}
-            </a>
+            </Link>
           </li>
         ))}
       </ul>
@@ -31,7 +33,9 @@ export default function CategoryNav({ categories = [], level = 0 }) {
       
       <ul className="category-list">
         <li className="category-item">
-          <a href="/catalog" className="category-link">Все категории</a>
+          <Link href="/catalog" className="category-link">
+            Все категории
+          </Link>
         </li>
         
         {categories.map(category => (
@@ -40,9 +44,9 @@ export default function CategoryNav({ categories = [], level = 0 }) {
             className={`category-item ${category.hasSubcategories ? 'has-subcotegory' : ''} ${category.active && !category.subcategories ? 'active' : ''}`}
           >
             {category.url && (
-              <a href={category.url} className="category-link">
+              <Link href={category.url} className="category-link">
                 {category.name}
-              </a>
+              </Link>
             )}
             {category.subcategories && renderSubcategories(category.subcategories)}
           </li>
