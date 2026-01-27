@@ -39,11 +39,10 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
-          source: ".,!.git,!.github,!.next,!node_modules,!*.log,!.DS_Store"
+          source: "Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,context,data,mockData,modals,scripts,styles,jsconfig.json"
           target: "/home/deploy/apps/ikea_front"
-          strip_components: 0
 
-      - name: Install dependencies and restart on server
+      - name: Build and restart Docker containers
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -52,17 +51,7 @@ jobs:
           port: 22
           script: |
             cd /home/deploy/apps/ikea_front
-            
-            # Удаляем старые динамические роуты (если остались)
-            rm -rf app/catalog/\[category\] 2>/dev/null || true
-            rm -rf app/catalog/\[level1\] 2>/dev/null || true
-            rm -rf app/\[category\] 2>/dev/null || true
-            
-            # Удаляем кеш Next.js
-            rm -rf .next
-            
-            export NODE_ENV=production
-            npm ci --production=false
-            npm run build
-            pm2 restart ikea_front || pm2 start ecosystem.config.js
-            pm2 save
+            docker network create ikea-network 2>/dev/null || true
+            docker compose up -d --build
+            # Опционально: очистка старых образов
+            docker image prune -f

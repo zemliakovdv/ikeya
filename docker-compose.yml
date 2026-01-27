@@ -1,0 +1,30 @@
+services:
+  ikea-front:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ikea-front
+    restart: always
+    environment:
+      - NODE_ENV=production
+    networks:
+      - ikea-network
+
+  # Nginx Proxy Manager
+  npm:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: ikea-npm
+    restart: always
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./npm/data:/data
+      - ./npm/letsencrypt:/etc/letsencrypt
+    networks:
+      - ikea-network
+
+networks:
+  ikea-network:
+    external: true
