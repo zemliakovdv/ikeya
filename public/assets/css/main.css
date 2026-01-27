@@ -1790,6 +1790,7 @@ main {
 
 .catalog-categoties-card {
     text-align: center;
+    width: 166.5px;
     max-width: 166.5px;
     position: relative;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -2009,6 +2010,7 @@ main {
 /* Фильтры */
 .filter-aside {
     min-width: 256px;
+    max-width: 256px;
     background-color: white;
     border-radius: 0;
     height: fit-content;

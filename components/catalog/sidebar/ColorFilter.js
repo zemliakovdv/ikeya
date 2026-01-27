@@ -1,22 +1,35 @@
+// components/catalog/sidebar/ColorFilter.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
-export default function ColorFilter({ colors = [], showMore = false, onChange }) {
+export default function ColorFilter() {
   const [selectedColors, setSelectedColors] = useState([]);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
-  const visibleColors = showMore && !isExpanded ? colors.slice(0, 9) : colors;
-  const hiddenCount = colors.length - 9;
+  const colors = [
+    { id: 'beige', name: 'Бежевый', class: 'color-beige' },
+    { id: 'gray', name: 'Серый', class: 'color-gray' },
+    { id: 'brown', name: 'Коричневый', class: 'color-brown' },
+    { id: 'white', name: 'Белый', class: 'color-white' },
+    { id: 'multicolor', name: 'Разноцветный', class: 'color-multicolor' },
+    { id: 'black', name: 'Черный', class: 'color-black' },
+    { id: 'blue', name: 'Синий', class: 'color-blue' },
+    { id: 'green', name: 'Зеленый', class: 'color-green' },
+    { id: 'red', name: 'Красный', class: 'color-red' },
+  ];
 
-  const handleChange = (colorValue) => {
-    const newColors = selectedColors.includes(colorValue)
-      ? selectedColors.filter(c => c !== colorValue)
-      : [...selectedColors, colorValue];
-    
-    setSelectedColors(newColors);
-    onChange && onChange(newColors);
-  };
+  const visibleColors = showAll ? colors : colors.slice(0, 5);
+
+  const handleToggleColor = useCallback((colorId) => {
+    setSelectedColors((prev) =>
+      prev.includes(colorId) ? prev.filter((c) => c !== colorId) : [...prev, colorId]
+    );
+  }, []);
+
+  const toggleShowAll = useCallback(() => {
+    setShowAll((prev) => !prev);
+  }, []);
 
   return (
     <div className="filter-section">
@@ -26,32 +39,23 @@ export default function ColorFilter({ colors = [], showMore = false, onChange })
           <img src="/assets/img/icons/arrow-down.svg" alt="" />
         </span>
       </div>
-      
       <div className="brand-grid">
-        {visibleColors.map(color => (
-          <label key={color.value} className="brand-checkbox">
-            <input 
-              type="checkbox" 
-              value={color.value}
-              checked={selectedColors.includes(color.value)}
-              onChange={() => handleChange(color.value)}
+        {visibleColors.map((color) => (
+          <label key={color.id} className="brand-checkbox">
+            <input
+              type="checkbox"
+              checked={selectedColors.includes(color.id)}
+              onChange={() => handleToggleColor(color.id)}
             />
             <span className="custom-checkbox"></span>
-            <div 
-              className={`color-option color-${color.value} ${selectedColors.includes(color.value) ? 'active' : ''}`}
-              title={color.label}
-            ></div>
-            <span>{color.label}</span>
+            <div className={`color-option ${color.class} ${selectedColors.includes(color.id) ? 'active' : ''}`} title={color.name}></div>
+            <span>{color.name}</span>
           </label>
         ))}
       </div>
-
-      {showMore && hiddenCount > 0 && (
-        <button 
-          className="show-more"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? 'Скрыть' : `Еще ${hiddenCount}`}
+      {colors.length > 5 && (
+        <button className="show-more" onClick={toggleShowAll}>
+          {showAll ? 'Скрыть' : `Ещё ${colors.length - 5}`}
           <span className="toggle-icon">
             <img src="/assets/img/icons/arrow-down.svg" alt="" />
           </span>

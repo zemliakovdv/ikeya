@@ -1,127 +1,137 @@
+// components/catalog/sidebar/FilterAside.js
 'use client';
 
+import { useCallback } from 'react';
 import CategoryNav from './CategoryNav';
 import PriceFilter from './PriceFilter';
 import CollectionFilter from './CollectionFilter';
 import CheckboxFilter from './CheckboxFilter';
 import ColorFilter from './ColorFilter';
+import FilterNotification from './FilterNotification';
 
-export default function FilterAside({ filters = {}, currentLevel = 0, onFilterChange }) {
-  const handlePriceChange = (priceRange) => {
-    onFilterChange && onFilterChange({ type: 'price', value: priceRange });
-  };
-
-  const handleCollectionChange = (collections) => {
-    onFilterChange && onFilterChange({ type: 'collections', value: collections });
-  };
-
-  const handleCheckboxChange = (filterType, values) => {
-    onFilterChange && onFilterChange({ type: filterType, value: values });
-  };
-
-  const handleColorChange = (colors) => {
-    onFilterChange && onFilterChange({ type: 'colors', value: colors });
-  };
-
-  const handleClearFilters = () => {
-    onFilterChange && onFilterChange({ type: 'clear' });
-  };
+export default function FilterAside({ 
+  showAllFilters = false, 
+  currentCategory,
+  categorySlug,
+  parentCategory = null,
+  grandParentCategory = null,
+  greatGrandParentCategory = null,
+  subcategories = [],
+  level = 0,
+  filters = {} 
+}) {
+  const handleClearFilters = useCallback(() => {
+    alert('Фильтры очищены! (функция будет доработана при подключении API)');
+  }, []);
 
   return (
     <aside className="filter-aside">
       <CategoryNav 
-        categories={filters.categories || []} 
-        level={currentLevel}
+        currentCategory={currentCategory}
+        categorySlug={categorySlug}
+        parentCategory={parentCategory}
+        grandParentCategory={grandParentCategory}
+        greatGrandParentCategory={greatGrandParentCategory}
+        subcategories={subcategories}
+        level={level}
       />
 
-      <PriceFilter 
-        min={filters.priceMin || 19.99}
-        max={filters.priceMax || 4999}
-        onChange={handlePriceChange}
-      />
+      <PriceFilter />
+      <CollectionFilter />
 
-      <CollectionFilter 
-        collections={filters.collections || []}
-        showMore={true}
-        onChange={handleCollectionChange}
-      />
+      {showAllFilters && (
+        <>
+          <CheckboxFilter 
+            title="Ширина, см"
+            options={[
+              { value: '0-49', label: '0 - 49 см' },
+              { value: '50-99', label: '50 - 99 см' },
+              { value: '100-149', label: '100 - 149 см' },
+              { value: '150-199', label: '150 - 199 см' },
+              { value: '200+', label: '200+ см' },
+            ]}
+          />
 
-      {filters.width && (
-        <CheckboxFilter 
-          title="Ширина"
-          options={filters.width}
-          onChange={(values) => handleCheckboxChange('width', values)}
-        />
+          <CheckboxFilter 
+            title="Высота, см"
+            options={[
+              { value: '0-39', label: '0 - 39 см' },
+              { value: '40-49', label: '40 - 49 см' },
+              { value: '50-59', label: '50 - 59 см' },
+              { value: '60-69', label: '60 - 69 см' },
+              { value: '70+', label: '70+ см' },
+            ]}
+          />
+
+          <CheckboxFilter 
+            title="Глубина, см"
+            options={[
+              { value: '0-39', label: '0 - 39 см' },
+              { value: '40-59', label: '40 - 59 см' },
+              { value: '60-79', label: '60 - 79 см' },
+              { value: '80-99', label: '80 - 99 см' },
+              { value: '100+', label: '100+ см' },
+            ]}
+          />
+
+          <CheckboxFilter 
+            title="Длина, см"
+            options={[
+              { value: '0-59', label: '0 - 59 см' },
+              { value: '60-79', label: '60 - 79 см' },
+              { value: '80-99', label: '80 - 99 см' },
+              { value: '100-119', label: '100 - 119 см' },
+              { value: '120+', label: '120+ см' },
+            ]}
+          />
+
+          <CheckboxFilter 
+            title="Материал"
+            options={[
+              { value: 'wood', label: 'Дерево' },
+              { value: 'metal', label: 'Металл' },
+              { value: 'plastic', label: 'Пластик' },
+              { value: 'rattan', label: 'Ротанг' },
+              { value: 'fabric', label: 'Ткань' },
+            ]}
+            showMore
+          />
+
+          <ColorFilter />
+
+          <CheckboxFilter 
+            title="Количество мест"
+            options={[
+              { value: '1', label: '1 место' },
+              { value: '2', label: '2 места' },
+              { value: '2+', label: '2+ места' },
+              { value: '3+', label: '3+ места' },
+              { value: '4+', label: '4+ места' },
+            ]}
+            showMore
+          />
+
+          <CheckboxFilter 
+            title="Форма"
+            options={[
+              { value: 'rectangular', label: 'Прямоугольная' },
+              { value: 'square', label: 'Квадратная' },
+              { value: 'round', label: 'Круглая' },
+              { value: 'oval', label: 'Овальная' },
+              { value: 'l-shaped', label: 'Г-образная' },
+            ]}
+            showMore
+          />
+        </>
       )}
 
-      {filters.height && (
-        <CheckboxFilter 
-          title="Высота"
-          options={filters.height}
-          onChange={(values) => handleCheckboxChange('height', values)}
-        />
-      )}
+      {!showAllFilters && <FilterNotification />}
 
-      {filters.depth && (
-        <CheckboxFilter 
-          title="Глубина"
-          options={filters.depth}
-          onChange={(values) => handleCheckboxChange('depth', values)}
-        />
+      {showAllFilters && (
+        <button className="apply-filters" onClick={handleClearFilters}>
+          Очистить фильтры
+        </button>
       )}
-
-      {filters.length && (
-        <CheckboxFilter 
-          title="Длина"
-          options={filters.length}
-          onChange={(values) => handleCheckboxChange('length', values)}
-        />
-      )}
-
-      {filters.materials && (
-        <CheckboxFilter 
-          title="Материал"
-          options={filters.materials}
-          showMore={true}
-          expandLimit={9}
-          onChange={(values) => handleCheckboxChange('materials', values)}
-        />
-      )}
-
-      {filters.colors && (
-        <ColorFilter 
-          colors={filters.colors}
-          showMore={true}
-          onChange={handleColorChange}
-        />
-      )}
-
-      {filters.seats && (
-        <CheckboxFilter 
-          title="Количество мест"
-          options={filters.seats}
-          showMore={true}
-          expandLimit={7}
-          onChange={(values) => handleCheckboxChange('seats', values)}
-        />
-      )}
-
-      {filters.shape && (
-        <CheckboxFilter 
-          title="Форма"
-          options={filters.shape}
-          showMore={true}
-          expandLimit={9}
-          onChange={(values) => handleCheckboxChange('shape', values)}
-        />
-      )}
-
-      <button 
-        className="apply-filters"
-        onClick={handleClearFilters}
-      >
-        Очистить фильтры
-      </button>
     </aside>
   );
 }

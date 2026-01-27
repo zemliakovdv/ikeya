@@ -1,13 +1,10 @@
-export default function ProductBadge({ type, text }) {
-  const badgeClasses = {
-    hit: 'catalog-card-badge hit',
-    promo: 'catalog-card-badge promo',
-    new: 'catalog-card-badge new'
-  };
-
+// components/catalog/products/ProductBadge.js
+export default function ProductBadge({ label, variant = 'default' }) {
+  const className = variant === 'pink' ? 'sales-hit pink' : 'sales-hit';
+  
   return (
-    <div className={badgeClasses[type] || 'catalog-card-badge'}>
-      <p>{text}</p>
-    </div>
+    <span className={className} style={{ display: 'inline-block' }}>
+      {label}
+    </span>
   );
 }

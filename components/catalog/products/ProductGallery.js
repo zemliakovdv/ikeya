@@ -1,71 +1,88 @@
+// components/catalog/products/ProductGallery.js
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Thumbs } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
+import { useEffect, useRef } from 'react';
 
-export default function ProductGallery({ images = [], galleryId = 'gallery-1' }) {
-  const [thumbsSwiper, setThumbsSwiper] = useState(null);
+export default function ProductGallery({ images, thumbs, galleryId }) {
+  const mainSwiperRef = useRef(null);
+  const thumbsSwiperRef = useRef(null);
 
-  if (!images || images.length === 0) return null;
+  useEffect(() => {
+    // Проверяем что Swiper загружен
+    if (typeof window === 'undefined' || !window.Swiper) return;
+
+    // Инициализация Swiper для миниатюр
+    const thumbsSwiper = new window.Swiper(`.product-gallery-thumbs[data-gallery-thumbs="${galleryId}"]`, {
+      spaceBetween: 10,
+      slidesPerView: 4,
+      freeMode: true,
+      watchSlidesProgress: true,
+    });
+
+    // Инициализация главного Swiper
+    const mainSwiper = new window.Swiper(`.product-gallery-main[data-gallery="${galleryId}"]`, {
+      spaceBetween: 10,
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      },
+      thumbs: {
+        swiper: thumbsSwiper,
+      },
+    });
+
+    mainSwiperRef.current = mainSwiper;
+    thumbsSwiperRef.current = thumbsSwiper;
+
+    // Cleanup
+    return () => {
+      if (mainSwiper) mainSwiper.destroy();
+      if (thumbsSwiper) thumbsSwiper.destroy();
+    };
+  }, [galleryId]);
+
+  const hasMoreThumbs = thumbs && thumbs.length > 3;
+  const extraThumbsCount = hasMoreThumbs ? thumbs.length - 3 : 0;
 
   return (
     <div className="product-card__gallery">
-      <div 
+      {/* Главная галерея */}
+      <div
         style={{ '--swiper-navigation-color': '#fff', '--swiper-pagination-color': '#fff' }}
-        className="swiper product-gallery-main" 
+        className="swiper product-gallery-main"
         data-gallery={galleryId}
       >
-        <Swiper
-          modules={[Navigation, Thumbs]}
-          navigation={{
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-          }}
-          thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-          spaceBetween={0}
-          slidesPerView={1}
-          className="swiper-wrapper"
-        >
+        <div className="swiper-wrapper">
           {images.map((image, index) => (
-            <SwiperSlide key={index}>
-              <img src={image} alt="Товар" />
-            </SwiperSlide>
+            <div key={index} className="swiper-slide">
+              <img src={image} alt={`Slide ${index + 1}`} />
+            </div>
           ))}
-        </Swiper>
+        </div>
         <div className="swiper-button-next"></div>
         <div className="swiper-button-prev"></div>
       </div>
 
-      {images.length > 1 && (
-        <div 
-          className="swiper product-gallery-thumbs" 
+      {/* Миниатюры */}
+      {thumbs && thumbs.length > 0 && (
+        <div
+          thumbsSlider=""
+          className="swiper product-gallery-thumbs"
           data-gallery-thumbs={galleryId}
-          style={{ opacity: images.length > 4 ? 0 : 1 }}
+          style={{ opacity: thumbs.length <= 3 ? 0 : 1 }}
         >
-          <Swiper
-            modules={[Thumbs]}
-            onSwiper={setThumbsSwiper}
-            spaceBetween={8}
-            slidesPerView={4}
-            watchSlidesProgress={true}
-            className="swiper-wrapper"
-          >
-            {images.slice(0, 3).map((image, index) => (
-              <SwiperSlide key={index}>
-                <img src={image} alt="Миниатюра" />
-              </SwiperSlide>
+          <div className="swiper-wrapper">
+            {thumbs.slice(0, 3).map((thumb, index) => (
+              <div key={index} className="swiper-slide">
+                <img src={thumb} alt={`Thumb ${index + 1}`} />
+              </div>
             ))}
-            {images.length > 4 && (
-              <SwiperSlide>
-                <div className="product-gallery-thumbs__more">
-                  <span className="product-gallery-thumbs__count">+{images.length - 3}</span>
-                </div>
-              </SwiperSlide>
+            {hasMoreThumbs && (
+              <div className="swiper-slide product-gallery-thumbs__more">
+                <span className="product-gallery-thumbs__count">+{extraThumbsCount}</span>
+              </div>
             )}
-          </Swiper>
+          </div>
         </div>
       )}
     </div>

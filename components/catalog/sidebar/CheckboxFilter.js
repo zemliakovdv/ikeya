@@ -1,29 +1,23 @@
+// components/catalog/sidebar/CheckboxFilter.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
-export default function CheckboxFilter({ 
-  title, 
-  options = [], 
-  showMore = false,
-  expandLimit = 15,
-  onChange 
-}) {
+export default function CheckboxFilter({ title, options = [], showMore = false }) {
+  const [selectedOptions, setSelectedOptions] = useState([]);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedValues, setSelectedValues] = useState([]);
 
-  const visibleOptions = showMore && !isExpanded 
-    ? options.slice(0, expandLimit) 
-    : options;
+  const handleToggle = useCallback((value) => {
+    setSelectedOptions((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  }, []);
 
-  const handleChange = (value) => {
-    const newValues = selectedValues.includes(value)
-      ? selectedValues.filter(v => v !== value)
-      : [...selectedValues, value];
-    
-    setSelectedValues(newValues);
-    onChange && onChange(newValues);
-  };
+  const toggleExpanded = useCallback(() => {
+    setIsExpanded((prev) => !prev);
+  }, []);
+
+  const visibleOptions = showMore && !isExpanded ? options.slice(0, 5) : options;
 
   return (
     <div className="filter-section">
@@ -33,28 +27,22 @@ export default function CheckboxFilter({
           <img src="/assets/img/icons/arrow-down.svg" alt="" />
         </span>
       </div>
-      
       <div className="brand-grid">
-        {visibleOptions.map(option => (
+        {visibleOptions.map((option) => (
           <label key={option.value} className="brand-checkbox">
-            <input 
-              type="checkbox" 
-              value={option.value}
-              checked={selectedValues.includes(option.value)}
-              onChange={() => handleChange(option.value)}
+            <input
+              type="checkbox"
+              checked={selectedOptions.includes(option.value)}
+              onChange={() => handleToggle(option.value)}
             />
             <span className="custom-checkbox"></span>
             <span>{option.label}</span>
           </label>
         ))}
       </div>
-      
-      {showMore && options.length > expandLimit && (
-        <button 
-          className="show-more"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? 'Скрыть' : `Еще ${options.length - expandLimit}`}
+      {showMore && options.length > 5 && (
+        <button className="show-more" onClick={toggleExpanded}>
+          {isExpanded ? 'Скрыть' : `Ещё ${options.length - 5}`}
           <span className="toggle-icon">
             <img src="/assets/img/icons/arrow-down.svg" alt="" />
           </span>
