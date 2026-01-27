@@ -39,7 +39,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
-          source: ".,!.git,!.github,!.next,node_modules,*.log,.DS_Store"
+          source: ".,!.git,!.github,!.next,!node_modules,!*.log,!.DS_Store"
           target: "/home/deploy/apps/ikea_front"
           strip_components: 0
 
@@ -52,9 +52,17 @@ jobs:
           port: 22
           script: |
             cd /home/deploy/apps/ikea_front
+            
+            # Удаляем старые динамические роуты (если остались)
+            rm -rf app/catalog/\[category\] 2>/dev/null || true
+            rm -rf app/catalog/\[level1\] 2>/dev/null || true
+            rm -rf app/\[category\] 2>/dev/null || true
+            
+            # Удаляем кеш Next.js
+            rm -rf .next
+            
             export NODE_ENV=production
             npm ci --production=false
             npm run build
             pm2 restart ikea_front || pm2 start ecosystem.config.js
             pm2 save
-
