@@ -7,6 +7,8 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+    volumes:
+      - ./public/assets:/app/public/assets
     networks:
       - ikea-network
 
