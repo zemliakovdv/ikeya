@@ -11,7 +11,7 @@ export default function BlogSection() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
+    queueMicrotask(() => setMounted(true));
   }, [])
 
   // Данные статей блога

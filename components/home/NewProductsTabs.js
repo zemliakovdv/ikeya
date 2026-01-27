@@ -15,7 +15,7 @@ export default function NewProductsTabs() {
 
   // Ждем монтирования компонента
   useEffect(() => {
-    setMounted(true)
+    queueMicrotask(() => setMounted(true));
   }, [])
 
   const tabs = [

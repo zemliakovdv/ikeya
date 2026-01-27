@@ -20,7 +20,7 @@ export default function ProductTabsSection({
   const galleryThumbsInstances = useRef({})
 
   useEffect(() => {
-    setMounted(true)
+    queueMicrotask(() => setMounted(true));
   }, [])
 
   useEffect(() => {
