@@ -4,17 +4,17 @@
 export default function EmptyState({ type }) {
   const states = {
     active: {
-      image: '../assets/img/profile/empty-orders.svg',
+      image: '/assets/img/profile/empty-orders.svg',
       title: 'У вас пока нет актуальных заказов',
       text: 'Когда появятся, будут отображаться здесь. Остальные заказы находятся в истории заказов'
     },
     history: {
-      image: '../assets/img/profile/empty-history.svg',
+      image: '/assets/img/profile/empty-history.svg',
       title: 'У вас пока нет истории заказов',
       text: 'Когда появятся, будут отображаться здесь.'
     },
     purchases: {
-      image: '../assets/img/profile/empty-buys.svg',
+      image: '/assets/img/profile/empty-buys.svg',
       title: 'Купленных товаров пока нет',
       text: 'Когда появятся, будут отображаться здесь.'
     }

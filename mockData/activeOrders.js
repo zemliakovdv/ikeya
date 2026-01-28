@@ -8,8 +8,8 @@ export const mockActiveOrders = [
     price: '2 556,93',
     detailUrl: 'order-processing.html',
     items: [
-      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '../assets/img/profile/zakaz_1.png' },
-      { name: 'VALEVÅG', desc: 'Матрас, пружины карманного типа, средней жесткости/светло‑голубой, 140x200 см', quantity: 1, price: '558,93', image: '../assets/img/profile/zakaz_2.png' }
+      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '/assets/img/profile/zakaz_1.png' },
+      { name: 'VALEVÅG', desc: 'Матрас, пружины карманного типа, средней жесткости/светло‑голубой, 140x200 см', quantity: 1, price: '558,93', image: '/assets/img/profile/zakaz_2.png' }
     ]
   },
   {
@@ -21,7 +21,7 @@ export const mockActiveOrders = [
     countdown: '00:28:39',
     detailUrl: 'order-waiting-payment.html',
     items: [
-      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '../assets/img/profile/zakaz_1.png' }
+      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '/assets/img/profile/zakaz_1.png' }
     ]
   },
   {
@@ -32,7 +32,7 @@ export const mockActiveOrders = [
     price: '2 556,93',
     detailUrl: 'order-in-transit.html',
     items: [
-      { name: 'MUGGSVEIK', desc: '9-местный диван-кровать с шезлонгом, с шерстяным покрытием/серый Гуннаред/темный серый', quantity: 1, price: '1 856,07', image: '../assets/img/profile/zakaz_3.png' }
+      { name: 'MUGGSVEIK', desc: '9-местный диван-кровать с шезлонгом, с шерстяным покрытием/серый Гуннаред/темный серый', quantity: 1, price: '1 856,07', image: '/assets/img/profile/zakaz_3.png' }
     ]
   },
   {
@@ -44,7 +44,7 @@ export const mockActiveOrders = [
     trackNumber: 'LX004561845UZ',
     detailUrl: 'order-arrived.html',
     items: [
-      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '../assets/img/profile/zakaz_1.png' }
+      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '/assets/img/profile/zakaz_1.png' }
     ]
   },
   {
@@ -56,7 +56,7 @@ export const mockActiveOrders = [
     trackNumber: 'LX004561845UZ',
     detailUrl: 'order-arrived.html',
     items: [
-      { name: 'VALEVÅG', desc: 'Матрас, пружины карманного типа, средней жесткости/светло‑голубой, 140x200 см', quantity: 1, price: '558,93', image: '../assets/img/profile/zakaz_2.png' }
+      { name: 'VALEVÅG', desc: 'Матрас, пружины карманного типа, средней жесткости/светло‑голубой, 140x200 см', quantity: 1, price: '558,93', image: '/assets/img/profile/zakaz_2.png' }
     ]
   }
 ];

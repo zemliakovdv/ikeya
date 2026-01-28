@@ -8,16 +8,16 @@ export const mockPurchasedProducts = [
     priceCents: '00',
     galleryId: 'beds-1',
     images: [
-      '../assets/img/catalog-page/card/card_1.png',
-      '../assets/img/catalog-page/card/card_1.png',
-      '../assets/img/catalog-page/card/card_1.png',
-      '../assets/img/catalog-page/card/card_1.png',
-      '../assets/img/catalog-page/card/card_1.png'
+      '/assets/img/catalog-page/card/card_1.png',
+      '/assets/img/catalog-page/card/card_1.png',
+      '/assets/img/catalog-page/card/card_1.png',
+      '/assets/img/catalog-page/card/card_1.png',
+      '/assets/img/catalog-page/card/card_1.png'
     ],
     thumbs: [
-      { image: '../assets/img/main-page/sales-hist/hits-1.png' },
-      { image: '../assets/img/main-page/sales-hist/hits-1.png' },
-      { image: '../assets/img/main-page/sales-hist/hits-3.png' },
+      { image: '/assets/img/main-page/sales-hist/hits-1.png' },
+      { image: '/assets/img/main-page/sales-hist/hits-1.png' },
+      { image: '/assets/img/main-page/sales-hist/hits-3.png' },
       { isMore: true, count: '+2' }
     ],
     showThumbs: false,
@@ -36,16 +36,16 @@ export const mockPurchasedProducts = [
     priceCents: '00',
     galleryId: 'beds-2',
     images: [
-      '../assets/img/catalog-page/card/card_2.png',
-      '../assets/img/catalog-page/card/card_2.png',
-      '../assets/img/catalog-page/card/card_2.png',
-      '../assets/img/catalog-page/card/card_2.png',
-      '../assets/img/catalog-page/card/card_2.png'
+      '/assets/img/catalog-page/card/card_2.png',
+      '/assets/img/catalog-page/card/card_2.png',
+      '/assets/img/catalog-page/card/card_2.png',
+      '/assets/img/catalog-page/card/card_2.png',
+      '/assets/img/catalog-page/card/card_2.png'
     ],
     thumbs: [
-      { image: '../assets/img/main-page/sales-hist/hits-1.png' },
-      { image: '../assets/img/main-page/sales-hist/hits-1.png' },
-      { image: '../assets/img/main-page/sales-hist/hits-3.png' },
+      { image: '/assets/img/main-page/sales-hist/hits-1.png' },
+      { image: '/assets/img/main-page/sales-hist/hits-1.png' },
+      { image: '/assets/img/main-page/sales-hist/hits-3.png' },
       { isMore: true, count: '+2' }
     ],
     showThumbs: false,
@@ -64,16 +64,16 @@ export const mockPurchasedProducts = [
     priceCents: '00',
     galleryId: 'beds-3',
     images: [
-      '../assets/img/catalog-page/card/card_3.png',
-      '../assets/img/catalog-page/card/card_3.png',
-      '../assets/img/catalog-page/card/card_3.png',
-      '../assets/img/catalog-page/card/card_3.png',
-      '../assets/img/catalog-page/card/card_3.png'
+      '/assets/img/catalog-page/card/card_3.png',
+      '/assets/img/catalog-page/card/card_3.png',
+      '/assets/img/catalog-page/card/card_3.png',
+      '/assets/img/catalog-page/card/card_3.png',
+      '/assets/img/catalog-page/card/card_3.png'
     ],
     thumbs: [
-      { image: '../assets/img/catalog-page/card/mini/card_mini_1.png' },
-      { image: '../assets/img/catalog-page/card/mini/card_mini_2.png' },
-      { image: '../assets/img/catalog-page/card/mini/card_mini_3.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_1.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_2.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_3.png' },
       { isMore: true, count: '+1' }
     ],
     showThumbs: true,
@@ -92,16 +92,16 @@ export const mockPurchasedProducts = [
     priceCents: '00',
     galleryId: 'beds-10',
     images: [
-      '../assets/img/catalog-page/card/card_10.png',
-      '../assets/img/catalog-page/card/card_10.png',
-      '../assets/img/catalog-page/card/card_10.png',
-      '../assets/img/catalog-page/card/card_10.png',
-      '../assets/img/catalog-page/card/card_10.png'
+      '/assets/img/catalog-page/card/card_10.png',
+      '/assets/img/catalog-page/card/card_10.png',
+      '/assets/img/catalog-page/card/card_10.png',
+      '/assets/img/catalog-page/card/card_10.png',
+      '/assets/img/catalog-page/card/card_10.png'
     ],
     thumbs: [
-      { image: '../assets/img/catalog-page/card/mini/card_mini_1.png' },
-      { image: '../assets/img/catalog-page/card/mini/card_mini_2.png' },
-      { image: '../assets/img/catalog-page/card/mini/card_mini_3.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_1.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_2.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_3.png' },
       { isMore: true, count: '+2' }
     ],
     showThumbs: true,
@@ -121,16 +121,16 @@ export const mockPurchasedProducts = [
     priceCents: '99',
     galleryId: 'beds-11',
     images: [
-      '../assets/img/catalog-page/card/card_11.png',
-      '../assets/img/catalog-page/card/card_11.png',
-      '../assets/img/catalog-page/card/card_11.png',
-      '../assets/img/catalog-page/card/card_11.png',
-      '../assets/img/catalog-page/card/card_11.png'
+      '/assets/img/catalog-page/card/card_11.png',
+      '/assets/img/catalog-page/card/card_11.png',
+      '/assets/img/catalog-page/card/card_11.png',
+      '/assets/img/catalog-page/card/card_11.png',
+      '/assets/img/catalog-page/card/card_11.png'
     ],
     thumbs: [
-      { image: '../assets/img/catalog-page/card/mini/card_mini_1.png' },
-      { image: '../assets/img/catalog-page/card/mini/card_mini_2.png' },
-      { image: '../assets/img/catalog-page/card/mini/card_mini_3.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_1.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_2.png' },
+      { image: '/assets/img/catalog-page/card/mini/card_mini_3.png' },
       { isMore: true, count: '+2' }
     ],
     showThumbs: false,

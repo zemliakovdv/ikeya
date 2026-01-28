@@ -16,7 +16,7 @@ const mockActiveOrders = [
     price: '2 556,93',
     detailUrl: 'order-processing.html',
     items: [
-      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '../assets/img/profile/zakaz_1.png' }
+      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см', quantity: 1, price: '143,93', image: '/assets/img/profile/zakaz_1.png' }
     ]
   }
 ];
@@ -28,7 +28,7 @@ const mockHistoryOrders = [
     status: 'canceled',
     price: '2 556,93',
     items: [
-      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка', quantity: 1, price: '143,93', image: '../assets/img/profile/zakaz_1.png' }
+      { name: 'NATTSLÄNDA', desc: 'Пододеяльник и наволочка', quantity: 1, price: '143,93', image: '/assets/img/profile/zakaz_1.png' }
     ]
   }
 ];
@@ -41,8 +41,8 @@ const mockPurchasedProducts = [
     priceWhole: '135',
     priceCents: '00',
     galleryId: 'beds-1',
-    images: ['../assets/img/catalog-page/card/card_1.png'],
-    thumbs: [{ image: '../assets/img/main-page/sales-hist/hits-1.png' }],
+    images: ['/assets/img/catalog-page/card/card_1.png'],
+    thumbs: [{ image: '/assets/img/main-page/sales-hist/hits-1.png' }],
     showThumbs: false,
     badges: { hitSale: true, hitSaleVisible: true, promo: '-10%', promoVisible: true }
   }
