@@ -1124,6 +1124,10 @@ main {
     top: 253px;
 }
 
+.recommended-tabs{
+    padding-bottom: 40px;
+}
+
 /* Секция рекламных баннеров */
 .ads-banner {
     padding: 40px 0;
@@ -1242,6 +1246,10 @@ main {
     height: 8px;
     background: #181818;
     border-radius: 4px;
+}
+
+.new-tabs{
+    padding-bottom: 48px;
 }
 
 .new-tabs .sales-hit {
