@@ -32,6 +32,24 @@ jobs:
         env:
           NODE_ENV: production
 
+      - name: Precheck deploy path
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          script: |
+            whoami
+            id
+            pwd
+            ls -la /home/${{ secrets.DEPLOY_USER }}
+            ls -la /home/${{ secrets.DEPLOY_USER }}/apps || true
+            ls -la /home/${{ secrets.DEPLOY_USER }}/apps/ikea_front || true
+            stat /home/${{ secrets.DEPLOY_USER }}/apps/ikea_front || true
+            test -w /home/${{ secrets.DEPLOY_USER }}/apps && echo "apps writable" || echo "apps NOT writable"
+            test -w /home/${{ secrets.DEPLOY_USER }}/apps/ikea_front && echo "ikea_front writable" || echo "ikea_front NOT writable"
+
       - name: Deploy to server
         uses: appleboy/scp-action@master
         with:
