@@ -35,11 +35,12 @@ jobs:
       - name: Deploy to server
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
           source: Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,context,data,mockData,modals,scripts,styles,jsconfig.json
-          target: /home/${{ secrets.USERNAME }}/apps/ikea_front
+          target: /home/${{ secrets.DEPLOY_USER }}/apps/ikea_front
           rm: true
 
       - name: Build and restart Docker containers
