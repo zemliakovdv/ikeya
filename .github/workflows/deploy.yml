@@ -33,14 +33,14 @@ jobs:
           NODE_ENV: production
 
       - name: Deploy to server
-uses: appleboy/scp-action@master
-  with:
-    host: ${{ secrets.HOST }}
-    username: ${{ secrets.USERNAME }}
-    key: ${{ secrets.SSH_KEY }}
-    source: Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,context,data,mockData,modals,scripts,styles,jsconfig.json
-    target: /home/${{ secrets.USERNAME }}/apps/ikea_front
-    rm: true
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,context,data,mockData,modals,scripts,styles,jsconfig.json
+          target: /home/${{ secrets.USERNAME }}/apps/ikea_front
+          rm: true
 
       - name: Build and restart Docker containers
         uses: appleboy/ssh-action@master
@@ -53,5 +53,4 @@ uses: appleboy/scp-action@master
             cd /home/deploy/apps/ikea_front
             docker network create ikea-network 2>/dev/null || true
             docker compose up -d --build
-            # Опционально: очистка старых образов
             docker image prune -f
