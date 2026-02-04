@@ -5,6 +5,8 @@ import { useState, useCallback } from 'react';
 import ProductGallery from './ProductGallery';
 import ProductBadge from './ProductBadge';
 
+const API_BASE_URL = 'http://45.135.234.22';
+
 export default function ProductCard({ product }) {
   const [isLiked, setIsLiked] = useState(false);
 
@@ -13,45 +15,91 @@ export default function ProductCard({ product }) {
   }, []);
 
   const handleAddToCart = useCallback(() => {
-    // TODO: Добавить товар в корзину
     console.log('Add to cart:', product.id);
   }, [product.id]);
+
+  const attr = product.attributes;
+  
+  const title = attr.name_ru || attr.name || 'Товар';
+  const description = attr.collection || '';
+  
+  const price = Math.floor(attr.price);
+  const priceDecimal = ((attr.price % 1) * 100).toFixed(0).padStart(2, '0');
+  
+  // 🔥 ИСПРАВЛЕНИЕ: Парсим local_images из строки JSON
+  let imagesList = [];
+  
+  // Пробуем local_images
+  if (attr.local_images) {
+    try {
+      // Если это строка JSON, парсим её
+      if (typeof attr.local_images === 'string') {
+        imagesList = JSON.parse(attr.local_images);
+      } else if (Array.isArray(attr.local_images)) {
+        imagesList = attr.local_images;
+      }
+    } catch (e) {
+      console.error('Ошибка парсинга local_images:', e);
+    }
+  }
+  
+  // Если local_images пустой, берём images
+  if (imagesList.length === 0 && Array.isArray(attr.images)) {
+    imagesList = attr.images;
+  }
+  
+  // Формируем массив изображений с полными URL
+  const images = imagesList.length > 0
+    ? imagesList.map(img => {
+        if (typeof img === 'string') {
+          if (img.startsWith('http')) {
+            return img;
+          }
+          return `${API_BASE_URL}/${img}`;
+        }
+        return `https://via.placeholder.com/400x400/f5f5f5/999?text=Invalid`;
+      })
+    : [`https://via.placeholder.com/400x400/f5f5f5/999?text=${encodeURIComponent(title.slice(0, 10))}`];
+  
+  const thumbs = images;
+  
+  const badges = [];
+  if (attr.is_bestseller) badges.push('Хит продаж');
+  if (attr.is_popular) badges.push('Популярное');
 
   return (
     <div className="col product-card-inner">
       <div className="product-card">
-        {/* Галерея изображений */}
         <ProductGallery
-          images={product.images}
-          thumbs={product.thumbs}
+          images={images}
+          thumbs={thumbs}
           galleryId={`product-${product.id}`}
         />
 
-        {/* Информация о товаре */}
         <div className="product-card__info">
-          <h3 className="product-card__title">{product.title}</h3>
-          <p className="product-card__description">{product.description}</p>
+          <h3 className="product-card__title">{title}</h3>
+          {description && (
+            <p className="product-card__description">{description}</p>
+          )}
           <p className="product-card__price">
-            {product.price}
-            <span>.00 р.</span>
+            {price}
+            <span>.{priceDecimal} р.</span>
           </p>
           <button className="shop_button" onClick={handleAddToCart}>
             <img src="/assets/img/icons/shopping-cart.svg" alt="Добавить в корзину" />
-            <p>Купить</p>
+            <p>В корзину</p>
           </button>
         </div>
 
-        {/* Бейджи */}
-        {product.badges && product.badges.length > 0 && (
+        {badges.length > 0 && (
           <>
-            <ProductBadge label={product.badges[0]} />
-            {product.badges[1] && (
-              <ProductBadge label={product.badges[1]} variant="pink" />
+            <ProductBadge label={badges[0]} />
+            {badges[1] && (
+              <ProductBadge label={badges[1]} variant="pink" />
             )}
           </>
         )}
 
-        {/* Кнопка "Избранное" */}
         <button
           className={`like ${isLiked ? 'active' : ''}`}
           onClick={handleToggleLike}

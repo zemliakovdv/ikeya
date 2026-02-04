@@ -1,162 +1,207 @@
-'use client'
+// components/home/ProductTabsSection.js
+'use client';
 
-import { useEffect } from 'react'
-import ProductCard from '@components/ui/ProductCard'
+import { useEffect, useRef } from 'react';
+import ProductCard from '@/components/ui/ProductCard';
 
-export default function ProductsTabs() {
+export default function ProductTabsSection({ 
+  title = 'Товары', 
+  tabs = [], 
+  tabProducts = {}, 
+  sectionClass = 'products-tabs',
+  showNewBadge = false 
+}) {
+  const swipersRef = useRef({});
+
   useEffect(() => {
-    // Инициализация слайдеров после загрузки
-    if (typeof window !== 'undefined' && window.Swiper) {
-      // Инициализация основных слайдеров товаров
-      document.querySelectorAll('.products-slider').forEach((slider) => {
-        new window.Swiper(slider, {
-          slidesPerView: 1,
-          spaceBetween: 0,
-          loop: true,
-          pagination: {
-            el: slider.querySelector('.products-slider__pagination'),
-            clickable: true,
-          },
-          navigation: {
-            nextEl: slider.querySelector('.products-slider__nav-next'),
-            prevEl: slider.querySelector('.products-slider__nav-prev'),
-          },
-        })
-      })
-
-      // Инициализация галерей товаров
-      document.querySelectorAll('.product-gallery-main').forEach((gallery) => {
-        const galleryId = gallery.getAttribute('data-gallery')
-        const thumbs = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`)
-        
-        let thumbsSwiper = null
-        if (thumbs) {
-          thumbsSwiper = new window.Swiper(thumbs, {
-            spaceBetween: 10,
-            slidesPerView: 4,
-            freeMode: true,
-            watchSlidesProgress: true,
-          })
-        }
-
-        new window.Swiper(gallery, {
-          spaceBetween: 10,
-          navigation: {
-            nextEl: gallery.querySelector('.swiper-button-next'),
-            prevEl: gallery.querySelector('.swiper-button-prev'),
-          },
-          thumbs: thumbsSwiper ? {
-            swiper: thumbsSwiper,
-          } : undefined,
-        })
-      })
+    // Проверяем наличие Swiper
+    if (typeof window === 'undefined' || !window.Swiper) {
+      return;
     }
-  }, [])
+
+    // Уничтожаем старые инстансы
+    Object.values(swipersRef.current).forEach(swiper => {
+      if (swiper) swiper.destroy(true, true);
+    });
+    swipersRef.current = {};
+
+    // Инициализируем слайдеры для каждого таба
+    document.querySelectorAll('.products-slider').forEach((slider) => {
+      const sliderId = slider.getAttribute('data-slider');
+      
+      swipersRef.current[sliderId] = new window.Swiper(slider, {
+        slidesPerView: 1,
+        spaceBetween: 0,
+        loop: false,
+        speed: 600,
+        pagination: {
+          el: slider.querySelector('.products-slider__pagination'),
+          clickable: true,
+        },
+        navigation: {
+          nextEl: slider.querySelector('.products-slider__nav-next'),
+          prevEl: slider.querySelector('.products-slider__nav-prev'),
+        },
+      });
+    });
+
+    // Инициализируем галереи товаров
+    document.querySelectorAll('.product-gallery-main').forEach((gallery) => {
+      const galleryId = gallery.getAttribute('data-gallery');
+      const thumbs = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
+      
+      let thumbsSwiper = null;
+      if (thumbs) {
+        thumbsSwiper = new window.Swiper(thumbs, {
+          spaceBetween: 8,
+          slidesPerView: 3,
+          freeMode: true,
+          watchSlidesProgress: true,
+        });
+      }
+
+      new window.Swiper(gallery, {
+        spaceBetween: 10,
+        navigation: {
+          nextEl: gallery.querySelector('.swiper-button-next'),
+          prevEl: gallery.querySelector('.swiper-button-prev'),
+        },
+        thumbs: thumbsSwiper ? {
+          swiper: thumbsSwiper,
+        } : undefined,
+      });
+    });
+
+    console.log('✅ Слайдеры товаров инициализированы');
+
+    // Cleanup
+    return () => {
+      Object.values(swipersRef.current).forEach(swiper => {
+        if (swiper) swiper.destroy(true, true);
+      });
+    };
+  }, [tabs, tabProducts]);
+
+  // Если нет табов или товаров, не рендерим секцию
+  if (tabs.length === 0 || Object.keys(tabProducts).length === 0) {
+    return null;
+  }
+
+  // Функция для разбивки товаров на слайды по 5 штук
+  const chunkProducts = (products, size = 5) => {
+    const chunks = [];
+    for (let i = 0; i < products.length; i += size) {
+      chunks.push(products.slice(i, i + size));
+    }
+    return chunks;
+  };
 
   return (
-    <section className="products-tabs">
+    <section className={sectionClass}>
       <div className="container">
         <div className="row">
           <div className="col-12">
-            <h2>Хиты продаж</h2>
+            <h2>{title}</h2>
+
             {/* Табы навигации */}
-            <ul className="nav products-tabs__nav" id="productsTabs" role="tablist">
-              <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link active" id="beds-tab" data-bs-toggle="tab"
-                  data-bs-target="#beds" type="button" role="tab">
-                  Кровати и матрасы
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="sofas-tab" data-bs-toggle="tab"
-                  data-bs-target="#sofas" type="button" role="tab">
-                  Диваны и кресла
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="lighting-tab" data-bs-toggle="tab"
-                  data-bs-target="#lighting" type="button" role="tab">
-                  Освещение
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="wardrobes-tab" data-bs-toggle="tab"
-                  data-bs-target="#wardrobes" type="button" role="tab">
-                  Шкафы
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="dressers-tab" data-bs-toggle="tab"
-                  data-bs-target="#dressers" type="button" role="tab">
-                  Комоды и тумбочки
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="storage-tab" data-bs-toggle="tab"
-                  data-bs-target="#storage" type="button" role="tab">
-                  Системы хранения
-                </button>
-              </li>
-              <li className="nav-item" role="presentation">
-                <button className="nav-link products-tabs__link" id="garden-tab" data-bs-toggle="tab"
-                  data-bs-target="#garden" type="button" role="tab">
-                  Сад и балкон
-                </button>
-              </li>
+            <ul className="nav products-tabs__nav" id={`${sectionClass}-tabs`} role="tablist">
+              {tabs.map((tab, index) => (
+                <li key={tab.id} className="nav-item" role="presentation">
+                  <button 
+                    className={`nav-link products-tabs__link ${index === 0 ? 'active' : ''}`}
+                    id={`${sectionClass}-${tab.id}-tab`}
+                    data-bs-toggle="tab"
+                    data-bs-target={`#${sectionClass}-${tab.id}`}
+                    type="button"
+                    role="tab"
+                  >
+                    {tab.label}
+                  </button>
+                </li>
+              ))}
             </ul>
 
             {/* Контент табов */}
-            <div className="tab-content products-tabs__content" id="productsTabsContent">
-              {/* Таб 1: Кровати и матрасы */}
-              <div className="tab-pane fade show active" id="beds" role="tabpanel">
-                <div className="products-card-slider">
-                  <div className="products-slider swiper" data-slider="beds">
-                    <div className="swiper-wrapper">
-                      {/* Слайд с 5 карточками */}
-                      <div className="swiper-slide">
-                        <div className="row g-4 swiper-slide-inner">
-                          <ProductCard gallery="beds-1" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-2" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-3" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-4" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-5" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                        </div>
-                      </div>
-                      {/* Дополнительный слайд */}
-                      <div className="swiper-slide">
-                        <div className="row g-4 swiper-slide-inner">
-                          <ProductCard gallery="beds-1" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-2" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-3" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-4" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                          <ProductCard gallery="beds-5" title="SLATTUM" description="Каркас кровати с обивкой, Vissle темно-серый, 140x200 см" price="135" salesHit={true} promo={true} />
-                        </div>
-                      </div>
-                    </div>
-                    {/* Пагинация */}
-                    <div className="products-slider__pagination"></div>
-                    {/* Навигация */}
-                    <button className="products-slider__nav products-slider__nav-prev">
-                      <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                    <button className="products-slider__nav products-slider__nav-next">
-                      <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
+            <div className="tab-content products-tabs__content" id={`${sectionClass}-content`}>
+              {tabs.map((tab, index) => {
+                const products = tabProducts[tab.id] || [];
+                const slides = chunkProducts(products, 5);
 
-              {/* Остальные табы (Диваны, Освещение и т.д.) - структура идентична */}
-              {/* Добавьте остальные 6 табов по аналогии с первым */}
-              
+                return (
+                  <div 
+                    key={tab.id}
+                    className={`tab-pane fade ${index === 0 ? 'show active' : ''}`}
+                    id={`${sectionClass}-${tab.id}`}
+                    role="tabpanel"
+                  >
+                    {products.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+                        <p>Нет товаров в этой категории</p>
+                      </div>
+                    ) : (
+                      <div className="products-card-slider">
+                        <div 
+                          className="products-slider swiper" 
+                          data-slider={`${sectionClass}-${tab.id}`}
+                        >
+                          <div className="swiper-wrapper">
+                            {slides.map((slideProducts, slideIndex) => (
+                              <div key={slideIndex} className="swiper-slide">
+                                <div className="row g-4 swiper-slide-inner">
+                                  {slideProducts.map((product) => (
+                                    <ProductCard
+                                      key={product.id}
+                                      gallery={`${sectionClass}-${product.id}`}
+                                      title={product.title}
+                                      description={product.description}
+                                      price={product.price}
+                                      images={product.images}
+                                      salesHit={product.badges?.includes('hit')}
+                                      promo={product.badges?.includes('promo')}
+                                      isNew={showNewBadge || product.badges?.includes('new')}
+                                      url={product.url}
+                                    />
+                                  ))}
+                                  
+                                  {/* Заполнение пустых слотов для последнего слайда */}
+                                  {slideProducts.length < 5 && Array.from({ length: 5 - slideProducts.length }).map((_, i) => (
+                                    <div key={`empty-${i}`} className="col-lg-3 col-md-4 col-sm-6" style={{ visibility: 'hidden' }} />
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Пагинация (показываем только если больше 1 слайда) */}
+                          {slides.length > 1 && (
+                            <div className="products-slider__pagination"></div>
+                          )}
+
+                          {/* Навигация (показываем только если больше 1 слайда) */}
+                          {slides.length > 1 && (
+                            <>
+                              <button className="products-slider__nav products-slider__nav-prev">
+                                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                              <button className="products-slider__nav products-slider__nav-next">
+                                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

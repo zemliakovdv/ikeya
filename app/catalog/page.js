@@ -6,6 +6,7 @@ import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductGrid from '@/components/catalog/products/ProductGrid';
 import Pagination from '@/components/catalog/Pagination';
+import { getPopularCategories, getProducts } from '@/lib/api/ikea';
 
 export const metadata = {
   title: 'Каталог | IKEA',
@@ -13,10 +14,34 @@ export const metadata = {
 };
 
 export default async function CatalogPage({ searchParams }) {
-  // TODO: Здесь будет запрос к API для получения данных
-  const categories = []; // Массив категорий для верхней панели
-  const products = [];   // Массив товаров
-  const filters = {};    // Активные фильтры
+  const page = Number(searchParams.page) || 1;
+  const per_page = 20;
+
+  // 🔥 ПОЛУЧАЕМ ДАННЫЕ ИЗ API
+  let categories = [];
+  let products = [];
+  let meta = { total: 0, page: 1, per_page: 20 };
+
+  try {
+    // Параллельно загружаем категории и товары
+    const [categoriesData, productsData] = await Promise.all([
+      getPopularCategories(),
+      getProducts({ page, per_page })
+    ]);
+    
+    categories = categoriesData?.data || [];
+    products = productsData?.data || [];
+    meta = productsData?.meta || meta;
+    
+    console.log('✅ Категорий:', categories.length, '| Товаров:', products.length);
+  } catch (error) {
+    console.error('❌ Ошибка загрузки:', error);
+  }
+
+  const filters = {}; // TODO: Добавим позже
+
+  // Вычисляем общее количество страниц
+  const totalPages = Math.ceil(meta.total / meta.per_page);
 
   return (
     <main className="main catalog-inner">
@@ -34,7 +59,7 @@ export default async function CatalogPage({ searchParams }) {
               <div className="all-catalog-inner">
                 {/* Левый sidebar с фильтрами */}
                 <FilterAside 
-                  showAllFilters={false} // На главной скрыты доп. фильтры
+                  showAllFilters={false}
                   filters={filters}
                 />
 
@@ -51,10 +76,10 @@ export default async function CatalogPage({ searchParams }) {
 
                   {/* Пагинация */}
                   <Pagination 
-                    currentPage={1}
-                    totalPages={16}
-                    totalItems={320}
-                    itemsPerPage={20}
+                    currentPage={page}
+                    totalPages={totalPages}
+                    totalItems={meta.total}
+                    itemsPerPage={per_page}
                   />
                 </div>
               </div>

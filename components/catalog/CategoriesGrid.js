@@ -2,51 +2,60 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 
-export default function CategoriesGrid({ categories, limit }) {
-  // Моковые данные (замени на реальные из API)
-  const mockCategories = categories?.length > 0 ? categories : [
-    { id: 1, name: 'Коллекции', slug: 'furniture', image: '/assets/img/catalog-page/collection.png' },
-    { id: 2, name: 'Уценённые товары', slug: 'kitchen', image: '/assets/img/catalog-page/collection_2.png' },
-    { id: 3, name: 'Сад и балкон', slug: 'bedroom', image: '/assets/img/catalog-page/collection_3.png' },
-    { id: 4, name: 'Мебель для хранения вещей', slug: 'living-room', image: '/assets/img/catalog-page/collection_4.png' },
-    { id: 5, name: 'Освещение', slug: 'kids', image: '/assets/img/catalog-page/collection_5.png' },
-    { id: 6, name: 'Диваны и кресла', slug: 'bathroom', image: '/assets/img/catalog-page/collection_6.png' },
-    { id: 7, name: 'Текстиль', slug: 'office', image: '/assets/img/catalog-page/collection_7.png' },
-    { id: 8, name: 'Кровати и матрасы', slug: 'storage', image: '/assets/img/catalog-page/collection_8.png' },
-    { id: 9, name: 'Небольшое хранение и организация', slug: 'storage', image: '/assets/img/catalog-page/collection_9.png' },
-  ];
+const API_BASE_URL = 'http://45.135.234.22';
 
-  // Применяем лимит если указан
-  const displayCategories = limit ? mockCategories.slice(0, limit) : mockCategories;
+export default function CategoriesGrid({ categories = [], limit = 12 }) {
+  if (!categories || categories.length === 0) {
+    return null;
+  }
+
+  const displayCategories = categories.slice(0, limit);
 
   return (
     <section className="catalog-categories">
       <div className="container">
         <div className="row">
           <div className="col-12">
-            <h2>Категории</h2>
+            <h2>Популярные категории</h2>
             <div className="catalog-categories-items">
-              {displayCategories.map((category) => (
-                <div key={category.id} className="catalog-categoties-card">
-                  <Link 
-                    href={`/catalog/${category.slug}`}
-                    className="atalog-categoties-card__link"
-                  >
-                    <div className="catalog-categoties-banner">
-                      <Image
-                        src={category.image}
-                        alt={category.name}
-                        width={300}
-                        height={200}
-                        loading="lazy"
-                      />
-                    </div>
-                    <p>{category.name}</p>
-                  </Link>
-                </div>
-              ))}
+              {displayCategories.map((category) => {
+                const attr = category.attributes;
+                
+                // Название
+                const name = attr.translated_name || attr.name || 'Категория';
+                
+                // 🔥 Только local изображения (remote не работают)
+                let image;
+                if (attr.local_image_path) {
+                  image = attr.local_image_path.startsWith('http') 
+                    ? attr.local_image_path 
+                    : `${API_BASE_URL}/${attr.local_image_path}`;
+                } else {
+                  // Placeholder если нет local изображения
+                  image = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(name.slice(0, 15))}`;
+                }
+                
+                const url = `/catalog/${attr.ikea_id}`;
+
+                return (
+                  <div key={category.id} className="catalog-categoties-card">
+                    <Link href={url} className="catalog-categoties-card-link">
+                      <div className="catalog-categoties-banner">
+                        <img 
+                          src={image} 
+                          alt={name}
+                          onError={(e) => {
+                            // Если не загрузилось, показываем placeholder
+                            e.target.src = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(name.slice(0, 15))}`;
+                          }}
+                        />
+                      </div>
+                      <p>{name}</p>
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -1,5 +1,7 @@
-import Header from '@components/layout/Header/Header'
-import Footer from '@components/layout/Footer/Footer'
+// app/layout.js
+import Header from '@/components/layout/Header/Header'
+import Footer from '@/components/layout/Footer/Footer'
+import ClientScripts from '@/components/ClientScripts'
 import './globals.css'
 import Script from 'next/script'
 
@@ -27,11 +29,22 @@ export default function RootLayout({ children }) {
         {children}
         <Footer />
         
-        <Script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossOrigin="anonymous" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" integrity="sha384-G/EV+4j2dNv+tEPo3++6LCgdCROaejBqfUeNjuKAiuXbjrxilcCdDz6ZAVfHWe1Y" crossOrigin="anonymous" strategy="afterInteractive" />
-        <Script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" strategy="afterInteractive" />
-        <Script src="/assets/js/main.js" strategy="afterInteractive" />
-        <Script src="/assets/js/cart.js" strategy="afterInteractive" />
+        {/* Библиотеки загружаются ДО наших скриптов */}
+        <Script 
+          src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" 
+          strategy="beforeInteractive" 
+        />
+        <Script 
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" 
+          strategy="beforeInteractive" 
+        />
+        <Script 
+          src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" 
+          strategy="beforeInteractive" 
+        />
+        
+        {/* ТВОИ СКРИПТЫ ТЕПЕРЬ ЗДЕСЬ */}
+        <ClientScripts />
       </body>
     </html>
   )

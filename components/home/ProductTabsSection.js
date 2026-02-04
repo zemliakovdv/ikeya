@@ -1,229 +1,112 @@
-'use client'
+// components/home/ProductTabsSection.js
+'use client';
 
-import { useEffect, useState, useRef } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import Swiper from 'swiper'
-import { Navigation, Pagination, Thumbs } from 'swiper/modules'
+import { useEffect, useRef } from 'react';
+import ProductCard from '@/components/ui/ProductCard';
 
 export default function ProductTabsSection({ 
-  title, 
-  tabs, 
-  tabProducts, 
-  sectionClass = '',
+  title = 'Товары', 
+  tabs = [], 
+  tabProducts = {}, 
+  sectionClass = 'products-tabs',
   showNewBadge = false 
 }) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id || '')
-  const [mounted, setMounted] = useState(false)
-  const swiperInstances = useRef({})
-  const galleryMainInstances = useRef({})
-  const galleryThumbsInstances = useRef({})
+  const swipersRef = useRef({});
 
   useEffect(() => {
-    queueMicrotask(() => setMounted(true));
-  }, [])
-
-  useEffect(() => {
-    if (!mounted) return
-
-    const initializeSliders = () => {
-      const currentProducts = tabProducts[activeTab] || []
-      
-      // Уничтожаем старые галереи
-      Object.values(galleryMainInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      Object.values(galleryThumbsInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      galleryMainInstances.current = {}
-      galleryThumbsInstances.current = {}
-
-      // Инициализируем галереи для каждого товара
-      currentProducts.forEach((product) => {
-        const thumbsSelector = `[data-gallery-thumbs="${product.id}"]`
-        const mainSelector = `[data-gallery="${product.id}"]`
-
-        const thumbsEl = document.querySelector(thumbsSelector)
-        const mainEl = document.querySelector(mainSelector)
-
-        if (thumbsEl && mainEl && product.images.length > 1) {
-          try {
-            const thumbsSwiper = new Swiper(thumbsSelector, {
-              modules: [Thumbs],
-              spaceBetween: 8,
-              slidesPerView: 'auto',
-              watchSlidesProgress: true,
-              freeMode: true
-            })
-
-            const mainSwiper = new Swiper(mainSelector, {
-              modules: [Navigation, Thumbs],
-              spaceBetween: 0,
-              navigation: {
-                nextEl: `${mainSelector} .swiper-button-next`,
-                prevEl: `${mainSelector} .swiper-button-prev`
-              },
-              thumbs: {
-                swiper: thumbsSwiper
-              }
-            })
-
-            galleryThumbsInstances.current[product.id] = thumbsSwiper
-            galleryMainInstances.current[product.id] = mainSwiper
-          } catch (error) {
-            console.error('Ошибка инициализации галереи:', error)
-          }
-        }
-      })
-
-      // Уничтожаем старый основной слайдер
-      if (swiperInstances.current[activeTab]) {
-        swiperInstances.current[activeTab].destroy(true, true)
-      }
-
-      // Инициализируем основной слайдер товаров
-      setTimeout(() => {
-        const swiperEl = document.querySelector(`.products-slider[data-slider="${activeTab}"]`)
-        if (swiperEl) {
-          try {
-            const swiper = new Swiper(swiperEl, {
-              modules: [Navigation, Pagination],
-              slidesPerView: 1,
-              spaceBetween: 24,
-              navigation: {
-                nextEl: '.products-slider__nav-next',
-                prevEl: '.products-slider__nav-prev'
-              },
-              pagination: {
-                el: '.products-slider__pagination',
-                clickable: true
-              }
-            })
-            swiperInstances.current[activeTab] = swiper
-          } catch (error) {
-            console.error('Ошибка инициализации основного слайдера:', error)
-          }
-        }
-      }, 100)
+    if (typeof window === 'undefined' || !window.Swiper) {
+      return;
     }
 
-    initializeSliders()
+    const timer = setTimeout(() => {
+      Object.values(swipersRef.current).forEach(swiper => {
+        if (swiper) swiper.destroy(true, true);
+      });
+      swipersRef.current = {};
+
+      document.querySelectorAll('.products-slider').forEach((slider) => {
+        const sliderId = slider.getAttribute('data-slider');
+        
+        swipersRef.current[sliderId] = new window.Swiper(slider, {
+          slidesPerView: 1,
+          spaceBetween: 0,
+          loop: false,
+          speed: 600,
+          pagination: {
+            el: slider.querySelector('.products-slider__pagination'),
+            clickable: true,
+          },
+          navigation: {
+            nextEl: slider.querySelector('.products-slider__nav-next'),
+            prevEl: slider.querySelector('.products-slider__nav-prev'),
+          },
+        });
+      });
+
+      document.querySelectorAll('.product-gallery-main').forEach((gallery) => {
+        const galleryId = gallery.getAttribute('data-gallery');
+        const thumbs = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
+        
+        let thumbsSwiper = null;
+        if (thumbs) {
+          thumbsSwiper = new window.Swiper(thumbs, {
+            spaceBetween: 8,
+            slidesPerView: 3,
+            freeMode: true,
+            watchSlidesProgress: true,
+          });
+        }
+
+        new window.Swiper(gallery, {
+          spaceBetween: 10,
+          navigation: {
+            nextEl: gallery.querySelector('.swiper-button-next'),
+            prevEl: gallery.querySelector('.swiper-button-prev'),
+          },
+          thumbs: thumbsSwiper ? {
+            swiper: thumbsSwiper,
+          } : undefined,
+        });
+      });
+
+      console.log('✅ Слайдеры товаров инициализированы');
+    }, 100);
 
     return () => {
-      Object.values(swiperInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      Object.values(galleryMainInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      Object.values(galleryThumbsInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
+      clearTimeout(timer);
+      Object.values(swipersRef.current).forEach(swiper => {
+        if (swiper) swiper.destroy(true, true);
+      });
+    };
+  }, [tabs, tabProducts]);
+
+  if (tabs.length === 0 || Object.keys(tabProducts).length === 0) {
+    return null;
+  }
+
+  const chunkProducts = (products, size = 5) => {
+    const chunks = [];
+    for (let i = 0; i < products.length; i += size) {
+      chunks.push(products.slice(i, i + size));
     }
-  }, [activeTab, mounted, tabProducts])
-
-  const renderBadges = (badges) => {
-    return (
-      <>
-        {badges.includes('hit') && <span className="sales-hit">Хит продаж</span>}
-        {badges.includes('promo') && <span className="sales-hit pink">-10% промокод IKEYA</span>}
-        {showNewBadge && badges.includes('new') && <span className="sales-hit green">Новинка</span>}
-      </>
-    )
-  }
-
-  const renderProductCard = (product) => {
-    const visibleThumbs = product.images.slice(0, 3)
-    const remainingCount = product.images.length - 3
-
-    return (
-      <div key={product.id} className="col product-card-inner">
-        <div className="product-card">
-          <div className="product-card__gallery">
-            <Link href="/shop-card">
-              <div
-                style={{ '--swiper-navigation-color': '#fff', '--swiper-pagination-color': '#fff' }}
-                className="swiper product-gallery-main"
-                data-gallery={product.id}
-              >
-                <div className="swiper-wrapper">
-                  {product.images.map((img, idx) => (
-                    <div key={idx} className="swiper-slide">
-                      <Image src={img} alt="Товар" width={300} height={300} />
-                    </div>
-                  ))}
-                </div>
-                {product.images.length > 1 && (
-                  <>
-                    <div className="swiper-button-next"></div>
-                    <div className="swiper-button-prev"></div>
-                  </>
-                )}
-              </div>
-
-              {product.images.length > 1 && (
-                <div
-                  className="swiper product-gallery-thumbs"
-                  data-gallery-thumbs={product.id}
-                >
-                  <div className="swiper-wrapper">
-                    {visibleThumbs.map((img, idx) => (
-                      <div key={idx} className="swiper-slide">
-                        <Image src={img} alt="Миниатюра" width={60} height={60} />
-                      </div>
-                    ))}
-                    {remainingCount > 0 && (
-                      <div className="swiper-slide product-gallery-thumbs__more">
-                        <span className="product-gallery-thumbs__count">+{remainingCount}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </Link>
-          </div>
-
-          <div className="product-card__info">
-            <h3 className="product-card__title">{product.title}</h3>
-            <p className="product-card__description">{product.description}</p>
-            <p className="product-card__price">
-              {product.price.split('.')[0]}
-              <span>.{product.price.split('.')[1]} р.</span>
-            </p>
-            <button className="shop_button add-to-cart">
-              <Image src="/assets/img/icons/shopping-cart.svg" alt="В корзину" width={20} height={20} />
-              <p>В корзину</p>
-            </button>
-          </div>
-
-          {renderBadges(product.badges)}
-
-          <button className="like">
-            <Image src="/assets/img/icons/header-favorite.svg" alt="Добавить в избранное" width={24} height={24} />
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!mounted) return null
-
-  const currentProducts = tabProducts[activeTab] || []
+    return chunks;
+  };
 
   return (
-    <section className={`products-tabs ${sectionClass}`}>
+    <section className={sectionClass}>
       <div className="container">
         <div className="row">
           <div className="col-12">
             <h2>{title}</h2>
 
-            <ul className="nav products-tabs__nav" role="tablist">
-              {tabs.map(tab => (
+            <ul className="nav products-tabs__nav" id={`${sectionClass}-tabs`} role="tablist">
+              {tabs.map((tab, index) => (
                 <li key={tab.id} className="nav-item" role="presentation">
-                  <button
-                    className={`nav-link products-tabs__link ${activeTab === tab.id ? 'active' : ''}`}
-                    onClick={() => setActiveTab(tab.id)}
+                  <button 
+                    className={`nav-link products-tabs__link ${index === 0 ? 'active' : ''}`}
+                    id={`${sectionClass}-${tab.id}-tab`}
+                    data-bs-toggle="tab"
+                    data-bs-target={`#${sectionClass}-${tab.id}`}
                     type="button"
                     role="tab"
                   >
@@ -233,37 +116,83 @@ export default function ProductTabsSection({
               ))}
             </ul>
 
-            <div className="tab-content products-tabs__content">
-              <div className="tab-pane fade show active" role="tabpanel">
-                <div className="products-card-slider">
-                  <div className="products-slider swiper" data-slider={activeTab}>
-                    <div className="swiper-wrapper">
-                      <div className="swiper-slide">
-                        <div className="row g-4 swiper-slide-inner">
-                          {currentProducts.map(product => renderProductCard(product))}
+            <div className="tab-content products-tabs__content" id={`${sectionClass}-content`}>
+              {tabs.map((tab, index) => {
+                const products = tabProducts[tab.id] || [];
+                const slides = chunkProducts(products, 5);
+
+                return (
+                  <div 
+                    key={tab.id}
+                    className={`tab-pane fade ${index === 0 ? 'show active' : ''}`}
+                    id={`${sectionClass}-${tab.id}`}
+                    role="tabpanel"
+                  >
+                    {products.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+                        <p>Нет товаров в этой категории</p>
+                      </div>
+                    ) : (
+                      <div className="products-card-slider">
+                        <div 
+                          className="products-slider swiper" 
+                          data-slider={`${sectionClass}-${tab.id}`}
+                        >
+                          <div className="swiper-wrapper">
+                            {slides.map((slideProducts, slideIndex) => (
+                              <div key={slideIndex} className="swiper-slide">
+                                <div className="row g-4 swiper-slide-inner">
+                                  {slideProducts.map((product) => (
+                                    <ProductCard
+                                      key={product.id}
+                                      gallery={`${sectionClass}-${product.id}`}
+                                      title={product.title}
+                                      description={product.description}
+                                      price={product.price}
+                                      images={product.images}
+                                      salesHit={product.badges?.includes('hit')}
+                                      promo={product.badges?.includes('promo')}
+                                      isNew={showNewBadge || product.badges?.includes('new')}
+                                      url={product.url}
+                                    />
+                                  ))}
+                                  
+                                  {slideProducts.length < 5 && Array.from({ length: 5 - slideProducts.length }).map((_, i) => (
+                                    <div key={`empty-${i}`} className="col-lg-3 col-md-4 col-sm-6" style={{ visibility: 'hidden' }} />
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {slides.length > 1 && (
+                            <div className="products-slider__pagination"></div>
+                          )}
+
+                          {slides.length > 1 && (
+                            <>
+                              <button className="products-slider__nav products-slider__nav-prev">
+                                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                              <button className="products-slider__nav products-slider__nav-next">
+                                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="products-slider__nav products-slider__nav-prev">
-                      <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
-                        <path d="M6 1L1 6L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                    <div className="products-slider__nav products-slider__nav-next">
-                      <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
-                        <path d="M1 11L6 6L1 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-
-                    <div className="products-slider__pagination"></div>
+                    )}
                   </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

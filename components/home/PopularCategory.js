@@ -3,9 +3,8 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 
-export default function PopularCategory() {
+export default function PopularCategory({ categories = [] }) {
   useEffect(() => {
-    // Инициализация Swiper после загрузки
     if (typeof window !== 'undefined' && window.Swiper) {
       new window.Swiper('.popular-categories-inner', {
         slidesPerView: 1,
@@ -23,6 +22,21 @@ export default function PopularCategory() {
     }
   }, [])
 
+  // Разбиваем категории на группы по 8
+  const slides = [];
+  for (let i = 0; i < categories.length; i += 8) {
+    slides.push(categories.slice(i, i + 8));
+  }
+
+  // Если категорий нет, показываем пустые слайды (3 слайда по 8 карточек)
+  if (slides.length === 0) {
+    slides.push(
+      Array(8).fill({ id: 1, name: 'Мягкая мебель', image: '/assets/img/main-page/popular-categories/popular-categories-1.png', url: '/catalog' }),
+      Array(8).fill({ id: 2, name: 'Комоды', image: '/assets/img/main-page/popular-categories/popular-categories-2.png', url: '/catalog' }),
+      Array(8).fill({ id: 3, name: 'Матрасы', image: '/assets/img/main-page/popular-categories/popular-categories-3.png', url: '/catalog' })
+    );
+  }
+
   return (
     <section className="popular-category">
       <div className="container">
@@ -32,189 +46,28 @@ export default function PopularCategory() {
             <div className="popular-categories">
               <div className="popular-categories-inner swiper">
                 <div className="swiper-wrapper">
-                  {/* Слайд 1 */}
-                  <div className="swiper-slide popular-categories-item">
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-1.png" alt="Популярные категории" />
-                      </div>
-                      <p>Мягкая мебель</p>
-                      <Link href="/catalog"></Link>
+                  {slides.map((slideCategories, slideIndex) => (
+                    <div key={slideIndex} className="swiper-slide popular-categories-item">
+                      {slideCategories.map((category, idx) => (
+                        <div key={`${category.id}-${idx}`} className="categories-item-card">
+                          <div className="categories-card-img">
+                            <img 
+                              src={category.image} 
+                              alt={category.name}
+                              onError={(e) => {
+                                e.target.src = '/assets/img/main-page/popular-categories/popular-categories-1.png';
+                              }}
+                            />
+                          </div>
+                          <p>{category.name}</p>
+                          <Link href={category.url}></Link>
+                        </div>
+                      ))}
                     </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-2.png" alt="Популярные категории" />
-                      </div>
-                      <p>Комоды</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-3.png" alt="Популярные категории" />
-                      </div>
-                      <p>Матрасы</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-4.png" alt="Популярные категории" />
-                      </div>
-                      <p>Кровати</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-5.png" alt="Популярные категории" />
-                      </div>
-                      <p>Шкафы распашные</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-6.png" alt="Популярные категории" />
-                      </div>
-                      <p>Стеллажи и полки</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-7.png" alt="Популярные категории" />
-                      </div>
-                      <p>Декор</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-8.png" alt="Популярные категории" />
-                      </div>
-                      <p>Садовые качели</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                  </div>
-
-                  {/* Слайд 2 */}
-                  <div className="swiper-slide popular-categories-item">
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-1.png" alt="Популярные категории" />
-                      </div>
-                      <p>Мягкая мебель</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-2.png" alt="Популярные категории" />
-                      </div>
-                      <p>Комоды</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-3.png" alt="Популярные категории" />
-                      </div>
-                      <p>Матрасы</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-4.png" alt="Популярные категории" />
-                      </div>
-                      <p>Кровати</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-5.png" alt="Популярные категории" />
-                      </div>
-                      <p>Шкафы распашные</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-6.png" alt="Популярные категории" />
-                      </div>
-                      <p>Стеллажи и полки</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-7.png" alt="Популярные категории" />
-                      </div>
-                      <p>Декор</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-8.png" alt="Популярные категории" />
-                      </div>
-                      <p>Садовые качели</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                  </div>
-
-                  {/* Слайд 3 */}
-                  <div className="swiper-slide popular-categories-item">
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-1.png" alt="Популярные категории" />
-                      </div>
-                      <p>Мягкая мебель</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-2.png" alt="Популярные категории" />
-                      </div>
-                      <p>Комоды</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-3.png" alt="Популярные категории" />
-                      </div>
-                      <p>Матрасы</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-4.png" alt="Популярные категории" />
-                      </div>
-                      <p>Кровати</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-5.png" alt="Популярные категории" />
-                      </div>
-                      <p>Шкафы распашные</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-6.png" alt="Популярные категории" />
-                      </div>
-                      <p>Стеллажи и полки</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-7.png" alt="Популярные категории" />
-                      </div>
-                      <p>Декор</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                    <div className="categories-item-card">
-                      <div className="categories-card-img">
-                        <img src="/assets/img/main-page/popular-categories/popular-categories-8.png" alt="Популярные категории" />
-                      </div>
-                      <p>Садовые качели</p>
-                      <Link href="/catalog"></Link>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Навигация */}
               <div className="popular-categories__nav popular-categories__nav-prev">
                 <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M6 1L1 6L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -226,7 +79,6 @@ export default function PopularCategory() {
                 </svg>
               </div>
 
-              {/* Пагинация */}
               <div className="popular-categories__pagination"></div>
             </div>
           </div>
