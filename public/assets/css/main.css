@@ -650,7 +650,6 @@ main {
 }
 
 .swiper-slide-inner {
-    justify-content: space-between;
     --bs-gutter-x: 0;
     --bs-gutter-y: 0;
     gap: 0px 8px;

@@ -35,7 +35,6 @@ function mapProductToCard(product) {
   
   let images = [];
   
-  // ✅ ТОЛЬКО local_images, внешние не берём!
   if (attr.local_images) {
     try {
       const localImagesArray = typeof attr.local_images === 'string' 
@@ -49,8 +48,6 @@ function mapProductToCard(product) {
       console.error('Ошибка парсинга local_images для:', attr.name_ru, e);
     }
   }
-  
-  // Если нет локальных изображений — пустой массив (заглушка сработает в ProductCard)
   
   return {
     id: product.id,
@@ -66,77 +63,86 @@ function mapProductToCard(product) {
       attr.is_bestseller && 'hit',
       attr.is_popular && 'promo'
     ].filter(Boolean),
-    url: `/catalog/${attr.sku || product.id}`
+    url: `/catalog/${attr.sku || product.id}`,
+    categoryId: attr.category_id,
+    categoryName: attr.category_name
   };
 }
 
+function filterByCategoryId(products, categoryIds) {
+  return products.filter(p => categoryIds.includes(p.categoryId));
+}
 
 export default async function Home() {
   
-  // Загружаем данные для рекомендаций и новинок
   const [popularData, newData] = await Promise.all([
-    getProducts('/api/v1/products', { per_page: 50 }),
-    getProducts('/api/v1/products', { is_new: true, per_page: 50 })
+    getProducts('/api/v1/products', { per_page: 150 }),
+    getProducts('/api/v1/products', { is_new: true, per_page: 150 })
   ]);
 
   const allPopularProducts = popularData.map(mapProductToCard);
   const allNewProducts = newData.map(mapProductToCard);
 
-  // Табы для рекомендаций
+  // ID категорий
+  const LIGHTING_IDS = ['li001', 'li002', 'li003'];
+  const SOFAS_IDS = ['fu002', 'fu004'];
+  const TABLES_IDS = ['fu001', 'fu003'];
+  const STORAGE_IDS = ['st001', 'st002', 'st003', 'st004', 'st007', '16202'];
+  const OUTDOOR_IDS = ['od001', 'od003', '21964', '21966', '21967', 'pp001', 'pp004'];
+  const KITCHEN_IDS = ['ka001', 'ka002', 'ka003', 'kt001'];
+  const TEXTILES_IDS = ['tl001', 'tl002'];
+  const DECOR_IDS = ['de001', 'de002', '10757'];
+  const BATHROOM_IDS = ['ba001', 'ba002'];
+
+  // РЕКОМЕНДОВАННЫЕ ТОВАРЫ - 7 табов
   const recommendedTabs = [
-    { id: 'all', label: 'Все товары' },
+    { id: 'storage', label: 'Хранение' },
     { id: 'lighting', label: 'Освещение' },
     { id: 'sofas', label: 'Диваны и кресла' },
-    { id: 'shkafy', label: 'Шкафы' },
-    { id: 'komody', label: 'Комоды и тумбочки' },
-    { id: 'storage', label: 'Системы хранения' },
-    { id: 'outdoor', label: 'Сад и балкон' }
+    { id: 'kitchen', label: 'Кухня' },
+    { id: 'textiles', label: 'Текстиль' },
+    { id: 'decor', label: 'Декор' },
+    { id: 'bathroom', label: 'Ванная' }
   ];
 
   const recommendedProducts = {
-    all: allPopularProducts.slice(0, 15),
-    lighting: allPopularProducts.slice(0, 10),
-    sofas: allPopularProducts.slice(10, 20),
-    shkafy: allPopularProducts.slice(20, 30),
-    komody: allPopularProducts.slice(30, 40),
-    storage: allPopularProducts.slice(0, 10),
-    outdoor: allPopularProducts.slice(10, 20)
+    storage: filterByCategoryId(allPopularProducts, STORAGE_IDS).slice(0, 15),
+    lighting: filterByCategoryId(allPopularProducts, LIGHTING_IDS).slice(0, 15),
+    sofas: filterByCategoryId(allPopularProducts, SOFAS_IDS).slice(0, 15),
+    kitchen: filterByCategoryId(allPopularProducts, KITCHEN_IDS).slice(0, 15),
+    textiles: filterByCategoryId(allPopularProducts, TEXTILES_IDS).slice(0, 15),
+    decor: filterByCategoryId(allPopularProducts, DECOR_IDS).slice(0, 15),
+    bathroom: filterByCategoryId(allPopularProducts, BATHROOM_IDS).slice(0, 15)
   };
 
-  // Табы для новинок
+  // НОВИНКИ - 7 табов
   const newTabs = [
-    { id: 'all', label: 'Все новинки' },
-    { id: 'stoly', label: 'Столы и стулья' },
-    { id: 'divany', label: 'Диваны и кресла' },
-    { id: 'svet', label: 'Освещение' },
-    { id: 'shkaf', label: 'Шкафы' },
-    { id: 'tumba', label: 'Комоды и тумбочки' },
-    { id: 'hron', label: 'Системы хранения' },
-    { id: 'balkon', label: 'Сад и балкон' }
+    { id: 'storage', label: 'Хранение' },
+    { id: 'lighting', label: 'Освещение' },
+    { id: 'tables', label: 'Столы и стулья' },
+    { id: 'sofas', label: 'Диваны и кресла' },
+    { id: 'outdoor', label: 'Сад и балкон' },
+    { id: 'kitchen', label: 'Кухня' },
+    { id: 'textiles', label: 'Текстиль' }
   ];
 
   const newProducts = {
-    all: allNewProducts.slice(0, 15),
-    stoly: allNewProducts.slice(0, 10),
-    divany: allNewProducts.slice(10, 20),
-    svet: allNewProducts.slice(20, 30),
-    shkaf: allNewProducts.slice(30, 40),
-    tumba: allNewProducts.slice(0, 10),
-    hron: allNewProducts.slice(10, 20),
-    balkon: allNewProducts.slice(20, 30)
+    storage: filterByCategoryId(allNewProducts, STORAGE_IDS).slice(0, 15),
+    lighting: filterByCategoryId(allNewProducts, LIGHTING_IDS).slice(0, 15),
+    tables: filterByCategoryId(allNewProducts, TABLES_IDS).slice(0, 15),
+    sofas: filterByCategoryId(allNewProducts, SOFAS_IDS).slice(0, 15),
+    outdoor: filterByCategoryId(allNewProducts, OUTDOOR_IDS).slice(0, 15),
+    kitchen: filterByCategoryId(allNewProducts, KITCHEN_IDS).slice(0, 15),
+    textiles: filterByCategoryId(allNewProducts, TEXTILES_IDS).slice(0, 15)
   };
 
   return (
     <main className="main">
       <StartSlider />
       <PopularCategoriesSection />
-
-      {/* Хиты продаж - отдельный компонент */}
       <BestsellersSection />
-
       <PromoBlock />
 
-      {/* Рекомендованные товары */}
       <ProductTabsSection
         title="Рекомендованные товары"
         tabs={recommendedTabs}
@@ -146,7 +152,6 @@ export default async function Home() {
 
       <AdsBanner />
 
-      {/* Новинки */}
       <ProductTabsSection
         title="Новинки"
         tabs={newTabs}

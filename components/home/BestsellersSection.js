@@ -5,7 +5,7 @@ const API_BASE_URL = 'http://45.135.234.22';
 
 async function getBestsellers() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/products/bestsellers?per_page=50`, {
+    const res = await fetch(`${API_BASE_URL}/api/v1/products/bestsellers?per_page=100`, {
       cache: 'no-store'
     });
     
@@ -27,7 +27,6 @@ function mapProductToCard(product) {
   
   let images = [];
   
-  // ✅ ТОЛЬКО local_images, внешние не берём!
   if (attr.local_images) {
     try {
       const localImagesArray = typeof attr.local_images === 'string' 
@@ -41,8 +40,6 @@ function mapProductToCard(product) {
       console.error('Ошибка парсинга local_images для:', attr.name_ru, e);
     }
   }
-  
-  // Если нет локальных изображений — пустой массив (заглушка сработает в ProductCard)
   
   return {
     id: product.id,
@@ -58,29 +55,48 @@ function mapProductToCard(product) {
       attr.is_bestseller && 'hit',
       attr.is_popular && 'promo'
     ].filter(Boolean),
-    url: `/catalog/${attr.sku || product.id}`
+    url: `/catalog/${attr.sku || product.id}`,
+    categoryId: attr.category_id,
+    categoryName: attr.category_name
   };
+}
+
+function filterByCategoryId(products, categoryIds) {
+  return products.filter(p => categoryIds.includes(p.categoryId));
 }
 
 export default async function BestsellersSection() {
   const bestsellersData = await getBestsellers();
   const allBestsellers = bestsellersData.map(mapProductToCard);
 
-  const salesTabs = [
-    { id: 'all', label: 'Все хиты' },
-    { id: 'furniture', label: 'Мебель' },
-    { id: 'lighting', label: 'Освещение' },
-    { id: 'storage', label: 'Хранение' },
-    { id: 'decor', label: 'Декор' }
-  ];
+  // ID категорий
+  const STORAGE_IDS = ['st001', 'st002', 'st003', 'st004', 'st007', '16202'];
+  const LIGHTING_IDS = ['li001', 'li002', 'li003'];
+  const FURNITURE_IDS = ['fu001', 'fu002', 'fu003', 'fu004'];
+  const DECOR_IDS = ['de001', 'de002', '10757'];
+  const TEXTILES_IDS = ['tl001', 'tl002'];
+  const KITCHEN_IDS = ['kt001', 'ka001', 'ka002'];
+  const BATHROOM_IDS = ['ba001', 'ba002'];
 
   const salesProducts = {
-    all: allBestsellers.slice(0, 15),
-    furniture: allBestsellers.slice(0, 10),
-    lighting: allBestsellers.slice(10, 20),
-    storage: allBestsellers.slice(20, 30),
-    decor: allBestsellers.slice(30, 40)
+    storage: filterByCategoryId(allBestsellers, STORAGE_IDS).slice(0, 15),
+    lighting: filterByCategoryId(allBestsellers, LIGHTING_IDS).slice(0, 15),
+    furniture: filterByCategoryId(allBestsellers, FURNITURE_IDS).slice(0, 15),
+    decor: filterByCategoryId(allBestsellers, DECOR_IDS).slice(0, 15),
+    textiles: filterByCategoryId(allBestsellers, TEXTILES_IDS).slice(0, 15),
+    kitchen: filterByCategoryId(allBestsellers, KITCHEN_IDS).slice(0, 15),
+    bathroom: filterByCategoryId(allBestsellers, BATHROOM_IDS).slice(0, 15)
   };
+
+  const salesTabs = [
+    { id: 'storage', label: 'Хранение' },
+    { id: 'lighting', label: 'Освещение' },
+    { id: 'furniture', label: 'Мебель' },
+    { id: 'decor', label: 'Декор' },
+    { id: 'textiles', label: 'Текстиль' },
+    { id: 'kitchen', label: 'Кухня' },
+    { id: 'bathroom', label: 'Ванная' }
+  ];
 
   return (
     <ProductTabsSection

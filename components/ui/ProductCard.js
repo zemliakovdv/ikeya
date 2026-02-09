@@ -19,20 +19,12 @@ export default function ProductCard({
 }) {
   const [isLiked, setIsLiked] = useState(false);
 
-  // ✅ ОТЛАДКА - посмотри что приходит
-  console.log('=== ProductCard Debug ===');
-  console.log('Товар:', title);
-  console.log('images (raw):', images);
-  console.log('Тип images:', typeof images, Array.isArray(images));
-
-  // ✅ ИЗОБРАЖЕНИЯ С ЗАГЛУШКОЙ
-  const productImages = images.length > 0 
-    ? images 
-    : [PLACEHOLDER_IMAGE];
-
-  console.log('productImages (итог):', productImages);
-
+  const productImages = images.length > 0 ? images : [PLACEHOLDER_IMAGE];
   const productDescription = description || 'Описание скоро появится';
+
+  const handleImageError = (e) => {
+    e.target.src = PLACEHOLDER_IMAGE;
+  };
 
   const handleLikeClick = (e) => {
     e.preventDefault();
@@ -57,10 +49,7 @@ export default function ProductCard({
                       src={image} 
                       alt={`${title} - изображение ${index + 1}`}
                       loading="lazy"
-                      onError={(e) => {
-                        console.log('❌ Ошибка загрузки:', image);
-                        e.target.src = PLACEHOLDER_IMAGE;
-                      }}
+                      onError={handleImageError}
                     />
                   </div>
                 ))}
@@ -80,9 +69,7 @@ export default function ProductCard({
                     <img 
                       src={image} 
                       alt={`${title} - миниатюра ${index + 1}`}
-                      onError={(e) => {
-                        e.target.src = PLACEHOLDER_IMAGE;
-                      }}
+                      onError={handleImageError}
                     />
                   </div>
                 ))}
