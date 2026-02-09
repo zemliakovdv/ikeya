@@ -27,7 +27,7 @@ function mapProductToCard(product) {
   
   let images = [];
   
-  // Парсим local_images (это строка JSON!)
+  // ✅ ТОЛЬКО local_images, внешние не берём!
   if (attr.local_images) {
     try {
       const localImagesArray = typeof attr.local_images === 'string' 
@@ -38,16 +38,11 @@ function mapProductToCard(product) {
         images = localImagesArray.map(img => `${API_BASE_URL}/${img}`);
       }
     } catch (e) {
-      console.error('Ошибка парсинга local_images:', e);
+      console.error('Ошибка парсинга local_images для:', attr.name_ru, e);
     }
   }
   
-  // Если нет локальных, берём внешние (но они не загрузятся из-за CORS)
-  if (images.length === 0 && Array.isArray(attr.images) && attr.images.length > 0) {
-    images = attr.images.filter(img => img && img.startsWith('http') && img !== 'false');
-  }
-  
-  // Если нет изображений вообще — пустой массив (заглушка сработает в ProductCard)
+  // Если нет локальных изображений — пустой массив (заглушка сработает в ProductCard)
   
   return {
     id: product.id,
