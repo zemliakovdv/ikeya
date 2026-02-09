@@ -30,26 +30,9 @@ export default function PopularCategory({ categories = [] }) {
     e.target.src = PLACEHOLDER_IMAGE;
   };
 
-  // ✅ ИСПРАВЛЕНО: Если категорий меньше 24, дополняем их копиями
   let displayCategories = [...categories];
   
-  // Минимум 24 категории (3 слайда по 8)
-  if (displayCategories.length > 0 && displayCategories.length < 24) {
-    const needed = 24 - displayCategories.length;
-    const cycled = [];
-    
-    for (let i = 0; i < needed; i++) {
-      cycled.push({
-        ...displayCategories[i % displayCategories.length],
-        // ✅ Уникальный ID для React key
-        id: `${displayCategories[i % displayCategories.length].id}-copy-${i}`
-      });
-    }
-    
-    displayCategories = [...displayCategories, ...cycled];
-  }
-
-  // Если категорий вообще нет, показываем заглушки
+  // ✅ Если категорий нет вообще, показываем заглушки (3 слайда)
   if (categories.length === 0) {
     displayCategories = [
       // Слайд 1 - Мягкая мебель
@@ -76,7 +59,7 @@ export default function PopularCategory({ categories = [] }) {
     ];
   }
 
-  // Разбиваем категории на группы по 8
+  // ✅ Разбиваем категории на группы по 8 (столько слайдов, сколько нужно)
   const slides = [];
   for (let i = 0; i < displayCategories.length; i += 8) {
     slides.push(displayCategories.slice(i, i + 8));
