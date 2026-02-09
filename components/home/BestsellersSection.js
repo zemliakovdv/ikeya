@@ -1,26 +1,8 @@
 // components/home/BestsellersSection.js
+import { getBestsellers } from '@/lib/api/ikea';
 import ProductTabsSection from '@/components/home/ProductTabsSection';
 
 const API_BASE_URL = 'http://45.135.234.22';
-
-async function getBestsellers() {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/v1/products/bestsellers?per_page=100`, {
-      cache: 'no-store'
-    });
-    
-    if (!res.ok) {
-      console.error('Bestsellers API Error:', res.status);
-      return [];
-    }
-    
-    const data = await res.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Fetch bestsellers error:', error);
-    return [];
-  }
-}
 
 function mapProductToCard(product) {
   const attr = product.attributes;
@@ -66,8 +48,8 @@ function filterByCategoryId(products, categoryIds) {
 }
 
 export default async function BestsellersSection() {
-  const bestsellersData = await getBestsellers();
-  const allBestsellers = bestsellersData.map(mapProductToCard);
+  const response = await getBestsellers({ per_page: 100 });
+  const allBestsellers = response.data.map(mapProductToCard);
 
   // ID категорий
   const STORAGE_IDS = ['st001', 'st002', 'st003', 'st004', 'st007', '16202'];

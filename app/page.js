@@ -7,28 +7,9 @@ import PromoBlock from '@/components/home/PromoBlock';
 import AdsBanner from '@/components/home/AdsBanner';
 import BlogSection from '@/components/home/BlogSection';
 import SeoSection from '@/components/home/SeoSection';
+import { getProducts, getNewProducts } from '@/lib/api/ikea';
 
 const API_BASE_URL = 'http://45.135.234.22';
-
-async function getProducts(endpoint, params = {}) {
-  try {
-    const queryParams = new URLSearchParams(params).toString();
-    const url = `${API_BASE_URL}${endpoint}${queryParams ? '?' + queryParams : ''}`;
-    
-    const res = await fetch(url, { cache: 'no-store' });
-    
-    if (!res.ok) {
-      console.error('API Error:', res.status);
-      return [];
-    }
-    
-    const data = await res.json();
-    return data.data || [];
-  } catch (error) {
-    console.error('Fetch error:', error);
-    return [];
-  }
-}
 
 function mapProductToCard(product) {
   const attr = product.attributes;
@@ -75,13 +56,13 @@ function filterByCategoryId(products, categoryIds) {
 
 export default async function Home() {
   
-  const [popularData, newData] = await Promise.all([
-    getProducts('/api/v1/products', { per_page: 150 }),
-    getProducts('/api/v1/products', { is_new: true, per_page: 150 })
+  const [popularResponse, newResponse] = await Promise.all([
+    getProducts({ is_popular: true, per_page: 150 }),
+    getNewProducts({ per_page: 150 })
   ]);
 
-  const allPopularProducts = popularData.map(mapProductToCard);
-  const allNewProducts = newData.map(mapProductToCard);
+  const allPopularProducts = popularResponse.data.map(mapProductToCard);
+  const allNewProducts = newResponse.data.map(mapProductToCard);
 
   // ID категорий
   const LIGHTING_IDS = ['li001', 'li002', 'li003'];
