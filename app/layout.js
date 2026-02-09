@@ -5,10 +5,12 @@ import ClientScripts from '@/components/ClientScripts'
 import './globals.css'
 import Script from 'next/script'
 
+
 export const metadata = {
   title: 'IKEYA - Интернет-магазин мебели',
   description: 'Интернет-магазин мебели и товаров для дома',
 }
+
 
 export default function RootLayout({ children }) {
   return (
@@ -29,21 +31,19 @@ export default function RootLayout({ children }) {
         {children}
         <Footer />
         
-        {/* Библиотеки загружаются ДО наших скриптов */}
         <Script 
           src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" 
-          strategy="beforeInteractive" 
+          strategy="lazyOnload"
         />
         <Script 
           src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" 
-          strategy="beforeInteractive" 
+          strategy="lazyOnload"
         />
         <Script 
           src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" 
-          strategy="beforeInteractive" 
+          strategy="lazyOnload"
         />
         
-        {/* ТВОИ СКРИПТЫ ТЕПЕРЬ ЗДЕСЬ */}
         <ClientScripts />
       </body>
     </html>

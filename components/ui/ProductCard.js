@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
+
 export default function ProductCard({ 
   gallery, 
   title, 
@@ -17,13 +19,20 @@ export default function ProductCard({
 }) {
   const [isLiked, setIsLiked] = useState(false);
 
-  // Если нет изображений из API, логируем и используем fallback
+  // ✅ ОТЛАДКА - посмотри что приходит
+  console.log('=== ProductCard Debug ===');
+  console.log('Товар:', title);
+  console.log('images (raw):', images);
+  console.log('Тип images:', typeof images, Array.isArray(images));
+
+  // ✅ ИЗОБРАЖЕНИЯ С ЗАГЛУШКОЙ
   const productImages = images.length > 0 
     ? images 
-    : (() => {
-        console.warn('⚠️ Товар без изображений:', { title, images });
-        return ['/assets/img/main-page/sales-hist/hits-1.png'];
-      })();
+    : [PLACEHOLDER_IMAGE];
+
+  console.log('productImages (итог):', productImages);
+
+  const productDescription = description || 'Описание скоро появится';
 
   const handleLikeClick = (e) => {
     e.preventDefault();
@@ -49,8 +58,8 @@ export default function ProductCard({
                       alt={`${title} - изображение ${index + 1}`}
                       loading="lazy"
                       onError={(e) => {
-                        console.error('❌ Ошибка загрузки изображения:', image);
-                        e.target.src = '/assets/img/main-page/sales-hist/hits-1.png';
+                        console.log('❌ Ошибка загрузки:', image);
+                        e.target.src = PLACEHOLDER_IMAGE;
                       }}
                     />
                   </div>
@@ -72,7 +81,7 @@ export default function ProductCard({
                       src={image} 
                       alt={`${title} - миниатюра ${index + 1}`}
                       onError={(e) => {
-                        e.target.src = '/assets/img/main-page/sales-hist/hits-1.png';
+                        e.target.src = PLACEHOLDER_IMAGE;
                       }}
                     />
                   </div>
@@ -94,7 +103,7 @@ export default function ProductCard({
           <Link href={url}>
             <h3 className="product-card__title">{title}</h3>
           </Link>
-          <p className="product-card__description">{description}</p>
+          <p className="product-card__description">{productDescription}</p>
           <p className="product-card__price">
             {price}<span>.00 р.</span>
           </p>

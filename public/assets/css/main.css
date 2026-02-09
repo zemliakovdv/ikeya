@@ -567,7 +567,7 @@ main {
 
 
 /* Контейнер табов */
-.products-tabs, .sales-tabs {
+.products-tabs, .sales-tabs, .bestsellers-tabs {
     padding: 0;
     margin-bottom: 70px;
 }
