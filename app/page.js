@@ -1,7 +1,7 @@
 // app/page.js
 import StartSlider from '@/components/home/StartSlider';
 import PopularCategoriesSection from '@/components/home/PopularCategoriesSection';
-import BestsellersSection from '@/components/home/BestsellersSection'; // ✅ Возвращаем
+import BestsellersSection from '@/components/home/BestsellersSection';
 import ProductTabsSection from '@/components/home/ProductTabsSection';
 import PromoBlock from '@/components/home/PromoBlock';
 import AdsBanner from '@/components/home/AdsBanner';
@@ -35,24 +35,25 @@ function mapProductToCard(product) {
   
   let images = [];
   
-  // Приоритет: локальные изображения
-  if (Array.isArray(attr.local_images) && attr.local_images.length > 0) {
-    images = attr.local_images.map(img => {
-      // Если уже полный URL
-      if (img.startsWith('http')) return img;
-      // Если начинается с /
-      if (img.startsWith('/')) return `${API_BASE_URL}${img}`;
-      // Иначе добавляем слэш
-      return `${API_BASE_URL}/${img}`;
-    });
-  } 
-  // Если нет локальных, но есть внешние
-  else if (Array.isArray(attr.images) && attr.images.length > 0) {
-    // Проверяем, работают ли внешние ссылки
-    images = attr.images.filter(img => img && img.startsWith('http'));
+  // Парсим local_images (это строка JSON!)
+  if (attr.local_images) {
+    try {
+      const localImagesArray = typeof attr.local_images === 'string' 
+        ? JSON.parse(attr.local_images) 
+        : attr.local_images;
+      
+      if (Array.isArray(localImagesArray) && localImagesArray.length > 0) {
+        images = localImagesArray.map(img => `${API_BASE_URL}/${img}`);
+      }
+    } catch (e) {
+      console.error('Ошибка парсинга local_images:', e);
+    }
   }
   
-  // Если изображений нет — пустой массив (заглушка сработает в компоненте)
+  // Если нет локальных, берём внешние (кроме 'false')
+  if (images.length === 0 && Array.isArray(attr.images) && attr.images.length > 0) {
+    images = attr.images.filter(img => img && img.startsWith('http') && img !== 'false');
+  }
   
   return {
     id: product.id,
@@ -62,7 +63,7 @@ function mapProductToCard(product) {
       || attr.collection 
       || attr.name_ru 
       || 'Описание скоро появится',
-    price: attr.price ? `${attr.price}.00` : '0.00',
+    price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',
     images: images,
     badges: [
       attr.is_bestseller && 'hit',
@@ -71,7 +72,6 @@ function mapProductToCard(product) {
     url: `/catalog/${attr.sku || product.id}`
   };
 }
-
 
 export default async function Home() {
   
