@@ -601,7 +601,7 @@ main {
 
 .products-tabs__link:hover {
     color: #0058A3;
-    border-bottom-color: transparent;
+    border-bottom-color: #0058A3;
 }
 
 .products-tabs__link.active {
