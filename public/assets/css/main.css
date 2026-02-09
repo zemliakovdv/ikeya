@@ -450,10 +450,10 @@ main {
 }
 
 .categories-card-img {
-    background-color: #F5F5F5;
     padding: 16px;
     border-radius: 8px;
     margin-bottom: 8px;
+    box-shadow: 0px 5px 5px 1px rgb(34 60 80 / 7%);
 }
 
 .categories-card-img img {
@@ -567,7 +567,9 @@ main {
 
 
 /* Контейнер табов */
-.products-tabs, .sales-tabs, .bestsellers-tabs {
+.products-tabs,
+.sales-tabs,
+.bestsellers-tabs {
     padding: 0;
     margin-bottom: 70px;
 }
@@ -1124,7 +1126,7 @@ main {
     top: 253px;
 }
 
-.recommended-tabs{
+.recommended-tabs {
     padding-bottom: 40px;
 }
 
@@ -1248,7 +1250,7 @@ main {
     border-radius: 4px;
 }
 
-.new-tabs{
+.new-tabs {
     padding-bottom: 48px;
 }
 
@@ -1849,7 +1851,7 @@ main {
     letter-spacing: 0.1px;
 }
 
-.catalog-inner{
+.catalog-inner {
     padding-bottom: 32px;
 }
 
