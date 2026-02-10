@@ -4,110 +4,128 @@ import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import CategoriesGrid from '@/components/catalog/CategoriesGrid';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import ProductSort from '@/components/catalog/ProductSort';
-import FilterChips from '@/components/catalog/FilterChips';
-import ProductGrid from '@/components/catalog/products/ProductGrid';
-import Pagination from '@/components/catalog/Pagination';
+import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
+import { 
+  getCategoriesTree, 
+  getCategoryProducts,
+  getChildCategories // ✅ Добавили новую функцию
+} from '@/lib/api/ikea';
+import { 
+  findCategoryByIkeaId, 
+  buildCategoryChain, 
+  buildBreadcrumbs,
+  flattenCategoriesTree
+} from '@/lib/utils/categoryHelpers';
 
-export async function generateMetadata({ params }) {
-  const { slug = [] } = params;
-  const level = slug.length;
-
-  const titles = {
-    1: `${slug[0]} | Каталог IKEA`,
-    2: `${slug[1]} — ${slug[0]} | IKEA`,
-    3: `${slug[2]} — ${slug[1]} | IKEA`,
-    4: `${slug[3]} — ${slug[2]} | IKEA`
-  };
-
-  return {
-    title: titles[level] || 'Каталог IKEA',
-    description: `Каталог товаров IKEA — ${slug.join(' / ')}`
-  };
-}
-
-export default async function CatalogDynamicPage({ params, searchParams }) {
-  const { slug = [] } = params;
-  const level = slug.length;
-  const [level1, level2, level3, level4] = slug;
-
-  if (level === 0) {
-    redirect('/catalog');
-  }
-
-  // TODO: Запрос к API
-  const categoryData = {
-    name: level1 === 'sad-i-balkon' ? 'Сад и балкон' : level1,
-    level2Name: level2 ? 'Садовая и балконная мебель' : null,
-    level3Name: level3 ? 'Садовая мебель' : null,
-    level4Name: level4 ? 'Садовые стулья и кресла' : null,
-    subcategories: [],
-    products: [],
-    filters: {},
-  };
-
-  // Breadcrumbs
-  const breadcrumbs = [
-    { label: 'Главная', href: '/' },
-    { label: 'Каталог', href: '/catalog' },
-  ];
-
-  if (level >= 1) breadcrumbs.push({ label: categoryData.name, href: `/catalog/${level1}` });
-  if (level >= 2) breadcrumbs.push({ label: categoryData.level2Name || level2, href: `/catalog/${level1}/${level2}` });
-  if (level >= 3) breadcrumbs.push({ label: categoryData.level3Name || level3, href: `/catalog/${level1}/${level2}/${level3}` });
-  if (level >= 4) breadcrumbs.push({ label: categoryData.level4Name || level4 });
-
-  const showCategoriesGrid = level === 1;
-  const showAllFilters = level >= 2;
-
-  // Определяем заголовок
-  const pageTitle = level >= 2 
-    ? (categoryData.level4Name || categoryData.level3Name || categoryData.level2Name || 'Категория')
-    : null;
-
-  // Определяем текущую категорию для sidebar
-  let currentCategoryForSidebar = categoryData.name;
-  if (level === 3) currentCategoryForSidebar = categoryData.level3Name;
-  if (level === 4) currentCategoryForSidebar = categoryData.level4Name;
-
-  return (
-    <main className="main catalog-inner">
-      <Breadcrumbs items={breadcrumbs} />
-
-      {showCategoriesGrid && <CategoriesGrid categories={categoryData.subcategories} limit={8} />}
-
-      <section className="all-catalog">
-        <div className="container">
-          <div className="row">
-            <div className="col-12">
-              {pageTitle && <h2>{pageTitle}</h2>}
-              <div className="all-catalog-inner">
-                <FilterAside 
-                  showAllFilters={showAllFilters}
-                  currentCategory={currentCategoryForSidebar}
-                  categorySlug={level1}
-                  parentCategory={level >= 2 ? { name: level === 4 ? categoryData.level3Name : categoryData.level2Name, slug: level === 4 ? level3 : level2 } : null}
-                  grandParentCategory={level >= 3 ? { name: level === 4 ? categoryData.level2Name : categoryData.name, slug: level === 4 ? level2 : level1 } : null}
-                  greatGrandParentCategory={level >= 4 ? { name: categoryData.name, slug: level1 } : null}
-                  subcategories={categoryData.subcategories}
-                  level={level}
-                />
-
-                <div className="all-catalog-cards">
-                  <ProductSort />
-                  <FilterChips filters={categoryData.filters} />
-                  <ProductGrid products={categoryData.products} />
-                  <Pagination 
-                    currentPage={1}
-                    totalPages={16}
-                    totalItems={320}
-                    itemsPerPage={20}
-                  />
-                </div>
+export default async function CategoryPage({ params }) {
+  const { slug } = params;
+  const currentIkeaId = slug[slug.length - 1];
+  
+  try {
+    // 1. Загружаем дерево категорий (для breadcrumbs и навигации)
+    const categoriesResponse = await getCategoriesTree();
+    const allCategories = flattenCategoriesTree(categoriesResponse.data);
+    
+    const rootCategories = allCategories.filter(cat => 
+      !cat.attributes.parent_ids || cat.attributes.parent_ids.length === 0
+    );
+    
+    const simplifiedRootCategories = rootCategories.map(cat => ({
+      id: cat.id,
+      ikea_id: cat.attributes.ikea_id,
+      name: cat.attributes.translated_name
+    }));
+    
+    // 2. Находим текущую категорию
+    const currentCategory = findCategoryByIkeaId(allCategories, currentIkeaId);
+    
+    if (!currentCategory) {
+      redirect('/catalog');
+    }
+    
+    // 3. Строим breadcrumbs
+    const categoryChain = buildCategoryChain(allCategories, currentCategory);
+    const breadcrumbs = buildBreadcrumbs(categoryChain);
+    
+    // 4. ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Получаем дочерние категории через ОТДЕЛЬНЫЙ запрос
+    const childCategoriesResponse = await getChildCategories(currentIkeaId);
+    const childCategories = childCategoriesResponse.data || [];
+    
+    const level = categoryChain.length;
+    
+    // 5. ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Загружаем товары КОНКРЕТНОЙ категории
+    const productsResponse = await getCategoryProducts(currentIkeaId, 1, 20);
+    const initialProducts = productsResponse.data || [];
+    
+    const categoryData = prepareCategoryData(categoryChain, childCategories);
+    
+    const showCategoryGrid = level === 1 && childCategories.length > 0;
+    const displayCategories = showCategoryGrid ? childCategories.slice(0, 8) : [];
+    const showAllFilters = level >= 2;
+    
+    return (
+      <main className="main catalog-inner">
+        <Breadcrumbs items={breadcrumbs} />
+        
+        <section className="all-catalog">
+          <div className="container">
+            <h1>{currentCategory.attributes.translated_name}</h1>
+            
+            {showCategoryGrid && (
+              <div className="catalog-categories">
+                <CategoriesGrid categories={displayCategories} />
+              </div>
+            )}
+            
+            <div className="all-catalog-inner">
+              <FilterAside 
+                currentCategory={currentCategory}
+                categoryData={categoryData}
+                rootCategories={simplifiedRootCategories}
+                showAllFilters={showAllFilters}
+              />
+              
+              <div className="all-catalog-center">
+                {initialProducts.length > 0 ? (
+                  <>
+                    <ProductSort totalCount={productsResponse.meta?.total || 0} />
+                    <InfiniteProductGrid 
+                      initialProducts={initialProducts}
+                      categoryId={currentIkeaId}
+                      totalPages={productsResponse.meta?.total_pages || 1}
+                    />
+                  </>
+                ) : (
+                  <div className="all-catalog-empty">
+                    <p>В этой категории пока нет товаров</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </div>
-      </section>
-    </main>
-  );
+        </section>
+      </main>
+    );
+  } catch (error) {
+    console.error('Error loading category:', error);
+    redirect('/catalog');
+  }
+}
+
+function prepareCategoryData(categoryChain, childCategories) {
+  const level = categoryChain.length;
+  
+  const current = categoryChain[level - 1];
+  const parent = level >= 2 ? categoryChain[level - 2] : null;
+  const grandParent = level >= 3 ? categoryChain[level - 3] : null;
+  const greatGrandParent = level >= 4 ? categoryChain[level - 4] : null;
+  
+  return {
+    currentCategory: current,
+    parentCategory: parent,
+    grandParentCategory: grandParent,
+    greatGrandParentCategory: greatGrandParent,
+    subcategories: childCategories,
+    level: level
+  };
 }

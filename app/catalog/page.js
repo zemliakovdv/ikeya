@@ -3,86 +3,69 @@ import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import CategoriesGrid from '@/components/catalog/CategoriesGrid';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import ProductSort from '@/components/catalog/ProductSort';
-import FilterChips from '@/components/catalog/FilterChips';
-import ProductGrid from '@/components/catalog/products/ProductGrid';
-import Pagination from '@/components/catalog/Pagination';
-import { getPopularCategories, getProducts } from '@/lib/api/ikea';
+import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
+import { getCategoriesTree, getProducts } from '@/lib/api/ikea';
+import { flattenCategoriesTree } from '@/lib/utils/categoryHelpers';
 
-export const metadata = {
-  title: 'Каталог | IKEA',
-  description: 'Каталог товаров IKEA — мебель и товары для дома',
-};
-
-export default async function CatalogPage({ searchParams }) {
-  const page = Number(searchParams.page) || 1;
-  const per_page = 20;
-
-  // 🔥 ПОЛУЧАЕМ ДАННЫЕ ИЗ API
-  let categories = [];
-  let products = [];
-  let meta = { total: 0, page: 1, per_page: 20 };
-
-  try {
-    // Параллельно загружаем категории и товары
-    const [categoriesData, productsData] = await Promise.all([
-      getPopularCategories(),
-      getProducts({ page, per_page })
-    ]);
-    
-    categories = categoriesData?.data || [];
-    products = productsData?.data || [];
-    meta = productsData?.meta || meta;
-    
-    console.log('✅ Категорий:', categories.length, '| Товаров:', products.length);
-  } catch (error) {
-    console.error('❌ Ошибка загрузки:', error);
-  }
-
-  const filters = {}; // TODO: Добавим позже
-
-  // Вычисляем общее количество страниц
-  const totalPages = Math.ceil(meta.total / meta.per_page);
-
+export default async function CatalogPage() {
+  // Загружаем дерево категорий и товары
+  const [categoriesResponse, productsResponse] = await Promise.all([
+    getCategoriesTree(),
+    getProducts({ page: 1, per_page: 20 })
+  ]);
+  
+  const allCategories = flattenCategoriesTree(categoriesResponse.data);
+  
+  // Получаем только корневые категории
+  const rootCategories = allCategories.filter(cat => 
+    !cat.attributes.parent_ids || cat.attributes.parent_ids.length === 0
+  );
+  
+  const simplifiedRootCategories = rootCategories.map(cat => ({
+    id: cat.id,
+    ikea_id: cat.attributes.ikea_id,
+    name: cat.attributes.translated_name
+  }));
+  
+  const products = productsResponse.data || [];
+  const meta = productsResponse.meta || {};
+  
+  const breadcrumbs = [
+    { name: 'Главная', href: '/' },
+    { name: 'Каталог', href: '/catalog' }
+  ];
+  
   return (
     <main className="main catalog-inner">
-      {/* Хлебные крошки */}
-      <Breadcrumbs items={[{ label: 'Главная', href: '/' }, { label: 'Каталог' }]} />
-
-      {/* Верхняя панель с категориями */}
-      <CategoriesGrid categories={categories} />
-
-      {/* Основной контент */}
+      <Breadcrumbs items={breadcrumbs} />
+      
       <section className="all-catalog">
         <div className="container">
-          <div className="row">
-            <div className="col-12">
-              <div className="all-catalog-inner">
-                {/* Левый sidebar с фильтрами */}
-                <FilterAside 
-                  showAllFilters={false}
-                  filters={filters}
-                />
-
-                {/* Правая секция с товарами */}
-                <div className="all-catalog-cards">
-                  {/* Сортировка */}
-                  <ProductSort />
-
-                  {/* Чипсы активных фильтров */}
-                  <FilterChips filters={filters} />
-
-                  {/* Сетка товаров */}
-                  <ProductGrid products={products} />
-
-                  {/* Пагинация */}
-                  <Pagination 
-                    currentPage={page}
-                    totalPages={totalPages}
-                    totalItems={meta.total}
-                    itemsPerPage={per_page}
-                  />
-                </div>
-              </div>
+          <h1>Каталог</h1>
+          
+          {/* Корневые категории */}
+          {rootCategories.length > 0 && (
+            <div className="catalog-categories">
+              <CategoriesGrid categories={rootCategories} />
+            </div>
+          )}
+          
+          <div className="all-catalog-inner">
+            <FilterAside 
+              showAllFilters={false}
+              rootCategories={simplifiedRootCategories}
+              level={0}
+            />
+            
+            <div className="all-catalog-center">
+              <ProductSort totalCount={meta.total || products.length} />
+              
+              {/* ✅ ИСПРАВЛЕНО: Для "всех товаров" передаём null или undefined */}
+              <InfiniteProductGrid 
+                initialProducts={products}
+                categoryId={null}
+                totalPages={meta.total_pages || Math.ceil((meta.total || 0) / 20)}
+              />
             </div>
           </div>
         </div>

@@ -10,13 +10,10 @@ import ColorFilter from './ColorFilter';
 import FilterNotification from './FilterNotification';
 
 export default function FilterAside({ 
-  showAllFilters = false, 
-  currentCategory,
-  categorySlug,
-  parentCategory = null,
-  grandParentCategory = null,
-  greatGrandParentCategory = null,
-  subcategories = [],
+  showAllFilters = false,
+  currentCategory = null,
+  categoryData = null,
+  rootCategories = [],
   level = 0,
   filters = {} 
 }) {
@@ -24,15 +21,32 @@ export default function FilterAside({
     alert('Фильтры очищены! (функция будет доработана при подключении API)');
   }, []);
 
+  // Извлекаем данные из categoryData если он передан
+  const {
+    parentCategory = null,
+    grandParentCategory = null,
+    greatGrandParentCategory = null,
+    subcategories = [],
+  } = categoryData || {};
+
   return (
-    <aside className="filter-aside">
+    <aside 
+      className="filter-aside" 
+      style={{
+        position: 'sticky',
+        top: '0',
+        alignSelf: 'flex-start',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+      }}
+    >
       <CategoryNav 
         currentCategory={currentCategory}
-        categorySlug={categorySlug}
         parentCategory={parentCategory}
         grandParentCategory={grandParentCategory}
         greatGrandParentCategory={greatGrandParentCategory}
         subcategories={subcategories}
+        rootCategories={rootCategories}
         level={level}
       />
 

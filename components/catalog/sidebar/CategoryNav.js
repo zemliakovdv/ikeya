@@ -4,74 +4,39 @@
 import Link from 'next/link';
 
 export default function CategoryNav({ 
-  currentCategory, 
-  categorySlug, 
+  currentCategory = null,
   parentCategory = null,
   grandParentCategory = null,
   greatGrandParentCategory = null,
-  subcategories = [], 
+  subcategories = [],
+  rootCategories = [],
   level = 0 
 }) {
-  // Моковые категории
-  const allCategories = [
-    { id: 1, name: 'Мебель для дома', slug: 'furniture' },
-    { id: 2, name: 'Кухонная мебель', slug: 'kitchen' },
-    { id: 3, name: 'Спальня', slug: 'bedroom' },
-    { id: 4, name: 'Гостиная', slug: 'living-room' },
-    { id: 5, name: 'Детская', slug: 'kids' },
-    { id: 6, name: 'Ванная', slug: 'bathroom' },
-    { id: 7, name: 'Офис', slug: 'office' },
-    { id: 8, name: 'Хранение', slug: 'storage' },
-  ];
+  // Построение URL для категории
+  const buildCategoryUrl = (categoryChain) => {
+    const slugs = categoryChain
+      .filter(Boolean)
+      .map(cat => cat.attributes.ikea_id);
+    return `/catalog/${slugs.join('/')}`;
+  };
 
-  // Моковые подкатегории уровня 1
-  const mockSubcategoriesLevel1 = [
-    { id: 1, name: 'Садовая и балконная мебель', slug: 'garden-furniture' },
-    { id: 2, name: 'Декор для сада', slug: 'garden-decor' },
-    { id: 3, name: 'Балконная мебель', slug: 'balcony-furniture' },
-    { id: 4, name: 'Текстиль для улицы', slug: 'outdoor-textile' },
-    { id: 5, name: 'Освещение для сада', slug: 'garden-lighting' },
-  ];
-
-  // Моковые подкатегории уровня 2
-  const mockSubcategoriesLevel2 = [
-    { id: 1, name: 'Столы', slug: 'tables' },
-    { id: 2, name: 'Стулья', slug: 'chairs' },
-    { id: 3, name: 'Диваны', slug: 'sofas' },
-    { id: 4, name: 'Кресла', slug: 'armchairs' },
-    { id: 5, name: 'Скамейки', slug: 'benches' },
-  ];
-
-  // Моковые подкатегории уровня 3
-  const mockSubcategoriesLevel3 = [
-    { id: 1, name: 'Садовая мебель', slug: 'garden' },
-    { id: 2, name: 'Балконная мебель', slug: 'balcony' },
-    { id: 3, name: 'Терраса', slug: 'terrace' },
-    { id: 4, name: 'Патио', slug: 'patio' },
-    { id: 5, name: 'Веранда', slug: 'veranda' },
-  ];
-
-  // Моковые подкатегории уровня 4
-  const mockSubcategoriesLevel4 = subcategories.length > 0 ? subcategories : [
-    { id: 1, name: 'Садовые стулья и кресла', slug: 'garden-chairs' },
-    { id: 2, name: 'Складные стулья', slug: 'folding-chairs' },
-    { id: 3, name: 'Кресла-качалки', slug: 'rocking-chairs' },
-  ];
-
-  // Уровень 0 - главная каталога
+  // Уровень 0 - главная страница каталога (показываем корневые категории)
   if (level === 0) {
     return (
       <div className="filter-section">
         <div className="section-title">
-          <span>Категории</span>
+          <span>Категория</span>
           <span className="toggle-icon">
             <img src="/assets/img/icons/arrow-down.svg" alt="" />
           </span>
         </div>
         <ul className="category-list grand-catalog">
-          {allCategories.map((category) => (
+          {rootCategories.map((category) => (
             <li key={category.id} className="category-item">
-              <Link href={`/catalog/${category.slug}`} className="category-link">
+              <Link 
+                href={`/catalog/${category.ikea_id}`}
+                className="category-link"
+              >
                 {category.name}
               </Link>
             </li>
@@ -81,35 +46,47 @@ export default function CategoryNav({
     );
   }
 
-  // Уровень 1 - категория с подкатегориями
+  // Если нет текущей категории - не показываем навигацию
+  if (!currentCategory) {
+    return null;
+  }
+
+  // Уровень 1 - показываем текущую категорию с подкатегориями
   if (level === 1) {
     return (
       <div className="filter-section">
         <div className="section-title">
-          <span>Категории</span>
+          <span>Категория</span>
           <span className="toggle-icon">
             <img src="/assets/img/icons/arrow-down.svg" alt="" />
           </span>
         </div>
         <ul className="category-list">
+          {/* Возврат ко всем категориям */}
           <li className="category-item">
             <Link href="/catalog" className="category-link">
-              Все категории
+              <span className="category-back-icon">←</span> Все категории
             </Link>
           </li>
-          <li className="category-item active has-subcotegory">
-            <Link href={`/catalog/${categorySlug}`} className="category-link">
-              {currentCategory}
+          
+          {/* Текущая категория с подкатегориями */}
+          <li className="category-item active">
+            <Link 
+              href={buildCategoryUrl([currentCategory])} 
+              className="category-link active-link"
+            >
+              {currentCategory.attributes.translated_name}
             </Link>
-            {mockSubcategoriesLevel1.length > 0 && (
+            
+            {subcategories.length > 0 && (
               <ul className="subcategory-list">
-                {mockSubcategoriesLevel1.map((sub) => (
+                {subcategories.map((sub) => (
                   <li key={sub.id} className="subcategory-item">
                     <Link 
-                      href={`/catalog/${categorySlug}/${sub.slug}`} 
+                      href={buildCategoryUrl([currentCategory, sub])}
                       className="subcategory-link"
                     >
-                      {sub.name}
+                      {sub.attributes.translated_name}
                     </Link>
                   </li>
                 ))}
@@ -121,179 +98,213 @@ export default function CategoryNav({
     );
   }
 
-  // Уровень 2
+  // Уровень 2 - показываем родителя и текущую категорию с подкатегориями
   if (level === 2) {
     return (
       <div className="filter-section">
         <div className="section-title">
-          <span>Категории</span>
+          <span>Категория</span>
           <span className="toggle-icon">
             <img src="/assets/img/icons/arrow-down.svg" alt="" />
           </span>
         </div>
         <ul className="category-list">
+          {/* Возврат ко всем категориям */}
           <li className="category-item">
             <Link href="/catalog" className="category-link">
-              Все категории
+              <span className="category-back-icon">←</span> Все категории
             </Link>
           </li>
-          <li className="category-item">
-            <Link href={`/catalog/${categorySlug}`} className="category-link">
-              {currentCategory}
-            </Link>
-          </li>
+          
+          {/* Родительская категория */}
           {parentCategory && (
-            <li className="category-item active has-subcotegory">
+            <li className="category-item">
               <Link 
-                href={`/catalog/${categorySlug}/${parentCategory.slug}`} 
+                href={buildCategoryUrl([parentCategory])}
                 className="category-link"
               >
-                {parentCategory.name}
+                <span className="category-back-icon">←</span> {parentCategory.attributes.translated_name}
               </Link>
-              {mockSubcategoriesLevel2.length > 0 && (
-                <ul className="subcategory-list">
-                  {mockSubcategoriesLevel2.map((sub) => (
-                    <li key={sub.id} className="subcategory-item">
-                      <Link 
-                        href={`/catalog/${categorySlug}/${parentCategory.slug}/${sub.slug}`} 
-                        className="subcategory-link"
-                      >
-                        {sub.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </li>
           )}
+          
+          {/* Текущая категория с подкатегориями */}
+          <li className="category-item active">
+            <Link 
+              href={buildCategoryUrl([parentCategory, currentCategory].filter(Boolean))}
+              className="category-link active-link"
+            >
+              {currentCategory.attributes.translated_name}
+            </Link>
+            
+            {subcategories.length > 0 && (
+              <ul className="subcategory-list">
+                {subcategories.map((sub) => (
+                  <li key={sub.id} className="subcategory-item">
+                    <Link 
+                      href={buildCategoryUrl([parentCategory, currentCategory, sub].filter(Boolean))}
+                      className="subcategory-link"
+                    >
+                      {sub.attributes.translated_name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
         </ul>
       </div>
     );
   }
 
-  // Уровень 3
+  // Уровень 3 - показываем дедушку, родителя и текущую с подкатегориями
   if (level === 3) {
     return (
       <div className="filter-section">
         <div className="section-title">
-          <span>Категории</span>
+          <span>Категория</span>
           <span className="toggle-icon">
             <img src="/assets/img/icons/arrow-down.svg" alt="" />
           </span>
         </div>
         <ul className="category-list">
+          {/* Возврат ко всем категориям */}
           <li className="category-item">
             <Link href="/catalog" className="category-link">
-              Все категории
+              <span className="category-back-icon">←</span> Все категории
             </Link>
           </li>
+          
+          {/* Дедушка */}
           {grandParentCategory && (
             <li className="category-item">
-              <Link href={`/catalog/${categorySlug}`} className="category-link">
-                {grandParentCategory.name}
+              <Link 
+                href={buildCategoryUrl([grandParentCategory])}
+                className="category-link"
+              >
+                <span className="category-back-icon">←</span> {grandParentCategory.attributes.translated_name}
               </Link>
             </li>
           )}
+          
+          {/* Родитель */}
           {parentCategory && (
             <li className="category-item">
               <Link 
-                href={`/catalog/${categorySlug}/${parentCategory.slug}`} 
+                href={buildCategoryUrl([grandParentCategory, parentCategory].filter(Boolean))}
                 className="category-link"
               >
-                {parentCategory.name}
+                <span className="category-back-icon">←</span> {parentCategory.attributes.translated_name}
               </Link>
             </li>
           )}
-          <li className="category-item has-subcotegory">
-            <ul className="subcategory-list">
-              {mockSubcategoriesLevel3.map((sub) => (
-                <li 
-                  key={sub.id} 
-                  className={`subcategory-item ${sub.name === currentCategory ? 'active' : ''}`}
-                >
-                  <Link 
-                    href={`/catalog/${categorySlug}/${parentCategory?.slug}/${sub.slug}`} 
-                    className="subcategory-link"
-                  >
-                    {sub.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          
+          {/* Текущая категория с подкатегориями */}
+          <li className="category-item active">
+            <Link 
+              href={buildCategoryUrl([grandParentCategory, parentCategory, currentCategory].filter(Boolean))}
+              className="category-link active-link"
+            >
+              {currentCategory.attributes.translated_name}
+            </Link>
+            
+            {subcategories.length > 0 && (
+              <ul className="subcategory-list">
+                {subcategories.map((sub) => (
+                  <li key={sub.id} className="subcategory-item">
+                    <Link 
+                      href={buildCategoryUrl([grandParentCategory, parentCategory, currentCategory, sub].filter(Boolean))}
+                      className="subcategory-link"
+                    >
+                      {sub.attributes.translated_name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         </ul>
       </div>
     );
   }
 
-  // Уровень 4 - все родители + текущая категория в подкатегориях
-  if (level === 4) {
+  // Уровень 4+ - полная иерархия
+  if (level >= 4) {
     return (
       <div className="filter-section">
         <div className="section-title">
-          <span>Категории</span>
+          <span>Категория</span>
           <span className="toggle-icon">
             <img src="/assets/img/icons/arrow-down.svg" alt="" />
           </span>
         </div>
         <ul className="category-list">
-          {/* Все категории */}
+          {/* Возврат ко всем категориям */}
           <li className="category-item">
             <Link href="/catalog" className="category-link">
-              Все категории
+              <span className="category-back-icon">←</span> Все категории
             </Link>
           </li>
-
-          {/* Прапрадед (уровень 1) */}
+          
+          {/* Прапрадедушка */}
           {greatGrandParentCategory && (
             <li className="category-item">
-              <Link href={`/catalog/${categorySlug}`} className="category-link">
-                {greatGrandParentCategory.name}
+              <Link 
+                href={buildCategoryUrl([greatGrandParentCategory])}
+                className="category-link"
+              >
+                <span className="category-back-icon">←</span> {greatGrandParentCategory.attributes.translated_name}
               </Link>
             </li>
           )}
-
-          {/* Дедушка (уровень 2) */}
+          
+          {/* Дедушка */}
           {grandParentCategory && (
             <li className="category-item">
               <Link 
-                href={`/catalog/${categorySlug}/${grandParentCategory.slug}`} 
+                href={buildCategoryUrl([greatGrandParentCategory, grandParentCategory].filter(Boolean))}
                 className="category-link"
               >
-                {grandParentCategory.name}
+                <span className="category-back-icon">←</span> {grandParentCategory.attributes.translated_name}
               </Link>
             </li>
           )}
-
-          {/* Родитель (уровень 3) */}
+          
+          {/* Родитель */}
           {parentCategory && (
             <li className="category-item">
               <Link 
-                href={`/catalog/${categorySlug}/${grandParentCategory?.slug}/${parentCategory.slug}`} 
+                href={buildCategoryUrl([greatGrandParentCategory, grandParentCategory, parentCategory].filter(Boolean))}
                 className="category-link"
               >
-                {parentCategory.name}
+                <span className="category-back-icon">←</span> {parentCategory.attributes.translated_name}
               </Link>
             </li>
           )}
-
-          {/* Текущий уровень 4 с подкатегориями */}
-          <li className="category-item has-subcotegory">
-            <ul className="subcategory-list">
-              {mockSubcategoriesLevel4.map((sub) => (
-                <li 
-                  key={sub.id} 
-                  className={`subcategory-item ${sub.name === currentCategory ? 'active' : ''}`}
-                >
-                  <Link 
-                    href={`/catalog/${categorySlug}/${grandParentCategory?.slug}/${parentCategory?.slug}/${sub.slug}`} 
-                    className="subcategory-link"
-                  >
-                    {sub.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          
+          {/* Текущая категория с подкатегориями */}
+          <li className="category-item active">
+            <Link 
+              href={buildCategoryUrl([greatGrandParentCategory, grandParentCategory, parentCategory, currentCategory].filter(Boolean))}
+              className="category-link active-link"
+            >
+              {currentCategory.attributes.translated_name}
+            </Link>
+            
+            {subcategories.length > 0 && (
+              <ul className="subcategory-list">
+                {subcategories.map((sub) => (
+                  <li key={sub.id} className="subcategory-item">
+                    <Link 
+                      href={buildCategoryUrl([greatGrandParentCategory, grandParentCategory, parentCategory, currentCategory, sub].filter(Boolean))}
+                      className="subcategory-link"
+                    >
+                      {sub.attributes.translated_name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         </ul>
       </div>

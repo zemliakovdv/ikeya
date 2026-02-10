@@ -6,7 +6,7 @@ import ProductGallery from './ProductGallery';
 import ProductBadge from './ProductBadge';
 
 const API_BASE_URL = 'http://45.135.234.22';
-const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg'; // ✅ Заглушка для изображения
+const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
 export default function ProductCard({ product }) {
   const [isLiked, setIsLiked] = useState(false);
@@ -23,7 +23,6 @@ export default function ProductCard({ product }) {
   
   const title = attr.name_ru || attr.name || 'Товар';
   
-  // ✅ ОПИСАНИЕ С ФОЛЛБЭКОМ
   const description = attr.short_description_ru 
     || attr.content_ru 
     || attr.collection 
@@ -33,39 +32,39 @@ export default function ProductCard({ product }) {
   const price = Math.floor(attr.price);
   const priceDecimal = ((attr.price % 1) * 100).toFixed(0).padStart(2, '0');
   
-  // ✅ ИЗОБРАЖЕНИЯ С ЗАГЛУШКОЙ
+  // ✅ ИСПРАВЛЕНО: Используем localimages (без подчёркивания)
   let imagesList = [];
   
-  // Пробуем local_images
-  if (attr.local_images) {
-    try {
-      if (typeof attr.local_images === 'string') {
-        imagesList = JSON.parse(attr.local_images);
-      } else if (Array.isArray(attr.local_images)) {
-        imagesList = attr.local_images;
-      }
-    } catch (e) {
-      console.error('Ошибка парсинга local_images:', e);
+  // 1. Пробуем localimages (приоритет)
+  if (attr.localimages) {
+    if (typeof attr.localimages === 'string') {
+      // Если это строка с запятыми: "image1.jpg,image2.jpg"
+      imagesList = attr.localimages.split(',').map(img => img.trim()).filter(Boolean);
+    } else if (Array.isArray(attr.localimages)) {
+      imagesList = attr.localimages;
     }
   }
   
-  // Если local_images пустой, берём images
-  if (imagesList.length === 0 && Array.isArray(attr.images)) {
-    imagesList = attr.images;
+  // 2. Если localimages пустой, НЕ используем images (только заглушку)
+  if (imagesList.length === 0) {
+    console.warn(`⚠️ Товар ${product.id}: нет localimages`);
   }
   
-  // Формируем массив изображений с полными URL
+  // 3. Формируем массив изображений с полными URL
   const images = imagesList.length > 0
     ? imagesList.map(img => {
-        if (typeof img === 'string') {
+        if (typeof img === 'string' && img.length > 0) {
+          // Если путь уже полный
           if (img.startsWith('http')) {
             return img;
           }
+          // Если путь относительный — добавляем базовый URL
+          // localimages обычно: "images/products/abc123.jpg"
           return `${API_BASE_URL}/${img}`;
         }
-        return PLACEHOLDER_IMAGE; // ✅ Заглушка вместо placeholder.com
+        return PLACEHOLDER_IMAGE;
       })
-    : [PLACEHOLDER_IMAGE]; // ✅ Если нет изображений — заглушка
+    : [PLACEHOLDER_IMAGE]; // ✅ Если нет localimages — заглушка
   
   const thumbs = images;
   

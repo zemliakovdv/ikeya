@@ -66,7 +66,6 @@ export default function ProductGallery({ images, thumbs, galleryId }) {
       {/* Миниатюры */}
       {thumbs && thumbs.length > 0 && (
         <div
-          thumbsSlider=""
           className="swiper product-gallery-thumbs"
           data-gallery-thumbs={galleryId}
           style={{ opacity: thumbs.length <= 3 ? 0 : 1 }}

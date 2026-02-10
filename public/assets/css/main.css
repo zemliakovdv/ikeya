@@ -6,6 +6,7 @@
     box-sizing: border-box;
 }
 
+
 :root {
     --white-100: rgba(255, 255, 255, 1);
     --blue-900: rgba(0, 88, 163, 1);
@@ -1829,6 +1830,8 @@ main {
     height: auto;
     display: block;
     transition: transform 0.4s ease;
+    min-height: 114px;
+    object-fit: cover;
 }
 
 .catalog-categoties-card__link {
@@ -2013,7 +2016,7 @@ main {
     cursor: pointer;
 }
 
-.all-catalog-items {
+.all-catalog-items, .products-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -4850,8 +4853,6 @@ main {
     line-height: 133%;
     color: #181818;
 }
-
-.cart-summary__total div {}
 
 .cart-summary__total .summery-total__total {
     font-weight: 600;
