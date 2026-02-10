@@ -32,39 +32,37 @@ export default function ProductCard({ product }) {
   const price = Math.floor(attr.price);
   const priceDecimal = ((attr.price % 1) * 100).toFixed(0).padStart(2, '0');
   
-  // ✅ ИСПРАВЛЕНО: Используем localimages (без подчёркивания)
+  // ✅ ИСПРАВЛЕНО: Правильный парсинг local_images
   let imagesList = [];
   
-  // 1. Пробуем localimages (приоритет)
-  if (attr.localimages) {
-    if (typeof attr.localimages === 'string') {
-      // Если это строка с запятыми: "image1.jpg,image2.jpg"
-      imagesList = attr.localimages.split(',').map(img => img.trim()).filter(Boolean);
-    } else if (Array.isArray(attr.localimages)) {
-      imagesList = attr.localimages;
+  if (attr.local_images) {
+    try {
+      // Парсим JSON-строку: "[\"path1.jpg\",\"path2.jpg\"]" -> ["path1.jpg", "path2.jpg"]
+      const parsed = JSON.parse(attr.local_images);
+      if (Array.isArray(parsed)) {
+        imagesList = parsed.filter(img => img && typeof img === 'string');
+        console.log(`✅ Товар ${product.id}: загружено ${imagesList.length} изображений`, imagesList);
+      }
+    } catch (error) {
+      console.error(`❌ Ошибка парсинга local_images для товара ${product.id}:`, error, attr.local_images);
     }
   }
   
-  // 2. Если localimages пустой, НЕ используем images (только заглушку)
+  // Логирование для отладки
   if (imagesList.length === 0) {
-    console.warn(`⚠️ Товар ${product.id}: нет localimages`);
+    console.warn(`⚠️ Товар ${product.id} (${title}): нет изображений. local_images:`, attr.local_images);
   }
   
-  // 3. Формируем массив изображений с полными URL
+  // Формируем массив изображений с полными URL
   const images = imagesList.length > 0
     ? imagesList.map(img => {
-        if (typeof img === 'string' && img.length > 0) {
-          // Если путь уже полный
-          if (img.startsWith('http')) {
-            return img;
-          }
-          // Если путь относительный — добавляем базовый URL
-          // localimages обычно: "images/products/abc123.jpg"
-          return `${API_BASE_URL}/${img}`;
-        }
-        return PLACEHOLDER_IMAGE;
+        // Убираем начальный слэш если есть
+        const cleanPath = img.startsWith('/') ? img.slice(1) : img;
+        const fullUrl = `${API_BASE_URL}/${cleanPath}`;
+        console.log(`🖼️ Товар ${product.id}: ${fullUrl}`);
+        return fullUrl;
       })
-    : [PLACEHOLDER_IMAGE]; // ✅ Если нет localimages — заглушка
+    : [PLACEHOLDER_IMAGE];
   
   const thumbs = images;
   

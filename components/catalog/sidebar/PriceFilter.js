@@ -1,51 +1,60 @@
 // components/catalog/sidebar/PriceFilter.js
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 
-export default function PriceFilter() {
-  const [minPrice, setMinPrice] = useState(19.99);
-  const [maxPrice, setMaxPrice] = useState(4999);
-
+export default function PriceFilter({ 
+  min = 0, 
+  max = 10000, 
+  currentMin, 
+  currentMax, 
+  onChange 
+}) {
   const handleMinChange = useCallback((e) => {
     const value = parseFloat(e.target.value);
-    if (value <= maxPrice) {
-      setMinPrice(value);
+    if (value <= currentMax && onChange) {
+      onChange(value, currentMax);
     }
-  }, [maxPrice]);
+  }, [currentMax, onChange]);
 
   const handleMaxChange = useCallback((e) => {
     const value = parseFloat(e.target.value);
-    if (value >= minPrice) {
-      setMaxPrice(value);
+    if (value >= currentMin && onChange) {
+      onChange(currentMin, value);
     }
-  }, [minPrice]);
+  }, [currentMin, onChange]);
 
   return (
     <div className="filter-section">
       <div className="section-title">
         <span>Цена</span>
       </div>
-      <div className="price-slider">
-        <div className="price-slider-fill"></div>
-        <div className="slider-handle handle-min"></div>
-        <div className="slider-handle handle-max"></div>
-      </div>
+      
       <div className="price-range">
         <input
           type="number"
           className="price-input"
           placeholder="Мин"
-          value={minPrice}
+          min={min}
+          max={max}
+          value={currentMin}
           onChange={handleMinChange}
         />
         <input
           type="number"
           className="price-input"
           placeholder="Макс"
-          value={maxPrice}
+          min={min}
+          max={max}
+          value={currentMax}
           onChange={handleMaxChange}
         />
+      </div>
+      
+      <div className="price-display">
+        <span>{currentMin} zł</span>
+        <span>—</span>
+        <span>{currentMax} zł</span>
       </div>
     </div>
   );

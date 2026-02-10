@@ -3,15 +3,21 @@
 
 import { useState, useCallback } from 'react';
 
-export default function CheckboxFilter({ title, options = [], showMore = false }) {
-  const [selectedOptions, setSelectedOptions] = useState([]);
+export default function CheckboxFilter({ 
+  title, 
+  filterKey,
+  options = [], 
+  selectedOptions = [],
+  onToggle,
+  showMore = false 
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleToggle = useCallback((value) => {
-    setSelectedOptions((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-    );
-  }, []);
+    if (onToggle && filterKey) {
+      onToggle(filterKey, value);
+    }
+  }, [onToggle, filterKey]);
 
   const toggleExpanded = useCallback(() => {
     setIsExpanded((prev) => !prev);

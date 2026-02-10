@@ -3,8 +3,7 @@
 
 import { useState, useCallback } from 'react';
 
-export default function ColorFilter() {
-  const [selectedColors, setSelectedColors] = useState([]);
+export default function ColorFilter({ selectedColors = [], onToggle }) {
   const [showAll, setShowAll] = useState(false);
 
   const colors = [
@@ -22,10 +21,10 @@ export default function ColorFilter() {
   const visibleColors = showAll ? colors : colors.slice(0, 5);
 
   const handleToggleColor = useCallback((colorId) => {
-    setSelectedColors((prev) =>
-      prev.includes(colorId) ? prev.filter((c) => c !== colorId) : [...prev, colorId]
-    );
-  }, []);
+    if (onToggle) {
+      onToggle(colorId);
+    }
+  }, [onToggle]);
 
   const toggleShowAll = useCallback(() => {
     setShowAll((prev) => !prev);
@@ -48,7 +47,10 @@ export default function ColorFilter() {
               onChange={() => handleToggleColor(color.id)}
             />
             <span className="custom-checkbox"></span>
-            <div className={`color-option ${color.class} ${selectedColors.includes(color.id) ? 'active' : ''}`} title={color.name}></div>
+            <div 
+              className={`color-option ${color.class} ${selectedColors.includes(color.id) ? 'active' : ''}`} 
+              title={color.name}
+            ></div>
             <span>{color.name}</span>
           </label>
         ))}

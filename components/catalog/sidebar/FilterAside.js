@@ -2,7 +2,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import CategoryNav from './CategoryNav';
+import CategoryNav from './CategoryTree';
 import PriceFilter from './PriceFilter';
 import CollectionFilter from './CollectionFilter';
 import CheckboxFilter from './CheckboxFilter';
@@ -15,11 +15,20 @@ export default function FilterAside({
   categoryData = null,
   rootCategories = [],
   level = 0,
-  filters = {} 
+  filters = {},
+  priceRange = { min: 0, max: 10000 },
+  availableCollections = [],
+  onPriceChange,
+  onCollectionToggle,
+  onColorToggle,
+  onCheckboxToggle,
+  onClearFilters
 }) {
   const handleClearFilters = useCallback(() => {
-    alert('Фильтры очищены! (функция будет доработана при подключении API)');
-  }, []);
+    if (onClearFilters) {
+      onClearFilters();
+    }
+  }, [onClearFilters]);
 
   // Извлекаем данные из categoryData если он передан
   const {
@@ -50,13 +59,27 @@ export default function FilterAside({
         level={level}
       />
 
-      <PriceFilter />
-      <CollectionFilter />
+      <PriceFilter 
+        min={priceRange.min}
+        max={priceRange.max}
+        currentMin={filters.priceMin}
+        currentMax={filters.priceMax}
+        onChange={onPriceChange}
+      />
+      
+      <CollectionFilter 
+        collections={availableCollections}
+        selectedCollections={filters.collections || []}
+        onToggle={onCollectionToggle}
+      />
 
       {showAllFilters && (
         <>
           <CheckboxFilter 
             title="Ширина, см"
+            filterKey="widths"
+            selectedOptions={filters.widths || []}
+            onToggle={onCheckboxToggle}
             options={[
               { value: '0-49', label: '0 - 49 см' },
               { value: '50-99', label: '50 - 99 см' },
@@ -68,6 +91,9 @@ export default function FilterAside({
 
           <CheckboxFilter 
             title="Высота, см"
+            filterKey="heights"
+            selectedOptions={filters.heights || []}
+            onToggle={onCheckboxToggle}
             options={[
               { value: '0-39', label: '0 - 39 см' },
               { value: '40-49', label: '40 - 49 см' },
@@ -79,6 +105,9 @@ export default function FilterAside({
 
           <CheckboxFilter 
             title="Глубина, см"
+            filterKey="depths"
+            selectedOptions={filters.depths || []}
+            onToggle={onCheckboxToggle}
             options={[
               { value: '0-39', label: '0 - 39 см' },
               { value: '40-59', label: '40 - 59 см' },
@@ -90,6 +119,9 @@ export default function FilterAside({
 
           <CheckboxFilter 
             title="Длина, см"
+            filterKey="lengths"
+            selectedOptions={filters.lengths || []}
+            onToggle={onCheckboxToggle}
             options={[
               { value: '0-59', label: '0 - 59 см' },
               { value: '60-79', label: '60 - 79 см' },
@@ -101,6 +133,9 @@ export default function FilterAside({
 
           <CheckboxFilter 
             title="Материал"
+            filterKey="materials"
+            selectedOptions={filters.materials || []}
+            onToggle={onCheckboxToggle}
             options={[
               { value: 'wood', label: 'Дерево' },
               { value: 'metal', label: 'Металл' },
@@ -111,10 +146,16 @@ export default function FilterAside({
             showMore
           />
 
-          <ColorFilter />
+          <ColorFilter 
+            selectedColors={filters.colors || []}
+            onToggle={onColorToggle}
+          />
 
           <CheckboxFilter 
             title="Количество мест"
+            filterKey="seats"
+            selectedOptions={filters.seats || []}
+            onToggle={onCheckboxToggle}
             options={[
               { value: '1', label: '1 место' },
               { value: '2', label: '2 места' },
@@ -127,6 +168,9 @@ export default function FilterAside({
 
           <CheckboxFilter 
             title="Форма"
+            filterKey="shapes"
+            selectedOptions={filters.shapes || []}
+            onToggle={onCheckboxToggle}
             options={[
               { value: 'rectangular', label: 'Прямоугольная' },
               { value: 'square', label: 'Квадратная' },

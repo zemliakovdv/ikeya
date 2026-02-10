@@ -8,7 +8,7 @@ import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGr
 import { 
   getCategoriesTree, 
   getCategoryProducts,
-  getChildCategories // ✅ Добавили новую функцию
+  getChildCategories
 } from '@/lib/api/ikea';
 import { 
   findCategoryByIkeaId, 
@@ -17,12 +17,12 @@ import {
   flattenCategoriesTree
 } from '@/lib/utils/categoryHelpers';
 
+
 export default async function CategoryPage({ params }) {
   const { slug } = params;
   const currentIkeaId = slug[slug.length - 1];
   
   try {
-    // 1. Загружаем дерево категорий (для breadcrumbs и навигации)
     const categoriesResponse = await getCategoriesTree();
     const allCategories = flattenCategoriesTree(categoriesResponse.data);
     
@@ -36,24 +36,20 @@ export default async function CategoryPage({ params }) {
       name: cat.attributes.translated_name
     }));
     
-    // 2. Находим текущую категорию
     const currentCategory = findCategoryByIkeaId(allCategories, currentIkeaId);
     
     if (!currentCategory) {
       redirect('/catalog');
     }
     
-    // 3. Строим breadcrumbs
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbs(categoryChain);
     
-    // 4. ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Получаем дочерние категории через ОТДЕЛЬНЫЙ запрос
     const childCategoriesResponse = await getChildCategories(currentIkeaId);
     const childCategories = childCategoriesResponse.data || [];
     
     const level = categoryChain.length;
     
-    // 5. ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: Загружаем товары КОНКРЕТНОЙ категории
     const productsResponse = await getCategoryProducts(currentIkeaId, 1, 20);
     const initialProducts = productsResponse.data || [];
     
@@ -111,6 +107,7 @@ export default async function CategoryPage({ params }) {
     redirect('/catalog');
   }
 }
+
 
 function prepareCategoryData(categoryChain, childCategories) {
   const level = categoryChain.length;

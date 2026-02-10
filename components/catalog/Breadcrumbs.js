@@ -2,6 +2,10 @@
 import Link from 'next/link';
 
 export default function Breadcrumbs({ items }) {
+  if (!items || items.length === 0) {
+    return null;
+  }
+
   return (
     <section className="breadcumps">
       <div className="container">
@@ -11,9 +15,11 @@ export default function Breadcrumbs({ items }) {
               {items.map((item, index) => (
                 <span key={index}>
                   {item.href ? (
-                    <Link href={item.href}>{item.label}</Link>
+                    <Link href={item.href}>
+                      {item.name || item.label}
+                    </Link>
                   ) : (
-                    <span>{item.label}</span>
+                    <span>{item.name || item.label}</span>
                   )}
                   {index < items.length - 1 && <span> / </span>}
                 </span>
