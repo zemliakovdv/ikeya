@@ -784,6 +784,8 @@ main {
     color: #181818;
     letter-spacing: 0.1px;
     text-transform: uppercase;
+    min-height: 40px;
+    max-height: 40px;
 }
 
 .product-card__description {

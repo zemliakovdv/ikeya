@@ -32,35 +32,25 @@ export default function ProductCard({ product }) {
   const price = Math.floor(attr.price);
   const priceDecimal = ((attr.price % 1) * 100).toFixed(0).padStart(2, '0');
   
-  // ✅ ИСПРАВЛЕНО: Правильный парсинг local_images
   let imagesList = [];
   
-  if (attr.local_images) {
-    try {
-      // Парсим JSON-строку: "[\"path1.jpg\",\"path2.jpg\"]" -> ["path1.jpg", "path2.jpg"]
-      const parsed = JSON.parse(attr.local_images);
-      if (Array.isArray(parsed)) {
-        imagesList = parsed.filter(img => img && typeof img === 'string');
-        console.log(`✅ Товар ${product.id}: загружено ${imagesList.length} изображений`, imagesList);
-      }
-    } catch (error) {
-      console.error(`❌ Ошибка парсинга local_images для товара ${product.id}:`, error, attr.local_images);
+if (attr.local_images) {
+  try {
+    const parsed = typeof attr.local_images === 'string' 
+      ? JSON.parse(attr.local_images) 
+      : attr.local_images;
+    if (Array.isArray(parsed)) {
+      imagesList = parsed.filter(img => img && typeof img === 'string');
     }
+  } catch (error) {
+    console.error(`Ошибка парсинга изображений товара ${product.id}`);
   }
+}
   
-  // Логирование для отладки
-  if (imagesList.length === 0) {
-    console.warn(`⚠️ Товар ${product.id} (${title}): нет изображений. local_images:`, attr.local_images);
-  }
-  
-  // Формируем массив изображений с полными URL
   const images = imagesList.length > 0
     ? imagesList.map(img => {
-        // Убираем начальный слэш если есть
         const cleanPath = img.startsWith('/') ? img.slice(1) : img;
-        const fullUrl = `${API_BASE_URL}/${cleanPath}`;
-        console.log(`🖼️ Товар ${product.id}: ${fullUrl}`);
-        return fullUrl;
+        return `${API_BASE_URL}/${cleanPath}`;
       })
     : [PLACEHOLDER_IMAGE];
   

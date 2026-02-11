@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function CategoryTree({ 
-  // Старые пропсы (из FilterAside)
   currentCategory = null,
   parentCategory = null,
   grandParentCategory = null,
@@ -13,20 +12,18 @@ export default function CategoryTree({
   subcategories = [],
   rootCategories = [],
   level = 0,
-  // Новые пропсы (прямая передача)
   categoryChain = null,
   childCategories = null
 }) {
   const pathname = usePathname();
   
-  // Если переданы новые пропсы (прямая передача) — используем их
   if (categoryChain && categoryChain.length > 0) {
     const breadcrumb = [
       { name: 'Все категории', href: '/catalog', ikea_id: null },
       ...categoryChain.map((cat, index) => ({
         name: cat.attributes.translated_name,
-        href: `/catalog/${cat.attributes.ikea_id}`,
-        ikea_id: cat.attributes.ikea_id,
+        href: `/catalog/${cat.id}`,  // ✅ ИСПРАВЛЕНО
+        ikea_id: cat.id,  // ✅ ИСПРАВЛЕНО
         level: index + 1
       }))
     ];
@@ -41,7 +38,6 @@ export default function CategoryTree({
           {breadcrumb.map((item, index) => {
             const isLast = index === breadcrumb.length - 1;
             
-            // Пропускаем "Все категории" на главной (level 0)
             if (index === 0 && breadcrumb.length === 1) {
               return null;
             }
@@ -65,7 +61,7 @@ export default function CategoryTree({
           {children.length > 0 && (
             <div className="category-tree__children">
               {children.map(child => {
-                const childHref = `/catalog/${child.attributes.ikea_id}`;
+                const childHref = `/catalog/${child.id}`;  // ✅ ИСПРАВЛЕНО
                 const isActive = pathname === childHref;
                 
                 return (
@@ -85,7 +81,6 @@ export default function CategoryTree({
     );
   }
   
-  // Старая логика (из FilterAside) — строим цепочку из отдельных категорий
   const categoryChainFromProps = [];
   
   if (greatGrandParentCategory) categoryChainFromProps.push(greatGrandParentCategory);
@@ -93,7 +88,6 @@ export default function CategoryTree({
   if (parentCategory) categoryChainFromProps.push(parentCategory);
   if (currentCategory) categoryChainFromProps.push(currentCategory);
   
-  // ✅ Если level === 0 (главная страница каталога) — используем category-tree__root
   if (categoryChainFromProps.length === 0 && level === 0) {
     return (
       <div className="category-sidebar">
@@ -121,8 +115,8 @@ export default function CategoryTree({
     { name: 'Все категории', href: '/catalog', ikea_id: null },
     ...categoryChainFromProps.map((cat, index) => ({
       name: cat.attributes.translated_name,
-      href: `/catalog/${cat.attributes.ikea_id}`,
-      ikea_id: cat.attributes.ikea_id,
+      href: `/catalog/${cat.id}`,  // ✅ ИСПРАВЛЕНО
+      ikea_id: cat.id,  // ✅ ИСПРАВЛЕНО
       level: index + 1
     }))
   ];
@@ -154,7 +148,7 @@ export default function CategoryTree({
         {subcategories.length > 0 && (
           <div className="category-tree__children">
             {subcategories.map(child => {
-              const childHref = `/catalog/${child.attributes.ikea_id}`;
+              const childHref = `/catalog/${child.id}`;  // ✅ ИСПРАВЛЕНО
               const isActive = pathname === childHref;
               
               return (

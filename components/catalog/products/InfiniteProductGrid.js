@@ -37,22 +37,22 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
 
   const loadMore = async () => {
     if (loading || !hasMore) return;
-    
+
     setLoading(true);
-    
+
     try {
       // ✅ ИСПРАВЛЕНО: Разные URL для "всех товаров" и категорий
-      const url = categoryId 
+      const url = categoryId
         ? `/api/categories/${categoryId}/products?page=${page}&per_page=20`
         : `/api/products?page=${page}&per_page=20`;
-      
+
       const response = await fetch(url);
       const data = await response.json();
-      
+
       if (data.products && data.products.length > 0) {
         setProducts(prev => [...prev, ...data.products]);
         setPage(prev => prev + 1);
-        
+
         // Проверяем, есть ли еще страницы
         if (data.meta?.current_page >= data.meta?.total_pages) {
           setHasMore(false);
@@ -75,13 +75,13 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
-      
+
       {hasMore && (
-        <div 
-          ref={observerRef} 
-          className="loading-trigger" 
-          style={{ 
-            height: '100px', 
+        <div
+          ref={observerRef}
+          className="loading-trigger"
+          style={{
+            height: '100px',
             margin: '40px 0',
             display: 'flex',
             alignItems: 'center',
@@ -91,11 +91,9 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
           {loading && <div className="loader">⏳ Загрузка...</div>}
         </div>
       )}
-      
+
       {!hasMore && products.length > 0 && (
-        <p style={{ textAlign: 'center', color: '#999', margin: '20px 0' }}>
-          ✅ Все товары загружены ({products.length} шт.)
-        </p>
+        <div style={{ height: '10px' }} />
       )}
     </>
   );

@@ -18,15 +18,17 @@ export default function CategoriesGrid({ categories = [], limit = null, showTitl
       <div className="catalog-categories-items">
         {displayCategories.map((category) => {
           // Поддержка двух форматов: готовый объект или данные из API
-          let name, image, url;
+          let name, image, url, categoryId;
 
           if (category.name && category.href) {
             // Уже преобразованные данные
             name = category.name;
             image = category.image;
             url = category.href;
+            categoryId = category.id;
           } else if (category.attributes) {
-            // Данные напрямую из API
+            // ✅ ИСПРАВЛЕНО: ikea_id находится в корне, не в attributes
+            categoryId = category.id; // ikea_id
             const attr = category.attributes;
             name = attr.translated_name || attr.name || 'Категория';
             
@@ -40,13 +42,13 @@ export default function CategoriesGrid({ categories = [], limit = null, showTitl
               image = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(name.slice(0, 15))}`;
             }
             
-            url = `/catalog/${attr.ikea_id}`;
+            url = `/catalog/${categoryId}`;
           } else {
             return null;
           }
 
           return (
-            <div key={category.id} className="catalog-categoties-card">
+            <div key={categoryId} className="catalog-categoties-card">
               <Link href={url} className="catalog-categoties-card-link">
                 <div className="catalog-categoties-banner">
                   <img 

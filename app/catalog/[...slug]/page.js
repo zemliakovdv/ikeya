@@ -5,14 +5,14 @@ import CategoriesGrid from '@/components/catalog/CategoriesGrid';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import ProductSort from '@/components/catalog/ProductSort';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
-import { 
-  getCategoriesTree, 
+import {
+  getCategoriesTree,
   getCategoryProducts,
   getChildCategories
 } from '@/lib/api/ikea';
-import { 
-  findCategoryByIkeaId, 
-  buildCategoryChain, 
+import {
+  findCategoryByIkeaId,
+  buildCategoryChain,
   buildBreadcrumbs,
   flattenCategoriesTree
 } from '@/lib/utils/categoryHelpers';
@@ -21,71 +21,71 @@ import {
 export default async function CategoryPage({ params }) {
   const { slug } = params;
   const currentIkeaId = slug[slug.length - 1];
-  
+
   try {
     const categoriesResponse = await getCategoriesTree();
     const allCategories = flattenCategoriesTree(categoriesResponse.data);
-    
-    const rootCategories = allCategories.filter(cat => 
+
+    const rootCategories = allCategories.filter(cat =>
       !cat.attributes.parent_ids || cat.attributes.parent_ids.length === 0
     );
-    
+
     const simplifiedRootCategories = rootCategories.map(cat => ({
-      id: cat.id,
+      ikea_id: cat.id,
       ikea_id: cat.attributes.ikea_id,
       name: cat.attributes.translated_name
     }));
-    
+
     const currentCategory = findCategoryByIkeaId(allCategories, currentIkeaId);
-    
+
     if (!currentCategory) {
       redirect('/catalog');
     }
-    
+
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbs(categoryChain);
-    
+
     const childCategoriesResponse = await getChildCategories(currentIkeaId);
     const childCategories = childCategoriesResponse.data || [];
-    
+
     const level = categoryChain.length;
-    
+
     const productsResponse = await getCategoryProducts(currentIkeaId, 1, 20);
     const initialProducts = productsResponse.data || [];
-    
+
     const categoryData = prepareCategoryData(categoryChain, childCategories);
-    
+
     const showCategoryGrid = level === 1 && childCategories.length > 0;
     const displayCategories = showCategoryGrid ? childCategories.slice(0, 8) : [];
     const showAllFilters = level >= 2;
-    
+
     return (
       <main className="main catalog-inner">
         <Breadcrumbs items={breadcrumbs} />
-        
+
         <section className="all-catalog">
           <div className="container">
             <h1>{currentCategory.attributes.translated_name}</h1>
-            
+
             {showCategoryGrid && (
               <div className="catalog-categories">
                 <CategoriesGrid categories={displayCategories} />
               </div>
             )}
-            
+
             <div className="all-catalog-inner">
-              <FilterAside 
+              <FilterAside
                 currentCategory={currentCategory}
                 categoryData={categoryData}
                 rootCategories={simplifiedRootCategories}
                 showAllFilters={showAllFilters}
               />
-              
+
               <div className="all-catalog-center">
                 {initialProducts.length > 0 ? (
                   <>
                     <ProductSort totalCount={productsResponse.meta?.total || 0} />
-                    <InfiniteProductGrid 
+                    <InfiniteProductGrid
                       initialProducts={initialProducts}
                       categoryId={currentIkeaId}
                       totalPages={productsResponse.meta?.total_pages || 1}
@@ -111,12 +111,12 @@ export default async function CategoryPage({ params }) {
 
 function prepareCategoryData(categoryChain, childCategories) {
   const level = categoryChain.length;
-  
+
   const current = categoryChain[level - 1];
   const parent = level >= 2 ? categoryChain[level - 2] : null;
   const grandParent = level >= 3 ? categoryChain[level - 3] : null;
   const greatGrandParent = level >= 4 ? categoryChain[level - 4] : null;
-  
+
   return {
     currentCategory: current,
     parentCategory: parent,

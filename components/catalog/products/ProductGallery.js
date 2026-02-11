@@ -79,7 +79,8 @@ export default function ProductGallery({ images, thumbs, galleryId }) {
   const extraThumbsCount = hasMoreThumbs ? thumbs.length - 3 : 0;
   
   // Показываем thumbs только если: не заглушка И больше 1 изображения
-  const showThumbs = !isPlaceholder && thumbs && thumbs.length > 1;
+const showThumbs = thumbs && thumbs.length >= 1;
+
 
   return (
     <div className="product-card__gallery">
@@ -110,7 +111,7 @@ export default function ProductGallery({ images, thumbs, galleryId }) {
         <div
           className="swiper product-gallery-thumbs"
           data-gallery-thumbs={galleryId}
-          style={{ opacity: thumbs.length <= 3 ? 0 : 1 }}
+          style={{ opacity: 1 }}
         >
           <div className="swiper-wrapper">
             {thumbs.slice(0, 3).map((thumb, index) => (
