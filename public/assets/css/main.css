@@ -3526,6 +3526,7 @@ main {
     padding: 0;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
+    background: transparent;
 }
 
 .goods-color__item:hover {
@@ -3534,6 +3535,8 @@ main {
 
 .goods-color__item img {
     object-fit: cover;
+    max-width: 56px;
+    max-height: 56px;
 }
 
 .goods-sizes {
@@ -3552,6 +3555,7 @@ main {
     border-radius: 4px;
     padding: 4px 8px;
     text-align: center;
+    min-height: 93px;
 }
 
 .goods-sizes__card .goods-sizes__item:hover {
@@ -3561,6 +3565,9 @@ main {
 .goods-sizes__item img {
     width: 56px;
     height: 56px;
+    max-width: 56px;
+    max-height: 56px;
+    object-fit: cover;
     border-radius: 4px;
     margin-bottom: 4px;
 }

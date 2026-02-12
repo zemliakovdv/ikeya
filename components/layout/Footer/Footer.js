@@ -14,7 +14,7 @@ export default function Footer() {
                   </Link>
                   <p>Мы в социальных сетях:</p>
                   <div className="footer-links__social">
-                    <a href="#"><img src="/assets/img/icons/telegram.svg" alt="Telegram" /></a>
+                    <a href="#"><img src="/assets/img/icons/tg.svg" alt="Telegram" /></a>
                     <a href="#"><img src="/assets/img/icons/tik-tok.svg" alt="TikTok" /></a>
                     <a href="#"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
                   </div>
