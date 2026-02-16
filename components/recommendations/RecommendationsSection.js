@@ -1,15 +1,12 @@
 'use client';
 
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Thumbs, FreeMode } from 'swiper/modules';
-import { useState } from 'react';
-import ProductCard from './ProductCard';
+import { Navigation, Pagination } from 'swiper/modules';
+import ProductCard from '@/components/catalog/products/ProductCard';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import 'swiper/css/thumbs';
-import 'swiper/css/free-mode';
 
 export default function RecommendationsSection({ products = [] }) {
   // Группируем товары по 5 в каждый слайд
@@ -40,15 +37,15 @@ export default function RecommendationsSection({ products = [] }) {
                       clickable: true,
                     }}
                     className="products-slider"
-                    data-slider="beds"
                   >
                     {groupedProducts.map((group, groupIndex) => (
                       <SwiperSlide key={groupIndex}>
                         <div className="row g-4 swiper-slide-inner">
-                          {group.map((product, productIndex) => (
-                            <div key={product.id || `${groupIndex}-${productIndex}`} className="col product-card-inner">
-                              <ProductCard product={product} galleryId={`beds-${groupIndex * 5 + productIndex + 1}`} />
-                            </div>
+                          {group.map((product) => (
+                            <ProductCard 
+                              key={product.id} 
+                              product={product} 
+                            />
                           ))}
                         </div>
                       </SwiperSlide>

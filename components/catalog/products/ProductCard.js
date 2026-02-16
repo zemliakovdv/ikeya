@@ -1,7 +1,7 @@
-// components/catalog/products/ProductCard.js
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useCart } from '@/contexts/CartContext';
 import ProductGallery from './ProductGallery';
 import ProductBadge from './ProductBadge';
 
@@ -10,14 +10,21 @@ const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
 export default function ProductCard({ product }) {
   const [isLiked, setIsLiked] = useState(false);
+  const { addToCart } = useCart();
 
   const handleToggleLike = useCallback(() => {
     setIsLiked(prev => !prev);
   }, []);
 
-  const handleAddToCart = useCallback(() => {
-    console.log('Add to cart:', product.id);
-  }, [product.id]);
+  const handleAddToCart = useCallback(async () => {
+    try {
+      const sku = attr.sku || product.id; // Используем SKU или ID товара
+      await addToCart(sku, 1);
+    } catch (error) {
+      console.error('Ошибка добавления в корзину:', error);
+      alert('Не удалось добавить товар в корзину');
+    }
+  }, [addToCart, product.id]);
 
   const attr = product.attributes;
   
@@ -34,18 +41,18 @@ export default function ProductCard({ product }) {
   
   let imagesList = [];
   
-if (attr.local_images) {
-  try {
-    const parsed = typeof attr.local_images === 'string' 
-      ? JSON.parse(attr.local_images) 
-      : attr.local_images;
-    if (Array.isArray(parsed)) {
-      imagesList = parsed.filter(img => img && typeof img === 'string');
+  if (attr.local_images) {
+    try {
+      const parsed = typeof attr.local_images === 'string' 
+        ? JSON.parse(attr.local_images) 
+        : attr.local_images;
+      if (Array.isArray(parsed)) {
+        imagesList = parsed.filter(img => img && typeof img === 'string');
+      }
+    } catch (error) {
+      console.error(`Ошибка парсинга изображений товара ${product.id}`);
     }
-  } catch (error) {
-    console.error(`Ошибка парсинга изображений товара ${product.id}`);
   }
-}
   
   const images = imagesList.length > 0
     ? imagesList.map(img => {

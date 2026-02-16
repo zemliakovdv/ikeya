@@ -1,8 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import { useCart } from '@/contexts/CartContext'
 
 export default function Header() {
+  const { itemsCount } = useCart();
+
   return (
     <header className="header">
 
@@ -74,7 +77,7 @@ export default function Header() {
                     <Link href="/cart">
                       <img src="/assets/img/icons/header-card.svg" alt="Корзина" />
                       <p>Корзина</p>
-                      <span className="cart-count">0</span>
+                      {itemsCount > 0 && <span className="cart-count">{itemsCount}</span>}
                     </Link>
                   </div>
                 </div>

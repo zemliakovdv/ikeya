@@ -2,15 +2,14 @@
 import Header from '@/components/layout/Header/Header'
 import Footer from '@/components/layout/Footer/Footer'
 import ClientScripts from '@/components/ClientScripts'
+import { CartProvider } from '@/contexts/CartContext'
 import './globals.css'
 import Script from 'next/script'
-
 
 export const metadata = {
   title: 'IKEYA - Интернет-магазин мебели',
   description: 'Интернет-магазин мебели и товаров для дома',
 }
-
 
 export default function RootLayout({ children }) {
   return (
@@ -27,9 +26,11 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/main.css" />
       </head>
       <body>
-        <Header />
-        {children}
-        <Footer />
+        <CartProvider>
+          <Header />
+          {children}
+          <Footer />
+        </CartProvider>
         
         <Script 
           src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" 
