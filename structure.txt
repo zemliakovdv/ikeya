@@ -13,7 +13,6 @@ C:.
 |   package.json
 |   README.md
 |   structure.txt
-|   tree.txt
 |   
 +---.github
 |   \---workflows
@@ -31,17 +30,24 @@ C:.
 |   |   |       0ae9d8cb87d70014f22fe3f5d0b6d39aa9fb5c48299c3a6d5056c5ea3b061964
 |   |   |       0bff0a160736ad7bbdfb1f98ab0362691fabb4be2f4ab8a41939c5033c0be631
 |   |   |       114d73b5647340b32a5c7467c31e8c7d629038096f2ea733f28ee9b504d340d5
+|   |   |       153fdfd3115315c8f85a6dce1d5cdebfc5a943fada275648bcec3ad96dc49b46
 |   |   |       1844014e2da3666302f23429c079e36851cea2294319eb56157909e3fb005689
 |   |   |       1c688cd779906666a8638e3a0cd7740422d77cf0613127a0ab9972bcb8821505
 |   |   |       1dbb935f64a417fa504a665a5f9b8d92bb6ced4dc0e6fefb9e7c9affe53a808e
+|   |   |       2775dd244b20635f2a9b202ad66f3ff6747cffe6cc99a8c3b60746b3fb5e27e3
+|   |   |       31882f09729b9fbcb1f0186fdd0045c3b7b0550b583cff72b6b2d1d537319881
 |   |   |       33a1673b887a9ccb48331b0a7e89a74731fc60a86ed8d024e27a475cf4fbe75d
 |   |   |       34e319b92161568be174567bfb3c6558b93c995f81a497fed12b619bc0bff90d
+|   |   |       4324152bff159e4603234720abd512bef74db2ab58b72fb4f9d7a658aa4f53ba
 |   |   |       43846802fb8a17c6c507b930f9114c499a7ec57774e80d6f84072748acfa84c7
 |   |   |       43f0ce981c0abea3a9ef318a191e97eea26ea2e83ee251e2c2e402d6c76d135e
+|   |   |       45420d8d348afa6334416396a4e829b7f96ad0bfb12281b321b245ba180d4a16
 |   |   |       46f586a8b478d217a960d76359a16ab10cb5e557a4df7432b751ac6b144d12d4
 |   |   |       47b6a44b4337fee913d535442b7b0734300be88ec5cd964b9bca3676fe132eb8
+|   |   |       4ea6a5236cd7a098820c17953becfd0c25177389e34dbdf73745ac1b0301c6a0
 |   |   |       4f57f6da12ff53038a5769099b8c4c5202790e7a9ea280cf1f80250a06359440
 |   |   |       588c3260ca74b77fafdc13e81584a278ff59b62406d1573d7a14f335c45005e6
+|   |   |       6056d5bb7073e44519ca074ae4091a6a66f2178ad0eb2cb5a0351ad01f9f9e56
 |   |   |       60b696614ea9df93f0d772d8c02ca2a16c769516fe8a602e359a3866ffceccf9
 |   |   |       660cda486b65de275cec193a1d460f8a88c433b7fa6924bfdf665073683c81de
 |   |   |       67a1f1f367f208aea54839f623b01066270ff1633aab43efcd48b25692bf5a5b
@@ -55,15 +61,25 @@ C:.
 |   |   |       8a9a9e08d00a3681aee6b9203d503793e9b0b4436d749ae3a9b0e6baa42caecc
 |   |   |       8c6e94e1beb73c8af9c0ba56657d826507834a3d4a5745e660e1ec73706a8491
 |   |   |       97e8a34b1aa7e131a255b9df6536f8aa123aa92d7767fbf5508d1cf37c7bb17d
+|   |   |       9edd937267eb0a125ec77e235b0016cfe6e38c91e4ce41d7d78231845fa36197
+|   |   |       a361cf641d63ae3386ae1d85567d57e0ec1fea1f5ce46f8cb94f6f9bb160875f
 |   |   |       a49d5b9d8c9b0792644287ef6def6f2d624e281f7393d47769040ae6ceed022f
+|   |   |       a4e40817c8133a9dce752f3d044c2a35095f7a3e7f6d33f1553731b6d2c01b32
 |   |   |       b1518ed26e388d5a39c95849119c7bf23f8f782524767f2a6778906667cf474c
 |   |   |       b4162a8d7a82ab11a9444eb83550536aaf112cace67cb44e82e5de06c1511d80
 |   |   |       b698b18c802150b394ba7a502c8fbcf2f2d3ae70aa6d80f76f22ec1bab2218c6
+|   |   |       ce0d852bc0af85fa7b30be6266e106fec1bc1d891a7620c079424bef303c1e35
+|   |   |       d25d951a6b7f1c108b42319d2b640979df13d350ad00d879dfc945c5bd931112
 |   |   |       d350d4852d969f9f74a7b67ea988024c41138c9c9d5a985de058f9592a5bdc18
+|   |   |       d7d4fb32512fa50cb245cdb75f6165b600c99ed2bcfcff6e5fdcaba45c06267e
+|   |   |       e5b015fe7e6330a1eed496245673839949ecf834e4a9a483c25306d4b999f343
 |   |   |       ec3752d60b4c56ff7af7a1bde603551bc64549def6c8a4ae659a7563a1b5ea79
 |   |   |       edbdf0da17456c796c8081b9490b3373ef50ee2daf4982fd2436851ae8cffd46
+|   |   |       ef370fed7addd907269667aea55ed65ac140e9878c2e1fca3919567f00471fc5
+|   |   |       f4f2dcc04b2d7fc8c939a36768ed4b206c635f3338425e9adbbbb4040965f676
 |   |   |       f5cb5986b1704b30a5367cad0bd93c7ed1e13092c1086fd98ef1ad8381d52010
 |   |   |       f6427b9c755adecfd7c49c5b59634b48a30e7498dfd7f6da7a1b7a5ac0162300
+|   |   |       f77f6ede5104b753826cd3736136aff5e2e7a23d3d4ed0273d5c88949330287b
 |   |   |       
 |   |   +---swc
 |   |   |   \---plugins
@@ -78,6 +94,7 @@ C:.
 |   |       |       13.pack.gz
 |   |       |       14.pack.gz
 |   |       |       15.pack.gz
+|   |       |       16.pack.gz
 |   |       |       2.pack.gz
 |   |       |       3.pack.gz
 |   |       |       4.pack.gz
@@ -131,23 +148,11 @@ C:.
 |   |   |   webpack-runtime.js
 |   |   |   
 |   |   +---app
-|   |   |   |   page.js
-|   |   |   |   page_client-reference-manifest.js
-|   |   |   |   
-|   |   |   +---api
-|   |   |   |   \---categories
-|   |   |   |       \---[categoryId]
-|   |   |   |           \---products
-|   |   |   |                   route.js
-|   |   |   |                   
 |   |   |   +---cart
 |   |   |   |       page.js
 |   |   |   |       page_client-reference-manifest.js
 |   |   |   |       
 |   |   |   +---catalog
-|   |   |   |   |   page.js
-|   |   |   |   |   page_client-reference-manifest.js
-|   |   |   |   |   
 |   |   |   |   \---[...slug]
 |   |   |   |           page.js
 |   |   |   |           page_client-reference-manifest.js
@@ -155,6 +160,11 @@ C:.
 |   |   |   +---favicon.ico
 |   |   |   |       route.js
 |   |   |   |       
+|   |   |   +---product
+|   |   |   |   \---[slug]
+|   |   |   |           page.js
+|   |   |   |           page_client-reference-manifest.js
+|   |   |   |           
 |   |   |   \---_not-found
 |   |   |           page.js
 |   |   |           page_client-reference-manifest.js
@@ -173,15 +183,16 @@ C:.
 |   |   |   |   
 |   |   |   \---app
 |   |   |       |   layout.js
-|   |   |       |   page.js
 |   |   |       |   
 |   |   |       +---cart
 |   |   |       |       page.js
 |   |   |       |       
 |   |   |       +---catalog
-|   |   |       |   |   page.js
-|   |   |       |   |   
 |   |   |       |   \---[...slug]
+|   |   |       |           page.js
+|   |   |       |           
+|   |   |       +---product
+|   |   |       |   \---[slug]
 |   |   |       |           page.js
 |   |   |       |           
 |   |   |       \---_not-found
@@ -195,86 +206,191 @@ C:.
 |   |   |       _ssgManifest.js
 |   |   |       
 |   |   \---webpack
-|   |       |   0072ea7e196020cb.webpack.hot-update.json
-|   |       |   159a1996d0a9f56c.webpack.hot-update.json
-|   |       |   1f74d9e1e7b475cc.webpack.hot-update.json
-|   |       |   2ea229cd23cae0e9.webpack.hot-update.json
-|   |       |   30fe92925b7f87d9.webpack.hot-update.json
-|   |       |   50b76be80a7f17e7.webpack.hot-update.json
-|   |       |   56392a76f8ce3e12.webpack.hot-update.json
-|   |       |   60b9f0547f2d328b.webpack.hot-update.json
-|   |       |   62bed386ba9f6e6b.webpack.hot-update.json
+|   |       |   06e2c1d0166f97d4.webpack.hot-update.json
+|   |       |   0db343da9cc8d70a.webpack.hot-update.json
+|   |       |   0e09b6f7225a2959.webpack.hot-update.json
+|   |       |   1ba4c93844f267cd.webpack.hot-update.json
+|   |       |   1ec56e3a8de328a1.webpack.hot-update.json
+|   |       |   21c57cb1b50ba371.webpack.hot-update.json
+|   |       |   26d4615ee7fc15c7.webpack.hot-update.json
+|   |       |   28f2078a625d8b42.webpack.hot-update.json
+|   |       |   2927a7ce91e4f57d.webpack.hot-update.json
+|   |       |   3f5be549d6ab1043.webpack.hot-update.json
+|   |       |   42640cbb7d6a2386.webpack.hot-update.json
+|   |       |   4865d2cb46f6e6f8.webpack.hot-update.json
+|   |       |   4a622a42a4355846.webpack.hot-update.json
+|   |       |   4a84ced7f9a3b266.webpack.hot-update.json
+|   |       |   4d4fcdd565ddf303.webpack.hot-update.json
+|   |       |   4f863eed54a5b1ac.webpack.hot-update.json
+|   |       |   560be0a7acab2edb.webpack.hot-update.json
+|   |       |   5d2f5286106841fe.webpack.hot-update.json
+|   |       |   601de3685de2e447.webpack.hot-update.json
+|   |       |   62862a1674748e29.webpack.hot-update.json
 |   |       |   633457081244afec._.hot-update.json
-|   |       |   6361b6d1c7a09697.webpack.hot-update.json
-|   |       |   70639a91874d94f9.webpack.hot-update.json
-|   |       |   713bd93ab7e28b9b.webpack.hot-update.json
-|   |       |   745e7ab0f5d7dcef.webpack.hot-update.json
-|   |       |   848e6b231e07a386.webpack.hot-update.json
-|   |       |   9099b6155e3a269d.webpack.hot-update.json
-|   |       |   a5a6911604fd5062.webpack.hot-update.json
-|   |       |   b555a58ccd6ee915.webpack.hot-update.json
-|   |       |   cee7a5cc106cc5f0.webpack.hot-update.json
-|   |       |   fa4fccaa3bfb95fb.webpack.hot-update.json
-|   |       |   webpack.0072ea7e196020cb.hot-update.js
-|   |       |   webpack.159a1996d0a9f56c.hot-update.js
-|   |       |   webpack.1f74d9e1e7b475cc.hot-update.js
-|   |       |   webpack.2ea229cd23cae0e9.hot-update.js
-|   |       |   webpack.30fe92925b7f87d9.hot-update.js
-|   |       |   webpack.50b76be80a7f17e7.hot-update.js
-|   |       |   webpack.56392a76f8ce3e12.hot-update.js
-|   |       |   webpack.60b9f0547f2d328b.hot-update.js
-|   |       |   webpack.62bed386ba9f6e6b.hot-update.js
-|   |       |   webpack.6361b6d1c7a09697.hot-update.js
-|   |       |   webpack.70639a91874d94f9.hot-update.js
-|   |       |   webpack.713bd93ab7e28b9b.hot-update.js
-|   |       |   webpack.745e7ab0f5d7dcef.hot-update.js
-|   |       |   webpack.848e6b231e07a386.hot-update.js
-|   |       |   webpack.9099b6155e3a269d.hot-update.js
-|   |       |   webpack.a5a6911604fd5062.hot-update.js
-|   |       |   webpack.b555a58ccd6ee915.hot-update.js
-|   |       |   webpack.cee7a5cc106cc5f0.hot-update.js
-|   |       |   webpack.fa4fccaa3bfb95fb.hot-update.js
+|   |       |   68306386c8232ce6.webpack.hot-update.json
+|   |       |   69451c9b4a930283.webpack.hot-update.json
+|   |       |   6abfdf3a2db7120c.webpack.hot-update.json
+|   |       |   6c8e2909086cd49a.webpack.hot-update.json
+|   |       |   6e47bee2fc8cabb9.webpack.hot-update.json
+|   |       |   746578b3d4d2e3ab.webpack.hot-update.json
+|   |       |   76b4cb994108db95.webpack.hot-update.json
+|   |       |   77fc4967931aca8c.webpack.hot-update.json
+|   |       |   81c9f9020d919229.webpack.hot-update.json
+|   |       |   88efad4dced5722e.webpack.hot-update.json
+|   |       |   894631866ee516f1.webpack.hot-update.json
+|   |       |   9414bc7dc73a5d12.webpack.hot-update.json
+|   |       |   9ab0256b031b5fb1.webpack.hot-update.json
+|   |       |   9f6fb2a95655e0e0.webpack.hot-update.json
+|   |       |   a1fa4dba91bd66bc.webpack.hot-update.json
+|   |       |   a2b6929ede1f7d2a.webpack.hot-update.json
+|   |       |   aa966176315dab1b.webpack.hot-update.json
+|   |       |   b67bb593e75f62d6.webpack.hot-update.json
+|   |       |   b88c37bcc3582ddb.webpack.hot-update.json
+|   |       |   baf0082e83ff2682.webpack.hot-update.json
+|   |       |   be5d5c592c09a95f.webpack.hot-update.json
+|   |       |   c4287ce87b8de828.webpack.hot-update.json
+|   |       |   cd7a2e8f4f31cd9d.webpack.hot-update.json
+|   |       |   cd8f65de59ae1d9e.webpack.hot-update.json
+|   |       |   d2b457e02a35f07f.webpack.hot-update.json
+|   |       |   d2fe424fb8bfad9d.webpack.hot-update.json
+|   |       |   d5c46b7a0f574dfe.webpack.hot-update.json
+|   |       |   de160c282ff62ba9.webpack.hot-update.json
+|   |       |   df417dbc776b8764.webpack.hot-update.json
+|   |       |   dfa5aeaa7a4bd7d7.webpack.hot-update.json
+|   |       |   e01232c8269986ab.webpack.hot-update.json
+|   |       |   e67424a4afa39b16.webpack.hot-update.json
+|   |       |   fcba20e7ff4b5756.webpack.hot-update.json
+|   |       |   webpack.06e2c1d0166f97d4.hot-update.js
+|   |       |   webpack.0db343da9cc8d70a.hot-update.js
+|   |       |   webpack.0e09b6f7225a2959.hot-update.js
+|   |       |   webpack.1ba4c93844f267cd.hot-update.js
+|   |       |   webpack.1ec56e3a8de328a1.hot-update.js
+|   |       |   webpack.21c57cb1b50ba371.hot-update.js
+|   |       |   webpack.26d4615ee7fc15c7.hot-update.js
+|   |       |   webpack.28f2078a625d8b42.hot-update.js
+|   |       |   webpack.2927a7ce91e4f57d.hot-update.js
+|   |       |   webpack.3f5be549d6ab1043.hot-update.js
+|   |       |   webpack.42640cbb7d6a2386.hot-update.js
+|   |       |   webpack.4865d2cb46f6e6f8.hot-update.js
+|   |       |   webpack.4a622a42a4355846.hot-update.js
+|   |       |   webpack.4a84ced7f9a3b266.hot-update.js
+|   |       |   webpack.4d4fcdd565ddf303.hot-update.js
+|   |       |   webpack.4f863eed54a5b1ac.hot-update.js
+|   |       |   webpack.560be0a7acab2edb.hot-update.js
+|   |       |   webpack.5d2f5286106841fe.hot-update.js
+|   |       |   webpack.601de3685de2e447.hot-update.js
+|   |       |   webpack.62862a1674748e29.hot-update.js
+|   |       |   webpack.68306386c8232ce6.hot-update.js
+|   |       |   webpack.69451c9b4a930283.hot-update.js
+|   |       |   webpack.6abfdf3a2db7120c.hot-update.js
+|   |       |   webpack.6c8e2909086cd49a.hot-update.js
+|   |       |   webpack.6e47bee2fc8cabb9.hot-update.js
+|   |       |   webpack.746578b3d4d2e3ab.hot-update.js
+|   |       |   webpack.76b4cb994108db95.hot-update.js
+|   |       |   webpack.77fc4967931aca8c.hot-update.js
+|   |       |   webpack.81c9f9020d919229.hot-update.js
+|   |       |   webpack.88efad4dced5722e.hot-update.js
+|   |       |   webpack.894631866ee516f1.hot-update.js
+|   |       |   webpack.9414bc7dc73a5d12.hot-update.js
+|   |       |   webpack.9ab0256b031b5fb1.hot-update.js
+|   |       |   webpack.9f6fb2a95655e0e0.hot-update.js
+|   |       |   webpack.a1fa4dba91bd66bc.hot-update.js
+|   |       |   webpack.a2b6929ede1f7d2a.hot-update.js
+|   |       |   webpack.aa966176315dab1b.hot-update.js
+|   |       |   webpack.b67bb593e75f62d6.hot-update.js
+|   |       |   webpack.b88c37bcc3582ddb.hot-update.js
+|   |       |   webpack.baf0082e83ff2682.hot-update.js
+|   |       |   webpack.be5d5c592c09a95f.hot-update.js
+|   |       |   webpack.c4287ce87b8de828.hot-update.js
+|   |       |   webpack.cd7a2e8f4f31cd9d.hot-update.js
+|   |       |   webpack.cd8f65de59ae1d9e.hot-update.js
+|   |       |   webpack.d2b457e02a35f07f.hot-update.js
+|   |       |   webpack.d2fe424fb8bfad9d.hot-update.js
+|   |       |   webpack.d5c46b7a0f574dfe.hot-update.js
+|   |       |   webpack.de160c282ff62ba9.hot-update.js
+|   |       |   webpack.df417dbc776b8764.hot-update.js
+|   |       |   webpack.dfa5aeaa7a4bd7d7.hot-update.js
+|   |       |   webpack.e01232c8269986ab.hot-update.js
+|   |       |   webpack.e67424a4afa39b16.hot-update.js
+|   |       |   webpack.fcba20e7ff4b5756.hot-update.js
 |   |       |   
 |   |       \---app
-|   |           |   layout.159a1996d0a9f56c.hot-update.js
-|   |           |   layout.1f74d9e1e7b475cc.hot-update.js
-|   |           |   layout.2ea229cd23cae0e9.hot-update.js
-|   |           |   layout.30fe92925b7f87d9.hot-update.js
-|   |           |   layout.50b76be80a7f17e7.hot-update.js
-|   |           |   layout.56392a76f8ce3e12.hot-update.js
-|   |           |   layout.60b9f0547f2d328b.hot-update.js
-|   |           |   layout.62bed386ba9f6e6b.hot-update.js
-|   |           |   layout.70639a91874d94f9.hot-update.js
-|   |           |   layout.745e7ab0f5d7dcef.hot-update.js
-|   |           |   layout.a5a6911604fd5062.hot-update.js
-|   |           |   layout.cee7a5cc106cc5f0.hot-update.js
+|   |           |   layout.4a622a42a4355846.hot-update.js
+|   |           |   layout.4a84ced7f9a3b266.hot-update.js
+|   |           |   layout.746578b3d4d2e3ab.hot-update.js
+|   |           |   layout.fcba20e7ff4b5756.hot-update.js
 |   |           |   
-|   |           \---catalog
-|   |               |   page.6361b6d1c7a09697.hot-update.js
-|   |               |   
-|   |               \---[...slug]
-|   |                       page.6361b6d1c7a09697.hot-update.js
+|   |           +---cart
+|   |           |       page.1ec56e3a8de328a1.hot-update.js
+|   |           |       page.42640cbb7d6a2386.hot-update.js
+|   |           |       page.62862a1674748e29.hot-update.js
+|   |           |       page.6c8e2909086cd49a.hot-update.js
+|   |           |       page.77fc4967931aca8c.hot-update.js
+|   |           |       page.9414bc7dc73a5d12.hot-update.js
+|   |           |       page.be5d5c592c09a95f.hot-update.js
+|   |           |       page.cd8f65de59ae1d9e.hot-update.js
+|   |           |       
+|   |           +---catalog
+|   |           |   \---[...slug]
+|   |           |           page.1ec56e3a8de328a1.hot-update.js
+|   |           |           page.62862a1674748e29.hot-update.js
+|   |           |           page.6c8e2909086cd49a.hot-update.js
+|   |           |           page.9414bc7dc73a5d12.hot-update.js
+|   |           |           page.be5d5c592c09a95f.hot-update.js
+|   |           |           
+|   |           \---product
+|   |               \---[slug]
+|   |                       page.06e2c1d0166f97d4.hot-update.js
+|   |                       page.0db343da9cc8d70a.hot-update.js
+|   |                       page.0e09b6f7225a2959.hot-update.js
+|   |                       page.1ec56e3a8de328a1.hot-update.js
+|   |                       page.26d4615ee7fc15c7.hot-update.js
+|   |                       page.28f2078a625d8b42.hot-update.js
+|   |                       page.2927a7ce91e4f57d.hot-update.js
+|   |                       page.3f5be549d6ab1043.hot-update.js
+|   |                       page.4865d2cb46f6e6f8.hot-update.js
+|   |                       page.4a84ced7f9a3b266.hot-update.js
+|   |                       page.4f863eed54a5b1ac.hot-update.js
+|   |                       page.560be0a7acab2edb.hot-update.js
+|   |                       page.5d2f5286106841fe.hot-update.js
+|   |                       page.601de3685de2e447.hot-update.js
+|   |                       page.62862a1674748e29.hot-update.js
+|   |                       page.68306386c8232ce6.hot-update.js
+|   |                       page.6c8e2909086cd49a.hot-update.js
+|   |                       page.6e47bee2fc8cabb9.hot-update.js
+|   |                       page.76b4cb994108db95.hot-update.js
+|   |                       page.894631866ee516f1.hot-update.js
+|   |                       page.9414bc7dc73a5d12.hot-update.js
+|   |                       page.9ab0256b031b5fb1.hot-update.js
+|   |                       page.a1fa4dba91bd66bc.hot-update.js
+|   |                       page.a2b6929ede1f7d2a.hot-update.js
+|   |                       page.aa966176315dab1b.hot-update.js
+|   |                       page.b67bb593e75f62d6.hot-update.js
+|   |                       page.be5d5c592c09a95f.hot-update.js
+|   |                       page.c4287ce87b8de828.hot-update.js
+|   |                       page.cd7a2e8f4f31cd9d.hot-update.js
+|   |                       page.d2b457e02a35f07f.hot-update.js
+|   |                       page.d2fe424fb8bfad9d.hot-update.js
+|   |                       page.d5c46b7a0f574dfe.hot-update.js
+|   |                       page.de160c282ff62ba9.hot-update.js
+|   |                       page.dfa5aeaa7a4bd7d7.hot-update.js
+|   |                       page.e67424a4afa39b16.hot-update.js
 |   |                       
 |   \---types
 |       |   package.json
 |       |   
 |       \---app
 |           |   layout.ts
-|           |   page.ts
 |           |   
-|           +---api
-|           |   \---categories
-|           |       \---[categoryId]
-|           |           \---products
-|           |                   route.ts
-|           |                   
 |           +---cart
 |           |       page.ts
 |           |       
-|           \---catalog
-|               |   page.ts
-|               |   
-|               \---[...slug]
+|           +---catalog
+|           |   \---[...slug]
+|           |           page.ts
+|           |           
+|           \---product
+|               \---[slug]
 |                       page.ts
 |                       
 +---app
@@ -338,6 +454,7 @@ C:.
 |               
 +---components
 |   |   ClientScripts.js
+|   |   FloatingChatButton.js
 |   |   
 |   +---cart
 |   |       CartItem.js
@@ -407,9 +524,13 @@ C:.
 |   |   |   ProductTabs.js
 |   |   |   ProductVariants.js
 |   |   |   RelatedProducts.js
+|   |   |   SimilarProducts.js
 |   |   |   
 |   |   +---info
 |   |   |       ProductColors.js
+|   |   |       ProductConsultation.js
+|   |   |       ProductDeliveryLink.js
+|   |   |       ProductParameters.js
 |   |   |       ProductSizes.js
 |   |   |       
 |   |   \---tabs
@@ -457,6 +578,7 @@ C:.
 |   |       
 |   \---utils
 |           categoryHelpers.js
+|           productHelpers.js
 |           
 +---mockData
 |       activeOrders.js
