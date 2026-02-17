@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '/contexts/CartContext';
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
 import RecommendationsSection from '@/components/recommendations/RecommendationsSection';

@@ -1,6 +1,8 @@
 // components/product/ProductInfo.js
 'use client';
 
+import { useState, useCallback } from 'react';
+import { useCart } from '@/contexts/CartContext'; // ← ДОБАВЛЕН
 import ProductColors from './info/ProductColors';
 import ProductSizes from './info/ProductSizes';
 import ProductParameters from './info/ProductParameters';
@@ -8,7 +10,24 @@ import ProductDeliveryLink from './info/ProductDeliveryLink';
 import ProductConsultation from './info/ProductConsultation';
 
 export default function ProductInfo({ product }) {
+  // ← ДОБАВЛЕНЫ ХУКИ КОРЗИНЫ
+  const { addToCart } = useCart();
+  const [addToCartLoading, setAddToCartLoading] = useState(false);
+
   const attr = product.attributes;
+
+  // ← ДОБАВЛЕНА ФУНКЦИЯ
+  const handleAddToCart = useCallback(async () => {
+    setAddToCartLoading(true);
+    try {
+      const sku = attr.sku || product.id;
+      await addToCart(sku, 1);
+    } catch (error) {
+      console.error('Ошибка добавления в корзину:', error);
+    } finally {
+      setAddToCartLoading(false);
+    }
+  }, [addToCart, attr.sku, product.id]);
 
   // Рейтинг
   const rating = parseFloat(attr.rating_avg) || 0;
@@ -102,8 +121,13 @@ export default function ProductInfo({ product }) {
           <a href="#">Правила оплаты и формирование таможенной пошлины</a>
         </div>
 
-        {/* Кнопка "В корзину" */}
-        <button className="goods-add__cart">
+        {/* Кнопка "В корзину" ← ТЕПЕРЬ РАБОТАЕТ */}
+        <button
+          className="goods-add__cart"
+          onClick={handleAddToCart}
+          type="button"
+          disabled={addToCartLoading}
+        >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
               d="M7.26668 13.6833H12.5333C16.575 13.6833 17.15 10.85 17.75 7.84166C17.9584 6.79166 18.075 6.21666 17.7084 5.69999C17.3084 5.14999 16.6834 5.14999 15.7334 5.14999H5.82502L5.43335 3.27499C5.19168 2.32499 4.34168 1.65833 3.36668 1.65833H2.64168C2.31668 1.65833 2.05835 1.91666 2.05835 2.24166C2.05835 2.56666 2.31668 2.82499 2.64168 2.82499H3.36668C3.80835 2.82499 4.20002 3.12499 4.30002 3.54166L6.23335 12.7583C5.37502 13.1667 4.76668 14.0583 4.76668 15.1C4.76668 15.6083 5.16668 16.0167 5.66668 16.0167H7.20002C7.13335 16.2 7.09168 16.3917 7.09168 16.6C7.09168 17.5583 7.87502 18.3417 8.83335 18.3417C9.79168 18.3417 10.575 17.5583 10.575 16.6C10.575 16.3917 10.5334 16.2 10.4667 16.0167H12.6167C12.55 16.2 12.5084 16.3917 12.5084 16.6C12.5084 17.5583 13.2917 18.3417 14.25 18.3417C15.2084 18.3417 15.9917 17.5583 15.9917 16.6C15.9917 15.6417 15.2084 14.8583 14.25 14.8583H5.95002C6.05835 14.2 6.60835 13.6917 7.25835 13.6917L7.26668 13.6833Z"
@@ -117,9 +141,8 @@ export default function ProductInfo({ product }) {
         <ProductColors
           variants={variants}
           currentSku={attr.sku}
-          localImages={localImages}  // ← ДОБАВЬ ЭТО!
+          localImages={localImages}
         />
-
 
         {/* Варианты размеров */}
         <ProductSizes

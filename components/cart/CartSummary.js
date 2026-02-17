@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCart } from '@/contexts/CartContext';
+import { useCart } from '/contexts/CartContext';
 
 export default function CartSummary({
   subtotal = 0,

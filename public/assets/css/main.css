@@ -3759,6 +3759,7 @@ main {
 .products-card-slider .swiper-slide {
   height: auto;
   max-width: fit-content !important;
+  margin-right: 0 !important;
 }
 
 
