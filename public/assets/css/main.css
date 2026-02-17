@@ -323,7 +323,6 @@ h2 {
 
 .header-bottom-inner {
     display: flex;
-    justify-content: space-between;
     gap: 24.5px;
 }
 

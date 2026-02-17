@@ -1,10 +1,26 @@
 'use client'
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
+import { getHeaderMenuCategories } from '@/lib/api/ikea'
 
 export default function Header() {
   const { itemsCount } = useCart();
+  const [menuCategories, setMenuCategories] = useState([]);
+
+  // Загружаем категории меню при монтировании
+  useEffect(() => {
+    async function loadMenu() {
+      try {
+        const response = await getHeaderMenuCategories();
+        setMenuCategories(response.data || []);
+      } catch (error) {
+        console.error('Не удалось загрузить меню:', error);
+      }
+    }
+    loadMenu();
+  }, []);
 
   return (
     <header className="header">
@@ -92,17 +108,36 @@ export default function Header() {
           <div className="row">
             <div className="col-12">
               <div className="header-bottom-inner">
-                <Link href="/catalog">Диваны</Link>
-                <Link href="/catalog">Кресла</Link>
-                <Link href="/catalog">Кровати</Link>
-                <Link href="/catalog">Матрасы</Link>
-                <Link href="/catalog">Текстиль</Link>
-                <Link href="/catalog">Освещение</Link>
-                <Link href="/catalog">Посуда</Link>
-                <Link href="/catalog">Кухонная утварь</Link>
-                <Link href="/catalog">Украшения</Link>
-                <Link href="/catalog">Системы хранения</Link>
-                <Link href="/catalog">Комоды и тумбочки</Link>
+                {menuCategories.length > 0 ? (
+                  menuCategories.map((category) => {
+                    const attrs = category.attributes;
+                    const categoryUrl = `/catalog/${category.id}`; // ← ИСПРАВЛЕНО!
+                    const categoryName = attrs.translated_name || attrs.name;
+
+                    return (
+                      <Link
+                        key={category.id}
+                        href={categoryUrl}
+                      >
+                        {categoryName}
+                      </Link>
+                    );
+                  })
+                ) : (
+                  <>
+                    <Link href="/catalog">Диваны</Link>
+                    <Link href="/catalog">Кресла</Link>
+                    <Link href="/catalog">Кровати</Link>
+                    <Link href="/catalog">Матрасы</Link>
+                    <Link href="/catalog">Текстиль</Link>
+                    <Link href="/catalog">Освещение</Link>
+                    <Link href="/catalog">Посуда</Link>
+                    <Link href="/catalog">Кухонная утварь</Link>
+                    <Link href="/catalog">Украшения</Link>
+                    <Link href="/catalog">Системы хранения</Link>
+                    <Link href="/catalog">Комоды и тумбочки</Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
