@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header/Header'
 import Footer from '@/components/layout/Footer/Footer'
 import ClientScripts from '@/components/ClientScripts'
 import { CartProvider } from '@/contexts/CartContext'
+import FloatingChatButton from '@/components/FloatingChatButton';
 import './globals.css'
 import Script from 'next/script'
 
@@ -31,20 +32,23 @@ export default function RootLayout({ children }) {
           {children}
           <Footer />
         </CartProvider>
-        
-        <Script 
-          src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" 
+
+        {/* Плавающая кнопка чата */}
+        <FloatingChatButton />
+
+        <Script
+          src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
           strategy="lazyOnload"
         />
-        <Script 
-          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js" 
+        <Script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
           strategy="lazyOnload"
         />
-        <Script 
-          src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" 
+        <Script
+          src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"
           strategy="lazyOnload"
         />
-        
+
         <ClientScripts />
       </body>
     </html>

@@ -1,9 +1,11 @@
 // components/product/ProductInfo.js
 'use client';
 
-import ProductVariants from './ProductVariants';
 import ProductColors from './info/ProductColors';
 import ProductSizes from './info/ProductSizes';
+import ProductParameters from './info/ProductParameters';
+import ProductDeliveryLink from './info/ProductDeliveryLink';
+import ProductConsultation from './info/ProductConsultation';
 
 export default function ProductInfo({ product }) {
   const attr = product.attributes;
@@ -113,17 +115,11 @@ export default function ProductInfo({ product }) {
 
         {/* Выбор цвета */}
         <ProductColors
-          colors={attr.colors}
-          currentColorName={attr.color_name}
-        />
-
-
-        {/* Варианты товара */}
-        <ProductVariants
           variants={variants}
           currentSku={attr.sku}
-          localImages={localImages}
+          localImages={localImages}  // ← ДОБАВЬ ЭТО!
         />
+
 
         {/* Варианты размеров */}
         <ProductSizes
@@ -131,6 +127,15 @@ export default function ProductInfo({ product }) {
           currentPrice={parseFloat(attr.price)}
           productImage={localImages[0]}
         />
+
+        {/* Основные характеристики */}
+        <ProductParameters product={product} />
+
+        {/* Кнопка доставки */}
+        <ProductDeliveryLink />
+
+        {/* Консультация */}
+        <ProductConsultation />
 
       </div>
     </div>

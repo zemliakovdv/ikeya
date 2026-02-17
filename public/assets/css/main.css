@@ -3747,6 +3747,21 @@ main {
     padding-bottom: 54px;
 }
 
+.products-card-slider .swiper-slide-inner {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.products-card-slider .product-card-inner {
+  padding: 0 !important;
+}
+
+.products-card-slider .swiper-slide {
+  height: auto;
+  max-width: fit-content !important;
+}
+
+
 .more .products-slider__pagination {
     bottom: 30px !important;
 }
@@ -3864,6 +3879,10 @@ main {
 }
 
 .size-info__item:nth-child(15) {
+    margin-bottom: 24px;
+}
+
+.size-info__item:last-child{
     margin-bottom: 24px;
 }
 

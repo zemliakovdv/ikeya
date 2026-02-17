@@ -1,33 +1,55 @@
+// components/product/ProductVariants.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ProductVariants({ variants, currentSku, localImages }) {
   const [selectedVariant, setSelectedVariant] = useState(currentSku);
+  
+  // ОТЛАДКА через alert
+  useEffect(() => {
+    alert('ProductVariants загружен!\ncurrentSku: ' + currentSku + '\nКол-во вариантов: ' + (variants ? variants.length : 0));
+    
+    if (variants && variants.length > 0) {
+      alert('Первый вариант:\n' + JSON.stringify(variants[0], null, 2).substring(0, 500));
+    }
+  }, []);
   
   // Если нет вариантов
   if (!variants || variants.length === 0) {
     return null;
   }
 
+  // Находим текущий активный вариант
+  const activeVariant = variants.find(v => v.itemNo === currentSku);
+  const activeColorName = activeVariant?.validDesignText || 'не выбран';
+
   return (
     <div className="goods-color">
-      <p>Цвет: <span>{variants.find(v => v.itemNo === selectedVariant)?.validDesignText || 'не выбран'}</span></p>
+      <p>Цвет: <span>{activeColorName}</span></p>
       
       <div className="goods-color__buttons">
         {variants.map((variant) => {
-          // Если это текущий товар — берём локальное изображение
-          const imageUrl = variant.itemNo === currentSku && localImages && localImages[0]
-            ? `http://45.135.234.22/${localImages[0]}`
-            : '/assets/img/placeholder.png'; // Заглушка для других вариантов
+          // Берём изображение варианта из API
+          const variantImage = variant.mainImageUrl || 
+                              variant.allProductImage?.[0]?.url || 
+                              variant.imageUrl;
+          
+          const imageUrl = variantImage || '/assets/img/placeholder.png';
+          
+          // Проверяем активен ли этот вариант
+          const isActive = variant.itemNo === currentSku;
           
           return (
             <button
               key={variant.itemNo}
-              className={`goods-color__item ${variant.itemNo === selectedVariant ? 'active' : ''}`}
+              className={`goods-color__item ${isActive ? 'active' : ''}`}
               onClick={() => {
+                alert('Клик по варианту: ' + variant.validDesignText + '\nitemNo: ' + variant.itemNo);
                 setSelectedVariant(variant.itemNo);
-                window.location.href = `/product/${variant.name.toLowerCase()}-${variant.itemNo}`;
+                // Переход на страницу варианта
+                const slug = `${variant.name || 'product'}-${variant.itemNo}`.toLowerCase();
+                window.location.href = `/product/${slug}`;
               }}
             >
               <img 

@@ -163,7 +163,7 @@ export default function ProductTabs({ product }) {
                         className={`nav-link ${activeTab === 'delivery' ? 'active' : ''}`}
                         onClick={() => setActiveTab('delivery')}
                       >
-                        Услуги и доставка
+                        Услуги
                       </button>
                     )}
                     

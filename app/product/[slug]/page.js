@@ -3,8 +3,10 @@ import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import ProductGallery from '@/components/product/ProductGallery';
 import ProductInfo from '@/components/product/ProductInfo';
-import RelatedProducts from '@/components/product/RelatedProducts';
 import ProductTabs from '@/components/product/ProductTabs';
+import RelatedProducts from '@/components/product/RelatedProducts';
+import SimilarProducts from '@/components/product/SimilarProducts'; // Новая секция
+import { getRelatedAndSimilarProducts } from '@/lib/utils/productHelpers';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
@@ -30,6 +32,25 @@ async function getProduct(sku) {
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
+  }
+}
+
+// Получаем товары категории (новая функция)
+async function getCategoryProducts(categoryId) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/categories/${categoryId}/products`, {
+      next: { revalidate: 300 }
+    });
+    
+    if (!res.ok) {
+      return [];
+    }
+    
+    const data = await res.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Error fetching category products:', error);
+    return [];
   }
 }
 
@@ -85,7 +106,6 @@ async function buildBreadcrumbs(productData) {
     }
     
     // Сортируем категории по иерархии (от корня к листу)
-    // parent_ids идут от корня к листу, поэтому просто добавляем в том же порядке
     for (const parentId of parentIds) {
       const parent = parentCategories.find(cat => cat.id === parentId);
       if (parent) {
@@ -112,12 +132,6 @@ async function buildBreadcrumbs(productData) {
   return breadcrumbs;
 }
 
-// Получаем похожие товары (временно пустой массив)
-async function getRelatedProducts(categoryId) {
-  // TODO: Сделать API запрос для похожих товаров
-  return [];
-}
-
 export default async function ProductPage({ params }) {
   const { slug } = params;
   const sku = extractSKU(slug);
@@ -131,6 +145,12 @@ export default async function ProductPage({ params }) {
   const product = productData.data;
   const attr = product.attributes;
   
+  // Загружаем товары категории для рекомендаций
+  const categoryProducts = await getCategoryProducts(attr.category_id);
+  
+  // Формируем рекомендации
+  const { relatedProducts, similarProducts } = getRelatedAndSimilarProducts(product, categoryProducts);
+  
   // Парсим изображения
   let images = [];
   try {
@@ -138,9 +158,6 @@ export default async function ProductPage({ params }) {
   } catch (e) {
     console.error('Error parsing images:', e);
   }
-  
-  // Получаем похожие товары
-  const relatedProducts = await getRelatedProducts(attr.category_id);
   
   // Строим breadcrumbs
   const breadcrumbs = await buildBreadcrumbs(productData);
@@ -169,11 +186,14 @@ export default async function ProductPage({ params }) {
         </div>
       </section>
       
-      {/* Похожие товары */}
+      {/* 1. К этому товару подходят (НАД табами) */}
       <RelatedProducts products={relatedProducts} />
       
       {/* Табы: Описание, Характеристики, Отзывы */}
       <ProductTabs product={product} />
+      
+      {/* 2. Похожие товары (В КОНЦЕ) */}
+      <SimilarProducts products={similarProducts} />
       
     </main>
   );
