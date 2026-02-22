@@ -6,6 +6,7 @@ import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { AuthModalsProvider } from '@/components/auth/AuthModalsHost'
 import FloatingChatButton from '@/components/FloatingChatButton'
+import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import './globals.css'
 import Script from 'next/script'
 
@@ -40,9 +41,11 @@ export default function RootLayout({ children }) {
         <CartProvider>
           <AuthProvider>
             <AuthModalsProvider>
-              <Header />
-              {children}
-              <Footer />
+              <FavoritesProvider>   {/* ← добавил */}
+                <Header />
+                {children}
+                <Footer />
+              </FavoritesProvider>  {/* ← закрыл */}
             </AuthModalsProvider>
           </AuthProvider>
         </CartProvider>

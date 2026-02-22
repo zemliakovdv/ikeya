@@ -6,12 +6,14 @@ import { useCart } from '@/contexts/CartContext'
 import { getHeaderMenuCategories } from '@/lib/api/ikea'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModals } from '@/components/auth/AuthModalsHost'
+import { useFavorites } from '@/contexts/FavoritesContext';
+
 
 export default function Header() {
   const { itemsCount } = useCart();
   const { isAuth, user, logout } = useAuth();
   const { openLogin } = useAuthModals();
-
+  const { count: favCount } = useFavorites();
   const [menuCategories, setMenuCategories] = useState([]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -115,12 +117,13 @@ export default function Header() {
 
                 <div className="header-middle-panel">
                   <div className="header-panel-item">
-                    <Link href="/favorites">
+                    <Link href="/profile/favorite">
                       <img src="/assets/img/icons/header-favorite.svg" alt="Избранное" />
                       <p>Избранное</p>
-                      <span>0</span>
+                      {favCount > 0 && <span>{favCount}</span>}
                     </Link>
                   </div>
+
 
                   {/* Профиль: Войти / Профиль */}
                   {!isAuth ? (
