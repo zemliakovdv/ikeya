@@ -1,13 +1,14 @@
+// components/profile/ProfileLayout.js
 'use client';
 
 import Breadcrumbs from './Breadcrumbs';
 import ProfileSidebar from './ProfileSidebar';
 
-export default function ProfileLayout({ children, breadcrumbs }) {
+export default function ProfileLayout({ children, breadcrumbs, mainClassName = 'zakazi' }) {
   return (
-    <main className="zakazi">
+    <main className={mainClassName}>
       <Breadcrumbs items={breadcrumbs} />
-      
+
       <section className="orders-page">
         <div className="container">
           <div className="row">

@@ -1,31 +1,40 @@
+// components/profile/ProfileSidebar.js
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function ProfileSidebar({ userName = 'Иннокентий' }) {
+export default function ProfileSidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   const isActive = (path) => pathname === path;
 
+  function handleLogout() {
+    logout();
+    router.push('/');
+  }
+
   return (
     <aside className="sidebar">
+
       {/* User Card */}
-      <div 
-        className="user-card" 
+      <div
+        className="user-card"
         onClick={() => router.push('/profile/personal-data')}
         style={{ cursor: 'pointer' }}
       >
         <div className="avatar">
-          <img 
-            src="/assets/img/profile/img-profile.png" 
+          <img
+            src="/assets/img/profile/img-profile.png"
             alt="Фото профиля"
           />
         </div>
         <div>
-          <div className="user-name">{userName}</div>
+          <div className="user-name">{user?.username || 'Профиль'}</div>
           <div className="user-link">
-            Личные данные 
+            Личные данные
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10.22 7.99999C10.22 8.74666 8.19334 10.5333 6.50001 11.9C6.30667 12.0533 6.02667 12.0267 5.87334 11.8333C5.72001 11.64 5.74667 11.36 5.94001 11.2067C7.42667 10.0067 9.10001 8.47333 9.32001 7.99999C9.10001 7.52666 7.42667 5.99333 5.94001 4.79333C5.74667 4.63999 5.72001 4.35999 5.87334 4.16666C6.02667 3.97333 6.30667 3.94666 6.50001 4.09999C8.20001 5.46666 10.22 7.25999 10.22 7.99999Z" fill="#757575" />
             </svg>
@@ -35,7 +44,7 @@ export default function ProfileSidebar({ userName = 'Иннокентий' }) {
 
       {/* Main Navigation */}
       <nav className="nav">
-        <div 
+        <div
           className={`nav-item ${isActive('/profile/orders') ? 'active' : ''}`}
           onClick={() => router.push('/profile/orders')}
           style={{ cursor: 'pointer' }}
@@ -43,10 +52,12 @@ export default function ProfileSidebar({ userName = 'Иннокентий' }) {
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M7.26667 13.6833H12.5333C16.575 13.6833 17.15 10.85 17.75 7.84166C17.9583 6.79166 18.075 6.21666 17.7083 5.69999C17.3083 5.14999 16.6833 5.14999 15.7333 5.14999H5.825L5.43333 3.27499C5.19167 2.32499 4.34167 1.65833 3.36667 1.65833H2.64167C2.31667 1.65833 2.05833 1.91666 2.05833 2.24166C2.05833 2.56666 2.31667 2.82499 2.64167 2.82499H3.36667C3.80833 2.82499 4.2 3.12499 4.3 3.54166L6.23333 12.7583C5.375 13.1667 4.76667 14.0583 4.76667 15.1C4.76667 15.6083 5.16667 16.0167 5.66667 16.0167H7.2C7.13333 16.2 7.09167 16.3917 7.09167 16.6C7.09167 17.5583 7.875 18.3417 8.83333 18.3417C9.79167 18.3417 10.575 17.5583 10.575 16.6C10.575 16.3917 10.5333 16.2 10.4667 16.0167H12.6167C12.55 16.2 12.5083 16.3917 12.5083 16.6C12.5083 17.5583 13.2917 18.3417 14.25 18.3417C15.2083 18.3417 15.9917 17.5583 15.9917 16.6C15.9917 15.6417 15.2083 14.8583 14.25 14.8583H5.95C6.05833 14.2 6.60833 13.6917 7.25833 13.6917L7.26667 13.6833ZM9.425 16.5917C9.425 16.9083 9.16667 17.175 8.84167 17.175C8.51667 17.175 8.25833 16.9167 8.25833 16.5917C8.25833 16.2667 8.51667 16.0083 8.84167 16.0083C9.16667 16.0083 9.425 16.2667 9.425 16.5917ZM14.2667 17.175C13.95 17.175 13.6833 16.9167 13.6833 16.5917C13.6833 16.2667 13.9417 16.0083 14.2667 16.0083C14.5917 16.0083 14.85 16.2667 14.85 16.5917C14.85 16.9167 14.5917 17.175 14.2667 17.175ZM15.7333 6.32499C16.175 6.32499 16.6667 6.32499 16.7667 6.39166C16.8417 6.49166 16.7167 7.09166 16.6083 7.61666C15.9417 10.9333 15.4917 12.525 12.5333 12.525H7.375L6.075 6.32499H15.7417H15.7333Z" fill="#181818" />
           </svg>
-          Заказы <span className="badge">3</span>
+          Заказы
+          {/* Бейдж — заглушка, подключим когда будет счётчик от API */}
+          {/* <span className="badge">3</span> */}
         </div>
 
-        <div 
+        <div
           className={`nav-item ${isActive('/profile/favorite') ? 'active' : ''}`}
           onClick={() => router.push('/profile/favorite')}
           style={{ cursor: 'pointer' }}
@@ -57,7 +68,7 @@ export default function ProfileSidebar({ userName = 'Иннокентий' }) {
           Избранное
         </div>
 
-        <div 
+        <div
           className={`nav-item ${isActive('/profile/reviews') ? 'active' : ''}`}
           onClick={() => router.push('/profile/reviews')}
           style={{ cursor: 'pointer' }}
@@ -71,36 +82,39 @@ export default function ProfileSidebar({ userName = 'Иннокентий' }) {
 
       {/* Additional Links */}
       <div className="sidebar-section">
-        <div 
-          className="nav-item"
+        <div
+          className={`nav-item ${isActive('/profile/electronic-receipts') ? 'active' : ''}`}
           onClick={() => router.push('/profile/electronic-receipts')}
           style={{ cursor: 'pointer' }}
         >
           Электронные чеки
         </div>
-        <div 
-          className="nav-item"
+        <div
+          className={`nav-item ${isActive('/profile/returns') ? 'active' : ''}`}
           onClick={() => router.push('/profile/returns')}
           style={{ cursor: 'pointer' }}
         >
           Возвраты
         </div>
-        <div className="nav-item">Помощь</div>
-        <div 
-          className="nav-item"
-          onClick={() => router.push('/profile/personal-data')}
+        <div className="nav-item" style={{ cursor: 'default' }}>
+          Помощь
+        </div>
+        <div
+          className={`nav-item ${isActive('/profile/settings') ? 'active' : ''}`}
+          onClick={() => router.push('/profile/settings')}
           style={{ cursor: 'pointer' }}
         >
           Персональные данные
         </div>
-        <div 
+        <div
           className="nav-item logout"
-          onClick={() => router.push('/')}
+          onClick={handleLogout}
           style={{ cursor: 'pointer' }}
         >
           Выход
         </div>
       </div>
+
     </aside>
   );
 }

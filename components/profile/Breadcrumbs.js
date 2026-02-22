@@ -3,7 +3,6 @@
 import Link from 'next/link';
 
 export default function Breadcrumbs({ items }) {
-  // Безопасная проверка
   const breadcrumbItems = Array.isArray(items) ? items : [];
 
   return (
@@ -15,7 +14,7 @@ export default function Breadcrumbs({ items }) {
               <Link href="/">Главная</Link>
               {breadcrumbItems.length > 0 && (
                 <>
-                  <span></span>
+                  <span>/</span>
                   {breadcrumbItems.map((item, index) => (
                     <span key={index}>
                       {item.href ? (
@@ -23,7 +22,7 @@ export default function Breadcrumbs({ items }) {
                       ) : (
                         <a href="#">{item.label}</a>
                       )}
-                      {index < breadcrumbItems.length - 1 && <span></span>}
+                      {index < breadcrumbItems.length - 1 && <span>/</span>}
                     </span>
                   ))}
                 </>

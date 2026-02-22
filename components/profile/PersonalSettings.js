@@ -1,0 +1,118 @@
+// components/profile/PersonalSettings.js
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getProfile, updateProfile } from '@/lib/api/account';
+import { useAuth } from '@/contexts/AuthContext';
+
+export default function PersonalSettings() {
+  const { isAuth, isHydrated } = useAuth();
+
+  const [telegramConsent,  setTelegramConsent]  = useState(false);
+  const [emailConsent,     setEmailConsent]     = useState(false);
+  const [loading,          setLoading]          = useState(true);
+  const [savingTelegram,   setSavingTelegram]   = useState(false);
+  const [savingEmail,      setSavingEmail]      = useState(false);
+
+  useEffect(() => {
+    if (!isHydrated || !isAuth) return;
+
+    async function load() {
+      try {
+        const profile = await getProfile();
+        // gdpr_consent → Telegram, newsletter_consent → Email
+        setTelegramConsent(!!profile.gdpr_consent);
+        setEmailConsent(!!profile.newsletter_consent);
+      } catch (e) {
+        console.error('PersonalSettings: ошибка загрузки', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [isHydrated, isAuth]);
+
+  async function handleTelegramToggle() {
+    const newValue = !telegramConsent;
+    setTelegramConsent(newValue);
+    setSavingTelegram(true);
+    try {
+      await updateProfile({ gdpr_consent: newValue });
+    } catch (e) {
+      // Откатываем если ошибка
+      setTelegramConsent(!newValue);
+      console.error('Ошибка сохранения Telegram consent', e);
+    } finally {
+      setSavingTelegram(false);
+    }
+  }
+
+  async function handleEmailToggle() {
+    const newValue = !emailConsent;
+    setEmailConsent(newValue);
+    setSavingEmail(true);
+    try {
+      await updateProfile({ newsletter_consent: newValue });
+    } catch (e) {
+      setEmailConsent(!newValue);
+      console.error('Ошибка сохранения Email consent', e);
+    } finally {
+      setSavingEmail(false);
+    }
+  }
+
+  if (loading) {
+    return <div className="profile-loading">Загружаем настройки…</div>;
+  }
+
+  return (
+    <div className="content">
+
+      {/* Telegram */}
+      <div className="setting">
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={telegramConsent}
+            onChange={handleTelegramToggle}
+            disabled={savingTelegram}
+          />
+          <span className="slider" />
+        </label>
+        <div className="setting-info">
+          <div className="setting-title">
+            Получение рекламно-информационных рассылок через Telegram
+          </div>
+          <div className="setting-desc">
+            Без согласия вы не сможете оперативно получать специальные предложения,
+            получать промокоды и можете пропустить акции
+          </div>
+        </div>
+      </div>
+
+      {/* Email */}
+      <div className="setting">
+        <label className="toggle">
+          <input
+            type="checkbox"
+            checked={emailConsent}
+            onChange={handleEmailToggle}
+            disabled={savingEmail}
+          />
+          <span className="slider" />
+        </label>
+        <div className="setting-info">
+          <div className="setting-title">
+            Получение рекламно-информационных рассылок через Email
+          </div>
+          <div className="setting-desc">
+            Без согласия вы не сможете получать на ваш email специальные предложения,
+            получать промокоды и можете пропустить акции
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}

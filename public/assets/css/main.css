@@ -3083,7 +3083,7 @@ main {
 
 .reg-start {
     --bs-modal-width: 492px;
-    top: 30%;
+    top: 10%;
 }
 
 .reg-start .modal-header {
@@ -3126,6 +3126,10 @@ main {
     letter-spacing: 0.5px;
     font-weight: 400;
     color: #9E9E9E;
+}
+
+.the-name{
+    margin-bottom: 16px;
 }
 
 .the-mail {

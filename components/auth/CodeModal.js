@@ -130,7 +130,7 @@ export default function CodeModal({
                   e.preventDefault();
                   onResend?.();
                 }}
-                style={{ display: 'inline-block', marginTop: 10 }}
+                style={{ display: 'block', marginTop: 10 }}
               >
                 Повторный запрос звонка через <span className="code-count">{countdownText}</span>
               </a>
