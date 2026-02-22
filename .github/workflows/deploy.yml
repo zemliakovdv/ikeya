@@ -57,7 +57,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
-          source: Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,context,data,mockData,modals,scripts,styles,jsconfig.json
+          source: Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,contexts,data,mockData,modals,scripts,styles,jsconfig.json
           target: /home/${{ secrets.DEPLOY_USER }}/apps/ikea_front
           rm: true
 
