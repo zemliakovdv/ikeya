@@ -8,6 +8,28 @@ import RelatedProducts from '@/components/product/RelatedProducts';
 import SimilarProducts from '@/components/product/SimilarProducts'; // Новая секция
 import { getRelatedAndSimilarProducts } from '@/lib/utils/productHelpers';
 
+export async function generateMetadata({ params }) {
+  const { slug } = params;
+  const sku = extractSKU(slug);
+  
+  try {
+    const productData = await getProduct(sku);
+    if (!productData?.data?.attributes?.seo) return {};
+    
+    const seo = productData.data.attributes.seo;
+    return {
+      title: seo.title,
+      description: seo.description,
+      keywords: seo.keywords,
+      robots: seo.robots,
+    };
+  } catch (error) {
+    console.error('generateMetadata product error:', error);
+    return {};
+  }
+}
+
+
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
 // Извлекаем SKU из slug

@@ -17,6 +17,31 @@ import {
   flattenCategoriesTree
 } from '@/lib/utils/categoryHelpers';
 
+export async function generateMetadata({ params }) {
+  const { slug } = params;
+  const currentIkeaId = slug[slug.length - 1];
+
+  try {
+    const categoriesResponse = await getCategoriesTree();
+    const allCategories = flattenCategoriesTree(categoriesResponse.data);
+    const currentCategory = findCategoryByIkeaId(allCategories, currentIkeaId);
+    
+    if (!currentCategory?.attributes?.seo) return {};
+    
+    const seo = currentCategory.attributes.seo;
+    return {
+      title: seo.title,
+      description: seo.description,
+      keywords: seo.keywords,
+      robots: seo.robots,
+    };
+  } catch (error) {
+    console.error('generateMetadata category error:', error);
+    return {};
+  }
+}
+
+
 
 export default async function CategoryPage({ params }) {
   const { slug } = params;
