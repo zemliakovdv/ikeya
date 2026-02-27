@@ -1,0 +1,247 @@
+/* ============================================= */
+/* responsive.css */
+/* Desktop-first адаптация */
+/* Базовая верстка (без media) = 1920px */
+/* ============================================= */
+
+
+/* ============================================= */
+/* ≤ 1400px */
+/* Берём макет 1400px */
+/* Корректируем контейнеры, сетку, отступы */
+/* ============================================= */
+@media (max-width: 1400px) {
+    .container {
+        max-width: 1336px;
+    }
+
+    .header-bottom-inner {
+        gap: 8px;
+    }
+
+    /* Выпадающее меню */
+    .profile-dropdown {
+        top: 105px;
+        right: 258px;
+    }
+
+    .categories-card-img img {
+        max-width: 114px;
+    }
+
+    .product-card-inner {
+        min-width: 258px;
+        max-width: 258px;
+    }
+
+    .product-gallery-main {
+        height: 236px;
+    }
+
+    .product-gallery-main img {
+        max-width: 236px;
+        max-height: 236px;
+    }
+
+    .pink {
+        top: 227px;
+    }
+
+    .promo-block-inner {
+        gap: 0;
+    }
+
+    .promo-block-info {
+        width: 505px;
+    }
+
+    .promo-card-inner .swiper-slide {
+        min-width: 260px !important;
+        max-width: 260px;
+    }
+
+    .promo-card__gallery img {
+        max-width: 236px;
+        max-height: 236px;
+    }
+
+    .footer-links {
+        width: 254px;
+    }
+
+    .footer-navigation-list {
+        width: 254px;
+    }
+
+    .footer-payment {
+        width: 254px;
+    }
+
+    .all-catalog-inner {
+        margin-bottom: 16px;
+    }
+
+    .catalog-modal-body .category-list {
+        max-width: 360px;
+    }
+
+    .catalog-modal-body .column {
+        width: 325px;
+        max-width: 325px;
+    }
+
+    .category-group .category-item::before {
+        display: none;
+    }
+
+    .catalog-categoties-card {
+        max-width: 146px;
+    }
+
+    .catalog-categoties-banner img {
+        max-width: 114px;
+    }
+}
+
+
+/* ============================================= */
+/* ≤ 1200px */
+/* Берём макет 1200px */
+/* Упрощаем сетку, уменьшаем размеры блоков */
+/* ============================================= */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 1136px;
+    }
+
+    .header-bottom-links {
+        display: none;
+    }
+
+    .header-bottom-swiper {
+        display: block;
+        overflow: hidden;
+    }
+
+    .header-bottom-swiper .swiper-slide {
+        width: auto;
+        /* важно для slidesPerView: auto */
+    }
+
+    /* pill buttons */
+    .header-bottom-swiper .swiper-slide a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        border-radius: 8px;
+        padding: 4px 16px;
+        background: #f2f2f2;
+        /* как на скрине */
+        color: #181818;
+        text-decoration: none;
+        font-size: 14px;
+        line-height: 143%;
+        letter-spacing: 0.02em;
+    }
+
+    /* чтобы справа было место под стрелку */
+    .header-bottom-swiper .swiper {
+        padding-right: 44px;
+    }
+
+    .header-bottom-swiper .swiper .swiper-wrapper{
+        gap: 16px;
+    }
+
+    /* navigation buttons */
+    .header-bottom-swiper-prev,
+    .header-bottom-swiper-next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 32px;
+        border-radius: 999px;
+        border: 1px solid #e5e5e5;
+        background: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 2;
+    }
+
+    .header-bottom-swiper-next {
+        right: 0;
+        top: 80%;
+    }
+
+    .header-bottom-swiper-prev {
+        left: 1%;
+        top: 80%;
+    }
+
+    /* Swiper ставит disabled class */
+    .header-bottom-swiper-prev.is-disabled,
+    .header-bottom-swiper-next.is-disabled {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+
+
+    .start-slider{
+        padding-bottom: 32px;
+    }
+
+    .categories-card-img img{
+        max-width: 109px;
+    }
+
+
+}
+
+
+/* ============================================= */
+/* ≤ 992px */
+/* Берём макет 992px */
+/* Это переход в tablet landscape */
+/* Меню может становиться компактным */
+/* ============================================= */
+@media (max-width: 992px) {}
+
+
+/* ============================================= */
+/* ≤ 768px */
+/* Берём макет 768px */
+/* Планшет portrait */
+/* Часто меняется структура header и сетка каталога */
+/* ============================================= */
+@media (max-width: 768px) {}
+
+
+/* ============================================= */
+/* ≤ 576px */
+/* Берём макет 576px */
+/* Большинство мобильных */
+/* Переход к 1 колонке */
+/* ============================================= */
+@media (max-width: 576px) {}
+
+
+/* ============================================= */
+/* ≤ 360px */
+/* Берём макет 360px */
+/* Малые смартфоны */
+/* Сжимаем отступы, шрифты */
+/* ============================================= */
+@media (max-width: 360px) {}
+
+
+/* ============================================= */
+/* ≤ 320px */
+/* Берём макет 320px */
+/* Минимальная ширина */
+/* Минимизируем всё: padding, font-size, gaps */
+/* ============================================= */
+@media (max-width: 320px) {}

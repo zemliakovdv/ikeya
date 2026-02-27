@@ -1,92 +1,48 @@
-'use client'
+// components/home/AdsBanner.js
+import Link from 'next/link';
+import AdsBannerSlider from '@/components/home/AdsBannerSlider';
+import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-import { useEffect } from 'react'
-import Link from 'next/link'
+const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
-export default function AdsBanner() {
-  useEffect(() => {
-    // Инициализация Swiper после загрузки
-    if (typeof window !== 'undefined' && window.Swiper) {
-      new window.Swiper('.ads-banner-inner', {
-        slidesPerView: 1,
-        spaceBetween: 0,
-        loop: true,
-        pagination: {
-          el: '.ads-banner-slider__pagination',
-          clickable: true,
-        },
-        navigation: {
-          nextEl: '.ads-banner-slider__nav-next',
-          prevEl: '.ads-banner-slider__nav-prev',
-        },
-      })
-    }
-  }, [])
+async function getAdsBanners() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/homepage/slider/banners`, {
+      next: { revalidate: 60 }
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+  } catch (e) {
+    console.error('Ошибка загрузки рекламных баннеров:', e);
+    return [];
+  }
+}
 
-  return (
-    <section className="ads-banner">
-      <div className="container">
-        <div className="row">
-          <div className="col-12">
-            <div className="ads-banner-slider">
-              <div className="ads-banner-inner swiper">
-                <div className="swiper-wrapper">
-                  {/* Слайд 1 */}
-                  <div className="swiper-slide">
-                    <div className="ads-banner-item">
-                      <Link href="#">
-                        <img src="/assets/img/main-page/ads-banner/ads-banner-1.png" alt="Рекламный баннер" />
-                      </Link>
-                      <Link href="#">
-                        <img src="/assets/img/main-page/ads-banner/ads-banner-2.png" alt="Рекламный баннер" />
-                      </Link>
-                    </div>
-                  </div>
+export default async function AdsBanner() {
+  const banners = await getAdsBanners();
 
-                  {/* Слайд 2 */}
-                  <div className="swiper-slide">
-                    <div className="ads-banner-item">
-                      <Link href="#">
-                        <img src="/assets/img/main-page/ads-banner/ads-banner-1.png" alt="Рекламный баннер" />
-                      </Link>
-                      <Link href="#">
-                        <img src="/assets/img/main-page/ads-banner/ads-banner-2.png" alt="Рекламный баннер" />
-                      </Link>
-                    </div>
-                  </div>
+  if (!banners.length) return null;
 
-                  {/* Слайд 3 */}
-                  <div className="swiper-slide">
-                    <div className="ads-banner-item">
-                      <Link href="#">
-                        <img src="/assets/img/main-page/ads-banner/ads-banner-1.png" alt="Рекламный баннер" />
-                      </Link>
-                      <Link href="#">
-                        <img src="/assets/img/main-page/ads-banner/ads-banner-2.png" alt="Рекламный баннер" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
+  const all = banners.map(b => ({
+    id: b.id,
+    variant: b.attributes.variant,
+    image: `${IMAGES_BASE_URL}${b.attributes.image_url}`,
+    link: b.attributes.link_url || '#',
+  }));
 
-              {/* Навигационные кнопки */}
-              <button className="ads-banner-slider__nav ads-banner-slider__nav-prev">
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <button className="ads-banner-slider__nav ads-banner-slider__nav-next">
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
+  const small = all.filter(b => b.variant === 'secondary_742x256');
+  const large = all.filter(b => b.variant === 'secondary_1500x256');
 
-              {/* Пагинация (дотсы) */}
-              <div className="ads-banner-slider__pagination"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
+  // Приоритет у 742x256, если их нет — берём 1500x256
+  const mapped = small.length > 0 ? small : large;
+
+
+  // Группируем по 2 на слайд
+  const slides = [];
+  for (let i = 0; i < mapped.length; i += 2) {
+    slides.push(mapped.slice(i, i + 2));
+  }
+
+  return <AdsBannerSlider slides={slides} />;
 }

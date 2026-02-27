@@ -1,207 +1,141 @@
-// components/home/ProductTabsSection.js
-'use client';
+// components/home/RecommendedSection.js
+import { getAllCategories, getCategory, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import ProductTabsSection from '@/components/home/ProductTabsSection';
 
-import { useEffect, useRef } from 'react';
-import ProductCard from '@/components/ui/ProductCard';
+const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
-export default function ProductTabsSection({ 
-  title = 'Товары', 
-  tabs = [], 
-  tabProducts = {}, 
-  sectionClass = 'products-tabs',
-  showNewBadge = false 
-}) {
-  const swipersRef = useRef({});
+async function getAllRecommended() {
+  let allProducts = [];
+  let page = 1;
+  const perPage = 100;
 
-  useEffect(() => {
-    // Проверяем наличие Swiper
-    if (typeof window === 'undefined' || !window.Swiper) {
-      return;
+  try {
+    while (true) {
+      const res = await fetch(
+        `${API_BASE_URL}/products/recommended?page=${page}&per_page=${perPage}`,
+        { next: { revalidate: 60 } }
+      );
+      if (!res.ok) break;
+      const data = await res.json();
+      const products = data.data || [];
+      allProducts = allProducts.concat(products);
+      if (products.length < perPage) break;
+      page++;
     }
-
-    // Уничтожаем старые инстансы
-    Object.values(swipersRef.current).forEach(swiper => {
-      if (swiper) swiper.destroy(true, true);
-    });
-    swipersRef.current = {};
-
-    // Инициализируем слайдеры для каждого таба
-    document.querySelectorAll('.products-slider').forEach((slider) => {
-      const sliderId = slider.getAttribute('data-slider');
-      
-      swipersRef.current[sliderId] = new window.Swiper(slider, {
-        slidesPerView: 1,
-        spaceBetween: 0,
-        loop: false,
-        speed: 600,
-        pagination: {
-          el: slider.querySelector('.products-slider__pagination'),
-          clickable: true,
-        },
-        navigation: {
-          nextEl: slider.querySelector('.products-slider__nav-next'),
-          prevEl: slider.querySelector('.products-slider__nav-prev'),
-        },
-      });
-    });
-
-    // Инициализируем галереи товаров
-    document.querySelectorAll('.product-gallery-main').forEach((gallery) => {
-      const galleryId = gallery.getAttribute('data-gallery');
-      const thumbs = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
-      
-      let thumbsSwiper = null;
-      if (thumbs) {
-        thumbsSwiper = new window.Swiper(thumbs, {
-          spaceBetween: 8,
-          slidesPerView: 3,
-          freeMode: true,
-          watchSlidesProgress: true,
-        });
-      }
-
-      new window.Swiper(gallery, {
-        spaceBetween: 10,
-        navigation: {
-          nextEl: gallery.querySelector('.swiper-button-next'),
-          prevEl: gallery.querySelector('.swiper-button-prev'),
-        },
-        thumbs: thumbsSwiper ? {
-          swiper: thumbsSwiper,
-        } : undefined,
-      });
-    });
-
-    console.log('✅ Слайдеры товаров инициализированы');
-
-    // Cleanup
-    return () => {
-      Object.values(swipersRef.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true);
-      });
-    };
-  }, [tabs, tabProducts]);
-
-  // Если нет табов или товаров, не рендерим секцию
-  if (tabs.length === 0 || Object.keys(tabProducts).length === 0) {
-    return null;
+  } catch (e) {
+    console.error('Ошибка загрузки рекомендованных товаров:', e);
   }
 
-  // Функция для разбивки товаров на слайды по 5 штук
-  const chunkProducts = (products, size = 5) => {
-    const chunks = [];
-    for (let i = 0; i < products.length; i += size) {
-      chunks.push(products.slice(i, i + size));
-    }
-    return chunks;
+  return allProducts;
+}
+
+function mapProductToCard(product) {
+  const attr = product.attributes;
+
+  let images = [];
+  if (Array.isArray(attr.local_images) && attr.local_images.length > 0) {
+    images = attr.local_images.map(img =>
+      `${IMAGES_BASE_URL}${img.startsWith('/') ? img : '/' + img}`
+    );
+  }
+
+  return {
+    id: product.id,
+    title: attr.name_ru || attr.name || 'Без названия',
+    description: attr.collection || attr.name_ru || 'Описание скоро появится',
+    price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',
+    images,
+    badges: [
+      attr.is_bestseller && 'hit',
+      attr.is_popular && 'promo',
+    ].filter(Boolean),
+    url: `/product/${attr.slug}-${attr.sku}`,
+    categoryId: attr.category_id,
   };
+}
+
+export default async function RecommendedSection() {
+  const [allProducts, allCategoriesData] = await Promise.all([
+    getAllRecommended(),
+    getAllCategories()
+  ]);
+
+  if (!allProducts.length) return null;
+
+  const allMapped = allProducts.map(mapProductToCard);
+
+  // Строим categoryMap из плоского списка
+  const categoryMap = new Map();
+  if (Array.isArray(allCategoriesData)) {
+    allCategoriesData.forEach(cat => {
+      const name = cat.attributes?.translated_name || cat.attributes?.name;
+      if (name) categoryMap.set(cat.id, name);
+    });
+  }
+
+  // Догружаем недостающие категории (корневые)
+  const uniqueCategoryIds = [...new Set(allMapped.map(p => p.categoryId).filter(Boolean))];
+  const missingIds = uniqueCategoryIds.filter(id => !categoryMap.has(id));
+
+  if (missingIds.length > 0) {
+    await Promise.all(
+      missingIds.map(async (id) => {
+        try {
+          const response = await getCategory(id);
+          const cat = response?.data;
+          if (cat) {
+            const name = cat.attributes?.translated_name || cat.attributes?.name;
+            if (name) categoryMap.set(cat.id, name);
+          }
+        } catch (e) {}
+      })
+    );
+  }
+
+  // Группируем по категориям
+  const groupedByCategory = {};
+  allMapped.forEach(product => {
+    const catId = product.categoryId;
+    if (!catId || !categoryMap.has(catId)) return;
+
+    if (!groupedByCategory[catId]) {
+      groupedByCategory[catId] = {
+        categoryName: categoryMap.get(catId),
+        products: []
+      };
+    }
+    groupedByCategory[catId].products.push(product);
+  });
+
+  // Формируем табы
+  let tabs = [];
+  const allTabProducts = {};
+
+  Object.entries(groupedByCategory).forEach(([catId, { categoryName, products }]) => {
+    const limited = products.slice(0, 15);
+    if (!limited.length) return;
+    tabs.push({ id: catId, label: categoryName });
+    allTabProducts[catId] = limited;
+  });
+
+  tabs.sort((a, b) => a.label.localeCompare(b.label, 'ru'));
+
+  const MAX_TABS = 7;
+  const limitedTabs = tabs.slice(0, MAX_TABS);
+
+  const limitedTabProducts = {};
+  limitedTabs.forEach(tab => {
+    limitedTabProducts[tab.id] = allTabProducts[tab.id];
+  });
+
+  if (!limitedTabs.length) return null;
 
   return (
-    <section className={sectionClass}>
-      <div className="container">
-        <div className="row">
-          <div className="col-12">
-            <h2>{title}</h2>
-
-            {/* Табы навигации */}
-            <ul className="nav products-tabs__nav" id={`${sectionClass}-tabs`} role="tablist">
-              {tabs.map((tab, index) => (
-                <li key={tab.id} className="nav-item" role="presentation">
-                  <button 
-                    className={`nav-link products-tabs__link ${index === 0 ? 'active' : ''}`}
-                    id={`${sectionClass}-${tab.id}-tab`}
-                    data-bs-toggle="tab"
-                    data-bs-target={`#${sectionClass}-${tab.id}`}
-                    type="button"
-                    role="tab"
-                  >
-                    {tab.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            {/* Контент табов */}
-            <div className="tab-content products-tabs__content" id={`${sectionClass}-content`}>
-              {tabs.map((tab, index) => {
-                const products = tabProducts[tab.id] || [];
-                const slides = chunkProducts(products, 5);
-
-                return (
-                  <div 
-                    key={tab.id}
-                    className={`tab-pane fade ${index === 0 ? 'show active' : ''}`}
-                    id={`${sectionClass}-${tab.id}`}
-                    role="tabpanel"
-                  >
-                    {products.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-                        <p>Нет товаров в этой категории</p>
-                      </div>
-                    ) : (
-                      <div className="products-card-slider">
-                        <div 
-                          className="products-slider swiper" 
-                          data-slider={`${sectionClass}-${tab.id}`}
-                        >
-                          <div className="swiper-wrapper">
-                            {slides.map((slideProducts, slideIndex) => (
-                              <div key={slideIndex} className="swiper-slide">
-                                <div className="row g-4 swiper-slide-inner">
-                                  {slideProducts.map((product) => (
-                                    <ProductCard
-                                      key={product.id}
-                                      gallery={`${sectionClass}-${product.id}`}
-                                      title={product.title}
-                                      description={product.description}
-                                      price={product.price}
-                                      images={product.images}
-                                      salesHit={product.badges?.includes('hit')}
-                                      promo={product.badges?.includes('promo')}
-                                      isNew={showNewBadge || product.badges?.includes('new')}
-                                      url={product.url}
-                                    />
-                                  ))}
-                                  
-                                  {/* Заполнение пустых слотов для последнего слайда */}
-                                  {slideProducts.length < 5 && Array.from({ length: 5 - slideProducts.length }).map((_, i) => (
-                                    <div key={`empty-${i}`} className="col-lg-3 col-md-4 col-sm-6" style={{ visibility: 'hidden' }} />
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Пагинация (показываем только если больше 1 слайда) */}
-                          {slides.length > 1 && (
-                            <div className="products-slider__pagination"></div>
-                          )}
-
-                          {/* Навигация (показываем только если больше 1 слайда) */}
-                          {slides.length > 1 && (
-                            <>
-                              <button className="products-slider__nav products-slider__nav-prev">
-                                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </button>
-                              <button className="products-slider__nav products-slider__nav-next">
-                                <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <ProductTabsSection
+      title="Рекомендованные товары"
+      tabs={limitedTabs}
+      tabProducts={limitedTabProducts}
+      sectionClass="recommended-tabs"
+    />
   );
 }

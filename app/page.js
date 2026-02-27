@@ -2,145 +2,40 @@
 import StartSlider from '@/components/home/StartSlider';
 import PopularCategoriesSection from '@/components/home/PopularCategoriesSection';
 import BestsellersSection from '@/components/home/BestsellersSection';
-import ProductTabsSection from '@/components/home/ProductTabsSection';
-import PromoBlock from '@/components/home/PromoBlock';
+import PromoBlockServer from '@/components/home/PromoBlockServer';
 import AdsBanner from '@/components/home/AdsBanner';
 import BlogSection from '@/components/home/BlogSection';
 import SeoSection from '@/components/home/SeoSection';
-import { getProducts, getNewProducts } from '@/lib/api/ikea';
+import NewArrivalsSection from '@/components/home/NewArrivalsSection';
+import RecommendedSection from '@/components/home/RecommendedSection';
+import { getMainSliderBanners } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'http://45.135.234.22';
+export async function generateMetadata() {
+  const { meta } = await getMainSliderBanners();
+  const seo = meta.seo || {};
 
-function mapProductToCard(product) {
-  const attr = product.attributes;
-  
-  let images = [];
-  
-  if (attr.local_images) {
-    try {
-      const localImagesArray = typeof attr.local_images === 'string' 
-        ? JSON.parse(attr.local_images) 
-        : attr.local_images;
-      
-      if (Array.isArray(localImagesArray) && localImagesArray.length > 0) {
-        images = localImagesArray.map(img => `${API_BASE_URL}/${img}`);
-      }
-    } catch (e) {
-      console.error('Ошибка парсинга local_images для:', attr.name_ru, e);
-    }
-  }
-  
   return {
-    id: product.id,
-    title: attr.name_ru || attr.name || 'Без названия',
-    description: attr.short_description_ru 
-      || attr.content_ru 
-      || attr.collection 
-      || attr.name_ru 
-      || 'Описание скоро появится',
-    price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',
-    images: images,
-    badges: [
-      attr.is_bestseller && 'hit',
-      attr.is_popular && 'promo'
-    ].filter(Boolean),
-    url: `/catalog/${attr.sku || product.id}`,
-    categoryId: attr.category_id,
-    categoryName: attr.category_name
+    title: seo.title || 'IKEYA – интернет-магазин мебели и товаров для дома',
+    description: seo.description || 'Купить мебель в Минске с доставкой по Беларуси',
+    keywords: seo.keywords,
+    robots: seo.robots,
+    openGraph: {
+      title: seo.title,
+      description: seo.description,
+    },
   };
-}
-
-function filterByCategoryId(products, categoryIds) {
-  return products.filter(p => categoryIds.includes(p.categoryId));
 }
 
 export default async function Home() {
-  
-  const [popularResponse, newResponse] = await Promise.all([
-    getProducts({ is_popular: true, per_page: 150 }),
-    getNewProducts({ per_page: 150 })
-  ]);
-
-  const allPopularProducts = popularResponse.data.map(mapProductToCard);
-  const allNewProducts = newResponse.data.map(mapProductToCard);
-
-  // ID категорий
-  const LIGHTING_IDS = ['li001', 'li002', 'li003'];
-  const SOFAS_IDS = ['fu002', 'fu004'];
-  const TABLES_IDS = ['fu001', 'fu003'];
-  const STORAGE_IDS = ['st001', 'st002', 'st003', 'st004', 'st007', '16202'];
-  const OUTDOOR_IDS = ['od001', 'od003', '21964', '21966', '21967', 'pp001', 'pp004'];
-  const KITCHEN_IDS = ['ka001', 'ka002', 'ka003', 'kt001'];
-  const TEXTILES_IDS = ['tl001', 'tl002'];
-  const DECOR_IDS = ['de001', 'de002', '10757'];
-  const BATHROOM_IDS = ['ba001', 'ba002'];
-
-  // РЕКОМЕНДОВАННЫЕ ТОВАРЫ - 7 табов
-  const recommendedTabs = [
-    { id: 'storage', label: 'Хранение' },
-    { id: 'lighting', label: 'Освещение' },
-    { id: 'sofas', label: 'Диваны и кресла' },
-    { id: 'kitchen', label: 'Кухня' },
-    { id: 'textiles', label: 'Текстиль' },
-    { id: 'decor', label: 'Декор' },
-    { id: 'bathroom', label: 'Ванная' }
-  ];
-
-  const recommendedProducts = {
-    storage: filterByCategoryId(allPopularProducts, STORAGE_IDS).slice(0, 15),
-    lighting: filterByCategoryId(allPopularProducts, LIGHTING_IDS).slice(0, 15),
-    sofas: filterByCategoryId(allPopularProducts, SOFAS_IDS).slice(0, 15),
-    kitchen: filterByCategoryId(allPopularProducts, KITCHEN_IDS).slice(0, 15),
-    textiles: filterByCategoryId(allPopularProducts, TEXTILES_IDS).slice(0, 15),
-    decor: filterByCategoryId(allPopularProducts, DECOR_IDS).slice(0, 15),
-    bathroom: filterByCategoryId(allPopularProducts, BATHROOM_IDS).slice(0, 15)
-  };
-
-  // НОВИНКИ - 7 табов
-  const newTabs = [
-    { id: 'storage', label: 'Хранение' },
-    { id: 'lighting', label: 'Освещение' },
-    { id: 'tables', label: 'Столы и стулья' },
-    { id: 'sofas', label: 'Диваны и кресла' },
-    { id: 'outdoor', label: 'Сад и балкон' },
-    { id: 'kitchen', label: 'Кухня' },
-    { id: 'textiles', label: 'Текстиль' }
-  ];
-
-  const newProducts = {
-    storage: filterByCategoryId(allNewProducts, STORAGE_IDS).slice(0, 15),
-    lighting: filterByCategoryId(allNewProducts, LIGHTING_IDS).slice(0, 15),
-    tables: filterByCategoryId(allNewProducts, TABLES_IDS).slice(0, 15),
-    sofas: filterByCategoryId(allNewProducts, SOFAS_IDS).slice(0, 15),
-    outdoor: filterByCategoryId(allNewProducts, OUTDOOR_IDS).slice(0, 15),
-    kitchen: filterByCategoryId(allNewProducts, KITCHEN_IDS).slice(0, 15),
-    textiles: filterByCategoryId(allNewProducts, TEXTILES_IDS).slice(0, 15)
-  };
-
   return (
     <main className="main">
       <StartSlider />
       <PopularCategoriesSection />
       <BestsellersSection />
-      <PromoBlock />
-
-      <ProductTabsSection
-        title="Рекомендованные товары"
-        tabs={recommendedTabs}
-        tabProducts={recommendedProducts}
-        sectionClass="recommended-tabs"
-      />
-
+      <PromoBlockServer />
+      <RecommendedSection />
       <AdsBanner />
-
-      <ProductTabsSection
-        title="Новинки"
-        tabs={newTabs}
-        tabProducts={newProducts}
-        sectionClass="new-tabs"
-        showNewBadge={true}
-      />
-
+      <NewArrivalsSection />
       <BlogSection />
       <SeoSection />
     </main>

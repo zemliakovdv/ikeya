@@ -36,6 +36,8 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/pvz.css" />
         <link rel="stylesheet" href="/assets/css/profile.css" />
         <link rel="stylesheet" href="/assets/css/main.css" />
+        <link rel="stylesheet" href="/assets/css/article.css" />
+        <link rel="stylesheet" href="/assets/css/responsive.css" />
       </head>
       <body>
         <CartProvider>

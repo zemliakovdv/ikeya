@@ -1,0 +1,229 @@
+.the-detail {
+    margin-bottom: 56px;
+}
+
+.the-detail__content {
+    max-width: 1136px;
+    margin: 0 auto;
+    margin-bottom: 40px;
+}
+
+.the-detail-more .blog-slider {
+    padding-bottom: 16px;
+}
+
+.the-detail__content h1 {
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 133%;
+    color: #181818;
+    margin-bottom: 12px;
+}
+
+.the-detail__content p {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    letter-spacing: 0.03em;
+    color: #181818;
+    margin-bottom: 32px;
+}
+
+.the-detail__cheaps {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.detail-cheaps__item {
+    padding: 2px 8px;
+    background: #0058a3;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 133%;
+    letter-spacing: 0.04em;
+    color: #fff;
+}
+
+.deatil-cheaps__date {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #616161;
+}
+
+.text-with-big-image img {
+    width: 100%;
+    min-height: 600px;
+    max-height: 600px;
+    border-radius: 8px;
+    margin-bottom: 32px;
+    object-fit: cover;
+}
+
+.right-text-left-image,
+.left-text-right-image {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 32px;
+}
+
+.right-text-left-image img,
+.left-text-right-image img {
+    width: 552px;
+    max-width: 552px;
+    height: 735px;
+    max-height: 735px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.text-container{
+    width: 552px;
+    max-width: 552px;
+}
+
+.text-container h5 {
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 127%;
+    color: #181818;
+    margin-bottom: 16px;
+}
+
+.the-detail__content .text-container p {
+    margin-bottom: 16px;
+}
+
+.article-detail-button-transparent {
+    border: 1px solid #0058a3;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: inline-block;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    text-align: center;
+    color: #0058a3;
+    cursor: pointer;
+}
+
+.the-detail__content .products-slider__pagination{
+    bottom: 0 !important;
+}
+
+.the-detail__content .products-slider {
+    padding-bottom: 26px;
+}
+
+.the-detail__content .swiper-slide-inner {
+    justify-content: unset;
+    padding: 0;
+}
+
+.the-detail__content .product-card-inner {
+    min-width: 278px;
+    max-width: 278px;
+    margin-top: 0;
+    max-height: fit-content;
+}
+
+.the-detail__content .product-card-inner .product-gallery-main{
+    height: 254px;
+}
+
+.the-detail__content .product-card-inner .product-gallery-main img {
+    width: 100%;
+    max-width: 254px;
+    max-height: 254px;
+    object-fit: cover;
+}
+
+.the-detail__content .product-card__title {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    color: #181818;
+}
+
+.the-detail__content .product-card__description {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #757575;
+    margin-bottom: 8px;
+}
+
+.the-detail__content .product-card__price {
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 133%;
+    color: #181818;
+    margin-bottom: 8px;
+}
+
+.the-detail__content .product-card__price span {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    color: #181818;
+}
+
+.the-detail__content .shop_button p {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 0;
+}
+
+.grid-of-goods {
+    margin-bottom: 32px;
+}
+
+.text-button-two-image h5 {
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 127%;
+    color: #181818;
+    margin-bottom: 16px;
+}
+
+.the-detail__content .text-button-two-image p {
+    margin-bottom: 16px;
+}
+
+.text-button-two-image .article-detail-button-transparent {
+    margin-bottom: 16px;
+}
+
+.two-image-inner {
+    display: flex;
+    gap: 32px;
+}
+
+.two-image-inne img {
+    width: 552px;
+    max-width: 552px;
+    height: 735px;
+    max-height: 735px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.the-detail-more h4 {
+    font-weight: 600;
+    font-size: 24px;
+    line-height: 133%;
+    color: #181818;
+    margin-bottom: 24px;
+}

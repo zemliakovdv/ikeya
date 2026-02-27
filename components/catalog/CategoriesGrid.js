@@ -17,7 +17,6 @@ export default function CategoriesGrid({ categories = [], limit = null, showTitl
       {showTitle && <h2 style={{ marginBottom: '20px' }}>Популярные категории</h2>}
       <div className="catalog-categories-items">
         {displayCategories.map((category) => {
-          // Поддержка двух форматов: готовый объект или данные из API
           let name, image, url, categoryId;
 
           if (category.name && category.href) {
@@ -27,22 +26,22 @@ export default function CategoriesGrid({ categories = [], limit = null, showTitl
             url = category.href;
             categoryId = category.id;
           } else if (category.attributes) {
-            // ✅ ИСПРАВЛЕНО: ikea_id находится в корне, не в attributes
-            categoryId = category.id; // ikea_id
+            categoryId = category.id;
             const attr = category.attributes;
             name = attr.translated_name || attr.name || 'Категория';
-            
+
             if (attr.local_image_path) {
-              image = attr.local_image_path.startsWith('http') 
-                ? attr.local_image_path 
+              image = attr.local_image_path.startsWith('http')
+                ? attr.local_image_path
                 : `${API_BASE_URL}/${attr.local_image_path}`;
             } else if (attr.remote_image_url) {
               image = attr.remote_image_url;
             } else {
               image = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(name.slice(0, 15))}`;
             }
-            
-            url = `/catalog/${categoryId}`;
+
+            // ✅ используем slug вместо ikea_id
+            url = `/catalog/${attr.slug || categoryId}`;
           } else {
             return null;
           }
@@ -51,8 +50,8 @@ export default function CategoriesGrid({ categories = [], limit = null, showTitl
             <div key={categoryId} className="catalog-categoties-card">
               <Link href={url} className="catalog-categoties-card-link">
                 <div className="catalog-categoties-banner">
-                  <img 
-                    src={image} 
+                  <img
+                    src={image}
                     alt={name}
                     onError={(e) => {
                       e.target.src = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(name.slice(0, 15))}`;

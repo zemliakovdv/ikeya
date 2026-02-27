@@ -336,6 +336,16 @@ h2 {
     letter-spacing: 0.25px;
 }
 
+.header-bottom-links {
+    display: flex;
+    gap: 16px;
+    flex-wrap: nowrap;
+}
+
+.header-bottom-swiper {
+    display: none;
+}
+
 
 main {
     padding-top: 24px;
@@ -2017,7 +2027,8 @@ main {
     cursor: pointer;
 }
 
-.all-catalog-items, .products-grid {
+.all-catalog-items,
+.products-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -2174,96 +2185,97 @@ main {
 }
 
 .category-sidebar {
-  background: #fff;
-  border-radius: 0;
+    background: #fff;
+    border-radius: 0;
 }
 
 .category-sidebar__title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: #111;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #111;
 }
 
 .category-tree {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 /* Родительские категории (breadcrumb) */
 .category-tree__item {
-  margin-left: 0;
+    margin-left: 0;
 }
 
 .category-tree__item.level-1 {
-  margin-left: 0;
+    margin-left: 0;
 }
 
 .category-tree__item.level-2 {
-  margin-left: 32px;
+    margin-left: 32px;
 }
 
 .category-tree__item.level-3 {
-  margin-left: 48px;
+    margin-left: 48px;
 }
 
 .category-tree__item.level-4 {
-  margin-left: 64px;
+    margin-left: 64px;
 }
 
 .category-tree__link {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 4px;
-  color: #111;
-  text-decoration: none;
-  font-size: 14px;
-  transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 4px;
+    color: #111;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
 }
 
 .category-tree__link:hover {
-  color: #0058a3;
+    color: #0058a3;
 }
 
 .category-tree__link.current {
-  font-weight: 600;
-  color: #111;
+    font-weight: 600;
+    color: #111;
 }
 
 .category-tree__link .chevron {
-  font-size: 16px;
-  color: #666;
+    font-size: 16px;
+    color: #666;
 }
 
 /* Дочерние категории */
 .category-tree__children {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .category-tree__child {
-  padding: 10px 16px;
-  margin-left: 6px; /* Отступ для дочерних */
-  color: #111;
-  text-decoration: none;
-  font-size: 14px;
-  border-radius: 4px;
-  transition: background 0.2s, color 0.2s;
-  display: block;
+    padding: 10px 16px;
+    margin-left: 6px;
+    /* Отступ для дочерних */
+    color: #111;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: background 0.2s, color 0.2s;
+    display: block;
 }
 
 .category-tree__child:hover {
-  background: #f5f5f5;
-  color: #0058a3;
+    background: #f5f5f5;
+    color: #0058a3;
 }
 
 .category-tree__child.active {
-  background: #0058a3;
-  color: #fff;
-  font-weight: 500;
+    background: #0058a3;
+    color: #fff;
+    font-weight: 500;
 }
 
 
@@ -3128,7 +3140,7 @@ main {
     color: #9E9E9E;
 }
 
-.the-name{
+.the-name {
     margin-bottom: 16px;
 }
 
@@ -3752,18 +3764,18 @@ main {
 }
 
 .products-card-slider .swiper-slide-inner {
-  margin: 0 !important;
-  padding: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .products-card-slider .product-card-inner {
-  padding: 0 !important;
+    padding: 0 !important;
 }
 
 .products-card-slider .swiper-slide {
-  height: auto;
-  max-width: fit-content !important;
-  margin-right: 0 !important;
+    height: auto;
+    max-width: fit-content !important;
+    margin-right: 0 !important;
 }
 
 
@@ -3887,7 +3899,7 @@ main {
     margin-bottom: 24px;
 }
 
-.size-info__item:last-child{
+.size-info__item:last-child {
     margin-bottom: 24px;
 }
 
@@ -6771,136 +6783,4 @@ main {
     letter-spacing: 0.01em;
     text-align: right;
     color: #00910a;
-}
-
-/* Large Desktop (1400px - 1919px) */
-@media (max-width: 1919px) {
-    /* Стили для макета 1400px */
-
-    .container {
-        max-width: 1336px;
-    }
-
-    .header-bottom-inner {
-        gap: 8px;
-    }
-
-    /* Выпадающее меню */
-    .profile-dropdown {
-        top: 105px;
-        right: 258px;
-    }
-
-    .categories-card-img img {
-        max-width: 114px;
-    }
-
-    .product-card-inner {
-        min-width: 258px;
-        max-width: 258px;
-    }
-
-    .product-gallery-main {
-        height: 236px;
-    }
-
-    .product-gallery-main img {
-        max-width: 236px;
-        max-height: 236px;
-    }
-
-    .pink {
-        top: 227px;
-    }
-
-    .promo-block-inner {
-        gap: 0;
-    }
-
-    .promo-block-info {
-        width: 505px;
-    }
-
-    .promo-card-inner .swiper-slide {
-        min-width: 260px !important;
-        max-width: 260px;
-    }
-
-    .promo-card__gallery img {
-        max-width: 236px;
-        max-height: 236px;
-    }
-
-    .footer-links {
-        width: 254px;
-    }
-
-    .footer-navigation-list {
-        width: 254px;
-    }
-
-    .footer-payment {
-        width: 254px;
-    }
-
-    .all-catalog-inner {
-        margin-bottom: 16px;
-    }
-
-    .catalog-modal-body .category-list {
-        max-width: 360px;
-    }
-
-    .catalog-modal-body .column {
-        width: 325px;
-        max-width: 325px;
-    }
-
-    .category-group .category-item::before {
-        display: none;
-    }
-
-    .catalog-categoties-card {
-        max-width: 146px;
-    }
-
-    .catalog-categoties-banner img {
-        max-width: 114px;
-    }
-
-}
-
-/* Desktop (1200px - 1399px) */
-@media (max-width: 1399px) {
-
-    /* Выпадающее меню */
-    .profile-dropdown {
-        top: 105px;
-        right: 20px;
-    }
-}
-
-/* Large Tablet / Small Desktop (992px - 1199px) */
-@media (max-width: 1199px) {
-    /* Стили для макета 992px */
-}
-
-/* Tablet (768px - 991px) */
-@media (max-width: 991px) {
-    /* Стили для макета 768px */
-}
-
-/* Large Mobile (576px - 767px) */
-@media (max-width: 767px) {
-    /* Стили для макета 576px */
-}
-
-/* Mobile (360px - 575px) */
-@media (max-width: 575px) {
-    /* Стили для макета 360px */
-}
-
-/* Small Mobile (320px - 359px) */
-@media (max-width: 359px) {
-    /* Стили для макета 320px */
 }

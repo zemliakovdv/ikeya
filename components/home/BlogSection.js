@@ -1,211 +1,61 @@
-'use client'
+// components/home/BlogSection.js
+import BlogSlider from '@/components/home/BlogSlider';
+import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import Swiper from 'swiper'
-import { Navigation, Pagination } from 'swiper/modules'
+const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
-export default function BlogSection() {
-  const swiperRef = useRef(null)
-  const [mounted, setMounted] = useState(false)
+const CONTENT_TYPE_LABELS = {
+  tips_ideas: 'Советы и идеи',
+  news: 'Новости',
+};
 
-  useEffect(() => {
-    queueMicrotask(() => setMounted(true));
-  }, [])
+async function getArticles() {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/content/articles?per_page=9`,
+      { next: { revalidate: 60 } }
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+  } catch (e) {
+    console.error('Ошибка загрузки статей:', e);
+    return [];
+  }
+}
 
-  // Данные статей блога
-  const blogSlides = [
-    {
-      id: 1,
-      articles: [
-        {
-          id: 'article-1-1',
-          image: '/assets/img/main-page/blog/blog-1.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-1'
-        },
-        {
-          id: 'article-1-2',
-          image: '/assets/img/main-page/blog/blog-1.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-2'
-        },
-        {
-          id: 'article-1-3',
-          image: '/assets/img/main-page/blog/blog-1.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-3'
-        }
-      ]
-    },
-    {
-      id: 2,
-      articles: [
-        {
-          id: 'article-2-1',
-          image: '/assets/img/main-page/blog/blog-2.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-4'
-        },
-        {
-          id: 'article-2-2',
-          image: '/assets/img/main-page/blog/blog-2.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-5'
-        },
-        {
-          id: 'article-2-3',
-          image: '/assets/img/main-page/blog/blog-2.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-6'
-        }
-      ]
-    },
-    {
-      id: 3,
-      articles: [
-        {
-          id: 'article-3-1',
-          image: '/assets/img/main-page/blog/blog-3.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-7'
-        },
-        {
-          id: 'article-3-2',
-          image: '/assets/img/main-page/blog/blog-3.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-8'
-        },
-        {
-          id: 'article-3-3',
-          image: '/assets/img/main-page/blog/blog-3.png',
-          category: 'Гостинная',
-          title: 'Как сделать ванную удобнее: 8 «работающих» идей',
-          description: 'Точечные вмешательства для видимого результата.',
-          link: '/blog/article-9'
-        }
-      ]
+function extractImage(article) {
+  const blocks = article.attributes.body_blocks || [];
+  for (const block of blocks) {
+    const images = block.images || [];
+    const hero = images.find(img => img.slot === 'hero_image') || images[0];
+    if (hero?.url) {
+      // Заменяем localhost на боевой IMAGES_BASE_URL
+      return hero.url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
     }
-  ]
+  }
+  return null;
+}
 
-  useEffect(() => {
-    if (!mounted) return
+export default async function BlogSection() {
+  const articles = await getArticles();
 
-    const initSwiper = () => {
-      const swiperEl = document.querySelector('.blog-inner')
-      
-      if (swiperEl) {
-        try {
-          swiperRef.current = new Swiper('.blog-inner', {
-            modules: [Navigation, Pagination],
-            slidesPerView: 1,
-            spaceBetween: 24,
-            navigation: {
-              nextEl: '.blog-slider__nav-next',
-              prevEl: '.blog-slider__nav-prev'
-            },
-            pagination: {
-              el: '.blog-slider__pagination',
-              clickable: true
-            }
-          })
-        } catch (error) {
-          console.error('Ошибка инициализации слайдера блога:', error)
-        }
-      }
-    }
+  if (!articles.length) return null;
 
-    initSwiper()
+  const mapped = articles.map(a => ({
+    id: a.id,
+    title: a.attributes.title,
+    excerpt: a.attributes.excerpt,
+    category: CONTENT_TYPE_LABELS[a.attributes.content_type] || a.attributes.content_type,
+    image: extractImage(a),
+    link: `/blog/${a.attributes.slug}`,
+  }));
 
-    return () => {
-      if (swiperRef.current) {
-        swiperRef.current.destroy(true, true)
-      }
-    }
-  }, [mounted])
+  // По 3 статьи на слайд
+  const slides = [];
+  for (let i = 0; i < mapped.length; i += 3) {
+    slides.push(mapped.slice(i, i + 3));
+  }
 
-  if (!mounted) return null
-
-  return (
-    <section className="blog">
-      <div className="container">
-        <div className="row">
-          <div className="col-12">
-            <h2>Советы и лайфхакти</h2>
-            
-            <div className="blog-slider">
-              <div className="blog-inner swiper">
-                <div className="swiper-wrapper">
-                  {blogSlides.map(slide => (
-                    <div key={slide.id} className="swiper-slide">
-                      <div className="blog-item">
-                        {slide.articles.map(article => (
-                          <div key={article.id} className="blog-card">
-                            <Image 
-                              src={article.image} 
-                              alt={article.title}
-                              width={400}
-                              height={300}
-                            />
-                            <span>{article.category}</span>
-                            <h4>{article.title}</h4>
-                            <p>{article.description}</p>
-                            <Link href={article.link}></Link>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Навигационные кнопки */}
-              <button className="blog-slider__nav blog-slider__nav-prev">
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                  <path 
-                    d="M6 1L1 6L6 11" 
-                    stroke="#181818" 
-                    strokeWidth="1.5" 
-                    strokeLinecap="round"
-                    strokeLinejoin="round" 
-                  />
-                </svg>
-              </button>
-              <button className="blog-slider__nav blog-slider__nav-next">
-                <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                  <path 
-                    d="M1 11L6 6L1 1" 
-                    stroke="#181818" 
-                    strokeWidth="1.5" 
-                    strokeLinecap="round"
-                    strokeLinejoin="round" 
-                  />
-                </svg>
-              </button>
-
-              {/* Пагинация */}
-              <div className="blog-slider__pagination"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )
+  return <BlogSlider slides={slides} />;
 }

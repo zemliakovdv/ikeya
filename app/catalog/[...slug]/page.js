@@ -11,7 +11,7 @@ import {
   getChildCategories
 } from '@/lib/api/ikea';
 import {
-  findCategoryByIkeaId,
+  findCategoryBySlug,
   buildCategoryChain,
   buildBreadcrumbs,
   flattenCategoriesTree
@@ -19,15 +19,13 @@ import {
 
 export async function generateMetadata({ params }) {
   const { slug } = params;
-  const currentIkeaId = slug[slug.length - 1];
+  const currentSlug = slug[slug.length - 1];
 
   try {
-    const categoriesResponse = await getCategoriesTree();
-    const allCategories = flattenCategoriesTree(categoriesResponse.data);
-    const currentCategory = findCategoryByIkeaId(allCategories, currentIkeaId);
-    
+    const currentCategory = findCategoryBySlug(allCategories, currentSlug);
+
     if (!currentCategory?.attributes?.seo) return {};
-    
+
     const seo = currentCategory.attributes.seo;
     return {
       title: seo.title,
@@ -36,16 +34,16 @@ export async function generateMetadata({ params }) {
       robots: seo.robots,
     };
   } catch (error) {
+      // ✅ не глотаем redirect
+  if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
     console.error('generateMetadata category error:', error);
-    return {};
+    redirect('/catalog');
   }
 }
 
-
-
 export default async function CategoryPage({ params }) {
   const { slug } = params;
-  const currentIkeaId = slug[slug.length - 1];
+  const currentSlug = slug[slug.length - 1];
 
   try {
     const categoriesResponse = await getCategoriesTree();
@@ -56,12 +54,11 @@ export default async function CategoryPage({ params }) {
     );
 
     const simplifiedRootCategories = rootCategories.map(cat => ({
-      ikea_id: cat.id,
       ikea_id: cat.attributes.ikea_id,
       name: cat.attributes.translated_name
     }));
 
-    const currentCategory = findCategoryByIkeaId(allCategories, currentIkeaId);
+    const currentCategory = findCategoryBySlug(allCategories, currentSlug);
 
     if (!currentCategory) {
       redirect('/catalog');
@@ -70,12 +67,12 @@ export default async function CategoryPage({ params }) {
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbs(categoryChain);
 
-    const childCategoriesResponse = await getChildCategories(currentIkeaId);
+    const childCategoriesResponse = await getChildCategories(currentCategory.id);
     const childCategories = childCategoriesResponse.data || [];
 
     const level = categoryChain.length;
 
-    const productsResponse = await getCategoryProducts(currentIkeaId, 1, 20);
+    const productsResponse = await getCategoryProducts(currentCategory.id, 1, 20);
     const initialProducts = productsResponse.data || [];
 
     const categoryData = prepareCategoryData(categoryChain, childCategories);
@@ -112,7 +109,7 @@ export default async function CategoryPage({ params }) {
                     <ProductSort totalCount={productsResponse.meta?.total || 0} />
                     <InfiniteProductGrid
                       initialProducts={initialProducts}
-                      categoryId={currentIkeaId}
+                      categoryId={currentCategory.id}
                       totalPages={productsResponse.meta?.total_pages || 1}
                     />
                   </>
@@ -133,21 +130,14 @@ export default async function CategoryPage({ params }) {
   }
 }
 
-
 function prepareCategoryData(categoryChain, childCategories) {
   const level = categoryChain.length;
-
-  const current = categoryChain[level - 1];
-  const parent = level >= 2 ? categoryChain[level - 2] : null;
-  const grandParent = level >= 3 ? categoryChain[level - 3] : null;
-  const greatGrandParent = level >= 4 ? categoryChain[level - 4] : null;
-
   return {
-    currentCategory: current,
-    parentCategory: parent,
-    grandParentCategory: grandParent,
-    greatGrandParentCategory: greatGrandParent,
+    currentCategory: categoryChain[level - 1],
+    parentCategory: level >= 2 ? categoryChain[level - 2] : null,
+    grandParentCategory: level >= 3 ? categoryChain[level - 3] : null,
+    greatGrandParentCategory: level >= 4 ? categoryChain[level - 4] : null,
     subcategories: childCategories,
-    level: level
+    level
   };
 }

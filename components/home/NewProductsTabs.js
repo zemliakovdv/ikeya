@@ -1,3 +1,4 @@
+// components/home/NewProductsTabs.js
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
@@ -6,223 +7,138 @@ import Image from 'next/image'
 import Swiper from 'swiper'
 import { Navigation, Pagination, Thumbs } from 'swiper/modules'
 
-export default function NewProductsTabs() {
-  const [activeTab, setActiveTab] = useState('beds')
-  const [mounted, setMounted] = useState(false)
-  const swiperInstances = useRef({})
-  const galleryMainInstances = useRef({})
-  const galleryThumbsInstances = useRef({})
+export default function NewProductsTabs({ tabs = [], tabProducts = {} }) {
+  const [activeTab, setActiveTab] = useState(tabs[0]?.id || null);
+  const [mounted, setMounted] = useState(false);
+  const swiperInstances = useRef({});
+  const galleryMainInstances = useRef({});
+  const galleryThumbsInstances = useRef({});
 
-  // Ждем монтирования компонента
   useEffect(() => {
     queueMicrotask(() => setMounted(true));
-  }, [])
-
-  const tabs = [
-    { id: 'beds', label: 'Освещение' },
-    { id: 'sofas', label: 'Диваны и кресла' },
-    { id: 'lighting', label: 'Освещение' },
-    { id: 'wardrobes', label: 'Шкафы' },
-    { id: 'dressers', label: 'Комоды и тумбочки' },
-    { id: 'storage', label: 'Системы хранения' },
-    { id: 'garden', label: 'Сад и балкон' }
-  ]
-
-  const tabProducts = {
-    beds: [
-      {
-        id: 'beds-1',
-        title: 'STOCKHOLM 2025',
-        description: 'Стул, дуб/ротанг',
-        price: '135.00',
-        images: [
-          '/assets/img/main-page/news/new-1.png',
-          '/assets/img/main-page/news/new-2.png',
-          '/assets/img/main-page/news/new-3.png',
-          '/assets/img/main-page/news/new-4.png',
-          '/assets/img/main-page/news/new-5.png'
-        ],
-        badges: ['hit', 'promo', 'new']
-      },
-      {
-        id: 'beds-2',
-        title: 'SONHULT',
-        description: 'Stoliki, 2 szt., szary/orzech',
-        price: '135.00',
-        images: [
-          '/assets/img/main-page/news/new-2.png',
-          '/assets/img/main-page/news/new-3.png',
-          '/assets/img/main-page/news/new-4.png'
-        ],
-        badges: ['hit', 'promo', 'new']
-      },
-      {
-        id: 'beds-3',
-        title: 'STOCKHOLM 2025',
-        description: 'Стул, дуб/кожа',
-        price: '135.00',
-        images: ['/assets/img/main-page/news/new-3.png'],
-        badges: ['hit', 'promo', 'new']
-      },
-      {
-        id: 'beds-4',
-        title: 'STOCKHOLM 2025',
-        description: 'Журнальный столик, дубовый шпон, стекло',
-        price: '135.00',
-        images: ['/assets/img/main-page/news/new-4.png'],
-        badges: ['hit', 'promo', 'new']
-      },
-      {
-        id: 'beds-5',
-        title: 'ARKELSTORP',
-        description: 'Журнальный столик, черный, 65x140x52 см',
-        price: '135.00',
-        images: ['/assets/img/main-page/news/new-5.png'],
-        badges: ['hit', 'promo', 'new']
-      }
-    ],
-    sofas: [
-      {
-        id: 'sofas-1',
-        title: 'STOCKHOLM 2025',
-        description: 'Стул, дуб/ротанг',
-        price: '135.00',
-        images: ['/assets/img/main-page/news/new-1.png'],
-        badges: ['hit', 'promo', 'new']
-      }
-    ]
-  }
+  }, []);
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || !activeTab) return;
 
-    const initializeSliders = () => {
-      const currentProducts = tabProducts[activeTab] || []
-      
-      // Уничтожаем старые галереи
-      Object.values(galleryMainInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      Object.values(galleryThumbsInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      galleryMainInstances.current = {}
-      galleryThumbsInstances.current = {}
+    const currentProducts = tabProducts[activeTab] || [];
 
-      // Инициализируем галереи для каждого товара
-      currentProducts.forEach((product) => {
-        const thumbsSelector = `[data-gallery-thumbs="${product.id}"]`
-        const mainSelector = `[data-gallery="${product.id}"]`
+    // Уничтожаем старые галереи
+    Object.values(galleryMainInstances.current).forEach(s => s?.destroy(true, true));
+    Object.values(galleryThumbsInstances.current).forEach(s => s?.destroy(true, true));
+    galleryMainInstances.current = {};
+    galleryThumbsInstances.current = {};
 
-        const thumbsEl = document.querySelector(thumbsSelector)
-        const mainEl = document.querySelector(mainSelector)
+    // Инициализируем галереи для каждого товара
+    currentProducts.forEach((product) => {
+      const thumbsSelector = `[data-gallery-thumbs="${product.id}"]`;
+      const mainSelector = `[data-gallery="${product.id}"]`;
+      const thumbsEl = document.querySelector(thumbsSelector);
+      const mainEl = document.querySelector(mainSelector);
 
-        if (thumbsEl && mainEl && product.images.length > 1) {
-          try {
-            const thumbsSwiper = new Swiper(thumbsSelector, {
-              modules: [Thumbs],
-              spaceBetween: 8,
-              slidesPerView: 'auto',
-              watchSlidesProgress: true,
-              freeMode: true
-            })
+      if (thumbsEl && mainEl && product.images.length > 1) {
+        try {
+          const thumbsSwiper = new Swiper(thumbsSelector, {
+            modules: [Thumbs],
+            spaceBetween: 8,
+            slidesPerView: 'auto',
+            watchSlidesProgress: true,
+            freeMode: true
+          });
 
-            const mainSwiper = new Swiper(mainSelector, {
-              modules: [Navigation, Thumbs],
-              spaceBetween: 0,
-              navigation: {
-                nextEl: `${mainSelector} .swiper-button-next`,
-                prevEl: `${mainSelector} .swiper-button-prev`
-              },
-              thumbs: {
-                swiper: thumbsSwiper
-              }
-            })
+          const mainSwiper = new Swiper(mainSelector, {
+            modules: [Navigation, Thumbs],
+            spaceBetween: 0,
+            navigation: {
+              nextEl: `${mainSelector} .swiper-button-next`,
+              prevEl: `${mainSelector} .swiper-button-prev`
+            },
+            thumbs: { swiper: thumbsSwiper }
+          });
 
-            galleryThumbsInstances.current[product.id] = thumbsSwiper
-            galleryMainInstances.current[product.id] = mainSwiper
-          } catch (error) {
-            console.error('Ошибка инициализации галереи:', error)
-          }
+          galleryThumbsInstances.current[product.id] = thumbsSwiper;
+          galleryMainInstances.current[product.id] = mainSwiper;
+        } catch (error) {
+          console.error('Ошибка инициализации галереи:', error);
         }
-      })
-
-      // Уничтожаем старый основной слайдер
-      if (swiperInstances.current[activeTab]) {
-        swiperInstances.current[activeTab].destroy(true, true)
       }
+    });
 
-      // Инициализируем основной слайдер товаров
-      setTimeout(() => {
-        const swiperEl = document.querySelector(`.products-slider[data-slider="${activeTab}"]`)
-        if (swiperEl) {
-          try {
-            const swiper = new Swiper(swiperEl, {
-              modules: [Navigation, Pagination],
-              slidesPerView: 1,
-              spaceBetween: 24,
-              navigation: {
-                nextEl: '.products-slider__nav-next',
-                prevEl: '.products-slider__nav-prev'
-              },
-              pagination: {
-                el: '.products-slider__pagination',
-                clickable: true
-              }
-            })
-            swiperInstances.current[activeTab] = swiper
-          } catch (error) {
-            console.error('Ошибка инициализации основного слайдера:', error)
-          }
-        }
-      }, 100)
+    // Уничтожаем старый основной слайдер
+    if (swiperInstances.current[activeTab]) {
+      swiperInstances.current[activeTab].destroy(true, true);
     }
 
-    initializeSliders()
+    // Инициализируем основной слайдер
+    setTimeout(() => {
+      const swiperEl = document.querySelector(`.products-slider[data-slider="${activeTab}"]`);
+      if (swiperEl) {
+        try {
+          swiperInstances.current[activeTab] = new Swiper(swiperEl, {
+            modules: [Navigation, Pagination],
+            slidesPerView: 1,
+            spaceBetween: 24,
+            navigation: {
+              nextEl: '.products-slider__nav-next',
+              prevEl: '.products-slider__nav-prev'
+            },
+            pagination: {
+              el: '.products-slider__pagination',
+              clickable: true
+            }
+          });
+        } catch (error) {
+          console.error('Ошибка инициализации основного слайдера:', error);
+        }
+      }
+    }, 100);
 
     return () => {
-      Object.values(swiperInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      Object.values(galleryMainInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-      Object.values(galleryThumbsInstances.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true)
-      })
-    }
-  }, [activeTab, mounted])
+      Object.values(swiperInstances.current).forEach(s => s?.destroy(true, true));
+      Object.values(galleryMainInstances.current).forEach(s => s?.destroy(true, true));
+      Object.values(galleryThumbsInstances.current).forEach(s => s?.destroy(true, true));
+    };
+  }, [activeTab, mounted]);
 
-  const renderBadges = (badges) => {
-    return (
-      <>
-        {badges.includes('hit') && <span className="sales-hit">Хит продаж</span>}
-        {badges.includes('promo') && <span className="sales-hit pink">-10% промокод IKEYA</span>}
-        {badges.includes('new') && <span className="sales-hit green">Новинка</span>}
-      </>
-    )
-  }
+  const renderBadges = (badges) => (
+    <>
+      {badges.includes('hit') && <span className="sales-hit">Хит продаж</span>}
+      {badges.includes('new') && <span className="sales-hit green">Новинка</span>}
+    </>
+  );
 
   const renderProductCard = (product) => {
-    const visibleThumbs = product.images.slice(0, 3)
-    const remainingCount = product.images.length - 3
+    const visibleThumbs = product.images.slice(0, 3);
+    const remainingCount = product.images.length - 3;
 
     return (
       <div key={product.id} className="col product-card-inner">
         <div className="product-card">
           <div className="product-card__gallery">
-            <Link href="/shop-card">
+            <Link href={product.url}>
               <div
                 style={{ '--swiper-navigation-color': '#fff', '--swiper-pagination-color': '#fff' }}
                 className="swiper product-gallery-main"
                 data-gallery={product.id}
               >
                 <div className="swiper-wrapper">
-                  {product.images.map((img, idx) => (
-                    <div key={idx} className="swiper-slide">
-                      <Image src={img} alt="Товар" width={300} height={300} />
+                  {product.images.length > 0 ? (
+                    product.images.map((img, idx) => (
+                      <div key={idx} className="swiper-slide">
+                        <img
+                          src={img}
+                          alt={product.title}
+                          onError={(e) => {
+                            e.target.src = '/assets/img/main-page/news/new-1.png';
+                          }}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="swiper-slide">
+                      <img src="/assets/img/main-page/news/new-1.png" alt={product.title} />
                     </div>
-                  ))}
+                  )}
                 </div>
                 {product.images.length > 1 && (
                   <>
@@ -240,7 +156,7 @@ export default function NewProductsTabs() {
                   <div className="swiper-wrapper">
                     {visibleThumbs.map((img, idx) => (
                       <div key={idx} className="swiper-slide">
-                        <Image src={img} alt="Миниатюра" width={60} height={60} />
+                        <img src={img} alt="Миниатюра" />
                       </div>
                     ))}
                     {remainingCount > 0 && (
@@ -255,14 +171,18 @@ export default function NewProductsTabs() {
           </div>
 
           <div className="product-card__info">
-            <h3 className="product-card__title">{product.title}</h3>
-            <p className="product-card__description">{product.description}</p>
+            <Link href={product.url}>
+              <h3 className="product-card__title">{product.title}</h3>
+            </Link>
+            {product.description && (
+              <p className="product-card__description">{product.description}</p>
+            )}
             <p className="product-card__price">
               {product.price.split('.')[0]}
               <span>.{product.price.split('.')[1]} р.</span>
             </p>
             <button className="shop_button add-to-cart">
-              <Image src="/assets/img/icons/shopping-cart.svg" alt="В корзину" width={20} height={20} />
+              <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
               <p>В корзину</p>
             </button>
           </div>
@@ -270,16 +190,16 @@ export default function NewProductsTabs() {
           {renderBadges(product.badges)}
 
           <button className="like">
-            <Image src="/assets/img/icons/header-favorite.svg" alt="Добавить в избранное" width={24} height={24} />
+            <img src="/assets/img/icons/header-favorite.svg" alt="Добавить в избранное" />
           </button>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
-  if (!mounted) return null
+  if (!mounted || !activeTab) return null;
 
-  const currentProducts = tabProducts[activeTab] || []
+  const currentProducts = tabProducts[activeTab] || [];
 
   return (
     <section className="products-tabs new-tabs">
@@ -331,9 +251,10 @@ export default function NewProductsTabs() {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }
