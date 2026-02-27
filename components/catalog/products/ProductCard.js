@@ -14,15 +14,17 @@ export default function ProductCard({ product }) {
   const [isLiked, setIsLiked] = useState(false);
   const { addToCart } = useCart();
 
-  // ← attr перемещён ВЕРХУ
+  // ← Guard после хуков
+  if (!product || !product.attributes) return null;
+
   const attr = product.attributes;
-  
+
   const title = attr.name_ru || attr.name || 'Товар';
-  
-  const description = attr.short_description_ru 
-    || attr.content_ru 
-    || attr.collection 
-    || attr.name_ru 
+
+  const description = attr.short_description_ru
+    || attr.content_ru
+    || attr.collection
+    || attr.name_ru
     || 'Описание скоро появится';
 
   const handleToggleLike = useCallback(() => {
@@ -37,23 +39,22 @@ export default function ProductCard({ product }) {
       console.error('Ошибка добавления в корзину:', error);
       alert('Не удалось добавить товар в корзину');
     }
-  }, [addToCart, attr.sku, product.id]); // ← Зависимости обновлены
+  }, [addToCart, attr.sku, product.id]);
 
-  // ← Теперь attr доступен
   const handleProductClick = useCallback(() => {
     const slug = attr.sku || product.id || 'unknown';
     router.push(`/product/${slug}`);
-  }, [router, attr.sku, product.id]); // ← Правильные зависимости
+  }, [router, attr.sku, product.id]);
 
   const price = Math.floor(attr.price);
   const priceDecimal = ((attr.price % 1) * 100).toFixed(0).padStart(2, '0');
-  
+
   let imagesList = [];
-  
+
   if (attr.local_images) {
     try {
-      const parsed = typeof attr.local_images === 'string' 
-        ? JSON.parse(attr.local_images) 
+      const parsed = typeof attr.local_images === 'string'
+        ? JSON.parse(attr.local_images)
         : attr.local_images;
       if (Array.isArray(parsed)) {
         imagesList = parsed.filter(img => img && typeof img === 'string');
@@ -62,16 +63,16 @@ export default function ProductCard({ product }) {
       console.error(`Ошибка парсинга изображений товара ${product.id}`);
     }
   }
-  
+
   const images = imagesList.length > 0
     ? imagesList.map(img => {
         const cleanPath = img.startsWith('/') ? img.slice(1) : img;
         return `${API_BASE_URL}/${cleanPath}`;
       })
     : [PLACEHOLDER_IMAGE];
-  
+
   const thumbs = images;
-  
+
   const badges = [];
   if (attr.is_bestseller) badges.push('Хит продаж');
   if (attr.is_popular) badges.push('Популярное');
@@ -86,7 +87,7 @@ export default function ProductCard({ product }) {
         />
 
         <div className="product-card__info">
-          <div 
+          <div
             className="product-card__header clickable"
             onClick={handleProductClick}
             role="button"
@@ -99,14 +100,14 @@ export default function ProductCard({ product }) {
               <p className="product-card__description">{description}</p>
             )}
           </div>
-          
+
           <p className="product-card__price">
             {price}
             <span>.{priceDecimal} р.</span>
           </p>
-          
-          <button 
-            className="shop_button" 
+
+          <button
+            className="shop_button"
             onClick={handleAddToCart}
             type="button"
           >

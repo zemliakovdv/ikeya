@@ -1,19 +1,21 @@
-// components/catalog/products/InfiniteProductGrid.js
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
 
+// ← Хелпер: фильтруем мусор из массива товаров
+const sanitize = (arr) =>
+  (arr || []).filter(p => p && p.attributes);
+
 export default function InfiniteProductGrid({ initialProducts, categoryId, totalPages }) {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState(sanitize(initialProducts));
   const [page, setPage] = useState(2);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(totalPages ? page <= totalPages : initialProducts.length >= 20);
   const observerRef = useRef(null);
 
-  // Обновляем состояние при изменении категории
   useEffect(() => {
-    setProducts(initialProducts);
+    setProducts(sanitize(initialProducts));  // ← sanitize
     setPage(2);
     setHasMore(totalPages ? 2 <= totalPages : initialProducts.length >= 20);
   }, [categoryId, initialProducts, totalPages]);
@@ -41,7 +43,6 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
     setLoading(true);
 
     try {
-      // ✅ ИСПРАВЛЕНО: Разные URL для "всех товаров" и категорий
       const url = categoryId
         ? `/api/categories/${categoryId}/products?page=${page}&per_page=20`
         : `/api/products?page=${page}&per_page=20`;
@@ -50,10 +51,9 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
       const data = await response.json();
 
       if (data.products && data.products.length > 0) {
-        setProducts(prev => [...prev, ...data.products]);
+        setProducts(prev => [...prev, ...sanitize(data.products)]);  // ← sanitize
         setPage(prev => prev + 1);
 
-        // Проверяем, есть ли еще страницы
         if (data.meta?.current_page >= data.meta?.total_pages) {
           setHasMore(false);
         }
@@ -98,5 +98,3 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
     </>
   );
 }
-
-
