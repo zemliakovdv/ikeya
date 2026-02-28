@@ -1459,11 +1459,14 @@ main {
 }
 
 .seo-text-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease;
+  max-height: 160px; /* подгони под макет */
+  overflow: hidden;
+  transition: max-height 0.4s ease;
 }
 
+.seo-text-content--expanded {
+  max-height: 2000px; /* большое значение, чтобы всё влезло */
+}
 .seo-text-content p:last-child {
     margin-bottom: 0;
 }
@@ -1471,18 +1474,6 @@ main {
 .seo-text-content.open {
     max-height: 1000px;
     /* Достаточно большой размер — под реальный контент */
-}
-
-.button-text-hidden {
-    display: none;
-}
-
-.seo-text-content.open~.seo-text-bottom .button-text-hidden {
-    display: block;
-}
-
-.seo-text-content.open~.seo-text-bottom .button-text {
-    display: none;
 }
 
 .seo-text-bottom {
@@ -5312,8 +5303,6 @@ main {
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 6px 12px 0 rgba(24, 24, 24, 0.08), -4px -4px 10px 0 rgba(24, 24, 24, 0.08);
-    opacity: 0;
-    visibility: hidden;
     transform: translateY(-10px);
     transition: all 0.3s ease;
     z-index: 1000;
