@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProfile } from '@/lib/api/account';
 
 import EditPersonalDataModal from './modals/EditPersonalDataModal';
+import DeliveryPickupModal from './modals/DeliveryPickupModal';
 import EditPhoneModal from './modals/EditPhoneModal';
 import EditEmailModal from './modals/EditEmailModal';
 import EditPassportModal from './modals/EditPassportModal';
@@ -24,6 +25,9 @@ export default function PersonalData() {
   const [smsCode, setSmsCode] = useState('');
   const [smsError, setSmsError] = useState('');
   const [smsLoading, setSmsLoading] = useState(false);
+
+  // Сохранённый адрес доставки
+  const [selectedPickupPoint, setSelectedPickupPoint] = useState(null);
 
   useEffect(() => {
     if (!isHydrated || !isAuth) return;
@@ -129,13 +133,31 @@ export default function PersonalData() {
               </div>
             </div>
           </div>
+
+          {/* Адреса доставки */}
           <div className="data-section">
             <div className="data-section__header">
               <h3 className="data-section__title">Адреса доставки</h3>
-              <button className="data-section__edit add" onClick={() => setModal('address')}>Добавить</button>
+              <button className="data-section__edit add" onClick={() => setModal('address')}>
+                {selectedPickupPoint ? 'Изменить' : 'Добавить'}
+              </button>
             </div>
             <div className="data-section__body">
-              <div className="data-item"><p className="data-item__value" style={{ color: '#9e9e9e' }}>Адреса появятся после добавления</p></div>
+              {selectedPickupPoint ? (
+                <div className="data-item">
+                  <label className="data-item__label">{selectedPickupPoint.name}</label>
+                  <p className="data-item__value">{selectedPickupPoint.city}, {selectedPickupPoint.address}</p>
+                  {selectedPickupPoint.working_hours && (
+                    <p className="data-item__value" style={{ color: '#757575', fontSize: '13px' }}>
+                      {selectedPickupPoint.working_hours}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="data-item">
+                  <p className="data-item__value" style={{ color: '#9e9e9e' }}>Адреса появятся после добавления</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -164,11 +186,20 @@ export default function PersonalData() {
         </div>
       </aside>
 
-      {modal === 'personal' && <EditPersonalDataModal profile={profile} onClose={closeModal} />}
-      {modal === 'phone'    && <EditPhoneModal profile={profile} onClose={closeModal} onRequestSms={requestSms} loading={smsLoading} error={smsError} />}
-      {modal === 'email'    && <EditEmailModal profile={profile} onClose={closeModal} />}
-      {modal === 'passport' && <EditPassportModal profile={profile} onClose={closeModal} onRequestSms={requestSms} loading={smsLoading} error={smsError} />}
-      {modal === 'sms'      && <SmsVerifyModal callerMasked={callerMasked} smsCode={smsCode} onChange={setSmsCode} onConfirm={verifySms} onClose={closeModal} loading={smsLoading} error={smsError} />}
+      {modal === 'personal'  && <EditPersonalDataModal profile={profile} onClose={closeModal} />}
+      {modal === 'phone'     && <EditPhoneModal profile={profile} onClose={closeModal} onRequestSms={requestSms} loading={smsLoading} error={smsError} />}
+      {modal === 'email'     && <EditEmailModal profile={profile} onClose={closeModal} />}
+      {modal === 'address'   && (
+        <DeliveryPickupModal
+          onClose={closeModal}
+          onSelect={(point) => {
+            setSelectedPickupPoint(point);
+            closeModal();
+          }}
+        />
+      )}
+      {modal === 'passport'  && <EditPassportModal profile={profile} onClose={closeModal} onRequestSms={requestSms} loading={smsLoading} error={smsError} />}
+      {modal === 'sms'       && <SmsVerifyModal callerMasked={callerMasked} smsCode={smsCode} onChange={setSmsCode} onConfirm={verifySms} onClose={closeModal} loading={smsLoading} error={smsError} />}
       {modal && <div className="modal-backdrop fade show" onClick={closeModal} />}
     </div>
   );
