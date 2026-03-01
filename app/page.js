@@ -1,4 +1,3 @@
-// app/page.js
 import StartSlider from '@/components/home/StartSlider';
 import PopularCategoriesSection from '@/components/home/PopularCategoriesSection';
 import BestsellersSection from '@/components/home/BestsellersSection';
@@ -27,6 +26,10 @@ export async function generateMetadata() {
 }
 
 export default async function Home() {
+  const { meta } = await getMainSliderBanners();
+  const seo = meta?.seo || {};
+  const seoText = seo.seo_text || null;
+
   return (
     <main className="main">
       <StartSlider />
@@ -37,7 +40,7 @@ export default async function Home() {
       <AdsBanner />
       <NewArrivalsSection />
       <BlogSection />
-      <SeoSection />
+      <SeoSection seoText={seoText} />
     </main>
   );
 }

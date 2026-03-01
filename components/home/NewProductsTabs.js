@@ -1,21 +1,44 @@
 // components/home/NewProductsTabs.js
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import Swiper from 'swiper'
 import { Navigation, Pagination, Thumbs } from 'swiper/modules'
+import { useCart } from '@/contexts/CartContext'
+import CartCounter from '@/components/cart/CartCounter'
 
 export default function NewProductsTabs({ tabs = [], tabProducts = {} }) {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id || null);
   const [mounted, setMounted] = useState(false);
+
   const swiperInstances = useRef({});
   const galleryMainInstances = useRef({});
   const galleryThumbsInstances = useRef({});
 
+  const raf1Ref = useRef(0);
+  const raf2Ref = useRef(0);
+
+  const { addToCart, items } = useCart();
+
   useEffect(() => {
     queueMicrotask(() => setMounted(true));
+  }, []);
+
+  const destroyAllGalleries = useCallback(() => {
+    Object.values(galleryMainInstances.current).forEach(s => s?.destroy?.(true, true));
+    Object.values(galleryThumbsInstances.current).forEach(s => s?.destroy?.(true, true));
+    galleryMainInstances.current = {};
+    galleryThumbsInstances.current = {};
+  }, []);
+
+  const destroyActiveSwiper = useCallback((tabId) => {
+    const inst = swiperInstances.current[tabId];
+    if (inst) {
+      inst.destroy(true, true);
+      delete swiperInstances.current[tabId];
+    }
   }, []);
 
   useEffect(() => {
@@ -23,82 +46,94 @@ export default function NewProductsTabs({ tabs = [], tabProducts = {} }) {
 
     const currentProducts = tabProducts[activeTab] || [];
 
-    // Уничтожаем старые галереи
-    Object.values(galleryMainInstances.current).forEach(s => s?.destroy(true, true));
-    Object.values(galleryThumbsInstances.current).forEach(s => s?.destroy(true, true));
-    galleryMainInstances.current = {};
-    galleryThumbsInstances.current = {};
+    // чистим возможные pending rAF
+    if (raf1Ref.current) cancelAnimationFrame(raf1Ref.current);
+    if (raf2Ref.current) cancelAnimationFrame(raf2Ref.current);
 
-    // Инициализируем галереи для каждого товара
-    currentProducts.forEach((product) => {
-      const thumbsSelector = `[data-gallery-thumbs="${product.id}"]`;
-      const mainSelector = `[data-gallery="${product.id}"]`;
-      const thumbsEl = document.querySelector(thumbsSelector);
-      const mainEl = document.querySelector(mainSelector);
+    // пересоздаём галереи под новый набор карточек
+    destroyAllGalleries();
 
-      if (thumbsEl && mainEl && product.images.length > 1) {
-        try {
-          const thumbsSwiper = new Swiper(thumbsSelector, {
-            modules: [Thumbs],
-            spaceBetween: 8,
-            slidesPerView: 'auto',
-            watchSlidesProgress: true,
-            freeMode: true
-          });
+    // уничтожаем конкретный swiper вкладки (если был)
+    destroyActiveSwiper(activeTab);
 
-          const mainSwiper = new Swiper(mainSelector, {
-            modules: [Navigation, Thumbs],
-            spaceBetween: 0,
-            navigation: {
-              nextEl: `${mainSelector} .swiper-button-next`,
-              prevEl: `${mainSelector} .swiper-button-prev`
-            },
-            thumbs: { swiper: thumbsSwiper }
-          });
+    const init = () => {
+      const swiperEl = document.querySelector(`.products-slider[data-slider="${activeTab}"]`);
+      if (!swiperEl) return;
 
-          galleryThumbsInstances.current[product.id] = thumbsSwiper;
-          galleryMainInstances.current[product.id] = mainSwiper;
-        } catch (error) {
-          console.error('Ошибка инициализации галереи:', error);
+      // ✅ ИНИЦИАЛИЗИРУЕМ ГАЛЕРЕИ ТОЛЬКО ВНУТРИ ТЕКУЩЕГО СЛАЙДЕРА
+      currentProducts.forEach((product) => {
+        const thumbsSelector = `[data-gallery-thumbs="${product.id}"]`;
+        const mainSelector = `[data-gallery="${product.id}"]`;
+
+        const thumbsEl = swiperEl.querySelector(thumbsSelector);
+        const mainEl = swiperEl.querySelector(mainSelector);
+
+        if (thumbsEl && mainEl && product.images.length > 1) {
+          try {
+            const thumbsSwiper = new Swiper(thumbsEl, {
+              modules: [Thumbs],
+              spaceBetween: 8,
+              slidesPerView: 'auto',
+              watchSlidesProgress: true,
+              freeMode: true
+            });
+
+            const mainSwiper = new Swiper(mainEl, {
+              modules: [Navigation, Thumbs],
+              spaceBetween: 0,
+              navigation: {
+                nextEl: mainEl.querySelector('.swiper-button-next'),
+                prevEl: mainEl.querySelector('.swiper-button-prev')
+              },
+              thumbs: { swiper: thumbsSwiper }
+            });
+
+            galleryThumbsInstances.current[product.id] = thumbsSwiper;
+            galleryMainInstances.current[product.id] = mainSwiper;
+          } catch (error) {
+            console.error('Ошибка инициализации галереи:', error);
+          }
         }
+      });
+
+      // ✅ ОСНОВНОЙ СЛАЙДЕР — nav/pagination берём строго из swiperEl
+      try {
+        const prevBtn = swiperEl.querySelector('.products-slider__nav-prev');
+        const nextBtn = swiperEl.querySelector('.products-slider__nav-next');
+        const paginationEl = swiperEl.querySelector('.products-slider__pagination');
+
+        swiperInstances.current[activeTab] = new Swiper(swiperEl, {
+          modules: [Navigation, Pagination],
+          slidesPerView: 1,
+          spaceBetween: 24,
+          navigation: {
+            nextEl: nextBtn,
+            prevEl: prevBtn
+          },
+          pagination: {
+            el: paginationEl,
+            clickable: true
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка инициализации основного слайдера:', error);
       }
+    };
+
+    // ✅ rAF x2 вместо setTimeout — стабильнее под реальный рендер
+    raf1Ref.current = requestAnimationFrame(() => {
+      raf2Ref.current = requestAnimationFrame(init);
     });
 
-    // Уничтожаем старый основной слайдер
-    if (swiperInstances.current[activeTab]) {
-      swiperInstances.current[activeTab].destroy(true, true);
-    }
-
-    // Инициализируем основной слайдер
-    setTimeout(() => {
-      const swiperEl = document.querySelector(`.products-slider[data-slider="${activeTab}"]`);
-      if (swiperEl) {
-        try {
-          swiperInstances.current[activeTab] = new Swiper(swiperEl, {
-            modules: [Navigation, Pagination],
-            slidesPerView: 1,
-            spaceBetween: 24,
-            navigation: {
-              nextEl: '.products-slider__nav-next',
-              prevEl: '.products-slider__nav-prev'
-            },
-            pagination: {
-              el: '.products-slider__pagination',
-              clickable: true
-            }
-          });
-        } catch (error) {
-          console.error('Ошибка инициализации основного слайдера:', error);
-        }
-      }
-    }, 100);
-
     return () => {
-      Object.values(swiperInstances.current).forEach(s => s?.destroy(true, true));
-      Object.values(galleryMainInstances.current).forEach(s => s?.destroy(true, true));
-      Object.values(galleryThumbsInstances.current).forEach(s => s?.destroy(true, true));
+      if (raf1Ref.current) cancelAnimationFrame(raf1Ref.current);
+      if (raf2Ref.current) cancelAnimationFrame(raf2Ref.current);
+
+      // В cleanup: прибиваем активный swiper и галереи
+      destroyActiveSwiper(activeTab);
+      destroyAllGalleries();
     };
-  }, [activeTab, mounted]);
+  }, [activeTab, mounted, tabProducts, destroyAllGalleries, destroyActiveSwiper]);
 
   const renderBadges = (badges) => (
     <>
@@ -107,9 +142,33 @@ export default function NewProductsTabs({ tabs = [], tabProducts = {} }) {
     </>
   );
 
+  const getQtyBySku = useCallback((sku) => {
+    if (!sku) return 0;
+    const found = (items || []).find((it) => it?.sku === sku);
+    return Number(found?.quantity || 0);
+  }, [items]);
+
+  const handleAddToCart = async (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const sku = product?.sku || product?.id;
+    if (!sku) return;
+
+    try {
+      await addToCart(sku, 1);
+    } catch (error) {
+      console.error('Ошибка добавления в корзину:', error);
+      alert('Не удалось добавить товар в корзину');
+    }
+  };
+
   const renderProductCard = (product) => {
     const visibleThumbs = product.images.slice(0, 3);
     const remainingCount = product.images.length - 3;
+    const sku = product?.sku || product?.id;
+    const hasSku = !!sku;
+    const quantity = getQtyBySku(sku);
 
     return (
       <div key={product.id} className="col product-card-inner">
@@ -181,15 +240,28 @@ export default function NewProductsTabs({ tabs = [], tabProducts = {} }) {
               {product.price.split('.')[0]}
               <span>.{product.price.split('.')[1]} р.</span>
             </p>
-            <button className="shop_button add-to-cart">
-              <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
-              <p>В корзину</p>
-            </button>
+
+            {quantity > 0 ? (
+              <div style={{ marginBottom: 0 }}>
+                <CartCounter sku={sku} className="added-fullwidth" />
+              </div>
+            ) : (
+              <button
+                className="shop_button add-to-cart"
+                onClick={(e) => handleAddToCart(e, product)}
+                type="button"
+                disabled={!hasSku}
+                aria-disabled={!hasSku}
+              >
+                <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
+                <p>В корзину</p>
+              </button>
+            )}
           </div>
 
           {renderBadges(product.badges)}
 
-          <button className="like">
+          <button className="like" type="button">
             <img src="/assets/img/icons/header-favorite.svg" alt="Добавить в избранное" />
           </button>
         </div>

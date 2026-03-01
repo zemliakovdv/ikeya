@@ -663,14 +663,14 @@ main {
     --bs-gutter-x: 0;
     --bs-gutter-y: 0;
     gap: 0px 8px;
-    padding-bottom: 10px;
+    padding-bottom: 20px;
 }
 
 .product-card-inner {
     min-width: 293px;
     max-width: 293px;
     margin-top: 0;
-    max-height: 497px;
+    max-height: fit-content;
 }
 
 /* Галерея товара */
@@ -1459,14 +1459,17 @@ main {
 }
 
 .seo-text-content {
-  max-height: 160px; /* подгони под макет */
-  overflow: hidden;
-  transition: max-height 0.4s ease;
+    max-height: 160px;
+    /* подгони под макет */
+    overflow: hidden;
+    transition: max-height 0.4s ease;
 }
 
 .seo-text-content--expanded {
-  max-height: 2000px; /* большое значение, чтобы всё влезло */
+    max-height: 2000px;
+    /* большое значение, чтобы всё влезло */
 }
+
 .seo-text-content p:last-child {
     margin-bottom: 0;
 }
@@ -3756,7 +3759,6 @@ main {
 
 .products-card-slider .swiper-slide-inner {
     margin: 0 !important;
-    padding: 0 !important;
 }
 
 .products-card-slider .product-card-inner {
@@ -4480,6 +4482,86 @@ main {
     color: #0058a3;
 }
 
+.goods-added {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.goods-added__counter {
+    background: #f5f5f5;
+    border-radius: 8px;
+    width: 50%;
+    display: flex;
+    justify-content: space-between;
+}
+
+
+.counter-button {
+    padding: 12px;
+    border: none;
+    background: transparent;
+    outline: none;
+}
+
+.counter-vlaue {
+    padding: 12px 60px;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    letter-spacing: 0.03em;
+    text-align: center;
+    color: #181818;
+    background: transparent;
+}
+
+.good-added__link {
+    background: #00910a;
+    padding: 14px 43px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    gap: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 50%;
+}
+
+.good-added__link p {
+    margin-bottom: 0;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+}
+
+.added-fullwidth {
+    margin-bottom: 0;
+}
+
+.added-fullwidth .goods-added__counter {
+    width: 100%;
+}
+
+.added-fullwidth .counter-button {
+    padding: 8px 12px;
+}
+
+.added-fullwidth .counter-button svg {
+    width: 20px;
+    height: 20px;
+}
+
+.added-fullwidth .counter-vlaue {
+    padding: 10px 60px;
+    display: inline-block;
+    max-height: fit-content;
+    font-size: 14px;
+    line-height: 20px;
+}
+
 .swiper-button-next,
 .swiper-button-prev {
     width: 32px;
@@ -4537,6 +4619,13 @@ main {
 .cart-main {
     width: 75%;
     max-width: 1124px;
+}
+
+.cart-empty {
+    margin: 0 auto;
+    text-align: center;
+    padding-top: 50px;
+    padding-bottom: 50px;
 }
 
 .cart-main__top,

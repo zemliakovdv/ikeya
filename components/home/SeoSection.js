@@ -2,12 +2,10 @@
 
 import { useState } from 'react'
 
-export default function SeoSection() {
+export default function SeoSection({ seoText }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const toggleText = () => {
-    setIsExpanded(!isExpanded)
-  }
+  if (!seoText) return null
 
   return (
     <section className="seo">
@@ -16,73 +14,29 @@ export default function SeoSection() {
           <div className="col-12">
             <div className="seo-inner">
               <h5>SEO текст</h5>
-              
-              {/* Всегда видимая часть */}
-              <div className="seo-text-content-visible">
-                <p>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
-                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute 
-                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla 
-                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
-                  deserunt mollit anim id est laborum.
-                </p>
-                <p>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
-                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute 
-                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla 
-                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
-                  deserunt mollit anim id est laborum.
-                </p>
-              </div>
 
-              {/* Скрытая часть, показывается при клике */}
-              <div className={`seo-text-content ${isExpanded ? 'expanded' : ''}`}>
-                <p>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
-                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute 
-                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla 
-                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
-                  deserunt mollit anim id est laborum.
-                </p>
-                <p>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
-                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute 
-                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla 
-                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
-                  deserunt mollit anim id est laborum.
-                </p>
-                <p>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
-                  exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute 
-                  irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla 
-                  pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia 
-                  deserunt mollit anim id est laborum.
-                </p>
-              </div>
+              {/* Весь текст всегда в DOM, без display:none */}
+              <div
+                className={`seo-text-content ${isExpanded ? 'seo-text-content--expanded' : ''}`}
+                dangerouslySetInnerHTML={{ __html: seoText }}
+              />
 
-              {/* Кнопка показать/скрыть */}
               <div className="seo-text-bottom">
-                <div className="seo-text-bottom-btn" onClick={toggleText}>
-                  {!isExpanded ? (
-                    <div className="button-text">
-                      <div className="else-link">
-                        <p>Показать полностью</p>
-                      </div>
+                <div
+                  className="seo-text-bottom-btn"
+                  onClick={() => setIsExpanded(prev => !prev)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && setIsExpanded(prev => !prev)}
+                >
+                  <div className="button-text">
+                    <div className="else-link">
+                      <p>{isExpanded ? 'Скрыть текст' : 'Показать полностью'}</p>
                     </div>
-                  ) : (
-                    <div className="button-text-hidden">
-                      <div className="else-link">
-                        <p>Скрыть текст</p>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
+
             </div>
           </div>
         </div>

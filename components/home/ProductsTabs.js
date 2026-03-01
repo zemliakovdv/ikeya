@@ -41,6 +41,7 @@ function mapProductToCard(product) {
 
   return {
     id: product.id,
+    sku: attr.sku || product.id,
     title: attr.name_ru || attr.name || 'Без названия',
     description: attr.collection || attr.name_ru || 'Описание скоро появится',
     price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',

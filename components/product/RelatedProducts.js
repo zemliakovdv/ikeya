@@ -1,5 +1,7 @@
+// components/product/RelatedProducts.js
 'use client';
 
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import ProductCard from '@/components/catalog/products/ProductCard';
@@ -9,10 +11,18 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 export default function RelatedProducts({ products }) {
-  // Если нет товаров, не показываем секцию
   if (!products || products.length === 0) {
     return null;
   }
+
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+  const paginationRef = useRef(null);
+  const [swiperReady, setSwiperReady] = useState(false);
+
+  useEffect(() => {
+    setSwiperReady(true);
+  }, []);
 
   return (
     <section className="more">
@@ -21,19 +31,36 @@ export default function RelatedProducts({ products }) {
           <div className="col-12">
             <div className="more-inner">
               <h2>К этому товару подходят</h2>
-              
+
               <div className="products-card-slider">
                 <Swiper
                   modules={[Navigation, Pagination]}
                   spaceBetween={20}
                   slidesPerView={5}
-                  navigation={{
-                    prevEl: '.products-slider__nav-prev',
-                    nextEl: '.products-slider__nav-next',
+                  navigation={swiperReady ? { prevEl: prevRef.current, nextEl: nextRef.current } : false}
+                  pagination={swiperReady ? { el: paginationRef.current, clickable: true } : false}
+                  onBeforeInit={(swiper) => {
+                    if (!prevRef.current || !nextRef.current || !paginationRef.current) return;
+
+                    swiper.params.navigation.prevEl = prevRef.current;
+                    swiper.params.navigation.nextEl = nextRef.current;
+                    swiper.params.pagination.el = paginationRef.current;
                   }}
-                  pagination={{
-                    el: '.products-slider__pagination',
-                    clickable: true,
+                  onSwiper={(swiper) => {
+                    if (!prevRef.current || !nextRef.current || !paginationRef.current) return;
+
+                    swiper.params.navigation.prevEl = prevRef.current;
+                    swiper.params.navigation.nextEl = nextRef.current;
+                    swiper.params.pagination.el = paginationRef.current;
+
+                    swiper.navigation?.destroy?.();
+                    swiper.navigation?.init?.();
+                    swiper.navigation?.update?.();
+
+                    swiper.pagination?.destroy?.();
+                    swiper.pagination?.init?.();
+                    swiper.pagination?.render?.();
+                    swiper.pagination?.update?.();
                   }}
                   breakpoints={{
                     320: { slidesPerView: 1, spaceBetween: 10 },
@@ -52,15 +79,15 @@ export default function RelatedProducts({ products }) {
                 </Swiper>
 
                 {/* Пагинация */}
-                <div className="products-slider__pagination"></div>
+                <div className="products-slider__pagination" ref={paginationRef}></div>
 
                 {/* Навигация */}
-                <button className="products-slider__nav products-slider__nav-prev">
+                <button className="products-slider__nav products-slider__nav-prev" ref={prevRef} type="button">
                   <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
-                <button className="products-slider__nav products-slider__nav-next">
+                <button className="products-slider__nav products-slider__nav-next" ref={nextRef} type="button">
                   <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>

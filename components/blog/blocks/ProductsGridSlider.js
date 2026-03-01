@@ -6,54 +6,109 @@ import ProductCard from '@/components/ui/ProductCard';
 export default function ProductsGridSlider({ slides, blockId }) {
   const swiperRef = useRef(null);
 
+  // ✅ отдельные инстансы галерей, чтобы корректно destroy()
+  const galleryMainInstances = useRef({});
+  const galleryThumbsInstances = useRef({});
+
   useEffect(() => {
     if (typeof window === 'undefined' || !window.Swiper) return;
 
-    const timer = setTimeout(() => {
+    let raf1 = 0;
+    let raf2 = 0;
+
+    const init = () => {
       const el = document.querySelector(`.products-slider[data-slider="${blockId}"]`);
       if (!el) return;
 
-      // Инициализируем галереи карточек
-      document.querySelectorAll('.product-gallery-main').forEach((gallery) => {
-        const galleryId = gallery.getAttribute('data-gallery');
-        const thumbs = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
+      // ---- cleanup старых галерей (важно) ----
+      Object.values(galleryMainInstances.current).forEach((s) => s?.destroy?.(true, true));
+      Object.values(galleryThumbsInstances.current).forEach((s) => s?.destroy?.(true, true));
+      galleryMainInstances.current = {};
+      galleryThumbsInstances.current = {};
+
+      // ✅ Инициализируем галереи ТОЛЬКО внутри текущего блока
+      el.querySelectorAll('.product-gallery-main').forEach((galleryEl) => {
+        const galleryId = galleryEl.getAttribute('data-gallery');
+        if (!galleryId) return;
+
+        const thumbsEl = el.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
+
         let thumbsSwiper = null;
-        if (thumbs) {
-          thumbsSwiper = new window.Swiper(thumbs, {
-            spaceBetween: 8,
-            slidesPerView: 3,
-            freeMode: true,
-            watchSlidesProgress: true,
-          });
+        if (thumbsEl) {
+          try {
+            thumbsSwiper = new window.Swiper(thumbsEl, {
+              spaceBetween: 8,
+              slidesPerView: 3,
+              freeMode: true,
+              watchSlidesProgress: true,
+            });
+            galleryThumbsInstances.current[galleryId] = thumbsSwiper;
+          } catch (e) {
+            console.error('Ошибка инициализации thumbs swiper:', e);
+          }
         }
-        new window.Swiper(gallery, {
-          spaceBetween: 10,
-          navigation: {
-            nextEl: gallery.querySelector('.swiper-button-next'),
-            prevEl: gallery.querySelector('.swiper-button-prev'),
-          },
-          thumbs: thumbsSwiper ? { swiper: thumbsSwiper } : undefined,
-        });
+
+        try {
+          const mainSwiper = new window.Swiper(galleryEl, {
+            spaceBetween: 10,
+            navigation: {
+              nextEl: galleryEl.querySelector('.swiper-button-next'),
+              prevEl: galleryEl.querySelector('.swiper-button-prev'),
+            },
+            thumbs: thumbsSwiper ? { swiper: thumbsSwiper } : undefined,
+          });
+          galleryMainInstances.current[galleryId] = mainSwiper;
+        } catch (e) {
+          console.error('Ошибка инициализации main gallery swiper:', e);
+        }
       });
 
-      swiperRef.current = new window.Swiper(el, {
-        slidesPerView: 1,
-        spaceBetween: 0,
-        loop: false,
-        pagination: {
-          el: el.querySelector('.products-slider__pagination'),
-          clickable: true,
-        },
-        navigation: {
-          nextEl: el.querySelector('.products-slider__nav-next'),
-          prevEl: el.querySelector('.products-slider__nav-prev'),
-        },
-      });
-    }, 100);
+      // ---- cleanup старого основного слайдера ----
+      if (swiperRef.current) {
+        swiperRef.current.destroy(true, true);
+        swiperRef.current = null;
+      }
+
+      // ✅ основной слайдер
+      try {
+        swiperRef.current = new window.Swiper(el, {
+          slidesPerView: 1,
+          spaceBetween: 0,
+          loop: false,
+          pagination: {
+            el: el.querySelector('.products-slider__pagination'),
+            clickable: true,
+          },
+          navigation: {
+            nextEl: el.querySelector('.products-slider__nav-next'),
+            prevEl: el.querySelector('.products-slider__nav-prev'),
+          },
+        });
+      } catch (e) {
+        console.error('Ошибка инициализации products slider:', e);
+      }
+    };
+
+    // ✅ rAF x2 — даём DOM “устаканиться” после рендера карточек
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(init);
+    });
 
     return () => {
-      clearTimeout(timer);
-      if (swiperRef.current) swiperRef.current.destroy(true, true);
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+
+      // destroy основного
+      if (swiperRef.current) {
+        swiperRef.current.destroy(true, true);
+        swiperRef.current = null;
+      }
+
+      // destroy галерей
+      Object.values(galleryMainInstances.current).forEach((s) => s?.destroy?.(true, true));
+      Object.values(galleryThumbsInstances.current).forEach((s) => s?.destroy?.(true, true));
+      galleryMainInstances.current = {};
+      galleryThumbsInstances.current = {};
     };
   }, [slides, blockId]);
 
@@ -73,21 +128,23 @@ export default function ProductsGridSlider({ slides, blockId }) {
                     price={product.price}
                     images={product.images}
                     url={product.url}
+                    sku={product.sku}
                   />
                 ))}
               </div>
             </div>
           ))}
         </div>
+
         {slides.length > 1 && <div className="products-slider__pagination"></div>}
         {slides.length > 1 && (
           <>
-            <button className="products-slider__nav products-slider__nav-prev">
+            <button className="products-slider__nav products-slider__nav-prev" type="button">
               <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
                 <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <button className="products-slider__nav products-slider__nav-next">
+            <button className="products-slider__nav products-slider__nav-next" type="button">
               <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
                 <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>

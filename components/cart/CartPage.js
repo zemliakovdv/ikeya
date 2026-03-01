@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '/contexts/CartContext';
+import * as cartAPI from '@/lib/api/cart';
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
 import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
 
 export default function CartPage() {
   const router = useRouter();
+
   const {
     cart,
     updateQuantity,
@@ -18,68 +20,84 @@ export default function CartPage() {
     totals,
     flags,
     recommendations,
-    loading
+    loading,
+    refreshCart,
   } = useCart();
 
-  // СОСТОЯНИЕ ВЫБРАННЫХ ТОВАРОВ (массив SKU)
+  // выбранные SKU (только доступные товары)
   const [selectedItems, setSelectedItems] = useState([]);
 
-  const handleQuantityChange = async (sku, newQuantity) => {
-    try {
-      await updateQuantity(sku, newQuantity);
-    } catch (error) {
-      console.error('Ошибка изменения количества:', error);
-      alert('Не удалось изменить количество товара');
-    }
-  };
+  const availableSkus = useMemo(
+    () => (availableItems || []).map((i) => i.sku).filter(Boolean),
+    [availableItems]
+  );
 
-  const handleDelete = async (sku) => {
-    try {
-      await removeFromCart(sku);
-      // Убираем из выбранных
-      setSelectedItems(prev => prev.filter(s => s !== sku));
-    } catch (error) {
-      console.error('Ошибка удаления товара:', error);
-      alert('Не удалось удалить товар');
-    }
-  };
+  const selectedCount = selectedItems.length;
+  const allSelected = availableSkus.length > 0 && selectedCount === availableSkus.length;
 
-  // ОБРАБОТЧИК ЧЕКБОКСА
-  const handleCheckChange = (sku) => {
-    setSelectedItems(prev => 
-      prev.includes(sku) 
-        ? prev.filter(s => s !== sku)  // Убрать
-        : [...prev, sku]                // Добавить
-    );
-  };
+  const handleQuantityChange = useCallback(
+    async (sku, newQuantity) => {
+      try {
+        await updateQuantity(sku, newQuantity);
+      } catch (error) {
+        console.error('Ошибка изменения количества:', error);
+        alert('Не удалось изменить количество товара');
+      }
+    },
+    [updateQuantity]
+  );
 
-  // ВЫБРАТЬ ВСЕ / СНЯТЬ ВСЕ
-  const handleSelectAll = () => {
-    if (selectedItems.length === availableItems.length) {
-      setSelectedItems([]);  // Снять все
-    } else {
-      setSelectedItems(availableItems.map(item => item.sku));  // Выбрать все
-    }
-  };
+  const handleDelete = useCallback(
+    async (sku) => {
+      try {
+        await removeFromCart(sku);
+        setSelectedItems((prev) => prev.filter((s) => s !== sku));
+      } catch (error) {
+        console.error('Ошибка удаления товара:', error);
+        alert('Не удалось удалить товар');
+      }
+    },
+    [removeFromCart]
+  );
 
-  // УДАЛИТЬ ВЫБРАННЫЕ
-  const handleDeleteSelected = async () => {
+  // чекбокс конкретного товара
+  const handleCheckChange = useCallback((sku, checked) => {
+    setSelectedItems((prev) => {
+      if (!sku) return prev;
+      return checked ? Array.from(new Set([...prev, sku])) : prev.filter((s) => s !== sku);
+    });
+  }, []);
+
+  // выбрать всё / снять всё (только для availableItems)
+  const handleSelectAll = useCallback(
+    (checked) => {
+      setSelectedItems(checked ? availableSkus : []);
+    },
+    [availableSkus]
+  );
+
+  // массовое удаление выбранных
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedItems.length === 0) return;
-    
+
     if (!confirm(`Удалить ${selectedItems.length} товаров из корзины?`)) return;
 
     try {
-      await Promise.all(selectedItems.map(sku => removeFromCart(sku)));
+      // массовый эндпоинт: DELETE /cart_items
+      await cartAPI.removeManyFromCart(selectedItems);
       setSelectedItems([]);
+      // подтягиваем актуальную корзину (на случай пересчётов/правил/промо)
+      await refreshCart();
     } catch (error) {
       console.error('Ошибка удаления товаров:', error);
       alert('Не удалось удалить некоторые товары');
+      await refreshCart();
     }
-  };
+  }, [selectedItems, refreshCart]);
 
-  const handleCheckout = () => {
+  const handleCheckout = useCallback(() => {
     router.push('/checkout');
-  };
+  }, [router]);
 
   const hasAvailableItems = availableItems.length > 0;
   const hasUnavailableItems = unavailableItems.length > 0;
@@ -108,7 +126,10 @@ export default function CartPage() {
                 {subtotal >= freeDeliveryThreshold && (
                   <div className="order-toast_delivery">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+                      <path
+                        d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z"
+                        fill="#0058A3"
+                      />
                     </svg>
                     <p>Бесплатная доставка от {freeDeliveryThreshold} р. стоимости товаров</p>
                   </div>
@@ -117,7 +138,10 @@ export default function CartPage() {
                 {!canCheckout && itemCount > 0 && (
                   <div className="order-toast_choose">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
+                      <path
+                        d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z"
+                        fill="#B71C1C"
+                      />
                     </svg>
                     <p>Оформление заказа доступно от {minOrderAmount} р. стоимости товаров</p>
                   </div>
@@ -129,7 +153,11 @@ export default function CartPage() {
                       <div className="cart-main">
                         {hasAvailableItems && (
                           <CartItemsSection
-                            items={availableItems}
+                            items={availableItems.map((it) => ({
+                              ...it,
+                              // контролируем чекбокс через selectedItems
+                              isChecked: selectedItems.includes(it.sku),
+                            }))}
                             isUnavailable={false}
                             onQuantityChange={handleQuantityChange}
                             onDelete={handleDelete}
@@ -138,6 +166,7 @@ export default function CartPage() {
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
                             selectedItems={selectedItems}
+                            allSelected={allSelected}
                             loading={loading}
                           />
                         )}
@@ -150,6 +179,7 @@ export default function CartPage() {
                             onFavorite={() => {}}
                             onSelectAll={() => {}}
                             onDeleteSelected={() => {}}
+                            onCheckChange={() => {}}
                             loading={loading}
                           />
                         )}
@@ -184,9 +214,7 @@ export default function CartPage() {
         </div>
       </section>
 
-      {recommendedProducts.length > 0 && (
-        <RecommendationsSection products={recommendedProducts} />
-      )}
+      {recommendedProducts.length > 0 && <RecommendationsSection products={recommendedProducts} />}
     </main>
   );
 }

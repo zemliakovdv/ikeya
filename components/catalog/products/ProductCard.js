@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
+import CartCounter from '@/components/cart/CartCounter';
 import ProductGallery from './ProductGallery';
 import ProductBadge from './ProductBadge';
 
@@ -12,12 +13,13 @@ const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 export default function ProductCard({ product }) {
   const router = useRouter();
   const [isLiked, setIsLiked] = useState(false);
-  const { addToCart } = useCart();
+  const { addToCart, items } = useCart();
 
   // ← Guard после хуков
   if (!product || !product.attributes) return null;
 
   const attr = product.attributes;
+  const sku = attr.sku || product.id;
 
   const title = attr.name_ru || attr.name || 'Товар';
 
@@ -27,19 +29,24 @@ export default function ProductCard({ product }) {
     || attr.name_ru
     || 'Описание скоро появится';
 
+  const quantity = useMemo(() => {
+    if (!sku) return 0;
+    const found = (items || []).find((it) => it?.sku === sku);
+    return Number(found?.quantity || 0);
+  }, [items, sku]);
+
   const handleToggleLike = useCallback(() => {
     setIsLiked(prev => !prev);
   }, []);
 
   const handleAddToCart = useCallback(async () => {
     try {
-      const sku = attr.sku || product.id;
       await addToCart(sku, 1);
     } catch (error) {
       console.error('Ошибка добавления в корзину:', error);
       alert('Не удалось добавить товар в корзину');
     }
-  }, [addToCart, attr.sku, product.id]);
+  }, [addToCart, sku]);
 
   const handleProductClick = useCallback(() => {
     const slug = attr.sku || product.id || 'unknown';
@@ -106,14 +113,20 @@ export default function ProductCard({ product }) {
             <span>.{priceDecimal} р.</span>
           </p>
 
-          <button
-            className="shop_button"
-            onClick={handleAddToCart}
-            type="button"
-          >
-            <img src="/assets/img/icons/shopping-cart.svg" alt="Добавить в корзину" />
-            <p>В корзину</p>
-          </button>
+          {quantity > 0 ? (
+            <div style={{ marginBottom: 0 }}>
+              <CartCounter sku={sku} className="added-fullwidth" />
+            </div>
+          ) : (
+            <button
+              className="shop_button"
+              onClick={handleAddToCart}
+              type="button"
+            >
+              <img src="/assets/img/icons/shopping-cart.svg" alt="Добавить в корзину" />
+              <p>В корзину</p>
+            </button>
+          )}
         </div>
 
         {badges.length > 0 && (

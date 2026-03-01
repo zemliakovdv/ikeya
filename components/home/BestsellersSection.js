@@ -12,6 +12,7 @@ function mapProductToCard(product) {
 
   return {
     id: product.id,
+    sku: attr.sku || product.id,
     title: attr.name_ru || attr.name || 'Без названия',
     description: attr.short_description_ru
       || attr.content_ru

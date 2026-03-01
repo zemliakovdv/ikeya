@@ -20,8 +20,10 @@ async function getProductBySku(sku) {
 function mapProduct(product) {
   const attr = product.attributes;
   console.log('local_images:', attr.sku, attr.local_images);
+
   return {
     id: product.id,
+    sku: attr.sku, // ✅ ДОБАВИЛИ SKU (важно для корзины)
     title: attr.name_ru || attr.name || 'Без названия',
     description: attr.collection || '',
     price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',

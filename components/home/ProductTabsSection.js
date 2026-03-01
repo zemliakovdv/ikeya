@@ -4,12 +4,12 @@
 import { useEffect, useRef } from 'react';
 import ProductCard from '@/components/ui/ProductCard';
 
-export default function ProductTabsSection({ 
-  title = 'Товары', 
-  tabs = [], 
-  tabProducts = {}, 
+export default function ProductTabsSection({
+  title = 'Товары',
+  tabs = [],
+  tabProducts = {},
   sectionClass = 'products-tabs',
-  showNewBadge = false 
+  showNewBadge = false
 }) {
   const swipersRef = useRef({});
 
@@ -26,7 +26,7 @@ export default function ProductTabsSection({
 
       document.querySelectorAll('.products-slider').forEach((slider) => {
         const sliderId = slider.getAttribute('data-slider');
-        
+
         swipersRef.current[sliderId] = new window.Swiper(slider, {
           slidesPerView: 1,
           spaceBetween: 0,
@@ -46,7 +46,7 @@ export default function ProductTabsSection({
       document.querySelectorAll('.product-gallery-main').forEach((gallery) => {
         const galleryId = gallery.getAttribute('data-gallery');
         const thumbs = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
-        
+
         let thumbsSwiper = null;
         if (thumbs) {
           thumbsSwiper = new window.Swiper(thumbs, {
@@ -102,7 +102,7 @@ export default function ProductTabsSection({
             <ul className="nav products-tabs__nav" id={`${sectionClass}-tabs`} role="tablist">
               {tabs.map((tab, index) => (
                 <li key={tab.id} className="nav-item" role="presentation">
-                  <button 
+                  <button
                     className={`nav-link products-tabs__link ${index === 0 ? 'active' : ''}`}
                     id={`${sectionClass}-${tab.id}-tab`}
                     data-bs-toggle="tab"
@@ -122,7 +122,7 @@ export default function ProductTabsSection({
                 const slides = chunkProducts(products, 5);
 
                 return (
-                  <div 
+                  <div
                     key={tab.id}
                     className={`tab-pane fade ${index === 0 ? 'show active' : ''}`}
                     id={`${sectionClass}-${tab.id}`}
@@ -134,8 +134,8 @@ export default function ProductTabsSection({
                       </div>
                     ) : (
                       <div className="products-card-slider">
-                        <div 
-                          className="products-slider swiper" 
+                        <div
+                          className="products-slider swiper"
                           data-slider={`${sectionClass}-${tab.id}`}
                         >
                           <div className="swiper-wrapper">
@@ -145,18 +145,19 @@ export default function ProductTabsSection({
                                   {slideProducts.map((product) => (
                                     <ProductCard
                                       key={product.id}
-                                      gallery={`${sectionClass}-${product.id}`}
+                                      sku={product.sku}
+                                      gallery={product.gallery}
                                       title={product.title}
                                       description={product.description}
                                       price={product.price}
                                       images={product.images}
-                                      salesHit={product.badges?.includes('hit')}
-                                      promo={product.badges?.includes('promo')}
-                                      isNew={showNewBadge || product.badges?.includes('new')}
+                                      salesHit={product.salesHit}
+                                      promo={product.promo}
+                                      isNew={product.isNew}
                                       url={product.url}
                                     />
                                   ))}
-                                  
+
                                   {slideProducts.length < 5 && Array.from({ length: 5 - slideProducts.length }).map((_, i) => (
                                     <div key={`empty-${i}`} className="col-lg-3 col-md-4 col-sm-6" style={{ visibility: 'hidden' }} />
                                   ))}
