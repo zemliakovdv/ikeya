@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useCart } from '/contexts/CartContext';
+import { useMemo, useState } from 'react';
+import { useCart } from '@/contexts/CartContext';
 
 export default function CartSummary({
   subtotal = 0,
@@ -14,62 +14,60 @@ export default function CartSummary({
   canCheckout = true,
   onCheckout,
   checkoutButtonText = 'Перейти к оформлению',
-  cart
+  cart,
 }) {
   const { applyPromo, removePromo, loading } = useCart();
   const [promoCode, setPromoCode] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastType, setToastType] = useState('error'); // 'error' или 'success'
+  const [toastType, setToastType] = useState('error');
 
-  // Проверяем, применён ли промокод
-  const appliedPromo = cart?.items?.[0]?.pricing?.promo_code || null;
+  // Находим применённый промокод
+  const appliedPromo = useMemo(() => {
+    const items = cart?.items || [];
+    const found = items.find((it) => it?.pricing?.promo_applied && it?.pricing?.promo_code);
+    return found?.pricing?.promo_code || null;
+  }, [cart]);
+
   const hasPromo = appliedPromo !== null;
+
+  // Итоговая сумма с учётом скидки
+  const finalTotal = subtotal - promoDiscount + delivery + pvzDelivery;
+
+  const show = (type, msg) => {
+    setToastType(type);
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   const handlePromoSubmit = async (e) => {
     e.preventDefault();
-
-    if (!promoCode.trim()) {
-      setToastMessage('Введите промокод');
-      setToastType('error');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-      return;
-    }
+    const code = promoCode.trim();
+    if (!code) return show('error', 'Введите промокод');
 
     try {
-      await applyPromo(promoCode);
-      setToastMessage('Промокод успешно применён');
-      setToastType('success');
-      setShowToast(true);
+      await applyPromo(code);
       setPromoCode('');
-      setTimeout(() => setShowToast(false), 3000);
+      show('success', 'Промокод успешно применён');
     } catch (error) {
-      setToastMessage('Невозможно применить данный промокод');
-      setToastType('error');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      show('error', 'Невозможно применить данный промокод');
     }
   };
 
   const handlePromoRemove = async () => {
     try {
       await removePromo();
-      setToastMessage('Промокод удалён');
-      setToastType('success');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      show('success', 'Промокод удалён');
     } catch (error) {
-      setToastMessage('Ошибка удаления промокода');
-      setToastType('error');
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      show('error', 'Ошибка удаления промокода');
     }
   };
 
   return (
     <aside className="cart-summary">
-      {/* Toast для уведомлений */}
+
+      {/* Toast */}
       <div
         className={`toast promokod-toast ${showToast ? 'show' : ''}`}
         role="alert"
@@ -78,91 +76,72 @@ export default function CartSummary({
       >
         <div className="d-flex">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path 
-              d={toastType === 'success' 
-                ? "M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM10.5 16.5L6.5 12.5L7.91 11.09L10.5 13.67L16.09 8.08L17.5 9.5L10.5 16.5Z"
-                : "M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z"
+            <path
+              d={
+                toastType === 'success'
+                  ? 'M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM10.5 16.5L6.5 12.5L7.91 11.09L10.5 13.67L16.09 8.08L17.5 9.5L10.5 16.5Z'
+                  : 'M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z'
               }
-              fill={toastType === 'success' ? '#0058A3' : '#B71C1C'} 
+              fill={toastType === 'success' ? '#0058A3' : '#B71C1C'}
             />
           </svg>
-          <div className="toast-body">
-            {toastMessage}
-          </div>
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => setShowToast(false)}
-            aria-label="Закрыть"
-          ></button>
+          <div className="toast-body">{toastMessage}</div>
+          <button type="button" className="btn-close" onClick={() => setShowToast(false)} aria-label="Закрыть" />
         </div>
       </div>
 
-      {/* Промокод */}
+      {/* Поле промокода */}
       <div className="card-summary__coupon">
-        {hasPromo ? (
-          <div className="applied-promo">
-            <span>Промокод: {appliedPromo}</span>
-            <button 
-              type="button" 
-              className="btn btn-danger btn-sm"
-              onClick={handlePromoRemove}
-              disabled={loading}
-            >
-              Удалить
-            </button>
-          </div>
-        ) : (
-          <form onSubmit={handlePromoSubmit}>
-            <input
-              type="text"
-              id="cardSummaryCoupon"
-              placeholder="Промокод или купон"
-              value={promoCode}
-              onChange={(e) => setPromoCode(e.target.value)}
-              disabled={loading}
-            />
-            <button 
-              type="submit" 
-              className="btn btn-primary"
-              disabled={loading}
-            >
-              Применить
-            </button>
-          </form>
-        )}
+        <form onSubmit={hasPromo ? (e) => { e.preventDefault(); handlePromoRemove(); } : handlePromoSubmit}>
+          <input
+            type="text"
+            id="cardSummaryCoupon"
+            placeholder={hasPromo ? appliedPromo : 'Промокод или купон'}
+            value={hasPromo ? appliedPromo : promoCode}
+            onChange={(e) => !hasPromo && setPromoCode(e.target.value)}
+            disabled={loading || hasPromo}
+          />
+          <button
+            type="submit"
+            className={`btn ${hasPromo ? 'btn-danger' : 'btn-primary'}`}
+            disabled={loading}
+          >
+            {hasPromo ? '✕ Удалить' : 'Применить'}
+          </button>
+        </form>
       </div>
 
-      {/* Основной блок */}
+      {/* Итоги */}
       <div className="cart-summary__inner">
         <h3 className="cart-summary__title">Ваш заказ</h3>
 
-        {/* Всего товаров */}
         <div className="cart-summary__row">
           <p>Всего</p>
           <div></div>
-          <p>{itemCount} {itemCount === 1 ? 'товар' : itemCount < 5 ? 'товара' : 'товаров'} {totalWeight > 0 && <span>({totalWeight} кг)</span>}</p>
+          <p>
+            {itemCount} {itemCount === 1 ? 'товар' : itemCount < 5 ? 'товара' : 'товаров'}
+            {totalWeight > 0 && <span> ({totalWeight} кг)</span>}
+          </p>
         </div>
 
-        {/* Стоимость товаров */}
         <div className="cart-summary__row">
           <p>Стоимость товаров</p>
           <div></div>
           <p className="summery-row__cost">{subtotal.toFixed(2)} р.</p>
         </div>
 
-        {/* Скидка по промокоду */}
-        {promoDiscount > 0 && (
-          <div className="cart-summary__row no_promokod">
-            <p>Скидка по промокоду</p>
-            <div></div>
-            <p className="summery-row__cost-promo" style={{ color: '#B71C1C' }}>
-              -{promoDiscount.toFixed(2)} р.
-            </p>
-          </div>
-        )}
+        {/* Строка скидки — display:flex когда есть промокод, скрыта когда нет */}
+        <div
+          className="cart-summary__row is_promocod"
+          style={{ display: hasPromo && promoDiscount > 0 ? 'flex' : 'none' }}
+        >
+          <p>Скидка по промокоду</p>
+          <div></div>
+          <p className="summery-row__cost-promo" style={{ color: '#B71C1C' }}>
+            -{promoDiscount.toFixed(2)} р.
+          </p>
+        </div>
 
-        {/* Доставка */}
         <div className="cart-summary__row">
           <p>Доставка в Беларусь</p>
           <div></div>
@@ -177,16 +156,16 @@ export default function CartSummary({
           </div>
         )}
 
-        {/* Итого */}
+        {/* Итого с учётом скидки */}
         <div className="cart-summary__total">
           <p>Итого</p>
           <div></div>
           <p className="summery-total__total">
-            {Math.floor(total)}<span>.{(total % 1).toFixed(2).split('.')[1]} р.</span>
+            {Math.floor(finalTotal)}
+            <span>.{(finalTotal % 1).toFixed(2).split('.')[1]} р.</span>
           </p>
         </div>
 
-        {/* Кнопка оформления */}
         <button
           className="cart-summary__checkout-btn"
           disabled={!canCheckout || loading}
@@ -196,7 +175,6 @@ export default function CartSummary({
         </button>
       </div>
 
-      {/* Примечание о пошлине */}
       <div className="cart-summary__note">
         <div className="summary-note__wrap">
           <p className="cart-summary__note-icon">

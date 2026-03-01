@@ -1,18 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
 import CartItem from './CartItem';
 
 export default function CartItemsSection({
   items = [],
   isUnavailable = false,
+
+  // actions
   onQuantityChange,
   onDelete,
   onFavorite,
+
+  // selection
+  selectedItems = [], // массив sku
   onSelectAll,
   onDeleteSelected,
   onCheckChange,
-  selectedItems = [],
+
   loading = false,
 }) {
   const sectionClass = isUnavailable
@@ -21,25 +25,21 @@ export default function CartItemsSection({
 
   const topClass = isUnavailable ? 'cart-section__top' : 'cart-main__top';
 
-  const itemSkus = useMemo(
-    () => items.map((i) => i?.sku).filter(Boolean),
-    [items]
+  const allSkus = items.map((it) => it?.sku).filter(Boolean);
+  const selectedSet = new Set(selectedItems);
+
+  const selectedInSectionCount = allSkus.reduce(
+    (acc, sku) => acc + (selectedSet.has(sku) ? 1 : 0),
+    0
   );
 
-  // “Выбрать всё” — выбран, если все SKU этой секции выбранны
-  const allSelected = useMemo(() => {
-    if (isUnavailable) return false;
-    if (itemSkus.length === 0) return false;
-    return itemSkus.every((sku) => selectedItems.includes(sku));
-  }, [isUnavailable, itemSkus, selectedItems]);
+  const isAllSelected =
+    allSkus.length > 0 && selectedInSectionCount === allSkus.length;
 
-  // Индефайнд-стейт (частично выбрано) — можно подсветить стилями, если надо
-  const partiallySelected = useMemo(() => {
-    if (isUnavailable) return false;
-    if (itemSkus.length === 0) return false;
-    const selectedCount = itemSkus.filter((sku) => selectedItems.includes(sku)).length;
-    return selectedCount > 0 && selectedCount < itemSkus.length;
-  }, [isUnavailable, itemSkus, selectedItems]);
+  const isIndeterminate =
+    selectedInSectionCount > 0 && selectedInSectionCount < allSkus.length;
+
+  const checkboxId = isUnavailable ? 'unavailableChoises' : 'allGoodChoises';
 
   return (
     <div className={sectionClass}>
@@ -47,25 +47,25 @@ export default function CartItemsSection({
         <h2 className="cart-section__title">Недоступно для заказа</h2>
       )}
 
-      {/* Верхняя панель */}
-      {!isUnavailable && (
-        <div className={topClass}>
-          <label className="cart-select-all">
-            <input
-              className="cart-select-all__input"
-              type="checkbox"
-              id="allGoodChoises"
-              checked={allSelected}
-              onChange={(e) => onSelectAll?.(e.target.checked)}
-              disabled={loading || itemSkus.length === 0}
-              // чисто для удобства дебага/стилей, если захочешь:
-              data-partial={partiallySelected ? 'true' : 'false'}
-            />
-            <label className="form-check-label" htmlFor="allGoodChoises">
-              Выбрать всё
-            </label>
+      <div className={topClass}>
+        <div className="cart-select-all">
+          <input
+            className="cart-select-all__input"
+            type="checkbox"
+            id={checkboxId}
+            checked={isAllSelected}
+            ref={(el) => {
+              if (el) el.indeterminate = isIndeterminate;
+            }}
+            onChange={(e) => onSelectAll?.(e.target.checked)}
+            disabled={loading || allSkus.length === 0 || isUnavailable}
+          />
+          <label className="form-check-label" htmlFor={checkboxId}>
+            Выбрать всё
           </label>
+        </div>
 
+        {!isUnavailable && (
           <button
             className="cart-remove-selected"
             onClick={onDeleteSelected}
@@ -79,23 +79,27 @@ export default function CartItemsSection({
             </svg>
             {' '}Удалить
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Список товаров */}
-      {items.map((item) => (
-        <CartItem
-          key={item.sku}
-          item={item}
-          isUnavailable={isUnavailable}
-          onQuantityChange={onQuantityChange}
-          onDelete={onDelete}
-          onFavorite={onFavorite}
-          onCheckChange={onCheckChange}
-          selected={selectedItems.includes(item.sku)}
-          loading={loading}
-        />
-      ))}
+      {items.map((item) => {
+        const sku = item?.sku;
+        const checked = !!sku && selectedSet.has(sku);
+
+        return (
+          <CartItem
+            key={sku}
+            item={item}
+            checked={checked}
+            isUnavailable={isUnavailable}
+            onQuantityChange={onQuantityChange}
+            onDelete={onDelete}
+            onFavorite={onFavorite}
+            onCheckChange={onCheckChange}
+            loading={loading}
+          />
+        );
+      })}
     </div>
   );
 }

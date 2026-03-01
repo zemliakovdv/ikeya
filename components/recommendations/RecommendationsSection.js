@@ -30,8 +30,6 @@ export default function RecommendationsSection({ products = [] }) {
     setSwiperReady(true);
   }, []);
 
-  if (!products?.length) return null;
-
   return (
     <section className="reki">
       <div className="container">
