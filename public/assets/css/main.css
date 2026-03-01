@@ -1021,6 +1021,7 @@ main {
 .promo-card-inner .swiper-slide {
     height: auto;
     box-sizing: border-box;
+    width: 293px !important;
     min-width: 293px !important;
     margin-right: 0 !important;
 }
