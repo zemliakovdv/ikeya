@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
+import CustomsModal from '@/components/modals/CustomsModal';
 
 export default function CartSummary({
   subtotal = 0,
@@ -21,8 +22,8 @@ export default function CartSummary({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('error');
+  const [customsModalOpen, setCustomsModalOpen] = useState(false);
 
-  // Находим применённый промокод
   const appliedPromo = useMemo(() => {
     const items = cart?.items || [];
     const found = items.find((it) => it?.pricing?.promo_applied && it?.pricing?.promo_code);
@@ -30,8 +31,6 @@ export default function CartSummary({
   }, [cart]);
 
   const hasPromo = appliedPromo !== null;
-
-  // Итоговая сумма с учётом скидки
   const finalTotal = subtotal - promoDiscount + delivery + pvzDelivery;
 
   const show = (type, msg) => {
@@ -45,7 +44,6 @@ export default function CartSummary({
     e.preventDefault();
     const code = promoCode.trim();
     if (!code) return show('error', 'Введите промокод');
-
     try {
       await applyPromo(code);
       setPromoCode('');
@@ -130,7 +128,6 @@ export default function CartSummary({
           <p className="summery-row__cost">{subtotal.toFixed(2)} р.</p>
         </div>
 
-        {/* Строка скидки — display:flex когда есть промокод, скрыта когда нет */}
         <div
           className="cart-summary__row is_promocod"
           style={{ display: hasPromo && promoDiscount > 0 ? 'flex' : 'none' }}
@@ -156,7 +153,6 @@ export default function CartSummary({
           </div>
         )}
 
-        {/* Итого с учётом скидки */}
         <div className="cart-summary__total">
           <p>Итого</p>
           <div></div>
@@ -184,10 +180,21 @@ export default function CartSummary({
           </p>
           <p><span>≈65 р.</span> пошлина не входит в цену</p>
         </div>
-        <a href="#" className="cart-summary__details-link" data-bs-toggle="modal" data-bs-target="#customsModal">
+        {/* Заменили a[data-bs-toggle] на button + React state */}
+        <button
+          type="button"
+          className="cart-summary__details-link"
+          onClick={() => setCustomsModalOpen(true)}
+        >
           Подробнее
-        </a>
+        </button>
       </div>
+
+      <CustomsModal
+        isOpen={customsModalOpen}
+        onClose={() => setCustomsModalOpen(false)}
+      />
+
     </aside>
   );
 }

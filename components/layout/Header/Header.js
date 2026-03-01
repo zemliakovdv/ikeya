@@ -6,12 +6,15 @@ import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModals } from '@/components/auth/AuthModalsHost'
+import { useFavorites } from '@/contexts/FavoritesContext'
 import { getTopCategories } from '@/lib/api/ikea'
 
 export default function Header() {
   const { itemsCount } = useCart()
   const { isAuth, user, logout } = useAuth()
   const { openLogin } = useAuthModals()
+
+  const { count } = useFavorites();
 
   const [menuCategories, setMenuCategories] = useState([])
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -152,13 +155,13 @@ export default function Header() {
   const bottomItems =
     menuCategories.length > 0
       ? menuCategories.map((category) => {
-          const attrs = category.attributes || {}
-          return {
-            key: category.id,
-            href: `/catalog/${attrs.slug}`,
-            label: attrs.translated_name || attrs.name || 'Категория',
-          }
-        })
+        const attrs = category.attributes || {}
+        return {
+          key: category.id,
+          href: `/catalog/${attrs.slug}`,
+          label: attrs.translated_name || attrs.name || 'Категория',
+        }
+      })
       : fallbackCategories
 
   return (
@@ -226,12 +229,21 @@ export default function Header() {
 
                 <div className="header-middle-panel">
                   <div className="header-panel-item">
-                    <Link href="/favorites">
+                    <Link
+                      href="/profile/favorite"
+                      onClick={e => {
+                        if (!isAuth) {
+                          e.preventDefault();
+                          openLogin();
+                        }
+                      }}
+                    >
                       <img src="/assets/img/icons/header-favorite.svg" alt="Избранное" />
                       <p>Избранное</p>
-                      <span>0</span>
+                      {count > 0 && <span>{count}</span>}
                     </Link>
                   </div>
+
 
                   {/* Профиль: Войти / Профиль */}
                   {!isAuth ? (
@@ -306,7 +318,7 @@ export default function Header() {
 
                 <div className="profile-header__info">
                   <h6 className="profile-name">{user?.username || 'Профиль'}</h6>
-                  <Link href="/profile" className="profile-details-link" onClick={() => setIsProfileOpen(false)}>
+                  <Link href="/profile/personal-data/" className="profile-details-link" onClick={() => setIsProfileOpen(false)}>
                     Личные данные
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path
@@ -325,18 +337,18 @@ export default function Header() {
               <div className="profile-divider" />
 
               <nav className="profile-menu">
-                <Link href="/orders" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <Link href="/profile/orders/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <span className="menu-item-text">Заказы</span>
                   <span className="menu-item-badge" style={{ display: 'flex' }}>
                     3
                   </span>
                 </Link>
 
-                <Link href="/favorites" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <Link href="/profile/favorite/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <span className="menu-item-text">Избранное</span>
                 </Link>
 
-                <Link href="/reviews" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <Link href="/profile/reviews/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <span className="menu-item-text">Отзывы</span>
                 </Link>
               </nav>
@@ -344,11 +356,11 @@ export default function Header() {
               <div className="profile-divider" />
 
               <nav className="profile-menu">
-                <Link href="/receipts" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <Link href="/profile/electronic-receipts/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <span className="menu-item-text">Электронные чеки</span>
                 </Link>
 
-                <Link href="/returns" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <Link href="/profile/returns/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <span className="menu-item-text">Возвраты</span>
                 </Link>
 
@@ -356,7 +368,7 @@ export default function Header() {
                   <span className="menu-item-text">Помощь</span>
                 </Link>
 
-                <Link href="/settings" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
+                <Link href="/profile/settings/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <span className="menu-item-text">Персональные данные</span>
                 </Link>
               </nav>

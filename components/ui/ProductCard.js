@@ -5,6 +5,9 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
 import CartCounter from '@/components/cart/CartCounter';
+import { useFavorites } from '@/contexts/FavoritesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthModals } from '@/components/auth/AuthModalsHost';
 
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
@@ -20,7 +23,10 @@ export default function ProductCard({
   url = '#',
   sku,
 }) {
-  const [isLiked, setIsLiked] = useState(false);
+  const { isFavorite, add, remove } = useFavorites();
+  const { isAuth } = useAuth();
+  const { openLogin } = useAuthModals();
+  const isLiked = sku ? isFavorite(sku) : false;
   const { addToCart, items } = useCart();
 
   const productImages = images.length > 0 ? images : [PLACEHOLDER_IMAGE];
@@ -36,11 +42,24 @@ export default function ProductCard({
     e.target.src = PLACEHOLDER_IMAGE;
   };
 
-  const handleLikeClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsLiked(!isLiked);
-  };
+const handleLikeClick = async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!sku) return;
+
+  try {
+    if (isLiked) {
+      await remove(sku);
+    } else {
+      await add(sku);
+    }
+  } catch (error) {
+    console.error('Ошибка избранного:', error);
+  }
+};
+
+
 
   const handleAddToCart = async (e) => {
     e.preventDefault();

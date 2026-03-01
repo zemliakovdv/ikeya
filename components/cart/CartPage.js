@@ -156,7 +156,7 @@ export default function CartPage() {
                             selectedItems={selectedItems}
                             onQuantityChange={handleQuantityChange}
                             onDelete={handleDelete}
-                            onFavorite={() => {}}
+                            onFavorite={() => { }}
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
@@ -170,18 +170,21 @@ export default function CartPage() {
                             isUnavailable={true}
                             selectedItems={[]} // для недоступных не выбираем
                             onDelete={handleDelete}
-                            onFavorite={() => {}}
-                            onSelectAll={() => {}}
-                            onDeleteSelected={() => {}}
-                            onCheckChange={() => {}}
+                            onFavorite={() => { }}
+                            onSelectAll={() => { }}
+                            onDeleteSelected={() => { }}
+                            onCheckChange={() => { }}
                             loading={loading}
                           />
                         )}
 
                         {!hasAvailableItems && !hasUnavailableItems && (
                           <div className="cart-empty">
-                            <h3>Корзина пуста</h3>
-                            <p>Добавьте товары из каталога</p>
+                            <img src="/assets/img/cart/no-goods.png" alt="" />
+                            <h3>Ваша корзина пуста</h3>
+                            <button className="empty-btn" onClick={() => router.push('/')}>
+                              Перейти к покупкам
+                            </button>
                           </div>
                         )}
                       </div>
@@ -208,7 +211,7 @@ export default function CartPage() {
         </div>
       </section>
 
-  <RecommendationsSection products={recommendedProducts} />
+      <RecommendationsSection products={recommendedProducts} />
 
     </main>
   );

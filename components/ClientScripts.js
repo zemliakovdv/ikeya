@@ -10,12 +10,9 @@ export default function ClientScripts() {
     // Ждём загрузки Swiper
     const initScripts = () => {
       if (!window.Swiper) {
-        console.log('⏳ Ждём загрузки Swiper...');
         setTimeout(initScripts, 100);
         return;
       }
-
-      console.log('✅ Swiper загружен, инициализация скриптов');
 
       // ========== УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДЛЯ НАВИГАЦИИ ==========
       function updateNavigationButtons(swiper, prevSelector, nextSelector) {
@@ -88,7 +85,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Стартовый слайдер инициализирован');
       }
 
       // ========== СЛАЙДЕР КАТЕГОРИЙ ==========
@@ -122,7 +118,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Слайдер категорий инициализирован');
       }
 
       // ========== ГАЛЕРЕИ ТОВАРОВ ==========
@@ -170,7 +165,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Галереи товаров инициализированы');
       }
 
       // ========== СЛАЙДЕРЫ ТОВАРОВ ==========
@@ -204,7 +198,6 @@ export default function ClientScripts() {
           });
         });
 
-        console.log('✅ Слайдеры товаров инициализированы');
       }
 
       // ========== СЛАЙДЕР ПРОМО-КАРТОЧЕК ==========
@@ -258,7 +251,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Слайдер промо-карточек инициализирован');
       }
 
       // ========== СЛАЙДЕР РЕКЛАМНЫХ БАННЕРОВ ==========
@@ -293,7 +285,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Слайдер баннеров инициализирован');
       }
 
       // ========== СЛАЙДЕР БЛОГА ==========
@@ -328,7 +319,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Слайдер блога инициализирован');
       }
 
       // ========== УПРАВЛЕНИЕ МЕГА-МЕНЮ КАТАЛОГА ==========
@@ -413,7 +403,6 @@ export default function ClientScripts() {
           }
         };
 
-        console.log('✅ Каталог меню инициализировано');
       }
 
       // ========== SEO ТЕКСТ ==========
@@ -432,7 +421,6 @@ export default function ClientScripts() {
           seoTextContent.classList.remove('open');
         });
 
-        console.log('✅ SEO текст инициализирован');
       }
 
       // ========== ГАЛЕРЕЯ ТОВАРА (СТРАНИЦА ТОВАРА) ==========
@@ -462,7 +450,6 @@ export default function ClientScripts() {
           },
         });
 
-        console.log('✅ Галерея товара инициализирована');
       }
 
       // ========== СЛАЙДЕР ПРЕДМЕТОВ ==========
@@ -516,7 +503,6 @@ export default function ClientScripts() {
           },
         });
 
-        console.log('✅ Слайдер предметов инициализирован');
       }
 
       // ========== СОРТИРОВКА ==========
@@ -553,7 +539,6 @@ export default function ClientScripts() {
             if (icon) icon.style.transform = 'rotate(0deg)';
 
             const sortType = this.dataset.sort;
-            console.log('Выбрана сортировка:', sortType);
           });
         });
 
@@ -573,7 +558,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Сортировка инициализирована');
       }
 
       // ========== ЧИПСЫ ФИЛЬТРОВ ==========
@@ -669,7 +653,6 @@ export default function ClientScripts() {
           });
         });
 
-        console.log('✅ Чипсы фильтров инициализированы');
       }
 
       // ========== КНОПКИ "ЕЩЁ N" / "СКРЫТЬ" ==========
@@ -738,7 +721,6 @@ export default function ClientScripts() {
           });
         });
 
-        console.log('✅ Кнопки "Ещё" инициализированы');
       }
 
       // ========== ЗАКРЕПЛЕНИЕ ASIDE С ФИЛЬТРАМИ ==========
@@ -787,7 +769,6 @@ export default function ClientScripts() {
           
         }, { passive: false });
 
-        console.log('✅ Sticky фильтры инициализированы');
       }
 
       // ========== ОЧИСТКА ФИЛЬТРОВ ==========
@@ -819,7 +800,6 @@ export default function ClientScripts() {
 
         updateClearAllButton();
 
-        console.log('✅ Все фильтры очищены');
       }
 
       function initClearFilters() {
@@ -831,7 +811,6 @@ export default function ClientScripts() {
           clearAllFilters();
         });
 
-        console.log('✅ Очистка фильтров инициализирована');
       }
 
       // ========== СВОРАЧИВАНИЕ СЕКЦИЙ ФИЛЬТРОВ ==========
@@ -863,8 +842,6 @@ export default function ClientScripts() {
             }
           });
         });
-
-        console.log('✅ Сворачивание секций фильтров инициализировано');
       }
 
       // ========== СЛАЙДЕР ЦЕНЫ ==========
@@ -1056,8 +1033,6 @@ export default function ClientScripts() {
         inputMax.value = INITIAL_MAX_VALUE.toFixed(2);
         
         updateSlider();
-        
-        console.log('✅ Слайдер цены инициализирован');
       }
 
       // ========== STICKY КАРТОЧКА ТОВАРА ==========
@@ -1111,7 +1086,6 @@ export default function ClientScripts() {
           }
         });
 
-        console.log('✅ Sticky карточка товара инициализирована');
       }
 
       // ========== ВЫЗОВ ВСЕХ ФУНКЦИЙ ==========
@@ -1134,8 +1108,6 @@ export default function ClientScripts() {
       initFilterSectionsToggle();
       initPriceSlider();
       initStickyProductCard();
-
-      console.log('🎉 Все скрипты инициализированы');
     };
 
     initScripts();

@@ -5044,7 +5044,7 @@ main {
     color: #181818;
 }
 
-.cart-summary__note a {
+.cart-summary__note button {
     font-weight: 400;
     font-size: 14px;
     line-height: 143%;
@@ -5052,6 +5052,9 @@ main {
     text-decoration: underline;
     text-decoration-skip-ink: none;
     color: #0058a3;
+    background: transparent;
+    border: none;
+    outline: none;
 }
 
 .card-summary__coupon {
@@ -5387,7 +5390,7 @@ main {
 /* Выпадающее меню */
 .profile-dropdown {
     position: absolute;
-    top: 105px;
+    top: 115px;
     right: 200px;
     width: 332px;
     background: #fff;

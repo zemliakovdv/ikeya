@@ -1,55 +1,79 @@
-// components/profile/FavoriteProductCard.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
-import { removeFavorite } from '@/lib/api/account';
+import { useFavorites } from '@/contexts/FavoritesContext';
 import { useCart } from '@/contexts/CartContext';
+import CartCounter from '@/components/cart/CartCounter';
+
+const API_BASE_URL = 'http://45.135.234.22';
+const PLACEHOLDER   = '/assets/img/no-image.jpg';
+const THUMBS_VISIBLE = 3;
 
 function formatPrice(price) {
-  const [int, dec] = Number(price).toFixed(2).split('.');
+  const num = Number(price || 0);
+  const int = Math.floor(num);
+  const dec = ((num % 1) * 100).toFixed(0).padStart(2, '0');
   return { int, dec };
 }
 
-const THUMBS_VISIBLE = 3;
+function buildImages(rawImages) {
+  const list =
+    rawImages?.local_images?.filter(Boolean).length
+      ? rawImages.local_images
+      : rawImages?.images?.filter(Boolean) ?? [];
+
+  if (!list.length) return [PLACEHOLDER];
+
+  return list.map(img => {
+    const clean = img.startsWith('/') ? img.slice(1) : img;
+    return `${API_BASE_URL}/${clean}`;
+  });
+}
 
 export default function FavoriteProductCard({ product, onRemoved }) {
-  const { addToCart } = useCart();
-  const [thumbsSwiper,  setThumbsSwiper]  = useState(null);
-  const [removing,      setRemoving]      = useState(false);
-  const [addingToCart,  setAddingToCart]  = useState(false);
+  const { remove } = useFavorites();
+  const { items: cartItems, addToCart } = useCart();
+  const [thumbsSwiper, setThumbsSwiper] = useState(null);
+  const [removing,     setRemoving]     = useState(false);
 
-  const { int, dec } = formatPrice(product.price);
-  const images = product.images?.length ? product.images : [product.image ?? '/assets/img/catalog-page/card/card_1.png'];
-  const thumbImages    = images.slice(0, THUMBS_VISIBLE);
-  const extraCount     = images.length - THUMBS_VISIBLE;
+  const sku   = product.sku;
+  const title = product.name_ru || product.name || 'Товар';
+  const desc  = product.collection || '';
+  const { int, dec } = formatPrice(product.price_byn);
 
-  async function handleRemove() {
+  const images      = useMemo(() => buildImages(product.images), [product.images]);
+  const thumbImages = images.slice(0, THUMBS_VISIBLE);
+  const extraCount  = images.length - THUMBS_VISIBLE;
+
+  const quantity = useMemo(() => {
+    const found = (cartItems || []).find(it => it?.sku === sku);
+    return Number(found?.quantity || 0);
+  }, [cartItems, sku]);
+
+  const handleRemove = useCallback(async () => {
     setRemoving(true);
     try {
-      await removeFavorite(product.id);
-      onRemoved(product.id);
+      await remove(sku);
+      onRemoved?.(sku);
     } catch (e) {
       console.error('Ошибка удаления из избранного', e);
       setRemoving(false);
     }
-  }
+  }, [remove, sku, onRemoved]);
 
-  async function handleAddToCart() {
-    setAddingToCart(true);
+  const handleAddToCart = useCallback(async () => {
     try {
-      await addToCart(product.id, 1);
+      await addToCart(sku, 1);
     } catch (e) {
       console.error('Ошибка добавления в корзину', e);
-    } finally {
-      setAddingToCart(false);
     }
-  }
+  }, [addToCart, sku]);
 
   return (
     <div className="col product-card-inner">
@@ -57,8 +81,6 @@ export default function FavoriteProductCard({ product, onRemoved }) {
 
         {/* Галерея */}
         <div className="product-card__gallery">
-
-          {/* Основной слайдер */}
           <Swiper
             style={{ '--swiper-navigation-color': '#fff', '--swiper-pagination-color': '#fff' }}
             className="swiper product-gallery-main"
@@ -70,14 +92,13 @@ export default function FavoriteProductCard({ product, onRemoved }) {
           >
             {images.map((img, idx) => (
               <SwiperSlide key={idx}>
-                <Link href={`/product/${product.slug}`}>
-                  <img src={img} alt={product.name} />
+                <Link href={`/product/${sku}`}>
+                  <img src={img} alt={title} onError={e => { e.target.src = PLACEHOLDER; }} />
                 </Link>
               </SwiperSlide>
             ))}
           </Swiper>
 
-          {/* Слайдер миниатюр */}
           <Swiper
             className="swiper product-gallery-thumbs"
             modules={[Thumbs]}
@@ -88,7 +109,7 @@ export default function FavoriteProductCard({ product, onRemoved }) {
           >
             {thumbImages.map((img, idx) => (
               <SwiperSlide key={idx}>
-                <img src={img} alt="Миниатюра" />
+                <img src={img} alt="Миниатюра" onError={e => { e.target.src = PLACEHOLDER; }} />
               </SwiperSlide>
             ))}
             {extraCount > 0 && (
@@ -99,35 +120,37 @@ export default function FavoriteProductCard({ product, onRemoved }) {
           </Swiper>
         </div>
 
-        {/* Инфо о товаре */}
+        {/* Инфо */}
         <div className="product-card__info">
-          <h3 className="product-card__title">
-            <Link href={`/product/${product.slug}`}>{product.name}</Link>
-          </h3>
-          <p className="product-card__description">{product.description}</p>
+          <Link href={`/product/${sku}`} className="product-card__header">
+            <h3 className="product-card__title">{title}</h3>
+            {desc && <p className="product-card__description">{desc}</p>}
+          </Link>
           <p className="product-card__price">
             {int}<span>.{dec} р.</span>
           </p>
-          <button
-            className="shop_button"
-            onClick={handleAddToCart}
-            disabled={addingToCart}
-          >
-            <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
-            <p>{addingToCart ? 'Добавляем…' : 'В корзину'}</p>
-          </button>
+
+          {quantity > 0 ? (
+            <CartCounter sku={sku} className="added-fullwidth" />
+          ) : (
+            <button className="shop_button" onClick={handleAddToCart} type="button">
+              <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
+              <p>В корзину</p>
+            </button>
+          )}
         </div>
 
         {/* Бейджи */}
-        {product.is_hit && <span className="sales-hit">Хит продаж</span>}
-        {product.discount && (
-          <span className="sales-hit pink" style={{ display: 'inline-block' }}>
-            -{product.discount}% промокод IKEYA
-          </span>
-        )}
+        {product.is_bestseller && <span className="sales-hit">Хит продаж</span>}
 
-        {/* Лайк — убрать из избранного */}
-        <button className="like" onClick={handleRemove} disabled={removing}>
+        {/* Удалить из избранного */}
+        <button
+          className="like active"
+          onClick={handleRemove}
+          disabled={removing}
+          aria-label="Удалить из избранного"
+          type="button"
+        >
           <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 17.22C9.34 17.22 8.67 17.01 8.1 16.58C5.66 14.76 0 10.04 0 5.53C0 2.43 2.35 0 5.35 0C7.01 0 8.43 0.62 10 2.06C11.57 0.62 12.99 0 14.65 0C17.65 0 20 2.43 20 5.53C20 10.03 14.33 14.75 11.9 16.58C11.33 17 10.67 17.22 10 17.22ZM5.35 1.4C3.1 1.4 1.4 3.18 1.4 5.53C1.4 9.51 7.17 14.13 8.94 15.46C9.57 15.93 10.43 15.93 11.06 15.46C12.83 14.14 18.6 9.51 18.6 5.53C18.6 3.17 16.9 1.4 14.65 1.4C13.59 1.4 12.36 1.66 10.49 3.52C10.22 3.79 9.78 3.79 9.5 3.52C7.64 1.66 6.4 1.4 5.34 1.4H5.35Z" fill="#181818"/>
           </svg>
