@@ -146,7 +146,7 @@ export default function CartPage() {
                 )}
 
                 <div className="zakaz-content">
-                  <div className="cart">
+                  <div className={`cart${!hasAvailableItems && !hasUnavailableItems ? ' is-empty-cart' : ''}`}>
                     <div className="cart-layout">
                       <div className="cart-main">
                         {hasAvailableItems && (

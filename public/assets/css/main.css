@@ -4622,6 +4622,11 @@ main {
     max-width: 1124px;
 }
 
+.is-empty-cart .cart-main{
+    width: 100%;
+    max-width: 100%;
+}
+
 .cart-empty {
     margin: 0 auto;
     text-align: center;
