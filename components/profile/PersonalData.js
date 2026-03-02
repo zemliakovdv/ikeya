@@ -5,13 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProfile } from '@/lib/api/account';
 
 import EditPersonalDataModal from './modals/EditPersonalDataModal';
-import DeliveryPickupModal from './modals/DeliveryPickupModal';
-import EditPhoneModal from './modals/EditPhoneModal';
-import EditEmailModal from './modals/EditEmailModal';
-import EditPassportModal from './modals/EditPassportModal';
-import SmsVerifyModal from './modals/SmsVerifyModal';
-
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+import DeliveryPickupModal   from './modals/DeliveryPickupModal';
+import EditPhoneModal        from './modals/EditPhoneModal';
+import EditEmailModal        from './modals/EditEmailModal';
+import EditPassportModal     from './modals/EditPassportModal';
 
 export default function PersonalData() {
   const { isAuth, isHydrated } = useAuth();
@@ -19,30 +16,34 @@ export default function PersonalData() {
   const [loading, setLoading] = useState(true);
   const [showPassportData, setShowPassportData] = useState(false);
   const [modal, setModal] = useState(null);
-
-  const [verificationId, setVerificationId] = useState(null);
-  const [callerMasked, setCallerMasked] = useState('');
-  const [smsCode, setSmsCode] = useState('');
-  const [smsError, setSmsError] = useState('');
-  const [smsLoading, setSmsLoading] = useState(false);
-
-  // Сохранённый адрес доставки
   const [selectedPickupPoint, setSelectedPickupPoint] = useState(null);
 
-  useEffect(() => {
-    if (!isHydrated || !isAuth) return;
-    async function loadProfile() {
-      try {
-        const data = await getProfile();
-        setProfile(data);
-      } catch (e) {
-        console.error('PersonalData: ошибка загрузки профиля', e);
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  if (!isHydrated || !isAuth) return;
+  getProfile()
+    .then(data => {
+      setProfile(data);
+
+      // Восстанавливаем сохранённый адрес из профиля
+      if (data?.city && data?.address) {
+        setSelectedPickupPoint({
+          name:    data.city,
+          city:    data.city,
+          address: data.address,
+        });
       }
-    }
-    loadProfile();
-  }, [isHydrated, isAuth]);
+    })
+    .catch(e => console.error('PersonalData: ошибка загрузки профиля', e))
+    .finally(() => setLoading(false));
+}, [isHydrated, isAuth]);
+
+
+  // После сохранения любой модалки обновляем профиль локально
+  function handleSave(updated) {
+    if (updated) setProfile(updated);
+  }
+
+  const closeModal = () => setModal(null);
 
   function formatPhone(raw) {
     if (!raw) return '—';
@@ -53,47 +54,28 @@ export default function PersonalData() {
     return `+${d}`;
   }
 
-  const closeModal = () => { setModal(null); setSmsError(''); setSmsCode(''); };
-
-  async function requestSms(phone, context) {
-    setSmsLoading(true);
-    setSmsError('');
-    try {
-      const res = await fetch(`${API_BASE_URL}/a1/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phone.replace(/\D/g, ''), context }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Ошибка запроса кода');
-      setVerificationId(data.verification_id);
-      setCallerMasked(data.caller_number_masked || '');
-      setSmsCode('');
-      setModal('sms');
-    } catch (e) {
-      setSmsError(e.message);
-    } finally {
-      setSmsLoading(false);
-    }
+  function formatDate(raw) {
+    if (!raw) return '—';
+    const [y, m, d] = raw.split('-');
+    return `${d}.${m}.${y}`;
   }
 
-  async function verifySms() {
-    if (smsCode.length !== 4) { setSmsError('Введите 4 цифры'); return; }
-    setSmsLoading(true);
-    setSmsError('');
-    try {
-      const res = await fetch(`${API_BASE_URL}/a1/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verification_id: verificationId, last4: smsCode }),
-      });
-      if (!res.ok) throw new Error('Неверный код');
-      closeModal();
-    } catch (e) {
-      setSmsError(e.message);
-    } finally {
-      setSmsLoading(false);
-    }
+  function formatGender(val) {
+    if (val === 'male')   return 'Мужской';
+    if (val === 'female') return 'Женский';
+    return '—';
+  }
+
+  function formatFullName() {
+    const parts = [profile?.last_name, profile?.first_name, profile?.middle_name].filter(Boolean);
+    return parts.length ? parts.join(' ') : '—';
+  }
+
+  function formatAddress() {
+    const p = profile?.passport_data;
+    if (!p) return '—';
+    const parts = [p.region, p.city, p.street, p.house, p.building, p.apartment].filter(Boolean);
+    return parts.length ? parts.join(', ') : '—';
   }
 
   if (loading) return <div className="profile-loading">Загружаем данные…</div>;
@@ -102,26 +84,43 @@ export default function PersonalData() {
     <div className="in_processing-layout persdat-layout">
       <section className="profile-data-main">
         <div className="profile-data">
+
+          {/* Личные данные */}
           <div className="data-section">
             <div className="data-section__header">
               <h3 className="data-section__title">Личные данные</h3>
               <button className="data-section__edit" onClick={() => setModal('personal')}>Изменить</button>
             </div>
             <div className="data-section__body">
-              <div className="data-item"><label className="data-item__label">Имя</label><p className="data-item__value">{profile?.username || '—'}</p></div>
-              <div className="data-item"><label className="data-item__label">Дата рождения</label><p className="data-item__value">—</p></div>
-              <div className="data-item"><label className="data-item__label">Пол</label><p className="data-item__value">—</p></div>
+              <div className="data-item">
+                <label className="data-item__label">ФИО</label>
+                <p className="data-item__value">{formatFullName()}</p>
+              </div>
+              <div className="data-item">
+                <label className="data-item__label">Дата рождения</label>
+                <p className="data-item__value">{formatDate(profile?.dob)}</p>
+              </div>
+              <div className="data-item">
+                <label className="data-item__label">Пол</label>
+                <p className="data-item__value">{formatGender(profile?.gender)}</p>
+              </div>
             </div>
           </div>
+
+          {/* Телефон */}
           <div className="data-section">
             <div className="data-section__header">
               <h3 className="data-section__title">Телефон</h3>
               <button className="data-section__edit" onClick={() => setModal('phone')}>Изменить</button>
             </div>
             <div className="data-section__body">
-              <div className="data-item"><p className="data-item__value">{formatPhone(profile?.phone)}</p></div>
+              <div className="data-item">
+                <p className="data-item__value">{formatPhone(profile?.phone)}</p>
+              </div>
             </div>
           </div>
+
+          {/* Почта */}
           <div className="data-section">
             <div className="data-section__header">
               <h3 className="data-section__title">Почта</h3>
@@ -155,14 +154,18 @@ export default function PersonalData() {
                 </div>
               ) : (
                 <div className="data-item">
-                  <p className="data-item__value" style={{ color: '#9e9e9e' }}>Адреса появятся после добавления</p>
+                  <p className="data-item__value" style={{ color: '#9e9e9e' }}>
+                    Адреса появятся после добавления
+                  </p>
                 </div>
               )}
             </div>
           </div>
+
         </div>
       </section>
 
+      {/* Паспорт */}
       <aside className="profile-data-aside">
         <div className="passport-data">
           <div className="data-section">
@@ -173,33 +176,75 @@ export default function PersonalData() {
             <div className="data-section__body">
               {profile?.passport_verified ? (
                 <>
-                  <div className="data-item"><label className="data-item__label">Статус</label><p className="data-item__value" style={{ color: '#04A31A' }}>Паспорт верифицирован</p></div>
-                  <button className="data-toggle" onClick={() => setShowPassportData(!showPassportData)}>
+                  <div className="data-item">
+                    <label className="data-item__label">Статус</label>
+                    <p className="data-item__value" style={{ color: '#04A31A' }}>Паспорт верифицирован</p>
+                  </div>
+                  <button className="data-toggle" onClick={() => setShowPassportData(p => !p)}>
                     {showPassportData ? 'Скрыть данные' : 'Показать данные'}
                   </button>
+                  {showPassportData && (
+                    <div className="passport-details" style={{ marginTop: '12px' }}>
+                      <div className="data-item">
+                        <label className="data-item__label">ФИО</label>
+                        <p className="data-item__value">
+                          {[profile.passport_data?.last_name, profile.passport_data?.first_name, profile.passport_data?.middle_name].filter(Boolean).join(' ') || '—'}
+                        </p>
+                      </div>
+                      <div className="data-item">
+                        <label className="data-item__label">Серия / Номер</label>
+                        <p className="data-item__value">
+                          {profile.passport_data?.series} {profile.passport_data?.number}
+                        </p>
+                      </div>
+                      <div className="data-item">
+                        <label className="data-item__label">Дата выдачи</label>
+                        <p className="data-item__value">{formatDate(profile.passport_data?.issue_date)}</p>
+                      </div>
+                      <div className="data-item">
+                        <label className="data-item__label">Адрес прописки</label>
+                        <p className="data-item__value">{formatAddress()}</p>
+                      </div>
+                    </div>
+                  )}
                 </>
+              ) : profile?.passport_data?.series ? (
+                <div className="data-item">
+                  <p className="data-item__value" style={{ color: '#E65100' }}>
+                    На проверке у менеджера
+                  </p>
+                </div>
               ) : (
-                <div className="data-item"><p className="data-item__value" style={{ color: '#9e9e9e' }}>Паспорт не верифицирован</p></div>
+                <div className="data-item">
+                  <p className="data-item__value" style={{ color: '#9e9e9e' }}>
+                    Паспорт не добавлен
+                  </p>
+                </div>
               )}
             </div>
           </div>
         </div>
       </aside>
 
-      {modal === 'personal'  && <EditPersonalDataModal profile={profile} onClose={closeModal} />}
-      {modal === 'phone'     && <EditPhoneModal profile={profile} onClose={closeModal} onRequestSms={requestSms} loading={smsLoading} error={smsError} />}
-      {modal === 'email'     && <EditEmailModal profile={profile} onClose={closeModal} />}
-      {modal === 'address'   && (
+      {/* Модалки */}
+      {modal === 'personal' && (
+        <EditPersonalDataModal profile={profile} onClose={closeModal} onSave={handleSave} />
+      )}
+      {modal === 'phone' && (
+        <EditPhoneModal profile={profile} onClose={closeModal} onSave={handleSave} />
+      )}
+      {modal === 'email' && (
+        <EditEmailModal profile={profile} onClose={closeModal} onSave={handleSave} />
+      )}
+      {modal === 'address' && (
         <DeliveryPickupModal
           onClose={closeModal}
-          onSelect={(point) => {
-            setSelectedPickupPoint(point);
-            closeModal();
-          }}
+          onSelect={(point) => { setSelectedPickupPoint(point); closeModal(); }}
         />
       )}
-      {modal === 'passport'  && <EditPassportModal profile={profile} onClose={closeModal} onRequestSms={requestSms} loading={smsLoading} error={smsError} />}
-      {modal === 'sms'       && <SmsVerifyModal callerMasked={callerMasked} smsCode={smsCode} onChange={setSmsCode} onConfirm={verifySms} onClose={closeModal} loading={smsLoading} error={smsError} />}
+      {modal === 'passport' && (
+        <EditPassportModal profile={profile} onClose={closeModal} onSave={handleSave} />
+      )}
       {modal && <div className="modal-backdrop fade show" onClick={closeModal} />}
     </div>
   );
