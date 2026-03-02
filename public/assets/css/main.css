@@ -4634,6 +4634,10 @@ main {
     padding-bottom: 50px;
 }
 
+.cart-empty h3{
+    margin-bottom: 20px;
+}
+
 .cart-main__top,
 .cart-section__top {
     display: flex;
