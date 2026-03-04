@@ -164,10 +164,10 @@ export default async function ProductPage({ params }) {
   const { relatedProducts, similarProducts } = getRelatedAndSimilarProducts(product, categoryProducts);
 
   let images = [];
-  try {
-    images = attr.local_images ? JSON.parse(attr.local_images) : [];
-  } catch (e) {
-    console.error('Error parsing images:', e);
+  if (attr.local_images) {
+    images = Array.isArray(attr.local_images)
+      ? attr.local_images  // уже массив — берём как есть
+      : JSON.parse(attr.local_images);  // строка — парсим
   }
 
   const breadcrumbs = await buildBreadcrumbs(productData);

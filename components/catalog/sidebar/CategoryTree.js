@@ -4,7 +4,31 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function CategoryTree({ 
+function buildPathFromChain(chain) {
+  const slugs = (chain || [])
+    .map((c) => c?.attributes?.slug)
+    .filter(Boolean);
+
+  return slugs.length ? `/catalog/${slugs.join('/')}` : '/catalog';
+}
+
+function getRootItemHref(item) {
+  // формат 1: { slug, name }
+  if (item?.slug) return `/catalog/${item.slug}`;
+
+  // формат 2: api node { id, attributes }
+  const slug = item?.attributes?.slug;
+  if (slug) return `/catalog/${slug}`;
+
+  return '/catalog';
+}
+
+function getRootItemName(item) {
+  if (item?.name) return item.name;
+  return item?.attributes?.translated_name || item?.attributes?.name || 'Категория';
+}
+
+export default function CategoryTree({
   currentCategory = null,
   parentCategory = null,
   grandParentCategory = null,
@@ -16,125 +40,80 @@ export default function CategoryTree({
   childCategories = null
 }) {
   const pathname = usePathname();
-  
-  if (categoryChain && categoryChain.length > 0) {
-    const breadcrumb = [
-      { name: 'Все категории', href: '/catalog', ikea_id: null },
-      ...categoryChain.map((cat, index) => ({
-        name: cat.attributes.translated_name,
-        href: `/catalog/${cat.id}`,  // ✅ ИСПРАВЛЕНО
-        ikea_id: cat.id,  // ✅ ИСПРАВЛЕНО
-        level: index + 1
-      }))
-    ];
-    
-    const children = childCategories || [];
-    
-    return (
-      <div className="category-sidebar">
-        <h3 className="category-sidebar__title">Категория</h3>
-        
-        <nav className="category-tree">
-          {breadcrumb.map((item, index) => {
-            const isLast = index === breadcrumb.length - 1;
-            
-            if (index === 0 && breadcrumb.length === 1) {
-              return null;
-            }
-            
-            return (
-              <div 
-                key={item.ikea_id || 'all'} 
-                className={`category-tree__item level-${index}`}
-              >
-                <Link 
-                  href={item.href}
-                  className={`category-tree__link ${isLast ? 'current' : ''}`}
-                >
-                  <span className="chevron">‹</span>
-                  {item.name}
-                </Link>
-              </div>
-            );
-          })}
-          
-          {children.length > 0 && (
-            <div className="category-tree__children">
-              {children.map(child => {
-                const childHref = `/catalog/${child.id}`;  // ✅ ИСПРАВЛЕНО
-                const isActive = pathname === childHref;
-                
-                return (
-                  <Link
-                    key={child.id}
-                    href={childHref}
-                    className={`category-tree__child ${isActive ? 'active' : ''}`}
-                  >
-                    {child.attributes.translated_name}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </nav>
-      </div>
-    );
-  }
-  
-  const categoryChainFromProps = [];
-  
-  if (greatGrandParentCategory) categoryChainFromProps.push(greatGrandParentCategory);
-  if (grandParentCategory) categoryChainFromProps.push(grandParentCategory);
-  if (parentCategory) categoryChainFromProps.push(parentCategory);
-  if (currentCategory) categoryChainFromProps.push(currentCategory);
-  
-  if (categoryChainFromProps.length === 0 && level === 0) {
-    return (
-      <div className="category-sidebar">
-        <h3 className="category-sidebar__title">Категория</h3>
-        <nav className="category-tree">
-          {rootCategories.length > 0 && (
-            <div className="category-tree__root">
-              {rootCategories.map(cat => (
-                <Link
-                  key={cat.id}
-                  href={`/catalog/${cat.ikea_id}`}
-                  className="category-tree__link"
-                >
-                  {cat.name}
-                </Link>
-              ))}
-            </div>
-          )}
-        </nav>
-      </div>
-    );
-  }
-  
-  const breadcrumb = [
-    { name: 'Все категории', href: '/catalog', ikea_id: null },
-    ...categoryChainFromProps.map((cat, index) => ({
-      name: cat.attributes.translated_name,
-      href: `/catalog/${cat.id}`,  // ✅ ИСПРАВЛЕНО
-      ikea_id: cat.id,  // ✅ ИСПРАВЛЕНО
-      level: index + 1
-    }))
-  ];
+
+// ✅ ЖЁСТКО: если мы на /catalog (нет текущей категории) — всегда показываем корневые категории
+if (!currentCategory) {
+  console.log('CategoryTree root mode, rootCategories:', rootCategories.length);
   
   return (
     <div className="category-sidebar">
       <h3 className="category-sidebar__title">Категория</h3>
-      
+
+      <nav className="category-tree">
+        <div className="category-tree__root">
+          {(rootCategories || []).map((cat, idx) => {
+            const href = getRootItemHref(cat);
+            const name = getRootItemName(cat);
+            const key = cat?.slug || cat?.id || `${href}-${idx}`;
+
+            return (
+              <Link
+                key={key}
+                href={href}
+                className={`category-tree__link ${pathname === href ? 'active' : ''}`}
+              >
+                {name}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+
+  // 1) если пришла цепочка категорий — используем её
+  const chain =
+    Array.isArray(categoryChain) && categoryChain.length > 0
+      ? categoryChain
+      : (() => {
+          const arr = [];
+          if (greatGrandParentCategory) arr.push(greatGrandParentCategory);
+          if (grandParentCategory) arr.push(grandParentCategory);
+          if (parentCategory) arr.push(parentCategory);
+          if (currentCategory) arr.push(currentCategory);
+          return arr;
+        })();
+
+  const children = childCategories || subcategories || [];
+
+  const breadcrumb = [
+    { name: 'Все категории', href: '/catalog', key: 'all' },
+    ...chain.map((cat, index) => {
+      const partialChain = chain.slice(0, index + 1);
+      const href = buildPathFromChain(partialChain);
+      return {
+        name: cat?.attributes?.translated_name || cat?.attributes?.name || 'Категория',
+        href,
+        key: cat?.id || href
+      };
+    })
+  ];
+
+  const basePath = buildPathFromChain(chain);
+
+  return (
+    <div className="category-sidebar">
+      <h3 className="category-sidebar__title">Категория</h3>
+
       <nav className="category-tree">
         {breadcrumb.map((item, index) => {
           const isLast = index === breadcrumb.length - 1;
-          
+
           return (
-            <div 
-              key={item.ikea_id || 'all'} 
-              className={`category-tree__item level-${index}`}
-            >
-              <Link 
+            <div key={item.key} className={`category-tree__item level-${index}`}>
+              <Link
                 href={item.href}
                 className={`category-tree__link ${isLast ? 'current' : ''}`}
               >
@@ -144,20 +123,27 @@ export default function CategoryTree({
             </div>
           );
         })}
-        
-        {subcategories.length > 0 && (
+
+        {children.length > 0 && (
           <div className="category-tree__children">
-            {subcategories.map(child => {
-              const childHref = `/catalog/${child.id}`;  // ✅ ИСПРАВЛЕНО
+            {children.map((child) => {
+              const childSlug = child?.attributes?.slug;
+              if (!childSlug) return null;
+
+              const childHref =
+                basePath === '/catalog'
+                  ? `/catalog/${childSlug}`
+                  : `${basePath}/${childSlug}`;
+
               const isActive = pathname === childHref;
-              
+
               return (
                 <Link
-                  key={child.id}
+                  key={child.id || childHref}
                   href={childHref}
                   className={`category-tree__child ${isActive ? 'active' : ''}`}
                 >
-                  {child.attributes.translated_name}
+                  {child?.attributes?.translated_name || child?.attributes?.name || 'Категория'}
                 </Link>
               );
             })}
