@@ -82,7 +82,7 @@ export default function ProductCard({ product }) {
 
   const badges = [];
   if (attr.is_bestseller) badges.push('Хит продаж');
-  if (attr.is_popular) badges.push('Популярное');
+  if (attr.is_popular) badges.push('Хит продаж');
 
   return (
     <div className="col product-card-inner">
