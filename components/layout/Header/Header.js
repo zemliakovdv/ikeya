@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModals } from '@/components/auth/AuthModalsHost'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { getTopCategories } from '@/lib/api/ikea'
+import MegaMenu from './MegaMenu'
+import SearchBox from './SearchBox'
 
 export default function Header() {
   const { itemsCount } = useCart()
@@ -18,6 +20,7 @@ export default function Header() {
 
   const [menuCategories, setMenuCategories] = useState([])
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false) // ← добавлено
 
   const dropdownRef = useRef(null)
   const toggleRef = useRef(null)
@@ -211,21 +214,26 @@ export default function Header() {
                   <Link href="/" className="logo">
                     <img src="/assets/img/logo.svg" alt="Логотип" />
                   </Link>
-                  <button id="catalogButton" className="catalog-btn" type="button">
-                    <img src="/assets/img/icons/catalog-button.svg" alt="Каталог" />
+                  {/* ← добавлен только onClick */}
+                  <button
+                    id="catalogButton"
+                    className="catalog-btn"
+                    type="button"
+                    onClick={() => setIsMegaMenuOpen((v) => !v)}
+                  >
+                    {isMegaMenuOpen ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      <img src="/assets/img/icons/catalog-button.svg" alt="Каталог" />
+                    )}
                     <p>Каталог</p>
                   </button>
                   <Link href="#">Услуги</Link>
                 </div>
 
-                <div className="header-middle-search">
-                  <div className="middle-searh-inner">
-                    <input type="search" placeholder="Поиск по названию, артикулу" id="search-form" />
-                    <button type="submit" className="search-but">
-                      <img src="/assets/img/icons/header-search.svg" alt="Поиск" />
-                    </button>
-                  </div>
-                </div>
+                <SearchBox />
 
                 <div className="header-middle-panel">
                   <div className="header-panel-item">
@@ -382,6 +390,9 @@ export default function Header() {
           </div>
         )}
       </div>
+
+      {/* ← мегаменю рендерится здесь, между header-middle и header-bottom */}
+      <MegaMenu isOpen={isMegaMenuOpen} onClose={() => setIsMegaMenuOpen(false)} />
 
       <div className="header-bottom">
         <div className="container">
