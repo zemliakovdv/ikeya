@@ -47,21 +47,11 @@ export default function ProductInfo({ product }) {
   const rating = parseFloat(attr.rating_avg) || 0;
   const ratingCount = attr.rating_count || 0;
 
-  // Парсим локальные изображения
-  let localImages = [];
-  try {
-    localImages = attr.local_images ? JSON.parse(attr.local_images) : [];
-  } catch (e) {
-    console.error('Error parsing local_images:', e);
-  }
+  // local_images уже приходит как массив с сервера
+  const localImages = Array.isArray(attr.local_images) ? attr.local_images : []
 
-  // Парсим варианты
-  let variants = [];
-  try {
-    variants = attr.variants || [];
-  } catch (e) {
-    console.error('Error parsing variants:', e);
-  }
+  // Варианты
+  const variants = Array.isArray(attr.variants) ? attr.variants : []
 
   return (
     <div className="goods-content">
@@ -100,7 +90,12 @@ export default function ProductInfo({ product }) {
 
         {/* Цена */}
         <div className="goods-costs">
-          <p>{Math.floor(attr.price)}<span>.{(attr.price % 1).toFixed(2).slice(2)}</span></p>
+          {(() => {
+            const price = parseFloat(attr.price) || 0
+            const priceInt = Math.floor(price)
+            const priceDec = (price % 1).toFixed(2).slice(2)
+            return <p>{priceInt}<span>.{priceDec}</span></p>
+          })()}
 
           {attr.delivery_name && (
             <div className="goods-delivery">
@@ -128,7 +123,7 @@ export default function ProductInfo({ product }) {
             </button>
             <p>
               <span>≈</span>
-              <span className="poshlina-number">{Math.floor(attr.price * 0.2)}</span>
+              <span className="poshlina-number">{Math.floor(parseFloat(attr.price) * 0.2)}</span>
               <span className="poshlina-valute">р.</span> пошлина не входит в цену
             </p>
           </div>

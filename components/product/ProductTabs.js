@@ -18,38 +18,34 @@ export default function ProductTabs({ product }) {
   // Проверка статей из API
   const [hasAdvices, setHasAdvices] = useState(false);
   const [advicesLoaded, setAdvicesLoaded] = useState(false);
-  
+
+  // Данные из full_attributes_ru
+  const fa = attr.full_attributes_ru || {};
+
   // Проверяем наличие данных для каждого таба
   const hasDescription = Boolean(
-    (attr.content_ru && attr.content_ru.trim() !== '' && attr.content_ru !== 'null') ||
-    (attr.short_description_ru && attr.short_description_ru.trim() !== '' && attr.short_description_ru !== 'null')
+    fa.description?.short_description ||
+    (fa.description?.description && fa.description.description.length > 0)
   );
-  
-  const hasSizes = Boolean(
-    (attr.dimensions && attr.dimensions !== 'null') ||
-    (attr.package_dimensions && attr.package_dimensions !== 'null')
-  );
-  
+
+  const hasSizes = Boolean(fa.size && Object.keys(fa.size).length > 0);
+
   const hasMaterials = Boolean(
-    attr.materials && 
-    attr.materials.trim() !== '' && 
-    attr.materials !== 'null'
+    fa.materials?.materials || fa.materials?.desc
   );
-  
+
   const hasItems = Boolean(
-    attr.variants && 
-    Array.isArray(attr.variants) && 
+    attr.variants &&
+    Array.isArray(attr.variants) &&
     attr.variants.length > 0
   );
-  
+
   const hasInstructions = Boolean(
-    attr.assembly_instructions && 
-    attr.assembly_instructions.trim() !== '' && 
-    attr.assembly_instructions !== 'null'
+    fa.instructions?.files && fa.instructions.files.length > 0
   );
-  
+
   const hasReviews = Boolean(attr.rating_count && attr.rating_count > 0);
-  
+
   const hasDelivery = true;
 
   // Проверяем статьи

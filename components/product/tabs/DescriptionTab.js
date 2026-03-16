@@ -1,7 +1,10 @@
 export default function DescriptionTab({ product }) {
-  const description = product?.attributes?.content_ru;
+  const fa = product?.attributes?.full_attributes_ru || {}
+  const desc = fa.description || {}
+  const shortDescription = desc.short_description || ''
+  const bulletPoints = Array.isArray(desc.description) ? desc.description : []
 
-  if (!description) {
+  if (!shortDescription && bulletPoints.length === 0) {
     return (
       <div className="tab-pane fade show active">
         <div className="tab-description__content">
@@ -14,7 +17,14 @@ export default function DescriptionTab({ product }) {
   return (
     <div className="tab-pane fade show active">
       <div className="tab-description__content">
-        <div dangerouslySetInnerHTML={{ __html: description }} />
+        {shortDescription && <p>{shortDescription}</p>}
+        {bulletPoints.length > 0 && (
+          <ul>
+            {bulletPoints.map((point, i) => (
+              <li key={i}>{point}</li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

@@ -3,22 +3,19 @@
 
 export default function ProductParameters({ product }) {
   const attr = product.attributes;
-  
-  // Парсим размеры из строки "60 × 40 × 202 cm"
-  const dimensions = attr.dimensions || '';
-  const dimensionParts = dimensions.split('×').map(d => d.trim().replace(/[^\d]/g, ''));
-  
-  const width = dimensionParts[0] || null;
-  const depth = dimensionParts[1] || null;
-  const height = dimensionParts[2] || null;
-  
-  const weight = attr.weight ? parseFloat(attr.weight) : null;
-  const netWeight = attr.net_weight ? parseFloat(attr.net_weight) : null;
-  const packageVolume = attr.package_volume ? parseFloat(attr.package_volume) : null;
+  const fa = attr.full_attributes_ru || {}
+  const sizeData = fa.size || {}
 
-  // Если нет характеристик - не показываем блок
-  if (!width && !depth && !height && !weight) {
-    return null;
+  // Исключаем служебные ключи, берём только размеры
+  const excludedKeys = ['packaging', 'desc']
+  const sizeEntries = Object.entries(sizeData)
+    .filter(([key]) => !excludedKeys.includes(key))
+    .slice(0, 3) // Показываем первые 3 параметра
+
+  const weight = attr.weight ? parseFloat(attr.weight) : null
+
+  if (sizeEntries.length === 0 && !weight) {
+    return null
   }
 
   return (
@@ -26,27 +23,13 @@ export default function ProductParameters({ product }) {
       <div className="goods-parametrs">
         <h2>Основные характеристики</h2>
         
-        {width && (
-          <div className="goods-parametrs__item">
-            <p className="parametrs-name">Ширина</p>
-            <p className="parametrs-number">{width} <span>см</span></p>
+        {sizeEntries.map(([key, value]) => (
+          <div key={key} className="goods-parametrs__item">
+            <p className="parametrs-name">{key}</p>
+            <p className="parametrs-number">{value}</p>
           </div>
-        )}
-        
-        {depth && (
-          <div className="goods-parametrs__item">
-            <p className="parametrs-name">Глубина</p>
-            <p className="parametrs-number">{depth} <span>см</span></p>
-          </div>
-        )}
-        
-        {height && (
-          <div className="goods-parametrs__item">
-            <p className="parametrs-name">Высота</p>
-            <p className="parametrs-number">{height} <span>см</span></p>
-          </div>
-        )}
-        
+        ))}
+
         {weight && (
           <div className="goods-parametrs__item">
             <p className="parametrs-name">Вес</p>
@@ -94,53 +77,18 @@ export default function ProductParameters({ product }) {
             <div className="tab-size__content">
               <div className="size-contet__info">
                 <h5>Размер в собранном виде</h5>
-                
-                {width && (
-                  <div className="size-info__item">
-                    <p>Ширина:</p>
-                    <p>{width} см</p>
+
+                {sizeEntries.map(([key, value]) => (
+                  <div key={key} className="size-info__item">
+                    <p>{key}:</p>
+                    <p>{value}</p>
                   </div>
-                )}
-                
-                {depth && (
-                  <div className="size-info__item">
-                    <p>Глубина:</p>
-                    <p>{depth} см</p>
-                  </div>
-                )}
-                
-                {height && (
-                  <div className="size-info__item">
-                    <p>Высота:</p>
-                    <p>{height} см</p>
-                  </div>
-                )}
-                
+                ))}
+
                 {weight && (
                   <div className="size-info__item">
                     <p>Вес:</p>
                     <p>{weight} кг</p>
-                  </div>
-                )}
-                
-                {netWeight && (
-                  <div className="size-info__item">
-                    <p>Вес нетто:</p>
-                    <p>{netWeight} кг</p>
-                  </div>
-                )}
-                
-                {packageVolume && (
-                  <div className="size-info__item">
-                    <p>Объём упаковки:</p>
-                    <p>{packageVolume} м³</p>
-                  </div>
-                )}
-                
-                {attr.package_dimensions && (
-                  <div className="size-info__item">
-                    <p>Размеры упаковки:</p>
-                    <p>{attr.package_dimensions}</p>
                   </div>
                 )}
               </div>

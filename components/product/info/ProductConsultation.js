@@ -4,22 +4,9 @@
 export default function ProductConsultation() {
   
   const handleChatOpen = () => {
-    // Здесь будет открытие чата
-    // Варианты:
-    // 1. Telegram Widget
-    // 2. WhatsApp
-    // 3. Jivo Chat
-    // 4. Intercom
-    // 5. Custom chat
-    
-    // Пример для Telegram:
+    // TODO: настроить интеграцию с чатом (Telegram / WhatsApp / Jivo)
     // window.open('https://t.me/your_bot', '_blank');
-    
-    // Пример для WhatsApp:
-    // window.open('https://wa.me/375291234567?text=Здравствуйте, нужна консультация', '_blank');
-    
-    // Пока заглушка
-    alert('Открытие чата (нужно настроить интеграцию)');
+    console.log('Открытие чата');
   };
 
   return (

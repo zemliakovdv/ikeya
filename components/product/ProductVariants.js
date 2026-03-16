@@ -1,62 +1,50 @@
 // components/product/ProductVariants.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+
+const API_BASE_URL = 'http://45.135.234.22';
 
 export default function ProductVariants({ variants, currentSku, localImages }) {
-  const [selectedVariant, setSelectedVariant] = useState(currentSku);
-  
-  // ОТЛАДКА через alert
-  useEffect(() => {
-    alert('ProductVariants загружен!\ncurrentSku: ' + currentSku + '\nКол-во вариантов: ' + (variants ? variants.length : 0));
-    
-    if (variants && variants.length > 0) {
-      alert('Первый вариант:\n' + JSON.stringify(variants[0], null, 2).substring(0, 500));
-    }
-  }, []);
-  
-  // Если нет вариантов
+  const [selectedSku, setSelectedSku] = useState(currentSku);
+
   if (!variants || variants.length === 0) {
     return null;
   }
 
-  // Находим текущий активный вариант
-  const activeVariant = variants.find(v => v.itemNo === currentSku);
-  const activeColorName = activeVariant?.validDesignText || 'не выбран';
+  const activeVariant = variants.find(v => v.sku === selectedSku);
+  const activeColorName = activeVariant?.name || '—';
 
   return (
     <div className="goods-color">
-      <p>Цвет: <span>{activeColorName}</span></p>
-      
+      <p>Вариант: <span>{activeColorName}</span></p>
+
       <div className="goods-color__buttons">
-        {variants.map((variant) => {
-          // Берём изображение варианта из API
-          const variantImage = variant.mainImageUrl || 
-                              variant.allProductImage?.[0]?.url || 
-                              variant.imageUrl;
-          
-          const imageUrl = variantImage || '/assets/img/placeholder.png';
-          
-          // Проверяем активен ли этот вариант
-          const isActive = variant.itemNo === currentSku;
-          
+        {variants.map((variant, index) => {
+          const variantImg = Array.isArray(variant.images) && variant.images.length > 0
+            ? variant.images[0]
+            : null;
+          const fallbackImg = localImages && localImages[index]
+            ? `${API_BASE_URL}/${localImages[index]}`
+            : '/assets/img/placeholder.png';
+          const imgSrc = variantImg
+            ? (variantImg.startsWith('http') ? variantImg : `${API_BASE_URL}/${variantImg}`)
+            : fallbackImg;
+
+          const isActive = variant.sku === selectedSku;
+
           return (
             <button
-              key={variant.itemNo}
+              key={variant.sku}
               className={`goods-color__item ${isActive ? 'active' : ''}`}
+              title={variant.name}
               onClick={() => {
-                alert('Клик по варианту: ' + variant.validDesignText + '\nitemNo: ' + variant.itemNo);
-                setSelectedVariant(variant.itemNo);
-                // Переход на страницу варианта
-                const slug = `${variant.name || 'product'}-${variant.itemNo}`.toLowerCase();
+                setSelectedSku(variant.sku);
+                const slug = `${(variant.name || 'product').toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-')}-${variant.sku}`;
                 window.location.href = `/product/${slug}`;
               }}
             >
-              <img 
-                src={imageUrl} 
-                alt={variant.validDesignText}
-                title={variant.validDesignText}
-              />
+              <img src={imgSrc} alt={variant.name || ''} />
             </button>
           );
         })}

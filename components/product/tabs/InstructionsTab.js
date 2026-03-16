@@ -1,13 +1,7 @@
 export default function InstructionsTab({ product }) {
-  const attr = product.attributes;
-  
-  // Парсим варианты (для инструкций по каждому компоненту)
-  let variants = [];
-  try {
-    variants = attr.variants || [];
-  } catch (e) {
-    console.error('Error parsing variants:', e);
-  }
+  const fa = product?.attributes?.full_attributes_ru || {}
+  const files = fa.instructions?.files || []
+  const attr = product.attributes
 
   // SVG иконка PDF
   const PdfIcon = () => (
@@ -42,66 +36,26 @@ export default function InstructionsTab({ product }) {
         
         {/* Инструкции по сборке */}
         <h5>Инструкции по сборке</h5>
-        {variants.length > 0 || attr.assembly_instructions ? (
+        {files.length > 0 ? (
           <div className="instrustions-content__files">
-            {/* Общая инструкция (если есть) */}
-            {attr.assembly_instructions && (
-              <a 
-                href={attr.assembly_instructions} 
-                target="_blank" 
+            {files.map((file, index) => (
+              <a
+                key={index}
+                href={`http://45.135.234.22${file.link}`}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="content-files__item"
               >
                 <PdfIcon />
                 <div className="content-files__info">
-                  <p>{attr.name_ru || attr.name}</p>
+                  <p>{file.title || attr.name_ru || attr.name}</p>
                   <p className="artikul">Артикул: <span>{attr.sku}</span></p>
                 </div>
               </a>
-            )}
-            
-            {/* Инструкции для каждого варианта */}
-            {variants.map((variant, index) => (
-              variant.assemblyInstructions && (
-                <a
-                  key={variant.itemNo || index}
-                  href={variant.assemblyInstructions}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="content-files__item"
-                >
-                  <PdfIcon />
-                  <div className="content-files__info">
-                    <p>{variant.name} {variant.typeName}</p>
-                    <p className="artikul">Артикул: <span>{variant.itemNo}</span></p>
-                  </div>
-                </a>
-              )
             ))}
           </div>
         ) : (
-          <p>Инструкции по сборке временно отсутствуют. Товар может не требовать сборки.</p>
-        )}
-        
-        {/* Советы и рекомендации */}
-        {attr.care_tips && (
-          <>
-            <h5 style={{ marginTop: '32px' }}>Советы и рекомендации по использованию и уходу</h5>
-            <div className="instrustions-content__files">
-              <a 
-                href={attr.care_tips} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="content-files__item"
-              >
-                <PdfIcon />
-                <div className="content-files__info">
-                  <p>{attr.name_ru || attr.name}</p>
-                  <p className="artikul">Артикул: <span>{attr.sku}</span></p>
-                </div>
-              </a>
-            </div>
-          </>
+          <p>Инструкции по сборке временно отсутствуют.</p>
         )}
       </div>
     </div>
