@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthModals } from '@/components/auth/AuthModalsHost';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -10,6 +12,8 @@ import RecommendationsSection from '@/components/recommendations/Recommendations
 
 export default function CartPage() {
   const router = useRouter();
+  const { isAuth } = useAuth();
+  const { openLogin } = useAuthModals();
   const {
     cart,
     updateQuantity,
@@ -100,8 +104,12 @@ export default function CartPage() {
   }, [removeFromCart, selectedItems]);
 
   const handleCheckout = useCallback(() => {
+    if (!isAuth) {
+      openLogin();
+      return;
+    }
     router.push('/checkout');
-  }, [router]);
+  }, [router, isAuth, openLogin]);
 
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
