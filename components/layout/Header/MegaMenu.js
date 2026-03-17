@@ -13,9 +13,24 @@ export default function MegaMenu({ isOpen, onClose }) {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch('/api/categories')
-        const cats = await res.json()
-        setAllCategories(cats)
+        let allCategories = []
+        let page = 1
+        const perPage = 100
+
+        while (true) {
+          const res = await fetch(
+            `http://45.135.234.22/api/v1/categories?per_page=${perPage}&page=${page}`,
+            { cache: 'no-store' }
+          )
+          if (!res.ok) throw new Error(`API Error: ${res.status}`)
+          const data = await res.json()
+          const cats = data.data || []
+          allCategories = allCategories.concat(cats)
+          if (cats.length < perPage || page >= (data.meta?.total_pages || 1)) break
+          page++
+        }
+
+        setAllCategories(allCategories)
       } catch (e) {
         console.error('MegaMenu: ошибка загрузки категорий', e)
       }
