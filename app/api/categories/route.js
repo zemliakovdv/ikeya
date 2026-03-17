@@ -1,10 +1,12 @@
+// app/api/categories/route.js
+import { NextResponse } from 'next/server'
 import { getCachedCategories } from '@/lib/api/ikea'
 
 export async function GET() {
   try {
     const categories = await getCachedCategories()
-    return Response.json(categories)
+    return NextResponse.json(categories)
   } catch (e) {
-    return Response.json([], { status: 500 })
+    return NextResponse.json([], { status: 500 })
   }
 }

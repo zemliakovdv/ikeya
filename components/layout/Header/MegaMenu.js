@@ -3,7 +3,6 @@
 // components/layout/Header/MegaMenu.js
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { getCachedCategories } from '@/lib/api/ikea'
 
 export default function MegaMenu({ isOpen, onClose }) {
   const [allCategories, setAllCategories] = useState([])
