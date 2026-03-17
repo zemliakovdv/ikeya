@@ -1,4 +1,4 @@
-import { getCachedCategories } from '@/lib/api/ikea.js'
+import { getCachedCategories } from '@/lib/api/ikea'
 
 export async function GET() {
   try {
