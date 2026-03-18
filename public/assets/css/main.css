@@ -1546,6 +1546,9 @@ main {
     height: 100%;
     object-fit: cover;
     display: block;
+    min-height: 322px;
+    max-height: 322px;
+    border-radius: 8px;
 }
 
 .blog-card span {
@@ -1577,6 +1580,9 @@ main {
     line-height: 20px;
     letter-spacing: 0.25px;
     color: #757575;
+    margin-bottom: 0;
+    max-height: 40px;
+    overflow: hidden;
 }
 
 .blog-card a {

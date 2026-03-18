@@ -17,7 +17,7 @@
         gap: 8px;
     }
 
-    .mega-menu-overlay .mega-menu-section{
+    .mega-menu-overlay .mega-menu-section {
         max-width: 325px;
     }
 
@@ -32,6 +32,7 @@
     }
 
     .product-card-inner {
+        min-width: 258px;
         max-width: 258px;
     }
 
@@ -64,6 +65,11 @@
     .promo-card__gallery img {
         max-width: 236px;
         max-height: 236px;
+    }
+
+    .blog-card img {
+        min-height: 286px;
+        max-height: 286px;
     }
 
     .footer-links {
