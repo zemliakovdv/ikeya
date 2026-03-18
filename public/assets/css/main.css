@@ -1986,13 +1986,6 @@ main {
     text-decoration: underline;
 }
 
-.catalog-show__more::after {
-    content: '›';
-    margin-left: 5px;
-    font-size: 18px;
-    text-decoration: none;
-}
-
 /* Конец модалки каталога*/
 
 
@@ -2773,7 +2766,8 @@ main {
     text-decoration: underline;
 }
 
-.apply-filters, .clear-filters {
+.apply-filters,
+.clear-filters {
     width: 100%;
     border: none;
     outline: none;
@@ -2789,7 +2783,8 @@ main {
     transition: all .3s;
 }
 
-.apply-filters:hover, .clear-filters:hover {
+.apply-filters:hover,
+.clear-filters:hover {
     background-color: #0058A3;
     color: #fff;
     transition: all .3s;
@@ -6985,31 +6980,32 @@ main {
 .mega-menu-overlay .sidebar {
     width: 300px;
     flex-shrink: 0;
-    border-right: 1px solid #E0E0E0;
     overflow-y: auto;
+    padding-top: 4px;
 }
 
 .mega-menu-overlay .menu-item {
     display: flex;
     align-items: center;
-    padding: 12px 20px;
+    padding: 12px 16px;
     cursor: pointer;
+    font-weight: 400;
     font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
     color: #181818;
     transition: background-color 0.15s;
-    border-left: 3px solid transparent;
 }
 
 .mega-menu-overlay .menu-item:hover,
 .mega-menu-overlay .menu-item.active {
     background-color: #F5F5F5;
-    border-left-color: #0058A3;
 }
 
 .mega-menu-overlay .menu-item-icon {
     width: 24px;
     height: 24px;
-    margin-right: 12px;
+    margin-right: 16px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -7022,7 +7018,7 @@ main {
 }
 
 .mega-menu-overlay .menu-item-arrow {
-    color: #9E9E9E;
+    color: #181818;
     font-size: 18px;
     margin-left: 8px;
 }
@@ -7030,7 +7026,7 @@ main {
 /* Правая часть — подкатегории */
 .mega-menu-overlay .mega-menu {
     flex: 1;
-    padding: 24px;
+    padding: 16px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 24px 16px;
@@ -7040,32 +7036,35 @@ main {
 .mega-menu-overlay .mega-menu-section {
     display: flex;
     flex-direction: column;
+    max-width: 258px;
 }
 
 .mega-menu-overlay .section-header {
     display: flex;
     align-items: center;
-    margin-bottom: 8px;
-    gap: 10px;
+    margin-bottom: 0;
+    gap: 16px;
 }
 
 .mega-menu-overlay .section-icon {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
 }
 
 .mega-menu-overlay .section-icon img {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
 }
 
 .mega-menu-overlay .section-title {
-    font-size: 15px;
     font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
     color: #181818;
-    line-height: 1.3;
+    padding: 0;
 }
 
 .mega-menu-overlay .section-title:hover {
@@ -7076,6 +7075,7 @@ main {
     list-style: none;
     padding: 0;
     margin: 0;
+    padding-left: 56px;
 }
 
 .mega-menu-overlay .section-links li {
@@ -7083,9 +7083,11 @@ main {
 }
 
 .mega-menu-overlay .section-links a {
-    font-size: 13px;
-    color: #424242;
-    line-height: 1.4;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #181818;
     transition: color 0.15s;
 }
 
