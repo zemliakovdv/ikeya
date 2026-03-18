@@ -17,6 +17,10 @@
         gap: 8px;
     }
 
+    .mega-menu-overlay .mega-menu-section{
+        max-width: 325px;
+    }
+
     /* Выпадающее меню */
     .profile-dropdown {
         top: 105px;

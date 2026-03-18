@@ -7036,7 +7036,7 @@ main {
 .mega-menu-overlay .mega-menu-section {
     display: flex;
     flex-direction: column;
-    max-width: 258px;
+    max-width: 380px;
 }
 
 .mega-menu-overlay .section-header {
@@ -7044,6 +7044,7 @@ main {
     align-items: center;
     margin-bottom: 0;
     gap: 16px;
+    padding-bottom: 0;
 }
 
 .mega-menu-overlay .section-icon {
