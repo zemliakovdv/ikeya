@@ -13,6 +13,29 @@ import {
   getChildCategories,
 } from '@/lib/utils/categoryHelpers';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+
+function getPriceRangeFromFilters(filters) {
+  const priceBucket = (filters || []).find(f => f.parameter === 'f-price-buckets');
+  if (!priceBucket?.values?.length) return { min: 0, max: 10000 };
+
+  let min = Infinity;
+  let max = 0;
+
+  priceBucket.values.forEach(({ id }) => {
+    const match = id.match(/^PRICE_(\d+)_(\d+)$/);
+    if (!match) return;
+    const lo = parseInt(match[1]) / 100;
+    const hi = parseInt(match[2]) / 100;
+    if (lo < min) min = lo;
+    if (hi < 92233720368547 && hi > max) max = hi;
+  });
+
+  return {
+    min: min === Infinity ? 0 : Math.floor(min),
+    max: max === 0 ? 10000 : Math.ceil(max)
+  };
+}
 
 export default async function CategoryPage({ params, searchParams }) {
   // ✅ Next.js 15: params и searchParams — это Promise
@@ -39,6 +62,7 @@ export default async function CategoryPage({ params, searchParams }) {
     ]);
 
     const availableFilters = categoryWithFilters.available_filters || [];
+    const priceRange = getPriceRangeFromFilters(availableFilters);
     const childCategories = getChildCategories(allCategories, currentCategory.id);
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbs(categoryChain);
@@ -105,8 +129,8 @@ export default async function CategoryPage({ params, searchParams }) {
               <div className="all-catalog-center" key={productsQueryString}>
                 {initialProducts.length > 0 ? (
                   <>
-                    <FilterChips />
                     <ProductSort currentSort={sort} />
+                    <FilterChips  filterLabels={filterLabels} />
                     <InfiniteProductGrid
                       key={`${currentCategory.id}-${productsQueryString}`}
                       initialProducts={initialProducts}

@@ -6,12 +6,18 @@ import ProductCard from './ProductCard';
 const sanitize = (arr) => (arr || []).filter(p => p && p.attributes);
 
 export default function InfiniteProductGrid({ initialProducts, categoryId, totalPages, queryString = '' }) {
-  console.log('🎯 InfiniteProductGrid render, products count:', initialProducts?.length, 'queryString:', queryString);
+
   const [products, setProducts] = useState(sanitize(initialProducts));
-  console.log('🔴 products state length:', products.length, 'first product id:', products[0]?.id);
   const [page, setPage] = useState(2);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20);
+
+  // Сбрасываем state когда меняются initialProducts (новый фильтр/сортировка)
+  useEffect(() => {
+    setProducts(sanitize(initialProducts));
+    setPage(2);
+    setHasMore(totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20);
+  }, [initialProducts, totalPages]);
   const observerRef = useRef(null);
 
   const loadMore = useCallback(async () => {

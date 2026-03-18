@@ -67,7 +67,15 @@ export default function CategoriesGrid({
             name.slice(0, 15)
           )}`;
 
-          if (attr.local_image_path) {
+          if (attr.icon_url) {
+            image = attr.icon_url.startsWith('http')
+              ? attr.icon_url
+              : `${API_BASE_URL}/${attr.icon_url}`;
+          } else if (attr.background_image_url) {
+            image = attr.background_image_url.startsWith('http')
+              ? attr.background_image_url
+              : `${API_BASE_URL}/${attr.background_image_url}`;
+          } else if (attr.local_image_path) {
             image = attr.local_image_path.startsWith('http')
               ? attr.local_image_path
               : `${API_BASE_URL}/${attr.local_image_path}`;

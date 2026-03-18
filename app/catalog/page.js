@@ -4,6 +4,7 @@ import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import CategoriesGrid from '@/components/catalog/CategoriesGrid';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import ProductSort from '@/components/catalog/ProductSort';
+import FilterChips from '@/components/catalog/FilterChips';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
 import { getCachedCategories, getProducts } from '@/lib/api/ikea';
 

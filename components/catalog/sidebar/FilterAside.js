@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import CategoryNav from './CategoryTree';
@@ -49,7 +49,6 @@ export default function FilterAside({
       }));
   }, [availableFilters]);
 
-  // стабильный ключ чтобы useEffect не зацикливался
   const filtersKey = useMemo(
     () => normalizedAvailableFilters.map((f) => f.parameter).join(','),
     [normalizedAvailableFilters]
@@ -59,7 +58,10 @@ export default function FilterAside({
   const [draftPriceMax, setDraftPriceMax] = useState('');
   const [draftFilters, setDraftFilters] = useState({});
 
-  // синхронизация draft <- URL
+  const priceDebounceRef = useRef(null);
+  const isMountedRef = useRef(false);
+
+  // Синхронизация draft <- URL
   useEffect(() => {
     const minPrice = safeNumberOrEmpty(searchParams.get('min_price'));
     const maxPrice = safeNumberOrEmpty(searchParams.get('max_price'));
@@ -73,50 +75,27 @@ export default function FilterAside({
     setDraftPriceMin(minPrice);
     setDraftPriceMax(maxPrice);
     setDraftFilters(nextDraftFilters);
-  }, [searchParams, filtersKey]); // ← filtersKey вместо normalizedAvailableFilters
+    isMountedRef.current = true;
+  }, [searchParams, filtersKey]);
 
-  const toggleValue = useCallback((parameter, value) => {
-    const v = String(value);
-    setDraftFilters((prev) => {
-      const current = Array.isArray(prev[parameter]) ? prev[parameter] : [];
-      const next = current.includes(v) ? current.filter((x) => x !== v) : [...current, v];
-      return { ...prev, [parameter]: next };
-    });
-  }, []);
-
-  const handlePriceChange = useCallback((minV, maxV) => {
-    setDraftPriceMin(String(minV));
-    setDraftPriceMax(String(maxV));
-  }, []);
-
-  const clearAllFiltersFromParams = useCallback((params) => {
-    params.delete('min_price');
-    params.delete('max_price');
-    params.delete('page');
-    for (const key of Array.from(params.keys())) {
-      if (key.startsWith('filters[')) params.delete(key);
-    }
-  }, []);
-
-  const handleApply = useCallback(() => {
-    if (!showAllFilters) return;
-
+  // Функция применения фильтров
+  const applyFilters = useCallback((minP, maxP, filters) => {
     const params = new URLSearchParams(searchParams.toString());
 
-    const minP = safeNumberOrEmpty(draftPriceMin);
-    const maxP = safeNumberOrEmpty(draftPriceMax);
+    const min = safeNumberOrEmpty(minP);
+    const max = safeNumberOrEmpty(maxP);
 
-    if (minP !== '') params.set('min_price', minP);
+    if (min !== '') params.set('min_price', min);
     else params.delete('min_price');
 
-    if (maxP !== '') params.set('max_price', maxP);
+    if (max !== '') params.set('max_price', max);
     else params.delete('max_price');
 
     for (const key of Array.from(params.keys())) {
       if (key.startsWith('filters[')) params.delete(key);
     }
 
-    Object.entries(draftFilters || {}).forEach(([parameter, values]) => {
+    Object.entries(filters || {}).forEach(([parameter, values]) => {
       const key = `filters[${parameter}][]`;
       (values || []).forEach((val) => params.append(key, String(val)));
     });
@@ -125,14 +104,49 @@ export default function FilterAside({
 
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
-  }, [showAllFilters, draftPriceMin, draftPriceMax, draftFilters, pathname, router, searchParams]);
+  }, [searchParams, pathname, router]);
 
+  // Автоприменение цены с дебаунсом 600мс
+  const handlePriceChange = useCallback((minV, maxV) => {
+    const min = String(minV);
+    const max = String(maxV);
+    setDraftPriceMin(min);
+    setDraftPriceMax(max);
+
+    if (!isMountedRef.current) return;
+
+    if (priceDebounceRef.current) clearTimeout(priceDebounceRef.current);
+    priceDebounceRef.current = setTimeout(() => {
+      applyFilters(min, max, draftFilters);
+    }, 600);
+  }, [applyFilters, draftFilters]);
+
+  // Автоприменение чекбоксов сразу при клике
+  const toggleValue = useCallback((parameter, value) => {
+    const v = String(value);
+    setDraftFilters((prev) => {
+      const current = Array.isArray(prev[parameter]) ? prev[parameter] : [];
+      const next = current.includes(v)
+        ? current.filter((x) => x !== v)
+        : [...current, v];
+      const newFilters = { ...prev, [parameter]: next };
+      applyFilters(draftPriceMin, draftPriceMax, newFilters);
+      return newFilters;
+    });
+  }, [applyFilters, draftPriceMin, draftPriceMax]);
+
+  // Очистка всех фильтров
   const handleClear = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
-    clearAllFiltersFromParams(params);
+    params.delete('min_price');
+    params.delete('max_price');
+    params.delete('page');
+    for (const key of Array.from(params.keys())) {
+      if (key.startsWith('filters[')) params.delete(key);
+    }
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
-  }, [clearAllFiltersFromParams, pathname, router, searchParams]);
+  }, [pathname, router, searchParams]);
 
   const {
     parentCategory = null,
@@ -152,6 +166,13 @@ export default function FilterAside({
     const n = Number(draftPriceMax);
     return Number.isFinite(n) ? n : priceRange.max;
   }, [draftPriceMax, priceRange.max]);
+
+  // Есть ли активные фильтры
+  const hasActiveFilters = useMemo(() => {
+    if (draftPriceMin !== '') return true;
+    if (draftPriceMax !== '') return true;
+    return Object.values(draftFilters).some((v) => Array.isArray(v) && v.length > 0);
+  }, [draftPriceMin, draftPriceMax, draftFilters]);
 
   return (
     <aside
@@ -174,17 +195,15 @@ export default function FilterAside({
         level={level}
       />
 
-      {showAllFilters && (
-        <PriceFilter
-          min={priceRange.min}
-          max={priceRange.max}
-          currentMin={currentMin}
-          currentMax={currentMax}
-          onChange={handlePriceChange}
-        />
-      )}
+      <PriceFilter
+        min={priceRange.min}
+        max={priceRange.max}
+        currentMin={currentMin}
+        currentMax={currentMax}
+        onChange={handlePriceChange}
+      />
 
-      {showAllFilters ? (
+      {showAllFilters && (
         <>
           {normalizedAvailableFilters.length > 0 ? (
             normalizedAvailableFilters.map((f) => (
@@ -201,17 +220,13 @@ export default function FilterAside({
           ) : (
             <FilterNotification />
           )}
-
-          <button className="apply-filters" onClick={handleApply} type="button">
-            Применить фильтры
-          </button>
-
-          <button className="apply-filters" onClick={handleClear} type="button">
-            Очистить фильтры
-          </button>
         </>
-      ) : (
-        <FilterNotification />
+      )}
+
+      {hasActiveFilters && (
+        <button className="clear-filters" onClick={handleClear} type="button">
+          Очистить фильтры
+        </button>
       )}
     </aside>
   );
