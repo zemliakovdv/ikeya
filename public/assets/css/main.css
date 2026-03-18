@@ -832,11 +832,14 @@ main {
     border: none;
     background: transparent;
     color: #757575;
-    font-size: 16px;
-    font-weight: 500;
     white-space: nowrap;
     transition: all 0.1s ease;
     border-bottom: 2px solid #EEEEEE;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    text-align: center;
 }
 
 .products-tabs__link:hover {
