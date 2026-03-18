@@ -2185,7 +2185,7 @@ main {
     padding: 0;
     max-height: fit-content;
     overflow: hidden;
-    opacity: 0;
+    opacity: 1;
     transition: all 0.3s ease;
     z-index: 100;
     box-shadow: 4px 4px 16px 0 rgba(24, 24, 24, 0.24), -1px -1px 16px 0 rgba(24, 24, 24, 0.04);
@@ -2256,7 +2256,7 @@ main {
     height: 16px;
 }
 
-.cheaps-clean {
+.cheaps-clear-all {
     border: none;
     background: none;
     font-weight: 600;

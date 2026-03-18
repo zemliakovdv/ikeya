@@ -63,6 +63,14 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const availableFilters = categoryWithFilters.available_filters || [];
     const priceRange = getPriceRangeFromFilters(availableFilters);
+
+    // Словарь id -> label для чипсов
+    const filterLabels = {};
+    availableFilters.forEach(f => {
+      (f.values || []).forEach(v => {
+        if (v.id !== undefined) filterLabels[String(v.id)] = v.translated_name || v.name || String(v.id);
+      });
+    });
     const childCategories = getChildCategories(allCategories, currentCategory.id);
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbs(categoryChain);

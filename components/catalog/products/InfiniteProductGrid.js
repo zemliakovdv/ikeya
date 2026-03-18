@@ -5,6 +5,8 @@ import ProductCard from './ProductCard';
 
 const sanitize = (arr) => (arr || []).filter(p => p && p.attributes);
 
+const API_BASE_URL = 'http://45.135.234.22/api/v1';
+
 export default function InfiniteProductGrid({ initialProducts, categoryId, totalPages, queryString = '' }) {
 
   const [products, setProducts] = useState(sanitize(initialProducts));
