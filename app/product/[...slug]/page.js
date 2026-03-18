@@ -1,12 +1,13 @@
 // app/product/[...slug]/page.js
 import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
+import ProductStickyBar from '@/components/product/ProductStickyBar';
 import ProductGallery from '@/components/product/ProductGallery';
 import ProductInfo from '@/components/product/ProductInfo';
 import ProductTabs from '@/components/product/ProductTabs';
 import RelatedProducts from '@/components/product/RelatedProducts';
 import SimilarProducts from '@/components/product/SimilarProducts';
-import { getRelatedAndSimilarProducts } from '@/lib/utils/productHelpers';
+
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
@@ -22,9 +23,7 @@ async function getProduct(sku) {
     const res = await fetch(`${API_BASE_URL}/products/${sku}`, {
       next: { revalidate: 60 }
     });
-
     if (!res.ok) return null;
-
     return await res.json();
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -32,90 +31,59 @@ async function getProduct(sku) {
   }
 }
 
-// Получаем товары категории
-async function getCategoryProducts(categoryId) {
+// Загружаем товары по массиву SKU (related_products)
+async function getProductsBySKUs(skus = []) {
+  if (!skus.length) return [];
   try {
-    const res = await fetch(`${API_BASE_URL}/categories/${categoryId}/products`, {
-      next: { revalidate: 300 }
-    });
+    const results = await Promise.allSettled(
+      skus.map(sku =>
+        fetch(`${API_BASE_URL}/products/${sku}`, { next: { revalidate: 300 } })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => data?.data || null)
+      )
+    );
+    return results
+      .filter(r => r.status === 'fulfilled' && r.value)
+      .map(r => r.value);
+  } catch (error) {
+    console.error('Error fetching related products:', error);
+    return [];
+  }
+}
 
+// Получаем похожие товары из той же категории
+async function getCategoryProducts(categoryId, excludeSku) {
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/categories/${categoryId}/products?per_page=10`,
+      { next: { revalidate: 300 } }
+    );
     if (!res.ok) return [];
-
     const data = await res.json();
-    return data.data || [];
+    return (data.data || []).filter(p => p.attributes?.sku !== excludeSku);
   } catch (error) {
     console.error('Error fetching category products:', error);
     return [];
   }
 }
 
-// Получаем категорию по ID
-async function getCategory(categoryId) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/categories/${categoryId}`, {
-      next: { revalidate: 3600 }
-    });
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    return data.data;
-  } catch (error) {
-    console.error('Error fetching category:', error);
-    return null;
-  }
-}
-
-// Строим breadcrumbs из категорий — используем slug в URL
-async function buildBreadcrumbs(productData) {
-  const product = productData.data;
-  const attr = product.attributes;
-
+// Строим breadcrumbs из данных API
+function buildBreadcrumbs(attr) {
   const breadcrumbs = [
     { name: 'Главная', href: '/' },
-    { name: 'Каталог', href: '/catalog' }
+    { name: 'Каталог', href: '/catalog' },
   ];
 
-  let currentCategory = null;
-  if (productData.included && productData.included.length > 0) {
-    currentCategory = productData.included.find(item => item.type === 'category');
-  }
-
-  if (!currentCategory && attr.category_id) {
-    currentCategory = await getCategory(attr.category_id);
-  }
-
-  if (currentCategory) {
-    const parentIds = currentCategory.attributes.parent_ids || [];
-
-    const parentCategories = [];
-    for (const parentId of parentIds) {
-      const parent = await getCategory(parentId);
-      if (parent) parentCategories.push(parent);
-    }
-
-    // Строим путь от корня — используем slug
-    let currentPath = '/catalog';
-    for (const parentId of parentIds) {
-      const parent = parentCategories.find(cat => cat.id === parentId);
-      if (parent) {
-        currentPath += `/${parent.attributes.slug}`; // ✅
-        breadcrumbs.push({
-          name: parent.attributes.translated_name || parent.attributes.name,
-          href: currentPath
-        });
+  // Используем breadcrumbs из API если есть
+  if (Array.isArray(attr.breadcrumbs) && attr.breadcrumbs.length > 0) {
+    attr.breadcrumbs.forEach(crumb => {
+      if (crumb.title && crumb.url) {
+        breadcrumbs.push({ name: crumb.title, href: crumb.url });
       }
-    }
-
-    // Текущая категория — тоже slug
-    currentPath += `/${currentCategory.attributes.slug}`; // ✅
-    breadcrumbs.push({
-      name: currentCategory.attributes.translated_name || currentCategory.attributes.name,
-      href: currentPath
     });
   }
 
-  // Товар — без ссылки
+  // Добавляем сам товар в конец
   breadcrumbs.push({
     name: attr.name_ru || attr.name,
     href: null
@@ -125,7 +93,7 @@ async function buildBreadcrumbs(productData) {
 }
 
 export async function generateMetadata({ params }) {
-  const slugParts = params.slug; // ['slug-kategorii', 'slug-tovara-60234534']
+  const slugParts = params.slug;
   const productSlug = slugParts[slugParts.length - 1];
   const sku = extractSKU(productSlug);
 
@@ -141,13 +109,12 @@ export async function generateMetadata({ params }) {
       robots: seo.robots,
     };
   } catch (error) {
-    console.error('generateMetadata product error:', error);
     return {};
   }
 }
 
 export default async function ProductPage({ params }) {
-  const slugParts = params.slug; // ['slug-kategorii', 'slug-tovara-60234534']
+  const slugParts = params.slug;
   const productSlug = slugParts[slugParts.length - 1];
   const sku = extractSKU(productSlug);
 
@@ -160,21 +127,24 @@ export default async function ProductPage({ params }) {
   const product = productData.data;
   const attr = product.attributes;
 
-  const categoryProducts = await getCategoryProducts(attr.category_id);
-  const { relatedProducts, similarProducts } = getRelatedAndSimilarProducts(product, categoryProducts);
+  // Загружаем related и similar параллельно
+  const relatedSkus = Array.isArray(attr.related_products) ? attr.related_products : [];
 
-  let images = [];
-  if (attr.local_images) {
-    images = Array.isArray(attr.local_images)
-      ? attr.local_images  // уже массив — берём как есть
-      : JSON.parse(attr.local_images);  // строка — парсим
-  }
+  const [relatedProducts, similarProducts] = await Promise.all([
+    getProductsBySKUs(relatedSkus),
+    getCategoryProducts(attr.category_id, attr.sku),
+  ]);
 
-  const breadcrumbs = await buildBreadcrumbs(productData);
+  // Изображения
+  const images = Array.isArray(attr.local_images) ? attr.local_images : [];
+
+  // Breadcrumbs из API
+  const breadcrumbs = buildBreadcrumbs(attr);
 
   return (
     <main className="shop-card">
       <Breadcrumbs items={breadcrumbs} />
+      <ProductStickyBar product={product} />
 
       <section className="goods">
         <div className="container">

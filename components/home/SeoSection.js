@@ -13,8 +13,6 @@ export default function SeoSection({ seoText }) {
         <div className="row">
           <div className="col-12">
             <div className="seo-inner">
-              <h5>SEO текст</h5>
-
               {/* Весь текст всегда в DOM, без display:none */}
               <div
                 className={`seo-text-content ${isExpanded ? 'seo-text-content--expanded' : ''}`}

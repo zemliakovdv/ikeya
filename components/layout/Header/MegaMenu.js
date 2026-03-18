@@ -4,6 +4,9 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
+// Модульный кеш — живёт пока открыта вкладка браузера
+let _cachedCategories = null
+
 export default function MegaMenu({ isOpen, onClose }) {
   const [allCategories, setAllCategories] = useState([])
   const [activeRootId, setActiveRootId] = useState(null)

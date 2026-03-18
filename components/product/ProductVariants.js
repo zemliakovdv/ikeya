@@ -17,7 +17,7 @@ export default function ProductVariants({ variants, currentSku, localImages }) {
 
   return (
     <div className="goods-color">
-      <p>Вариант: <span>{activeColorName}</span></p>
+      <p>Цвет: <span>{activeColorName}</span></p>
 
       <div className="goods-color__buttons">
         {variants.map((variant, index) => {

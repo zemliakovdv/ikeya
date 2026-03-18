@@ -21,6 +21,7 @@ export default function Header() {
   const [menuCategories, setMenuCategories] = useState([])
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false) // ← добавлено
+  const [isSticky, setIsSticky] = useState(false)
 
   const dropdownRef = useRef(null)
   const toggleRef = useRef(null)
@@ -28,6 +29,13 @@ export default function Header() {
   // Swiper for header-bottom categories (<=1200)
   const bottomSwiperElRef = useRef(null)
   const bottomSwiperInstanceRef = useRef(null)
+
+  // Sticky header при скролле
+  useEffect(() => {
+    const handleScroll = () => setIsSticky(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   // Загружаем топ-категории при монтировании
   useEffect(() => {
@@ -168,8 +176,8 @@ export default function Header() {
       : fallbackCategories
 
   return (
-    <header className="header">
-      <div className="header-top">
+    <header className={`header${isSticky ? ' sticky' : ''}`}>
+      <div className="header-top" style={isSticky ? { display: 'none' } : {}}>
         <div className="container">
           <div className="row">
             <div className="col-12">
@@ -394,7 +402,7 @@ export default function Header() {
       {/* ← мегаменю рендерится здесь, между header-middle и header-bottom */}
       <MegaMenu isOpen={isMegaMenuOpen} onClose={() => setIsMegaMenuOpen(false)} />
 
-      <div className="header-bottom">
+      <div className={`header-bottom${isSticky ? ' hidden' : ''}`}>
         <div className="container">
           <div className="row">
             <div className="col-12">

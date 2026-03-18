@@ -68,7 +68,7 @@ export default function RootLayout({ children }) {
           strategy="lazyOnload"
         />
 
-        <ClientScripts />
+      <ClientScripts />
       </body>
     </html>
   )

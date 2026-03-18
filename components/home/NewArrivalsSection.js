@@ -1,33 +1,8 @@
 // components/home/NewArrivalsSection.js
-import { getAllCategories, getCategory, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import { getAllNewArrivals, getAllCategories, IMAGES_BASE_URL } from '@/lib/api/ikea'
 import ProductTabsSection from '@/components/home/ProductTabsSection';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
-
-async function getAllNewArrivals() {
-  let allProducts = [];
-  let page = 1;
-  const perPage = 100;
-
-  try {
-    while (true) {
-      const res = await fetch(
-        `${API_BASE_URL}/products/new_arrivals?page=${page}&per_page=${perPage}`,
-        { next: { revalidate: 60 } }
-      );
-      if (!res.ok) break;
-      const data = await res.json();
-      const products = data.data || [];
-      allProducts = allProducts.concat(products);
-      if (products.length < perPage) break;
-      page++;
-    }
-  } catch (e) {
-    console.error('Ошибка загрузки новинок:', e);
-  }
-
-  return allProducts;
-}
 
 function mapProductToCard(product) {
   const attr = product.attributes;

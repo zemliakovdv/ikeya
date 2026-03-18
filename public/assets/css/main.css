@@ -70,7 +70,7 @@ h2 {
     line-height: 32px;
     letter-spacing: 0;
     font-weight: 600;
-    margin-bottom:16px;
+    margin-bottom: 16px;
 }
 
 .container {
@@ -1682,36 +1682,18 @@ main {
     padding-bottom: 32px;
 }
 
-.seo-inner h5 {
-    font-size: 18px;
-    line-height: 24px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: #181818;
-}
-
-.seo-inner p {
-    font-size: 14px;
-    line-height: 20px;
-    letter-spacing: 0.25px;
-    font-weight: 400;
-    color: #181818;
-}
 
 .seo-text-content {
-    max-height: 115px;
+    max-height: 110px;
     /* подгони под макет */
     overflow: hidden;
     transition: max-height 0.4s ease;
 }
 
+
 .seo-text-content--expanded {
     max-height: 2000px;
     /* большое значение, чтобы всё влезло */
-}
-
-.seo-text-content p:last-child {
-    margin-bottom: 0;
 }
 
 .seo-text-content.open {
@@ -1719,9 +1701,23 @@ main {
     /* Достаточно большой размер — под реальный контент */
 }
 
-.seo-text-bottom {
-    margin-top: 20px;
+.seo-text-content-visible p:first-child {
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 133%;
+    color: #181818;
+    margin-bottom: 16px;
 }
+
+.seo-text-content-visible p {
+    font-size: 14px;
+    line-height: 20px;
+    letter-spacing: 0.25px;
+    font-weight: 400;
+    color: #181818;
+    margin-bottom: 16px;
+}
+
 
 .else-link p {
     padding-bottom: 3px;
@@ -3762,13 +3758,17 @@ main {
     color: #181818;
 }
 
-.goods-poshlina a {
+.goods-poshlina .poshlina-link {
     font-weight: 400;
     font-size: 14px;
     color: #0058A3;
-    text-decoration: underline;
     line-height: 143%;
     letter-spacing: 0.02em;
+    background: transparent;
+    border: none;
+    outline: none;
+    border-bottom: 1px solid #0058a3;
+    padding: 0;
 }
 
 .goods-add__cart {
@@ -3844,7 +3844,8 @@ main {
     border-radius: 4px;
     padding: 4px 8px;
     text-align: center;
-    min-height: 93px;
+    min-height: 104px;
+    max-width: 93px;
 }
 
 .goods-sizes__card .goods-sizes__item:hover {
@@ -4051,13 +4052,16 @@ main {
     margin-right: 0 !important;
 }
 
-
 .more .products-slider__pagination {
     bottom: 30px !important;
 }
 
-.more-inner .swiper {
-    padding-bottom: 54px;
+.more-inner .products-slider .swiper-wrapper {
+    gap: 0px 8px;
+}
+
+.more-inner .product-gallery-thumbs .swiper-slide {
+    max-width: unset !important;
 }
 
 .same-inner {
@@ -4721,6 +4725,7 @@ main {
 }
 
 .verh-card__action .goods-add__cart {
+    width: 240px;
     max-width: 240px;
     margin-bottom: 0;
 }
@@ -4766,13 +4771,15 @@ main {
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+.goods-content__inner .goods-added {
     margin-bottom: 24px;
 }
 
 .goods-added__counter {
     background: #f5f5f5;
     border-radius: 8px;
-    width: 50%;
     display: flex;
     justify-content: space-between;
 }
@@ -7269,4 +7276,28 @@ main {
 
 .price-input:focus {
     border-color: #0058a3;
+}
+
+.fab-chat {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0058A3;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 88, 163, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.fab-chat.show {
+    animation: fabSlideIn 0.4s ease-out;
 }

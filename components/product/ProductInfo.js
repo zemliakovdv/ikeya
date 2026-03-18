@@ -4,7 +4,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import GoodsAdded from '@/components/product/GoodsAdded';
-
+import CustomsModal from '@/components/modals/CustomsModal';
 import ProductColors from './info/ProductColors';
 import ProductSizes from './info/ProductSizes';
 import ProductParameters from './info/ProductParameters';
@@ -14,6 +14,7 @@ import ProductConsultation from './info/ProductConsultation';
 export default function ProductInfo({ product }) {
   const { addToCart, updateQuantity, items } = useCart();
   const [addToCartLoading, setAddToCartLoading] = useState(false);
+  const [customsModalOpen, setCustomsModalOpen] = useState(false);
 
   const attr = product.attributes;
   const sku = attr.sku || product.id;
@@ -43,32 +44,31 @@ export default function ProductInfo({ product }) {
     updateQuantity(sku, currentQty + 1);
   }, [currentQty, sku, updateQuantity]);
 
-  // Рейтинг
   const rating = parseFloat(attr.rating_avg) || 0;
   const ratingCount = attr.rating_count || 0;
+  const localImages = Array.isArray(attr.local_images) ? attr.local_images : [];
+  const variants = Array.isArray(attr.variants) ? attr.variants : [];
 
-  // local_images уже приходит как массив с сервера
-  const localImages = Array.isArray(attr.local_images) ? attr.local_images : []
+  // Пошлина
+  const customsDuty = attr.customs_duty?.total_byn
+    ? Math.floor(attr.customs_duty.total_byn)
+    : Math.floor(parseFloat(attr.price) * 0.2);
 
-  // Варианты
-  const variants = Array.isArray(attr.variants) ? attr.variants : []
+  // Промокод
+  const promo = attr.promo;
 
   return (
     <div className="goods-content">
       <div className="goods-content__inner">
 
-        {/* Коллекция */}
         {attr.collection && (
           <span className="goods-category">{attr.collection}</span>
         )}
 
-        {/* Название */}
         <h1>{attr.name_ru || attr.name}</h1>
 
-        {/* Артикул */}
         <p className="artikul">Артикул: <span>{attr.sku}</span></p>
 
-        {/* Рейтинг */}
         {ratingCount > 0 && (
           <div className="goods-feedback">
             <a href="#reviews">
@@ -85,35 +85,34 @@ export default function ProductInfo({ product }) {
           </div>
         )}
 
-        {/* Промокод */}
-        <span className="sales-hit pink">-10% промокод IKEYA</span>
+        {/* Промокод — только если есть в API */}
+        {promo && (
+          <span className="sales-hit pink">
+            -{promo.discount_value}{promo.discount_type === 'percent' ? '%' : ' р.'} промокод {promo.code}
+          </span>
+        )}
 
         {/* Цена */}
         <div className="goods-costs">
           {(() => {
-            const price = parseFloat(attr.price) || 0
-            const priceInt = Math.floor(price)
-            const priceDec = (price % 1).toFixed(2).slice(2)
-            return <p>{priceInt}<span>.{priceDec}</span></p>
+            const price = parseFloat(attr.price) || 0;
+            const priceInt = Math.floor(price);
+            const priceDec = (price % 1).toFixed(2).slice(2);
+            return <p>{priceInt}<span>.{priceDec}</span></p>;
           })()}
 
-          {attr.delivery_name && (
-            <div className="goods-delivery">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                  d="M10.3134 4.12667C10.2867 3.61333 10.2 3.26667 9.91338 2.98C9.50671 2.57333 8.96671 2.57333 7.99338 2.57333H3.66005C2.68671 2.57333 2.15338 2.57333 1.74005 2.98C1.32671 3.38667 1.33338 3.92667 1.33338 4.9V9.86C1.33338 10.5 1.33338 10.8533 1.52005 11.18C1.64005 11.3933 1.82005 11.5733 2.03338 11.6933C2.28005 11.8333 2.54671 11.8667 2.94671 11.88C3.16005 12.7667 3.95338 13.4333 4.90671 13.4333C5.86005 13.4333 6.65338 12.7667 6.86005 11.88H9.14671C9.36005 12.7667 10.1534 13.4333 11.1 13.4333C12.0467 13.4333 12.8467 12.7667 13.0534 11.88H13.12C13.2867 11.88 13.3667 11.88 13.44 11.8667C14.0734 11.7867 14.5734 11.2867 14.6534 10.6533C14.66 10.5867 14.6667 10.5 14.6667 10.3333V8.62C14.6667 6.18667 12.7267 4.2 10.3134 4.12667Z"
-                  fill="#04A31A"
-                />
-              </svg>
-              <p>{attr.delivery_name}</p>
-            </div>
-          )}
+          <div className="goods-delivery">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10.3135 4.12667C10.2868 3.61333 10.2002 3.26667 9.9135 2.98C9.50684 2.57333 8.96684 2.57333 7.9935 2.57333H3.66017C2.68684 2.57333 2.1535 2.57333 1.74017 2.98C1.32684 3.38667 1.3335 3.92667 1.3335 4.9V9.86C1.3335 10.5 1.3335 10.8533 1.52017 11.18C1.64017 11.3933 1.82017 11.5733 2.0335 11.6933C2.28017 11.8333 2.54684 11.8667 2.94684 11.88C3.16017 12.7667 3.9535 13.4333 4.90684 13.4333C5.86017 13.4333 6.6535 12.7667 6.86017 11.88H9.14684C9.36017 12.7667 10.1535 13.4333 11.1002 13.4333C12.0468 13.4333 12.8468 12.7667 13.0535 11.88H13.1202C13.2868 11.88 13.3668 11.88 13.4402 11.8667C14.0735 11.7867 14.5735 11.2867 14.6535 10.6533C14.6602 10.5867 14.6668 10.5 14.6668 10.3333V8.62C14.6668 6.18667 12.7268 4.2 10.3135 4.12667ZM4.12017 4.9C4.12017 4.64 4.32684 4.43333 4.58684 4.43333C4.84684 4.43333 5.0535 4.64 5.0535 4.9V7.38C5.0535 7.64 4.84684 7.84667 4.58684 7.84667C4.32684 7.84667 4.12017 7.64 4.12017 7.38V4.9ZM4.8935 12.5C4.2935 12.5 3.80684 12.0133 3.80684 11.4133C3.80684 10.8133 4.2935 10.3267 4.8935 10.3267C5.4935 10.3267 5.98017 10.8133 5.98017 11.4133C5.98017 12.0133 5.4935 12.5 4.8935 12.5ZM7.52684 7.38667C7.52684 7.64667 7.32017 7.85333 7.06017 7.85333C6.80017 7.85333 6.5935 7.64667 6.5935 7.38667V4.90667C6.5935 4.64667 6.80017 4.44 7.06017 4.44C7.32017 4.44 7.52684 4.64667 7.52684 4.90667V7.38667ZM11.0935 12.5C10.4935 12.5 10.0068 12.0133 10.0068 11.4133C10.0068 10.8133 10.4935 10.3267 11.0935 10.3267C11.6935 10.3267 12.1802 10.8133 12.1802 11.4133C12.1802 12.0133 11.6935 12.5 11.0935 12.5Z" fill="#04A31A" />
+            </svg>
+            <p>{attr.delivery_name ? (attr.delivery_days ? attr.delivery_name + ' — ' + attr.delivery_days + ' дн.' : attr.delivery_name) : 'Доставка до 20 дней'}</p>
+          </div>
         </div>
 
         {/* Пошлина */}
         <div className="goods-poshlina">
           <div className="goods-poshlina_top">
-            <button type="button">
+            <button type="button" onClick={() => setCustomsModalOpen(true)}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M9.99996 1.66666C5.40829 1.66666 1.66663 5.40832 1.66663 9.99999C1.66663 14.5917 5.40829 18.3333 9.99996 18.3333C14.5916 18.3333 18.3333 14.5917 18.3333 9.99999C18.3333 5.40832 14.5916 1.66666 9.99996 1.66666ZM13.1 10.5833H10.5833V13.1C10.5833 13.425 10.325 13.6833 9.99996 13.6833C9.67496 13.6833 9.41663 13.425 9.41663 13.1V10.5833H6.89996C6.57496 10.5833 6.31663 10.325 6.31663 9.99999C6.31663 9.67499 6.57496 9.41666 6.89996 9.41666H9.41663V6.89999C9.41663 6.57499 9.67496 6.31666 9.99996 6.31666C10.325 6.31666 10.5833 6.57499 10.5833 6.89999V9.41666H13.1C13.425 9.41666 13.6833 9.67499 13.6833 9.99999C13.6833 10.325 13.425 10.5833 13.1 10.5833Z"
@@ -123,14 +122,15 @@ export default function ProductInfo({ product }) {
             </button>
             <p>
               <span>≈</span>
-              <span className="poshlina-number">{Math.floor(parseFloat(attr.price) * 0.2)}</span>
+              <span className="poshlina-number">{customsDuty}</span>
               <span className="poshlina-valute">р.</span> пошлина не входит в цену
             </p>
           </div>
-          <a href="#">Правила оплаты и формирование таможенной пошлины</a>
+          <button type="button" className="poshlina-link" onClick={() => setCustomsModalOpen(true)}>
+            Правила оплаты и формирование таможенной пошлины
+          </button>
         </div>
 
-        {/* Кнопка "В корзину" / блок добавленного товара */}
         {currentQty > 0 ? (
           <GoodsAdded quantity={currentQty} onMinus={handleMinus} onPlus={handlePlus} />
         ) : (
@@ -150,28 +150,13 @@ export default function ProductInfo({ product }) {
           </button>
         )}
 
-        {/* Выбор цвета */}
-        <ProductColors
-          variants={variants}
-          currentSku={attr.sku}
-          localImages={localImages}
-        />
-
-        {/* Варианты размеров */}
-        <ProductSizes
-          variants={variants}
-          currentPrice={parseFloat(attr.price)}
-          productImage={localImages[0]}
-        />
-
-        {/* Основные характеристики */}
+        <ProductColors variants={variants} currentSku={attr.sku} localImages={localImages} />
+        <ProductSizes variants={variants} currentPrice={parseFloat(attr.price)} productImage={localImages[0]} />
         <ProductParameters product={product} />
-
-        {/* Кнопка доставки */}
         <ProductDeliveryLink />
-
-        {/* Консультация */}
         <ProductConsultation />
+
+        <CustomsModal isOpen={customsModalOpen} onClose={() => setCustomsModalOpen(false)} />
 
       </div>
     </div>
