@@ -31,7 +31,7 @@
         max-width: 114px;
     }
 
-    .products-tabs__link{
+    .products-tabs__link {
         padding: 10px 8px;
     }
 
@@ -127,7 +127,126 @@
 
 /* Large Tablet / Small Desktop (992px - 1199px) */
 @media (max-width: 1199px) {
-    /* Стили для макета 992px */
+
+    /* Хедер 992 */
+
+    .header {
+        border: none;
+    }
+
+    .header-top {
+        display: none;
+    }
+
+    .container {
+        max-width: 960px;
+    }
+
+    .header-middle {
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    .header-middle-inner {
+        flex-wrap: wrap;
+        flex-direction: column;
+    }
+
+    .header-middle-start {
+        width: 100%;
+        max-width: 100%;
+        margin-right: 0;
+        padding-top: 17px;
+        padding-bottom: 17px;
+    }
+
+    .header-middle-start button {
+        display: none;
+    }
+
+    .header-middle-start a:last-child {
+        display: none;
+    }
+
+    .search-box {
+        width: 100%;
+        margin-right: 0;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .header-middle-panel {
+        display: none;
+    }
+
+    .header-bottom {
+        display: none;
+    }
+
+    /* Детальнаяя страница блога 992 */
+
+    .the-detail {
+        margin-bottom: 0;
+        padding-top: 0;
+    }
+
+    .the-detail .breadcumps {
+        display: none;
+    }
+
+    .the-detail__content {
+        max-width: 960px;
+    }
+
+    .the-detail__content h1 {
+        font-weight: 600;
+        font-size: 21px;
+        line-height: 133%;
+        color: #181818;
+        padding-top: 16px;
+    }
+
+    .detail-cheaps__item {
+        font-size: 11px;
+        line-height: 145%;
+        letter-spacing: 0.05em;
+    }
+
+    .deatil-cheaps__date {
+        font-size: 13px;
+        line-height: 138%;
+    }
+
+    .the-detail__content p {
+        font-size: 15px;
+        line-height: 133%;
+        letter-spacing: 0.03em;
+    }
+
+    .text-with-big-image img {
+        min-height: 507px;
+        max-height: 507px;
+    }
+
+    .right-text-left-image img, .left-text-right-image img {
+        max-width: 464px;
+        max-height: 618px;
+    }
+
+    .text-container {
+        max-width: 464px;
+    }
+
+    .article-detail-button-transparent {
+        font-size: 13px;
+        line-height: 138%;
+        letter-spacing: 0.01em;
+    }
+
+
+
+
+
 }
 
 /* Tablet (768px - 991px) */
