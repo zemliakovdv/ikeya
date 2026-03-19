@@ -1733,6 +1733,10 @@ main {
     cursor: pointer;
 }
 
+.footer-mobile{
+    display: none;
+}
+
 .footer {
     background-color: #F5F5F5;
     padding-top: 32px;

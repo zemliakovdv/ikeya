@@ -1,6 +1,7 @@
 // app/layout.js
 import Header from '@/components/layout/Header/Header'
 import Footer from '@/components/layout/Footer/Footer'
+import FooterMob from '@/components/layout/Footer/FooterMob'
 import ClientScripts from '@/components/ClientScripts'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -47,6 +48,7 @@ export default function RootLayout({ children }) {
                 <Header />
                 {children}
                 <Footer />
+                <FooterMob />
               </FavoritesProvider>  {/* ← закрыл */}
             </AuthModalsProvider>
           </AuthProvider>
