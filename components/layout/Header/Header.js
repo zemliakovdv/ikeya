@@ -10,6 +10,7 @@ import { useFavorites } from '@/contexts/FavoritesContext'
 import { getTopCategories } from '@/lib/api/ikea'
 import MegaMenu from './MegaMenu'
 import SearchBox from './SearchBox'
+import PhoneDropdown from './PhoneDropdown';
 
 export default function Header() {
   const { itemsCount } = useCart()
@@ -202,10 +203,7 @@ export default function Header() {
                   </ul>
                 </div>
                 <div className="header-top-phone">
-                  <a href="tel:2626">
-                    <img src="/assets/img/icons/header-short-phone.svg" alt="Телефон" />
-                    2626
-                  </a>
+                  <PhoneDropdown />
                 </div>
               </div>
             </div>

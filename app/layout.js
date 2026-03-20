@@ -8,6 +8,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { AuthModalsProvider } from '@/components/auth/AuthModalsHost'
 import FloatingChatButton from '@/components/FloatingChatButton'
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
+import CookieBanner from '@/components/cookie/CookieBanner';
 import './globals.css'
 import Script from 'next/script'
 
@@ -56,6 +57,8 @@ export default function RootLayout({ children }) {
 
         {/* Плавающая кнопка чата */}
         <FloatingChatButton />
+
+        <CookieBanner />
 
         <Script
           src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
