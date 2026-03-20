@@ -1,4 +1,6 @@
 // app/catalog/page.js
+export const dynamic = 'force-dynamic';
+
 import { Suspense } from 'react';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import CategoriesGrid from '@/components/catalog/CategoriesGrid';
