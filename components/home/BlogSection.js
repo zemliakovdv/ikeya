@@ -31,7 +31,8 @@ function extractImage(article) {
     const hero = images.find(img => img.slot === 'hero_image') || images[0];
     if (hero?.url) {
       // Заменяем localhost на боевой IMAGES_BASE_URL
-      return hero.url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
+      if (hero.url.startsWith('http')) return hero.url;
+      return `${IMAGES_BASE_URL}${hero.url}`;
     }
   }
   return null;

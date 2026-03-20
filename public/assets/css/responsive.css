@@ -416,7 +416,33 @@
 
 /* Tablet (768px - 991px) */
 @media (max-width: 991px) {
-    /* Стили для макета 768px */
+    .container {
+        max-width: 736px;
+    }
+
+    .the-detail__content {
+        max-width: 736px;
+    }
+
+    .text-with-big-image img {
+        max-height: 388px;
+        min-height: 388px;
+    }
+
+    .right-text-left-image img,
+    .left-text-right-image img {
+        max-width: 352px;
+        max-height: 468px;
+    }
+
+    .text-container {
+        max-width: 352px;
+    }
+
+    .two-image-inner img {
+        max-width: 352px;
+        max-height: 468px;
+    }
 }
 
 /* Large Mobile (576px - 767px) */
