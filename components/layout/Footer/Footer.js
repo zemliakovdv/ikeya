@@ -24,7 +24,7 @@ export default function Footer() {
                     <h5>Всё о IKEYA</h5>
                     <ul>
                       <li><Link href="#">О компании</Link></li>
-                      <li><Link href="#">Советы и идеи</Link></li>
+                      <li><Link href="/blog">Советы и идеи</Link></li>
                       <li><Link href="/pvz">Пункты выдачи</Link></li>
                       <li><Link href="#">Контакты</Link></li>
                     </ul>

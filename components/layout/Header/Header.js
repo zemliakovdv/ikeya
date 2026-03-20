@@ -194,7 +194,7 @@ export default function Header() {
                       <Link href="#">Оплата</Link>
                     </li>
                     <li>
-                      <Link href="/pvz">Пункты выдачи</Link>
+                      <Link href="#">Пункты выдачи</Link>
                     </li>
                     <li>
                       <Link href="#">Сотрудничество</Link>
