@@ -233,3 +233,20 @@
 .map-filters button.active svg{
   display: block;
 }
+
+.pvz-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pvz-card__icon {
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.pvz-card__header .card-title {
+  margin-bottom: 0;
+  line-height: 1.4;
+}

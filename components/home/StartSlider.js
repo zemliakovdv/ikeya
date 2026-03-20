@@ -1,88 +1,63 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { getMainSliderBanners, IMAGES_BASE_URL } from '@/lib/api/ikea'
+// components/home/StartSlider.js
 
-export default function StartSlider() {
-  const [slides, setSlides] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [sliderType, setSliderType] = useState(null) // 'single' или 'triple'
+import { useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
+function getImageUrl(banner) {
+  const url = banner.attributes.image_url;
+  if (!url) return null;
+  return url.startsWith('http') ? url : `${IMAGES_BASE_URL}${url}`;
+}
+
+function getLinkUrl(banner) {
+  if (banner.attributes.link_url) return banner.attributes.link_url;
+  const categoryId = banner.relationships?.category?.data?.id;
+  return categoryId ? `/catalog/${categoryId}` : '#';
+}
+
+/**
+ * Props:
+ *  - slides  {Array}   — для single: массив баннеров
+ *                      — для triple: массив групп по 3
+ *  - type    {string}  — 'single' | 'triple'
+ */
+export default function StartSlider({ slides = [], type = 'single' }) {
   useEffect(() => {
-    async function loadBanners() {
-      const { data } = await getMainSliderBanners()
-      
-      if (data.length === 0) {
-        setLoading(false)
-        return
-      }
+    if (!slides.length || typeof window === 'undefined') return;
 
-      // Определяем тип слайдера по первому баннеру
-      const firstVariant = data[0]?.attributes?.variant
-      if (firstVariant === 'main_1500x516') {
-        setSliderType('single')
-        // Сортируем по position
-        const sorted = [...data].sort((a, b) => a.attributes.position - b.attributes.position)
-        setSlides(sorted)
-      } else if (firstVariant === 'main_572x594') {
-        setSliderType('triple')
-        // Сортируем по position
-        const sorted = [...data].sort((a, b) => a.attributes.position - b.attributes.position)
-        // Группируем по 3
-        const grouped = []
-        for (let i = 0; i < sorted.length; i += 3) {
-          grouped.push(sorted.slice(i, i + 3))
-        }
-        setSlides(grouped)
-      }
+    // Swiper доступен глобально через CDN
+    const initSwiper = () => {
+      if (!window.Swiper) return;
+      new window.Swiper('.start-slider__swiper', {
+        slidesPerView: 1,
+        spaceBetween: 0,
+        loop: slides.length > 1,
+        pagination: {
+          el: '.start-slider__pagination',
+          clickable: true,
+        },
+        navigation: {
+          nextEl: '.start-slider__nav-next',
+          prevEl: '.start-slider__nav-prev',
+        },
+      });
+    };
 
-      setLoading(false)
+    // Если Swiper уже загружен — инициализируем сразу
+    if (window.Swiper) {
+      initSwiper();
+    } else {
+      // Иначе ждём загрузки скрипта
+      window.addEventListener('swiper-ready', initSwiper, { once: true });
+      return () => window.removeEventListener('swiper-ready', initSwiper);
     }
+  }, [slides]);
 
-    loadBanners()
-  }, [])
-
-  useEffect(() => {
-    if (loading || slides.length === 0 || typeof window === 'undefined') return
-
-    // Инициализация Swiper после рендера слайдов
-    import('swiper').then(({ default: Swiper }) => {
-      import('swiper/modules').then(({ Navigation, Pagination }) => {
-        new Swiper('.start-slider__swiper', {
-          modules: [Navigation, Pagination],
-          slidesPerView: 1,
-          spaceBetween: 0,
-          loop: true,
-          pagination: {
-            el: '.start-slider__pagination',
-            clickable: true,
-          },
-          navigation: {
-            nextEl: '.start-slider__nav-next',
-            prevEl: '.start-slider__nav-prev',
-          },
-        })
-      })
-    })
-  }, [loading, slides])
-
-  if (loading) return <div className="start-slider-loader">Загрузка...</div>
-  if (slides.length === 0) return null
-
-  const getLinkUrl = (banner) => {
-    if (banner.attributes.link_url) return banner.attributes.link_url
-    const categoryId = banner.relationships?.category?.data?.id
-    return categoryId ? `/catalog/${categoryId}` : '#'
-  }
-
-  const getImageUrl = (banner) => {
-    const url = banner.attributes.image_url
-    if (url.startsWith('http')) return url
-    return `${IMAGES_BASE_URL}${url}`
-  }
-
-  const getAltText = (index) => `Баннер ${index + 1}`
+  if (!slides.length) return null;
 
   return (
     <section className="start-slider">
@@ -92,29 +67,53 @@ export default function StartSlider() {
             <div className="start-slider-inner">
               <div className="swiper start-slider__swiper">
                 <div className="swiper-wrapper">
-                  {sliderType === 'single' && slides.map((banner, idx) => (
-                    <div className="swiper-slide" key={banner.id || idx}>
-                      <Link href={getLinkUrl(banner)}>
-                        <img src={getImageUrl(banner)} alt={getAltText(idx)} />
-                      </Link>
-                    </div>
-                  ))}
 
-                  {sliderType === 'triple' && slides.map((group, groupIdx) => (
+                  {type === 'single' && slides.map((banner, idx) => {
+                    const src = getImageUrl(banner);
+                    if (!src) return null;
+                    return (
+                      <div className="swiper-slide" key={banner.id || idx}>
+                        <Link href={getLinkUrl(banner)}>
+                          <Image
+                            src={src}
+                            alt={`Баннер ${idx + 1}`}
+                            width={1500}
+                            height={516}
+                            priority={idx === 0}
+                            style={{ width: '100%', height: 'auto' }}
+                          />
+                        </Link>
+                      </div>
+                    );
+                  })}
+
+                  {type === 'triple' && slides.map((group, groupIdx) => (
                     <div className="swiper-slide" key={groupIdx}>
                       <div className="triple-banners">
-                        {group.map((banner, i) => (
-                          <Link key={banner.id || i} href={getLinkUrl(banner)} className="triple-banner-item">
-                            <img src={getImageUrl(banner)} alt={getAltText(groupIdx * 3 + i)} />
-                          </Link>
-                        ))}
+                        {group.map((banner, i) => {
+                          const src = getImageUrl(banner);
+                          if (!src) return null;
+                          return (
+                            <Link key={banner.id || i} href={getLinkUrl(banner)} className="triple-banner-item">
+                              <Image
+                                src={src}
+                                alt={`Баннер ${groupIdx * 3 + i + 1}`}
+                                width={572}
+                                height={594}
+                                priority={groupIdx === 0}
+                                style={{ width: '100%', height: 'auto' }}
+                              />
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
+
                 </div>
               </div>
 
-              <div className="start-slider__pagination"></div>
+              <div className="start-slider__pagination" />
 
               <div className="start-slider__nav-prev">
                 <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
@@ -131,5 +130,5 @@ export default function StartSlider() {
         </div>
       </div>
     </section>
-  )
+  );
 }

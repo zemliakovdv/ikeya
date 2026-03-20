@@ -685,11 +685,6 @@ main {
 }
 
 
-.categories-item-card {
-    position: relative;
-    /* остальные стили */
-}
-
 .categories-card-img {
     padding: 16px;
     border-radius: 8px;
@@ -729,6 +724,8 @@ main {
 .categories-item-card {
     position: relative;
     cursor: pointer;
+    max-width: 166.5px;
+    min-width: 166.5px;
 }
 
 .categories-card-img img {
@@ -6860,12 +6857,6 @@ main {
     height: 100vh;
 }
 
-.pvz-scroll .pvz-card:nth-child(2) {
-    opacity: 0.5;
-    cursor: default;
-    pointer-events: none;
-    user-select: none;
-}
 
 #deliveryModal .map-wrapper {
     height: 100vh;
@@ -7825,4 +7816,29 @@ main {
 
 .cookie-toggle--on .cookie-toggle__thumb {
     transform: translateX(10px);
+}
+
+/* ─── Page Loader ───────────────────────────────────────────────────────────── */
+
+.page-loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  z-index: 9998;
+}
+
+.page-loader__spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e0eaf4;
+  border-top-color: #0058A3;
+  border-radius: 50%;
+  animation: page-loader-spin 0.75s linear infinite;
+}
+
+@keyframes page-loader-spin {
+  to { transform: rotate(360deg); }
 }

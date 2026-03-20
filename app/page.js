@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import StartSlider from '@/components/home/StartSlider';
+import StartSliderServer from '@/components/home/StartSliderServer';
 import PopularCategoriesSection from '@/components/home/PopularCategoriesSection';
 import BestsellersSection from '@/components/home/BestsellersSection';
 import PromoBlockServer from '@/components/home/PromoBlockServer';
@@ -61,7 +61,7 @@ export default async function Home() {
 
   return (
     <main className="main">
-      <StartSlider />
+      <StartSliderServer />
       <Suspense fallback={<SectionSkeleton />}>
         <PopularCategoriesSection />
       </Suspense>

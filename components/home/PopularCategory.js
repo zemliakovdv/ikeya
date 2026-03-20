@@ -1,18 +1,37 @@
-// components/home/PopularCategory.js
 'use client';
+
+// components/home/PopularCategory.js
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const PLACEHOLDER_IMAGE = '/assets/img/main-page/popular-categories/popular-categories-1.png';
 
+const FALLBACK_CATEGORIES = [
+  ...Array.from({ length: 8 }, (_, i) => ({ id: `fallback-1-${i}`, name: 'Мягкая мебель', image: '/assets/img/main-page/popular-categories/popular-categories-1.png', url: '/catalog' })),
+  ...Array.from({ length: 8 }, (_, i) => ({ id: `fallback-2-${i}`, name: 'Комоды',        image: '/assets/img/main-page/popular-categories/popular-categories-2.png', url: '/catalog' })),
+  ...Array.from({ length: 8 }, (_, i) => ({ id: `fallback-3-${i}`, name: 'Матрасы',       image: '/assets/img/main-page/popular-categories/popular-categories-3.png', url: '/catalog' })),
+];
+
 export default function PopularCategory({ categories = [] }) {
+  const displayCategories = categories.length ? categories : FALLBACK_CATEGORIES;
+
+  // Разбиваем на слайды по 8
+  const slides = [];
+  for (let i = 0; i < displayCategories.length; i += 8) {
+    slides.push(displayCategories.slice(i, i + 8));
+  }
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Swiper) {
+    if (typeof window === 'undefined') return;
+
+    const init = () => {
+      if (!window.Swiper) return;
       new window.Swiper('.popular-categories-inner', {
         slidesPerView: 1,
         spaceBetween: 0,
-        loop: true,
+        loop: slides.length > 1,
         pagination: {
           el: '.popular-categories__pagination',
           clickable: true,
@@ -22,48 +41,15 @@ export default function PopularCategory({ categories = [] }) {
           prevEl: '.popular-categories__nav-prev',
         },
       });
+    };
+
+    if (window.Swiper) {
+      init();
+    } else {
+      window.addEventListener('swiper-ready', init, { once: true });
+      return () => window.removeEventListener('swiper-ready', init);
     }
-  }, []);
-
-  const handleImageError = (e) => {
-    console.log('❌ Не загрузилась картинка категории');
-    e.target.src = PLACEHOLDER_IMAGE;
-  };
-
-  let displayCategories = [...categories];
-  
-  // ✅ Если категорий нет вообще, показываем заглушки (3 слайда)
-  if (categories.length === 0) {
-    displayCategories = [
-      // Слайд 1 - Мягкая мебель
-      ...Array.from({ length: 8 }, (_, i) => ({ 
-        id: `fallback-1-${i}`, 
-        name: 'Мягкая мебель', 
-        image: '/assets/img/main-page/popular-categories/popular-categories-1.png', 
-        url: '/catalog' 
-      })),
-      // Слайд 2 - Комоды
-      ...Array.from({ length: 8 }, (_, i) => ({ 
-        id: `fallback-2-${i}`, 
-        name: 'Комоды', 
-        image: '/assets/img/main-page/popular-categories/popular-categories-2.png', 
-        url: '/catalog' 
-      })),
-      // Слайд 3 - Матрасы
-      ...Array.from({ length: 8 }, (_, i) => ({ 
-        id: `fallback-3-${i}`, 
-        name: 'Матрасы', 
-        image: '/assets/img/main-page/popular-categories/popular-categories-3.png', 
-        url: '/catalog' 
-      }))
-    ];
-  }
-
-  // ✅ Разбиваем категории на группы по 8 (столько слайдов, сколько нужно)
-  const slides = [];
-  for (let i = 0; i < displayCategories.length; i += 8) {
-    slides.push(displayCategories.slice(i, i + 8));
-  }
+  }, [slides.length]);
 
   return (
     <section className="popular-category">
@@ -79,14 +65,18 @@ export default function PopularCategory({ categories = [] }) {
                       {slideCategories.map((category) => (
                         <div key={category.id} className="categories-item-card">
                           <div className="categories-card-img">
-                            <img 
-                              src={category.image} 
+                            <Image
+                              src={category.image}
                               alt={category.name}
-                              onError={handleImageError}
+                              width={120}
+                              height={120}
+                              priority={slideIndex === 0}
+                              onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                              style={{ width: '100%', height: 'auto' }}
                             />
                           </div>
                           <p>{category.name}</p>
-                          <Link href={category.url}></Link>
+                          <Link href={category.url} />
                         </div>
                       ))}
                     </div>
@@ -95,18 +85,17 @@ export default function PopularCategory({ categories = [] }) {
               </div>
 
               <div className="popular-categories__nav popular-categories__nav-prev">
-                <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
                   <path d="M6 1L1 6L6 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              
               <div className="popular-categories__nav popular-categories__nav-next">
-                <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
                   <path d="M1 11L6 6L1 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
 
-              <div className="popular-categories__pagination"></div>
+              <div className="popular-categories__pagination" />
             </div>
           </div>
         </div>

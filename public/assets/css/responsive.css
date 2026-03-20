@@ -27,6 +27,11 @@
         right: 258px;
     }
 
+    .categories-item-card{
+        min-width: 146px;
+        max-width: 146px;
+    }
+
     .categories-card-img img {
         max-width: 114px;
     }
