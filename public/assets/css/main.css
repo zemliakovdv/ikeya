@@ -571,6 +571,8 @@ h2 {
     display: flex;
     gap: 16px;
     flex-wrap: nowrap;
+    width: 100%;
+    justify-content: space-between;
 }
 
 .header-bottom-swiper {
