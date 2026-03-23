@@ -13,33 +13,33 @@ export default function MegaMenu({ isOpen, onClose }) {
   const menuRef = useRef(null)
 
   // Загружаем категории
-useEffect(() => {
-  async function load() {
-    try {
-      let allCategories = []
-      let page = 1
-      const perPage = 100
+  useEffect(() => {
+    async function load() {
+      try {
+        let allCategories = []
+        let page = 1
+        const perPage = 100
 
-      while (true) {
-        const res = await fetch(
-          `http://45.135.234.22/api/v1/categories?per_page=${perPage}&page=${page}`,
-          { cache: 'no-store' }
-        )
-        if (!res.ok) throw new Error(`API Error: ${res.status}`)
-        const data = await res.json()
-        const cats = data.data || []
-        allCategories = allCategories.concat(cats)
-        if (cats.length < perPage || page >= (data.meta?.total_pages || 1)) break
-        page++
+        while (true) {
+          const res = await fetch(
+            `http://45.135.234.22/api/v1/categories?per_page=${perPage}&page=${page}`,
+            { cache: 'no-store' }
+          )
+          if (!res.ok) throw new Error(`API Error: ${res.status}`)
+          const data = await res.json()
+          const cats = data.data || []
+          allCategories = allCategories.concat(cats)
+          if (cats.length < perPage || page >= (data.meta?.total_pages || 1)) break
+          page++
+        }
+
+        setAllCategories(allCategories)
+      } catch (e) {
+        console.error('MegaMenu: ошибка загрузки категорий', e)
       }
-
-      setAllCategories(allCategories)
-    } catch (e) {
-      console.error('MegaMenu: ошибка загрузки категорий', e)
     }
-  }
-  load()
-}, [])
+    load()
+  }, [])
 
   // Закрытие по клику вне
   useEffect(() => {
@@ -126,9 +126,18 @@ useEffect(() => {
                 className={`menu-item${isActive ? ' active' : ''}`}
                 onMouseEnter={() => setActiveRootId(cat.id)}
               >
-                {attrs.icon_url && (
+                {(attrs.pictogram_url || attrs.icon_url) && (
                   <div className="menu-item-icon">
-                    <img src={attrs.icon_url} alt="" width={24} height={24} />
+                    <img
+                      src={
+                        attrs.pictogram_url
+                          ? `http://45.135.234.22${attrs.pictogram_url}`
+                          : attrs.icon_url
+                      }
+                      alt=""
+                      width={24}
+                      height={24}
+                    />
                   </div>
                 )}
                 <span className="menu-item-text">
