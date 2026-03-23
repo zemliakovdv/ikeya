@@ -7827,6 +7827,20 @@ main {
     gap: 16px;
 }
 
+.footer-cookie-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  text-align: left;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: 0.5px;
+}
+
 /* ─── Toggle Switch ─────────────────────────────────────────────────────────── */
 
 .cookie-toggle {

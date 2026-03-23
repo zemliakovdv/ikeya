@@ -1,6 +1,25 @@
-import Link from 'next/link'
+'use client';
+
+import Link from 'next/link';
+import { useState } from 'react';
+import CookieSettingsModal from '@/components/cookie/CookieSettingsModal';
+
+const STORAGE_KEY = 'ikeya_cookie_consent';
 
 export default function Footer() {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const saveConsent = (prefs) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    } catch {}
+    setModalOpen(false);
+  };
+
+  const handleReject = () => {
+    saveConsent({ technical: true, analytics: false, advertising: false });
+  };
+
   return (
     <footer className="footer">
       <div className="container">
@@ -47,7 +66,15 @@ export default function Footer() {
                       <li><Link href="#">Доставка</Link></li>
                       <li><Link href="#">Оплата</Link></li>
                       <li><Link href="#">Правовая информация</Link></li>
-                      <li><Link href="#">Настройка cookie</Link></li>
+                      <li>
+                        <button
+                          type="button"
+                          className="footer-cookie-btn"
+                          onClick={() => setModalOpen(true)}
+                        >
+                          Настройка cookie
+                        </button>
+                      </li>
                       <li><Link href="#">Политика конфиденциальности</Link></li>
                     </ul>
                   </div>
@@ -72,6 +99,14 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
+      {modalOpen && (
+        <CookieSettingsModal
+          onSave={saveConsent}
+          onReject={handleReject}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </footer>
-  )
+  );
 }
