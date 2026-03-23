@@ -118,6 +118,10 @@
         max-width: 114px;
     }
 
+    .advice-card{
+        max-width: 656px;
+    }
+
 }
 
 /* Desktop (1200px - 1399px) */
