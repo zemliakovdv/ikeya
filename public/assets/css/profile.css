@@ -2004,7 +2004,7 @@
     /* ========== ЛИЧНЫЕ ДАННЫЕ ПРОФИЛЯ ========== */
 
     .persdat-layout {
-        grid-template-columns: 564px 564px;
+        grid-template-columns: 1fr 1fr;
     }
 
     .profile-data {
