@@ -7542,7 +7542,6 @@ main {
     min-width: 320px;
     padding: 8px;
     z-index: 1000;
-    border: 1px solid;
 }
 
 .phone-dropdown__phone {
