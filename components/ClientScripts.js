@@ -59,32 +59,20 @@ export default function ClientScripts() {
         const sliderEl = document.querySelector('.start-slider__swiper');
         if (!sliderEl) return;
 
-        const startSlider = new Swiper('.start-slider__swiper', {
-          loop: false,
+        new Swiper('.start-slider__swiper', {
+          loop: true,
           slidesPerView: 1,
           spaceBetween: 0,
           speed: 600,
-
           navigation: {
             nextEl: '.start-slider__nav-next',
             prevEl: '.start-slider__nav-prev',
           },
-
           pagination: {
             el: '.start-slider__pagination',
             clickable: true,
           },
-
-          on: {
-            init: function () {
-              updateNavigationButtons(this, '.start-slider__nav-prev', '.start-slider__nav-next');
-            },
-            slideChange: function () {
-              updateNavigationButtons(this, '.start-slider__nav-prev', '.start-slider__nav-next');
-            }
-          }
         });
-
       }
 
       // ========== СЛАЙДЕР КАТЕГОРИЙ ==========
@@ -92,32 +80,20 @@ export default function ClientScripts() {
         const sliderEl = document.querySelector('.popular-categories-inner');
         if (!sliderEl) return;
 
-        const categoriesSlider = new Swiper('.popular-categories-inner', {
-          loop: false,
+        new Swiper('.popular-categories-inner', {
+          loop: true,
           slidesPerView: 1,
           spaceBetween: 0,
           speed: 600,
-
           navigation: {
             nextEl: '.popular-categories__nav-next',
             prevEl: '.popular-categories__nav-prev',
           },
-
           pagination: {
             el: '.popular-categories__pagination',
             clickable: true,
           },
-
-          on: {
-            init: function () {
-              updateNavigationButtons(this, '.popular-categories__nav-prev', '.popular-categories__nav-next');
-            },
-            slideChange: function () {
-              updateNavigationButtons(this, '.popular-categories__nav-prev', '.popular-categories__nav-next');
-            }
-          }
         });
-
       }
 
       // ========== ГАЛЕРЕИ ТОВАРОВ ==========
@@ -164,7 +140,6 @@ export default function ClientScripts() {
             }
           }
         });
-
       }
 
       // ========== СЛАЙДЕРЫ ТОВАРОВ ==========
@@ -197,7 +172,6 @@ export default function ClientScripts() {
             }
           });
         });
-
       }
 
       // ========== СЛАЙДЕР ПРОМО-КАРТОЧЕК ==========
@@ -250,7 +224,6 @@ export default function ClientScripts() {
             }
           }
         });
-
       }
 
       // ========== СЛАЙДЕР РЕКЛАМНЫХ БАННЕРОВ ==========
@@ -261,7 +234,7 @@ export default function ClientScripts() {
         const adsBannerSlider = new Swiper('.ads-banner-inner', {
           slidesPerView: 1,
           spaceBetween: 20,
-          loop: false,
+          loop: true,
           speed: 600,
           watchOverflow: true,
 
@@ -273,18 +246,8 @@ export default function ClientScripts() {
           pagination: {
             el: '.ads-banner-slider__pagination',
             clickable: true,
-          },
-
-          on: {
-            init: function () {
-              updateNavigationButtons(this, '.ads-banner-slider__nav-prev', '.ads-banner-slider__nav-next');
-            },
-            slideChange: function () {
-              updateNavigationButtons(this, '.ads-banner-slider__nav-prev', '.ads-banner-slider__nav-next');
-            }
           }
         });
-
       }
 
       // ========== СЛАЙДЕР БЛОГА ==========
@@ -295,7 +258,7 @@ export default function ClientScripts() {
         const blogSlider = new Swiper('.blog-inner', {
           slidesPerView: 1,
           spaceBetween: 0,
-          loop: false,
+          loop: true,
           speed: 600,
           watchOverflow: true,
 
@@ -307,18 +270,8 @@ export default function ClientScripts() {
           pagination: {
             el: '.blog-slider__pagination',
             clickable: true,
-          },
-
-          on: {
-            init: function () {
-              updateNavigationButtons(this, '.blog-slider__nav-prev', '.blog-slider__nav-next');
-            },
-            slideChange: function () {
-              updateNavigationButtons(this, '.blog-slider__nav-prev', '.blog-slider__nav-next');
-            }
           }
         });
-
       }
 
       // ========== УПРАВЛЕНИЕ МЕГА-МЕНЮ КАТАЛОГА ==========
@@ -339,7 +292,7 @@ export default function ClientScripts() {
           catalogButton.classList.add('active');
           body.style.overflow = 'hidden';
           isOpen = true;
-          
+
           const firstMenuItem = catalogModal.querySelector('.menu-item');
           if (firstMenuItem) {
             firstMenuItem.focus();
@@ -402,7 +355,6 @@ export default function ClientScripts() {
             return isOpen;
           }
         };
-
       }
 
       // ========== SEO ТЕКСТ ==========
@@ -420,7 +372,6 @@ export default function ClientScripts() {
         hideBtn.addEventListener('click', function () {
           seoTextContent.classList.remove('open');
         });
-
       }
 
       // ========== ГАЛЕРЕЯ ТОВАРА (СТРАНИЦА ТОВАРА) ==========
@@ -449,7 +400,6 @@ export default function ClientScripts() {
             swiper: swiperMinis,
           },
         });
-
       }
 
       // ========== СЛАЙДЕР ПРЕДМЕТОВ ==========
@@ -502,7 +452,6 @@ export default function ClientScripts() {
             },
           },
         });
-
       }
 
       // ========== СОРТИРОВКА ==========
@@ -519,11 +468,11 @@ export default function ClientScripts() {
         selected.addEventListener('click', function (e) {
           e.stopPropagation();
           sortBlock.classList.toggle('open');
-          
+
           const icon = this.querySelector('svg');
           if (icon) {
-            icon.style.transform = sortBlock.classList.contains('open') 
-              ? 'rotate(180deg)' 
+            icon.style.transform = sortBlock.classList.contains('open')
+              ? 'rotate(180deg)'
               : 'rotate(0deg)';
           }
         });
@@ -534,7 +483,7 @@ export default function ClientScripts() {
             this.classList.add('active');
             currentText.textContent = this.textContent.trim();
             sortBlock.classList.remove('open');
-            
+
             const icon = selected.querySelector('svg');
             if (icon) icon.style.transform = 'rotate(0deg)';
 
@@ -557,7 +506,6 @@ export default function ClientScripts() {
             if (icon) icon.style.transform = 'rotate(0deg)';
           }
         });
-
       }
 
       // ========== ЧИПСЫ ФИЛЬТРОВ ==========
@@ -571,7 +519,7 @@ export default function ClientScripts() {
         const chip = document.createElement('div');
         chip.className = 'catalog-cheaps-item';
         chip.setAttribute('data-value', value);
-        
+
         chip.innerHTML = `
           <p>${filterType}: <span>${value}</span></p>
           <button class="cheaps-item-delete" aria-label="Удалить фильтр">×</button>
@@ -632,13 +580,13 @@ export default function ClientScripts() {
         if (!chipsContainer) return;
 
         const checkboxes = document.querySelectorAll('.brand-checkbox input[type="checkbox"]');
-        
+
         checkboxes.forEach(checkbox => {
           checkbox.addEventListener('change', function () {
             const label = this.closest('.brand-checkbox');
             const labelText = label.querySelector('span:last-child');
             const brandName = labelText ? labelText.textContent.trim() : '';
-            
+
             const section = this.closest('.filter-section');
             const sectionTitleEl = section ? section.querySelector('.section-title span:first-child') : null;
             const sectionTitle = sectionTitleEl ? sectionTitleEl.textContent.trim() : 'Фильтр';
@@ -652,7 +600,6 @@ export default function ClientScripts() {
             }
           });
         });
-
       }
 
       // ========== КНОПКИ "ЕЩЁ N" / "СКРЫТЬ" ==========
@@ -720,13 +667,12 @@ export default function ClientScripts() {
             }
           });
         });
-
       }
 
       // ========== ЗАКРЕПЛЕНИЕ ASIDE С ФИЛЬТРАМИ ==========
       function initStickyFilters() {
         const filterAside = document.querySelector('.filter-aside');
-        
+
         if (!filterAside) {
           console.warn('Боковая панель не найдена');
           return;
@@ -766,9 +712,8 @@ export default function ClientScripts() {
           }
 
           e.stopPropagation();
-          
-        }, { passive: false });
 
+        }, { passive: false });
       }
 
       // ========== ОЧИСТКА ФИЛЬТРОВ ==========
@@ -799,7 +744,6 @@ export default function ClientScripts() {
         }
 
         updateClearAllButton();
-
       }
 
       function initClearFilters() {
@@ -810,7 +754,6 @@ export default function ClientScripts() {
           e.preventDefault();
           clearAllFilters();
         });
-
       }
 
       // ========== СВОРАЧИВАНИЕ СЕКЦИЙ ФИЛЬТРОВ ==========
@@ -862,7 +805,7 @@ export default function ClientScripts() {
         const MIN_VALUE = 19.99;
         const MAX_VALUE = 4999;
         const GAP = 10;
-        
+
         const INITIAL_MAX_PERCENT = 93;
         const INITIAL_MAX_VALUE = MIN_VALUE + ((MAX_VALUE - MIN_VALUE) * (INITIAL_MAX_PERCENT / 100));
 
@@ -1031,7 +974,7 @@ export default function ClientScripts() {
 
         inputMin.value = MIN_VALUE.toFixed(2);
         inputMax.value = INITIAL_MAX_VALUE.toFixed(2);
-        
+
         updateSlider();
       }
 
@@ -1085,7 +1028,6 @@ export default function ClientScripts() {
             verhSection.style.top = `${headerHeight}px`;
           }
         });
-
       }
 
       // ========== ВЫЗОВ ВСЕХ ФУНКЦИЙ ==========

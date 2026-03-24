@@ -43,6 +43,7 @@ export default function RecommendationsSection({ products = [] }) {
                     modules={[Navigation, Pagination]}
                     spaceBetween={0}
                     slidesPerView={1}
+                    loop={groupedProducts.length > 1}
                     // 👇 не используем глобальные селекторы — всё через refs
                     navigation={swiperReady ? { prevEl: prevRef.current, nextEl: nextRef.current } : false}
                     pagination={swiperReady ? { el: paginationRef.current, clickable: true } : false}

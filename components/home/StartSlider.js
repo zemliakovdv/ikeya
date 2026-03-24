@@ -35,7 +35,7 @@ export default function StartSlider({ slides = [], type = 'single' }) {
       new window.Swiper('.start-slider__swiper', {
         slidesPerView: 1,
         spaceBetween: 0,
-        loop: slides.length > 1,
+        loop: true,
         pagination: {
           el: '.start-slider__pagination',
           clickable: true,
