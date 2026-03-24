@@ -1,13 +1,14 @@
 // src/components/auth/RegisterModal.js
 'use client';
 
+import { useState } from 'react';
+
 export default function RegisterModal({
   isOpen,
   onClose,
-  onOpenCode,     // запрос звонка + открыть CodeModal
-  onOpenLogin,    // открыть LoginModal
+  onOpenCode,
+  onOpenLogin,
 
-  // form state
   username,
   setUsername,
   phoneDigits,
@@ -19,11 +20,19 @@ export default function RegisterModal({
   consentMarketing,
   setConsentMarketing,
 
-  // UI
   showPhoneUsed = false,
   loading = false,
   errorText = '',
 }) {
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  const isPhoneComplete = (phoneDigits || '').replace(/\D/g, '').length === 9;
+  const isEmailValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const showEmailError = emailTouched && email && !isEmailValid;
+
+  const hasPhoneError = showPhoneUsed || !!errorText;
+  const canSubmit = isPhoneComplete && !loading;
+
   return (
     <div
       className={`modal fade reg-start ${isOpen ? 'show' : ''}`}
@@ -52,13 +61,18 @@ export default function RegisterModal({
           </div>
 
           <div className="modal-body">
-            <div className={`login-notice ${showPhoneUsed ? '' : 'the-hide'}`}>
-              <img src="/assets/img/icons/alert-fill.svg" alt="" />
-              <p>
-                Такой номер телефона уже используется. Укажите другой или воспользоваться формой входа.
-              </p>
-            </div>
 
+            {/* Уведомление — номер уже используется */}
+            {showPhoneUsed && (
+              <div className="login-notice">
+                <img src="/assets/img/icons/alert-fill.svg" alt="" />
+                <p>
+                  Такой номер телефона уже используется. Укажите другой или воспользуйтесь формой входа.
+                </p>
+              </div>
+            )}
+
+            {/* Имя */}
             <div className="form-floating the-name">
               <input
                 type="text"
@@ -74,7 +88,12 @@ export default function RegisterModal({
               </label>
             </div>
 
-            <div className="phone-input-container" id="phoneContainer">
+            {/* Телефон */}
+            <div
+              className="phone-input-container"
+              id="phoneContainer"
+              style={{ borderColor: hasPhoneError ? '#B71C1C' : undefined }}
+            >
               <div className="country-code">
                 <span className="flag-icon">
                   <img src="/assets/img/icons/rb.svg" alt="" />
@@ -98,6 +117,7 @@ export default function RegisterModal({
               />
             </div>
 
+            {/* Email */}
             <div className="form-floating the-mail">
               <input
                 type="email"
@@ -106,9 +126,16 @@ export default function RegisterModal({
                 placeholder="Электронная почта"
                 value={email}
                 onChange={(e) => setEmail?.(e.target.value)}
+                onBlur={() => setEmailTouched(true)}
+                style={{ borderColor: showEmailError ? '#B71C1C' : undefined }}
               />
               <label htmlFor="floatingInput">Электронная почта</label>
             </div>
+            {showEmailError && (
+              <p style={{ color: '#B71C1C', fontSize: 13, marginTop: 4 }}>
+                Неверный формат электронной почты
+              </p>
+            )}
 
             <div className="policy-inner">
               <div className="form-check">
@@ -139,7 +166,7 @@ export default function RegisterModal({
               </div>
 
               {!!errorText && (
-                <p style={{ color: 'crimson', marginTop: 10 }}>{errorText}</p>
+                <p style={{ color: '#B71C1C', marginTop: 8, fontSize: 14 }}>{errorText}</p>
               )}
 
               <button
@@ -147,7 +174,7 @@ export default function RegisterModal({
                 id="getCodeBtn"
                 type="button"
                 onClick={onOpenCode}
-                disabled={loading}
+                disabled={!canSubmit}
               >
                 {loading ? 'Отправляем…' : 'Получить код'}
               </button>

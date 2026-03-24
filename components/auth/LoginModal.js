@@ -1,18 +1,20 @@
 // src/components/auth/LoginModal.js
-// 'use client' — обязателен, т.к. тут events + controlled input
 'use client';
 
 export default function LoginModal({
   isOpen,
   onClose,
-  onOpenCode,       // async/handler: запрос звонка + открыть CodeModal
-  onOpenRegister,   // открыть RegisterModal
-  phoneDigits,      // 9 цифр после +375 (string)
+  onOpenCode,
+  onOpenRegister,
+  phoneDigits,
   setPhoneDigits,
   showNotRegistered = false,
   loading = false,
   errorText = '',
 }) {
+  const isPhoneComplete = (phoneDigits || '').replace(/\D/g, '').length === 9;
+  const hasError = showNotRegistered || !!errorText;
+
   return (
     <div
       className={`modal fade login-modal ${isOpen ? 'show' : ''}`}
@@ -23,7 +25,6 @@ export default function LoginModal({
       style={{ display: isOpen ? 'block' : 'none' }}
       role="dialog"
       onMouseDown={(e) => {
-        // клик по фону модалки закрывает
         if (e.target?.classList?.contains('modal')) onClose?.();
       }}
     >
@@ -46,15 +47,23 @@ export default function LoginModal({
               <div className="login-container">
                 <div className="login-card">
                   <div className="phone-input-group">
-                    <div className={`login-notice ${showNotRegistered ? '' : 'the-hide'}`}>
-                      <img src="/assets/img/icons/alert-fill.svg" alt="" />
-                      <p>
-                        Данный номер не зарегистрирован. Проверьте правильность ввода или
-                        зарегистрируйтесь.
-                      </p>
-                    </div>
 
-                    <div className="phone-input-container" id="phoneContainer">
+                    {/* Уведомление — номер не зарегистрирован */}
+                    {showNotRegistered && (
+                      <div className="login-notice">
+                        <img src="/assets/img/icons/alert-fill.svg" alt="" />
+                        <p>
+                          Данный номер не зарегистрирован. Проверьте правильность ввода или
+                          зарегистрируйтесь.
+                        </p>
+                      </div>
+                    )}
+
+                    <div
+                      className="phone-input-container"
+                      id="phoneContainer"
+                      style={{ borderColor: hasError ? '#B71C1C' : undefined }}
+                    >
                       <div className="country-code">
                         <span className="flag-icon">
                           <img src="/assets/img/icons/rb.svg" alt="" />
@@ -66,7 +75,7 @@ export default function LoginModal({
                         type="tel"
                         className="phone-input"
                         id="phoneInput"
-                        placeholder="25 895 26 84"
+                        placeholder="Введите номер"
                         inputMode="numeric"
                         maxLength={9}
                         value={phoneDigits}
@@ -79,7 +88,7 @@ export default function LoginModal({
                   </div>
 
                   {!!errorText && (
-                    <p style={{ color: 'crimson', marginTop: 10 }}>{errorText}</p>
+                    <p style={{ color: '#B71C1C', marginTop: 8, fontSize: 14 }}>{errorText}</p>
                   )}
 
                   <button
@@ -87,7 +96,7 @@ export default function LoginModal({
                     id="getCodeBtn"
                     type="button"
                     onClick={onOpenCode}
-                    disabled={loading}
+                    disabled={loading || !isPhoneComplete}
                   >
                     {loading ? 'Отправляем…' : 'Получить код'}
                   </button>

@@ -24,12 +24,18 @@ export default function CartPage() {
   } = useCart();
 
   const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [delivery, setDelivery] = useState(0);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
 
   const availableSkus = useMemo(
     () => (availableItems || []).map(it => it?.sku).filter(Boolean),
     [availableItems]
+  );
+
+  const unavailableSkus = useMemo(
+    () => (unavailableItems || []).map(it => it?.sku).filter(Boolean),
+    [unavailableItems]
   );
 
   // Подчищаем выбор если товары исчезли
@@ -133,6 +139,27 @@ export default function CartPage() {
     setSelectedItems(checked ? availableSkus : []);
   }, [availableSkus]);
 
+  const handleCheckChangeUnavailable = useCallback((sku, checked) => {
+    if (!sku) return;
+    setSelectedUnavailable(prev => {
+      const set = new Set(prev);
+      checked ? set.add(sku) : set.delete(sku);
+      return Array.from(set);
+    });
+  }, []);
+
+  const handleSelectAllUnavailable = useCallback((checked) => {
+    setSelectedUnavailable(checked ? unavailableSkus : []);
+  }, [unavailableSkus]);
+
+  const handleDeleteSelectedUnavailable = useCallback(async () => {
+    if (!selectedUnavailable.length) return;
+    try {
+      await Promise.all(selectedUnavailable.map(sku => removeFromCart(sku)));
+      setSelectedUnavailable([]);
+    } catch { alert('Не удалось удалить некоторые товары'); }
+  }, [removeFromCart, selectedUnavailable]);
+
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedItems.length) return;
     try {
@@ -201,12 +228,12 @@ export default function CartPage() {
                           <CartItemsSection
                             items={unavailableItems}
                             isUnavailable={true}
-                            selectedItems={[]}
+                            selectedItems={selectedUnavailable}
                             onDelete={handleDelete}
                             onFavorite={() => { }}
-                            onSelectAll={() => { }}
-                            onDeleteSelected={() => { }}
-                            onCheckChange={() => { }}
+                            onSelectAll={handleSelectAllUnavailable}
+                            onDeleteSelected={handleDeleteSelectedUnavailable}
+                            onCheckChange={handleCheckChangeUnavailable}
                             loading={loading}
                           />
                         )}

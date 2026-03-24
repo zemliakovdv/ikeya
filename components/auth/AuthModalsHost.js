@@ -16,7 +16,7 @@ const AuthModalsContext = createContext(null);
 
 export function AuthModalsProvider({ children }) {
   const { setAuth } = useAuth();
-  const { loadCart } = useCart();
+  const { refreshCart } = useCart();
 
   const [active, setActive]   = useState(null); // null|'login'|'register'|'code'|'success'
   const [flow,   setFlow]     = useState('login'); // 'login'|'register'
@@ -143,7 +143,7 @@ export function AuthModalsProvider({ children }) {
 
       setAuth({ token: resp.token, user: resp.user || null });
 
-      try { await loadCart?.(); } catch {}
+      try { await refreshCart?.(); } catch {}
 
       // показываем success если это была регистрация (is_new) или flow === 'register'
       if (resp.is_new || flow === 'register') {

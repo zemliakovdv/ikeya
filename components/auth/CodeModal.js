@@ -1,77 +1,82 @@
 // src/components/auth/CodeModal.js
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function CodeModal({
   isOpen,
   onClose,
-
-  // Данные для текста (из /a1/request)
-  callerNumberMasked = '', // например "+375 29 965 10 23" (mask)
-  displayMessage = '',     // если бэк отдает готовый текст — приоритетнее
-
-  // Код (4 цифры)
-  codeDigits,              // массив ['','','',''] или строка "1234" (лучше массив)
-  setCodeDigits,           // (nextArr) => void
-
-  // Действия
-  onSubmit,                // подтвердить (a1/verify -> auth/phone/verify)
-  onResend,                // повторный запрос звонка (a1/request)
-
-  // UI state
+  callerNumberMasked = '',
+  displayMessage = '',
+  codeDigits,
+  setCodeDigits,
+  onSubmit,
+  onResend,
   loading = false,
   errorText = '',
-  // Таймер отображаем как строку "00:30" (если пока не реализован, можно передавать константу)
-  countdownText = '00:30',
 }) {
   const inputsRef = useRef([]);
+  const [countdown, setCountdown] = useState(30);
+  const timerRef = useRef(null);
 
-  // фокус на первый инпут при открытии
+  // Фокус на первый инпут при открытии + запуск таймера
   useEffect(() => {
     if (!isOpen) return;
     setTimeout(() => inputsRef.current?.[0]?.focus?.(), 0);
+    setCountdown(30);
+    startTimer();
+    return () => clearInterval(timerRef.current);
   }, [isOpen]);
+
+  function startTimer() {
+    clearInterval(timerRef.current);
+    setCountdown(30);
+    timerRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }
+
+  async function handleResend() {
+    if (countdown > 0) return;
+    await onResend?.();
+    startTimer();
+  }
 
   function setDigit(idx, raw) {
     const d = (raw || '').replace(/\D/g, '').slice(0, 1);
-
     const next = [...codeDigits];
     next[idx] = d;
     setCodeDigits(next);
-
-    if (d && idx < 3) {
-      inputsRef.current[idx + 1]?.focus?.();
-    }
+    if (d && idx < 3) inputsRef.current[idx + 1]?.focus?.();
   }
 
   function onKeyDown(idx, e) {
     if (e.key !== 'Backspace') return;
-
-    if (codeDigits[idx]) {
-      setDigit(idx, '');
-      return;
-    }
+    if (codeDigits[idx]) { setDigit(idx, ''); return; }
     if (idx > 0) inputsRef.current[idx - 1]?.focus?.();
   }
 
   function handlePaste(e) {
     const text = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 4);
     if (!text) return;
-
     e.preventDefault();
     const next = [text[0] || '', text[1] || '', text[2] || '', text[3] || ''];
     setCodeDigits(next);
-
     const lastIdx = Math.min(text.length, 4) - 1;
     if (lastIdx >= 0) inputsRef.current[lastIdx]?.focus?.();
   }
 
-  const noteText =
-    displayMessage ||
+  const noteText = displayMessage ||
     `Введите последние 4 цифры номера, с которого мы звоним на Ваш номер: ${callerNumberMasked}`;
 
-  const fullCode = (codeDigits || []).join('');
+  const countdownFormatted = `00:${String(countdown).padStart(2, '0')}`;
+  const canResend = countdown === 0;
 
   return (
     <div
@@ -116,23 +121,30 @@ export default function CodeModal({
                     value={codeDigits?.[i] || ''}
                     onChange={(e) => setDigit(i, e.target.value)}
                     onKeyDown={(e) => onKeyDown(i, e)}
+                    style={{ borderColor: errorText ? '#B71C1C' : undefined }}
                   />
                 ))}
               </div>
 
               {!!errorText && (
-                <p style={{ color: 'crimson', marginTop: 10 }}>{errorText}</p>
+                <p style={{ color: '#B71C1C', marginTop: 10, fontSize: 14 }}>{errorText}</p>
               )}
 
               <a
                 href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onResend?.();
+                onClick={(e) => { e.preventDefault(); handleResend(); }}
+                style={{
+                  display: 'block',
+                  marginTop: 10,
+                  color: canResend ? '#0058A3' : '#9e9e9e',
+                  pointerEvents: canResend ? 'auto' : 'none',
+                  cursor: canResend ? 'pointer' : 'default',
                 }}
-                style={{ display: 'block', marginTop: 10 }}
               >
-                Повторный запрос звонка через <span className="code-count">{countdownText}</span>
+                {canResend
+                  ? 'Запросить звонок повторно'
+                  : <>Повторный запрос звонка через <span className="code-count">{countdownFormatted}</span></>
+                }
               </a>
             </div>
           </div>
