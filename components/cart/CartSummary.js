@@ -16,6 +16,7 @@ export default function CartSummary({
   checkoutButtonText = 'Перейти к оформлению',
   cart,
   deliveryLoading = false,
+  customsDuty = 0,
 }) {
   const { applyPromo, removePromo, loading } = useCart();
   const [promoCode, setPromoCode] = useState('');
@@ -61,8 +62,6 @@ export default function CartSummary({
       show('error', 'Ошибка удаления промокода');
     }
   };
-
-  console.log('deliveryLoading:', deliveryLoading, 'delivery:', delivery);
 
   return (
     <aside className="cart-summary">
@@ -182,7 +181,12 @@ export default function CartSummary({
               <path d="M9.99996 1.66669C5.40829 1.66669 1.66663 5.40835 1.66663 10C1.66663 14.5917 5.40829 18.3334 9.99996 18.3334C14.5916 18.3334 18.3333 14.5917 18.3333 10C18.3333 5.40835 14.5916 1.66669 9.99996 1.66669ZM13.1 10.5834H10.5833V13.1C10.5833 13.425 10.325 13.6834 9.99996 13.6834C9.67496 13.6834 9.41663 13.425 9.41663 13.1V10.5834H6.89996C6.57496 10.5834 6.31663 10.325 6.31663 10C6.31663 9.67502 6.57496 9.41669 6.89996 9.41669H9.41663V6.90002C9.41663 6.57502 9.67496 6.31669 9.99996 6.31669C10.325 6.31669 10.5833 6.57502 10.5833 6.90002V9.41669H13.1C13.425 9.41669 13.6833 9.67502 13.6833 10C13.6833 10.325 13.425 10.5834 13.1 10.5834Z" fill="#CE0061" />
             </svg>
           </p>
-          <p><span>≈65 р.</span> пошлина не входит в цену</p>
+          <p>
+            {customsDuty > 0
+              ? <><span>≈{customsDuty.toFixed(2)} р.</span> пошлина не входит в цену</>
+              : <><span>0 р.</span> пошлина не входит в цену</>
+            }
+          </p>
         </div>
         {/* Заменили a[data-bs-toggle] на button + React state */}
         <button

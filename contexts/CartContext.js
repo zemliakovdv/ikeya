@@ -42,6 +42,8 @@ export function CartProvider({ children }) {
                 item.product?.images ??
                 item.product?.images?.images,
             },
+            customs_duty: attrs.customs_duty || null,
+            weight: attrs.weight || item.weight || null,
           };
         } catch {
           return item;

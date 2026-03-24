@@ -49,10 +49,8 @@ export default function CartPage() {
     setDeliveryLoading(true);
     calculateDelivery({ delivery_type: 'pickup', items })
       .then(data => {
-        console.log('delivery data:', data?.delivery); // ← сюда
         const cost = parseFloat(data?.delivery?.base_cost_byn || 0);
-        console.log('cost:', cost); // ← и сюда
-        setDelivery(cost);
+        setDelivery(data?.delivery?.free_delivery_eligible ? 0 : cost);
       })
       .catch(() => setDelivery(0))
       .finally(() => setDeliveryLoading(false));
@@ -92,11 +90,19 @@ export default function CartPage() {
       }
     });
 
+    // Таможенная пошлина по выбранным товарам
+    let customsDuty = 0;
+    selected.forEach(it => {
+      const duty = parseFloat(it.customs_duty?.total_byn || 0);
+      customsDuty += duty * (it.quantity || 1);
+    });
+
     return {
       subtotal: parseFloat(subtotal.toFixed(2)),
       promoDiscount: parseFloat(promoDiscount.toFixed(2)),
       itemCount,
       totalWeight: parseFloat(totalWeight.toFixed(2)),
+      customsDuty: parseFloat(customsDuty.toFixed(2)),
     };
   }, [selectedItems, availableItems, totals]);
 
@@ -129,6 +135,7 @@ export default function CartPage() {
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedItems.length) return;
+    if (!confirm(`Удалить ${selectedItems.length} товаров из корзины?`)) return;
     try {
       await Promise.all(selectedItems.map(sku => removeFromCart(sku)));
       setSelectedItems([]);
@@ -183,7 +190,7 @@ export default function CartPage() {
                             selectedItems={selectedItems}
                             onQuantityChange={handleQuantityChange}
                             onDelete={handleDelete}
-                            onFavorite={() => { }}
+                            onFavorite={() => {}}
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
@@ -197,10 +204,10 @@ export default function CartPage() {
                             isUnavailable={true}
                             selectedItems={[]}
                             onDelete={handleDelete}
-                            onFavorite={() => { }}
-                            onSelectAll={() => { }}
-                            onDeleteSelected={() => { }}
-                            onCheckChange={() => { }}
+                            onFavorite={() => {}}
+                            onSelectAll={() => {}}
+                            onDeleteSelected={() => {}}
+                            onCheckChange={() => {}}
                             loading={loading}
                           />
                         )}
@@ -223,6 +230,7 @@ export default function CartPage() {
                           delivery={delivery}
                           itemCount={selectedData.itemCount}
                           totalWeight={selectedData.totalWeight}
+                          customsDuty={selectedData.customsDuty}
                           canCheckout={canCheckout}
                           onCheckout={handleCheckout}
                           cart={cart}
