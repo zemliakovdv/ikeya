@@ -39,7 +39,7 @@ export default function CartPage() {
 
   // Пересчёт доставки при изменении выбранных товаров
   useEffect(() => {
-    if (!selectedItems.length) { setDelivery(0); return; }
+    if (!selectedItems.length || !availableItems?.length) { setDelivery(0); return; }
 
     const items = selectedItems.map(sku => {
       const found = (availableItems || []).find(it => it.sku === sku);
@@ -50,7 +50,7 @@ export default function CartPage() {
     calculateDelivery({ delivery_type: 'pickup', items })
       .then(data => {
         const cost = parseFloat(data?.delivery?.base_cost_byn || 0);
-        setDelivery(data?.delivery?.free_delivery_eligible ? 0 : cost);
+        setDelivery(cost);
       })
       .catch(() => setDelivery(0))
       .finally(() => setDeliveryLoading(false));
