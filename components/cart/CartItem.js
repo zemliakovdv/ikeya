@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 export default function CartItem({
   item,
   checked = false,
@@ -11,38 +13,34 @@ export default function CartItem({
   loading = false,
 }) {
   const product = item.product || {};
+  const router = useRouter();
   const pricing = item.pricing || {};
 
-  // Изображение товара (приоритет: local_images → placeholder)
+  // Изображение — images.local_images приходит как JSON-строка
   const getImageUrl = () => {
-    const localImages = product.local_images;
-
-    let localImagesList = [];
-    if (typeof localImages === 'string') {
-      try {
-        localImagesList = JSON.parse(localImages);
-      } catch (e) {
-        console.error('Ошибка парсинга local_images');
-      }
-    } else if (Array.isArray(localImages)) {
-      localImagesList = localImages;
+    const rawImages = product.local_images || product.images?.local_images;
+    let list = [];
+    if (typeof rawImages === 'string') {
+      try { list = JSON.parse(rawImages); } catch { }
+    } else if (Array.isArray(rawImages)) {
+      list = rawImages;
     }
-
-    if (localImagesList.length > 0 && localImagesList[0]) {
-      const img = localImagesList[0];
+    if (list.length > 0 && list[0]) {
+      const img = list[0];
       if (img.startsWith('http')) return img;
-      const cleanPath = img.startsWith('/') ? img.slice(1) : img;
-      return `http://45.135.234.22/${cleanPath}`;
+      return `http://45.135.234.22/${img.startsWith('/') ? img.slice(1) : img}`;
     }
-
     return '/assets/img/no-image.jpg';
   };
 
   const imageUrl = getImageUrl();
 
-  // Цены
-  const oldPrice = parseFloat(pricing.unit_price_old_byn || product.price_byn || 0);
-  const newPrice = parseFloat(pricing.unit_price_new_byn || product.price_byn || 0);
+  // Цены — если pricing нули (бэк не посчитал), берём product.price_byn
+  const productPrice = parseFloat(product.price_byn || 0);
+  const pricingNew = parseFloat(pricing.unit_price_new_byn || 0);
+  const pricingOld = parseFloat(pricing.unit_price_old_byn || 0);
+  const newPrice = pricingNew > 0 ? pricingNew : productPrice;
+  const oldPrice = pricingOld > 0 ? pricingOld : productPrice;
   const discount = parseFloat(pricing.unit_discount_byn || 0);
   const hasDiscount = discount > 0 && pricing.promo_applied;
 
@@ -186,9 +184,14 @@ export default function CartItem({
             <span className="badge badge--dark">Нет в наличии</span>
           </div>
           <div className="cart-item__actions">
-            <button className="btn btn--ghost-small" type="button">
+            <button
+              className="btn btn--ghost-small"
+              type="button"
+              onClick={() => router.push(`/catalog/${product.category_id}`)}
+              disabled={!product.category_id}
+            >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.225 4.61666C16.6083 3.59166 15.45 3.29166 13.15 2.69166L11.625 2.29999C9.32495 1.69999 8.16662 1.39999 7.10828 1.99166C6.39995 2.39166 6.01662 3.08332 5.69162 4.03332C4.59995 4.09999 3.85828 4.28332 3.29995 4.84999C2.44995 5.69999 2.44995 6.95832 2.44995 9.23332V13.1083C2.44995 15.3833 2.44995 16.6417 3.29995 17.4917C4.14995 18.3417 5.40828 18.3417 7.68328 18.3417H9.23328C11.5083 18.3417 12.7583 18.3417 13.6166 17.4917C14.0583 17.05 14.2666 16.5083 14.3666 15.7667C15.2249 15.125 15.55 13.9667 16.0999 11.9833L16.9166 9.03332C17.5166 6.85832 17.85 5.66666 17.2333 4.62499L17.225 4.61666Z" fill="#181818" />
+                <path d="M17.225 4.61659C16.6083 3.59159 15.45 3.29159 13.15 2.69159L11.625 2.29993C9.32495 1.69993 8.16662 1.39993 7.10828 1.99159C6.39995 2.39159 6.01662 3.08326 5.69162 4.03326C4.59995 4.09993 3.85828 4.28326 3.29995 4.84993C2.44995 5.69993 2.44995 6.95826 2.44995 9.23326V13.1083C2.44995 15.3833 2.44995 16.6416 3.29995 17.4916C4.14995 18.3416 5.40828 18.3416 7.68328 18.3416H9.23328C11.5083 18.3416 12.7583 18.3416 13.6166 17.4916C14.0583 17.0499 14.2666 16.5083 14.3666 15.7666C15.2249 15.1249 15.55 13.9666 16.0999 11.9833L16.9166 9.03326C17.5166 6.85826 17.85 5.66659 17.2333 4.62493L17.225 4.61659ZM13.2916 13.0999C13.2916 15.1333 13.2916 16.1499 12.7833 16.6583C12.275 17.1666 11.25 17.1666 9.22495 17.1666H7.67495C5.64995 17.1666 4.62495 17.1666 4.11662 16.6583C3.60828 16.1499 3.60828 15.1333 3.60828 13.0999V9.22493C3.60828 7.19993 3.60828 6.17493 4.11662 5.66659C4.62495 5.15826 5.64995 5.15826 7.67495 5.15826H9.22495C11.25 5.15826 12.275 5.15826 12.7833 5.66659C13.2916 6.17493 13.2916 7.19993 13.2916 9.22493V13.0999ZM15.7833 8.70826L14.9666 11.6666C14.7666 12.3916 14.6 12.9666 14.45 13.4166C14.45 13.3083 14.45 13.2083 14.45 13.0916V9.2166C14.45 6.9416 14.45 5.6916 13.5999 4.83326C12.75 3.98326 11.4916 3.98326 9.21662 3.98326H7.66662C7.40828 3.98326 7.16662 3.98326 6.92495 3.98326C7.14995 3.44159 7.36662 3.14993 7.66662 2.98326C8.31662 2.61659 9.31662 2.88326 11.325 3.39993L12.85 3.79159C14.85 4.30826 15.8499 4.56659 16.2249 5.19159C16.575 5.77493 16.3583 6.63326 15.7916 8.6916L15.7833 8.70826Z" fill="#181818" />
               </svg>
               Похожие
             </button>

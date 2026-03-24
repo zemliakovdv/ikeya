@@ -60,7 +60,13 @@ export default function CartPage() {
   const selectedData = useMemo(() => {
     if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0, totalWeight: 0 };
 
-    const selected = (availableItems || []).filter(it => selectedItems.includes(it.sku));
+    const allItems = availableItems || [];
+    const selected = allItems.filter(it => selectedItems.includes(it.sku));
+
+    // Для пропорционального расчёта веса
+    const totalQtyAll = allItems.reduce((acc, it) => acc + (it.quantity || 1), 0);
+    const totalWeightAll = parseFloat(totals?.total_weight_kg || 0);
+
     let subtotal = 0;
     let promoDiscount = 0;
     let totalWeight = 0;
@@ -68,12 +74,20 @@ export default function CartPage() {
 
     selected.forEach(it => {
       const qty = it.quantity || 1;
-      const price = parseFloat(it.pricing?.unit_price_new_byn || it.pricing?.unit_price_old_byn || 0);
+      // Если pricing нули — берём product.price_byn
+      const pricingNew = parseFloat(it.pricing?.unit_price_new_byn || 0);
+      const productPrice = parseFloat(it.product?.price_byn || 0);
+      const price = pricingNew > 0 ? pricingNew : productPrice;
       const discount = parseFloat(it.pricing?.unit_discount_byn || 0);
+
       subtotal += price * qty;
       promoDiscount += discount * qty;
-      totalWeight += parseFloat(it.weight || 0) * qty;
       itemCount += qty;
+
+      // Вес пропорционально количеству
+      if (totalQtyAll > 0) {
+        totalWeight += (totalWeightAll / totalQtyAll) * qty;
+      }
     });
 
     return {
@@ -82,7 +96,7 @@ export default function CartPage() {
       itemCount,
       totalWeight: parseFloat(totalWeight.toFixed(2)),
     };
-  }, [selectedItems, availableItems]);
+  }, [selectedItems, availableItems, totals]);
 
   const canCheckout = selectedItems.length > 0 && selectedData.subtotal >= MIN_ORDER_AMOUNT;
 

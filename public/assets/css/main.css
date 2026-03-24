@@ -5095,6 +5095,10 @@ main {
     white-space: nowrap;
 }
 
+.cart-item__issue{
+    display: none;
+}
+
 .cart-item__meta button {
     border: none;
     background-color: transparent;
