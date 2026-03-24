@@ -135,7 +135,6 @@ export default function CartPage() {
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedItems.length) return;
-    if (!confirm(`Удалить ${selectedItems.length} товаров из корзины?`)) return;
     try {
       await Promise.all(selectedItems.map(sku => removeFromCart(sku)));
       setSelectedItems([]);
