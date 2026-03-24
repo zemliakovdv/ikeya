@@ -2,17 +2,12 @@
 
 import { useCart } from '/contexts/CartContext';
 import CartPage from '/components/cart/CartPage';
+import PageLoader from '@/components/ui/PageLoader';
 
 export default function Cart() {
   const { loading } = useCart();
 
-  if (loading) {
-    return (
-      <div className="container" style={{ padding: '100px 0', textAlign: 'center' }}>
-        <p>Загрузка корзины...</p>
-      </div>
-    );
-  }
+if (loading) return <PageLoader />;
 
   return <CartPage />;
 }
