@@ -2,129 +2,131 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCart } from '/contexts/CartContext';
+import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
+import { calculateDelivery } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
 import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
+
+const MIN_ORDER_AMOUNT = 150; // BYN
 
 export default function CartPage() {
   const router = useRouter();
   const { isAuth } = useAuth();
   const { openLogin } = useAuthModals();
   const {
-    cart,
-    updateQuantity,
-    removeFromCart,
-    availableItems,
-    unavailableItems,
-    totals,
-    flags,
-    recommendations,
-    loading,
+    cart, updateQuantity, removeFromCart,
+    availableItems, unavailableItems,
+    totals, recommendations, loading,
   } = useCart();
 
-  // SKU выбранных (только для доступных)
   const [selectedItems, setSelectedItems] = useState([]);
+  const [delivery, setDelivery] = useState(0);
+  const [deliveryLoading, setDeliveryLoading] = useState(false);
 
   const availableSkus = useMemo(
-    () => (availableItems || []).map((it) => it?.sku).filter(Boolean),
+    () => (availableItems || []).map(it => it?.sku).filter(Boolean),
     [availableItems]
   );
 
-  const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
-
-  // Подчищаем выбор, если товары исчезли/стали недоступными
+  // Подчищаем выбор если товары исчезли
   useEffect(() => {
-    setSelectedItems((prev) => prev.filter((sku) => availableSkus.includes(sku)));
+    setSelectedItems(prev => prev.filter(sku => availableSkus.includes(sku)));
   }, [availableSkus]);
 
-  const handleQuantityChange = useCallback(
-    async (sku, newQuantity) => {
-      try {
-        await updateQuantity(sku, newQuantity);
-      } catch (error) {
-        console.error('Ошибка изменения количества:', error);
-        alert('Не удалось изменить количество товара');
-      }
-    },
-    [updateQuantity]
-  );
+  // Пересчёт доставки при изменении выбранных товаров
+  useEffect(() => {
+    if (!selectedItems.length) { setDelivery(0); return; }
 
-  const handleDelete = useCallback(
-    async (sku) => {
-      try {
-        await removeFromCart(sku);
-        setSelectedItems((prev) => prev.filter((s) => s !== sku));
-      } catch (error) {
-        console.error('Ошибка удаления товара:', error);
-        alert('Не удалось удалить товар');
-      }
-    },
-    [removeFromCart]
-  );
+    const items = selectedItems.map(sku => {
+      const found = (availableItems || []).find(it => it.sku === sku);
+      return { sku, quantity: found?.quantity || 1 };
+    });
 
-  // sku + checked
+    setDeliveryLoading(true);
+    calculateDelivery({ delivery_type: 'pickup', items })
+      .then(data => {
+        const cost = parseFloat(data?.delivery?.base_cost_byn || 0);
+        setDelivery(data?.delivery?.free_delivery_eligible ? 0 : cost);
+      })
+      .catch(() => setDelivery(0))
+      .finally(() => setDeliveryLoading(false));
+  }, [selectedItems, availableItems]);
+
+  // Считаем данные только для выбранных товаров
+  const selectedData = useMemo(() => {
+    if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0, totalWeight: 0 };
+
+    const selected = (availableItems || []).filter(it => selectedItems.includes(it.sku));
+    let subtotal = 0;
+    let promoDiscount = 0;
+    let totalWeight = 0;
+    let itemCount = 0;
+
+    selected.forEach(it => {
+      const qty = it.quantity || 1;
+      const price = parseFloat(it.pricing?.unit_price_new_byn || it.pricing?.unit_price_old_byn || 0);
+      const discount = parseFloat(it.pricing?.unit_discount_byn || 0);
+      subtotal += price * qty;
+      promoDiscount += discount * qty;
+      totalWeight += parseFloat(it.weight || 0) * qty;
+      itemCount += qty;
+    });
+
+    return {
+      subtotal: parseFloat(subtotal.toFixed(2)),
+      promoDiscount: parseFloat(promoDiscount.toFixed(2)),
+      itemCount,
+      totalWeight: parseFloat(totalWeight.toFixed(2)),
+    };
+  }, [selectedItems, availableItems]);
+
+  const canCheckout = selectedItems.length > 0 && selectedData.subtotal >= MIN_ORDER_AMOUNT;
+
+  const handleQuantityChange = useCallback(async (sku, newQuantity) => {
+    try { await updateQuantity(sku, newQuantity); }
+    catch { alert('Не удалось изменить количество товара'); }
+  }, [updateQuantity]);
+
+  const handleDelete = useCallback(async (sku) => {
+    try {
+      await removeFromCart(sku);
+      setSelectedItems(prev => prev.filter(s => s !== sku));
+    } catch { alert('Не удалось удалить товар'); }
+  }, [removeFromCart]);
+
   const handleCheckChange = useCallback((sku, checked) => {
     if (!sku) return;
-    setSelectedItems((prev) => {
+    setSelectedItems(prev => {
       const set = new Set(prev);
-      if (checked) set.add(sku);
-      else set.delete(sku);
+      checked ? set.add(sku) : set.delete(sku);
       return Array.from(set);
     });
   }, []);
 
-  // checked = true/false
-  const handleSelectAll = useCallback(
-    (checked) => {
-      if (!checked) {
-        setSelectedItems([]);
-        return;
-      }
-      setSelectedItems(availableSkus);
-    },
-    [availableSkus]
-  );
+  const handleSelectAll = useCallback((checked) => {
+    setSelectedItems(checked ? availableSkus : []);
+  }, [availableSkus]);
 
   const handleDeleteSelected = useCallback(async () => {
-    if (selectedItems.length === 0) return;
-
+    if (!selectedItems.length) return;
     if (!confirm(`Удалить ${selectedItems.length} товаров из корзины?`)) return;
-
     try {
-      await Promise.all(selectedItems.map((sku) => removeFromCart(sku)));
+      await Promise.all(selectedItems.map(sku => removeFromCart(sku)));
       setSelectedItems([]);
-    } catch (error) {
-      console.error('Ошибка удаления товаров:', error);
-      alert('Не удалось удалить некоторые товары');
-    }
+    } catch { alert('Не удалось удалить некоторые товары'); }
   }, [removeFromCart, selectedItems]);
 
   const handleCheckout = useCallback(() => {
-    if (!isAuth) {
-      openLogin();
-      return;
-    }
+    if (!isAuth) { openLogin(); return; }
     router.push('/checkout');
   }, [router, isAuth, openLogin]);
 
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
-
-  const subtotal = parseFloat(totals?.subtotal_new_byn || 0);
-  const promoDiscount = parseFloat(totals?.discount_total_byn || 0);
-  const total = subtotal;
-  const itemCount = availableItems?.length || 0;
-  const totalWeight = totals?.total_weight_kg || 0;
-
-  const canCheckout = flags?.checkout_allowed || false;
-  const minOrderAmount = parseFloat(cart?.rules?.min_order_amount_byn || 500);
-  const freeDeliveryThreshold = parseFloat(cart?.rules?.free_delivery_threshold_byn || 5000);
-
-  const recommendedProducts = recommendations || [];
 
   return (
     <main className="korzina">
@@ -135,21 +137,23 @@ export default function CartPage() {
               <div className="zakaz-inner">
                 <h2>Корзина</h2>
 
-                {subtotal >= freeDeliveryThreshold && (
-                  <div className="order-toast_delivery">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+                {/* Минимальная сумма заказа */}
+                {selectedItems.length > 0 && selectedData.subtotal < MIN_ORDER_AMOUNT && (
+                  <div className="order-toast_choose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
                     </svg>
-                    <p>Бесплатная доставка от {freeDeliveryThreshold} р. стоимости товаров</p>
+                    <p>Оформление заказа доступно от {MIN_ORDER_AMOUNT} р. стоимости товаров</p>
                   </div>
                 )}
 
-                {!canCheckout && itemCount > 0 && (
+                {/* Не выбран ни один товар */}
+                {hasAvailableItems && selectedItems.length === 0 && (
                   <div className="order-toast_choose">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
                     </svg>
-                    <p>Оформление заказа доступно от {minOrderAmount} р. стоимости товаров</p>
+                    <p>Выберите товары, чтобы перейти к оформлению заказа</p>
                   </div>
                 )}
 
@@ -164,7 +168,7 @@ export default function CartPage() {
                             selectedItems={selectedItems}
                             onQuantityChange={handleQuantityChange}
                             onDelete={handleDelete}
-                            onFavorite={() => { }}
+                            onFavorite={() => {}}
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
@@ -176,12 +180,12 @@ export default function CartPage() {
                           <CartItemsSection
                             items={unavailableItems}
                             isUnavailable={true}
-                            selectedItems={[]} // для недоступных не выбираем
+                            selectedItems={[]}
                             onDelete={handleDelete}
-                            onFavorite={() => { }}
-                            onSelectAll={() => { }}
-                            onDeleteSelected={() => { }}
-                            onCheckChange={() => { }}
+                            onFavorite={() => {}}
+                            onSelectAll={() => {}}
+                            onDeleteSelected={() => {}}
+                            onCheckChange={() => {}}
                             loading={loading}
                           />
                         )}
@@ -199,15 +203,15 @@ export default function CartPage() {
 
                       {hasAvailableItems && (
                         <CartSummary
-                          subtotal={subtotal}
-                          promoDiscount={promoDiscount}
-                          delivery={0}
-                          total={total}
-                          itemCount={itemCount}
-                          totalWeight={totalWeight}
+                          subtotal={selectedData.subtotal}
+                          promoDiscount={selectedData.promoDiscount}
+                          delivery={delivery}
+                          itemCount={selectedData.itemCount}
+                          totalWeight={selectedData.totalWeight}
                           canCheckout={canCheckout}
                           onCheckout={handleCheckout}
                           cart={cart}
+                          deliveryLoading={deliveryLoading}
                         />
                       )}
                     </div>
@@ -219,8 +223,7 @@ export default function CartPage() {
         </div>
       </section>
 
-      <RecommendationsSection products={recommendedProducts} />
-
+      <RecommendationsSection products={recommendations || []} />
     </main>
   );
 }

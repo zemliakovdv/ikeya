@@ -128,7 +128,7 @@ export default async function ProductPage({ params }) {
   const attr = product.attributes;
 
   // Загружаем related и similar параллельно
-  const relatedSkus = Array.isArray(attr.related_products) ? attr.related_products : [];
+ const relatedSkus = (Array.isArray(attr.related_products) ? attr.related_products : []).slice(0, 10);
 
   const [relatedProducts, similarProducts] = await Promise.all([
     getProductsBySKUs(relatedSkus),

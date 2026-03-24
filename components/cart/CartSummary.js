@@ -9,13 +9,13 @@ export default function CartSummary({
   promoDiscount = 0,
   delivery = 0,
   pvzDelivery = 0,
-  total = 0,
   itemCount = 0,
   totalWeight = 0,
   canCheckout = true,
   onCheckout,
   checkoutButtonText = 'Перейти к оформлению',
   cart,
+  deliveryLoading = false,
 }) {
   const { applyPromo, removePromo, loading } = useCart();
   const [promoCode, setPromoCode] = useState('');
@@ -142,7 +142,9 @@ export default function CartSummary({
         <div className="cart-summary__row">
           <p>Доставка в Беларусь</p>
           <div></div>
-          <p className="summery-row__cost-delivery">{delivery.toFixed(2)} р.</p>
+          <p className="summery-row__cost-delivery">
+            {deliveryLoading ? '...' : delivery === 0 ? 'Бесплатно' : `${delivery.toFixed(2)} р.`}
+          </p>
         </div>
 
         {pvzDelivery > 0 && (

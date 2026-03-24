@@ -6,81 +6,63 @@ import { getProductBySku, getPopularProducts } from '@/lib/api/ikea';
 
 const CartContext = createContext();
 
+// Сохраняет порядок items из prevCart после ответа сервера
+function mergeWithOrder(prevItems = [], nextItems = []) {
+  const prevOrder = prevItems.map(it => it.sku);
+  const nextMap = new Map(nextItems.map(it => [it.sku, it]));
+  const sorted = prevOrder.map(sku => nextMap.get(sku)).filter(Boolean);
+  const added = nextItems.filter(it => !prevOrder.includes(it.sku));
+  return [...sorted, ...added];
+}
+
 export function CartProvider({ children }) {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const updateTimeoutId = useRef(null);
 
-  // --- единый энрич ---
   const enrichCartItems = useCallback(async (cartObj) => {
     if (!cartObj?.items?.length) return cartObj;
-
     const enrichedItems = await Promise.all(
       cartObj.items.map(async (item) => {
         try {
           const productData = await getProductBySku(item.sku);
           const attrs = productData?.data?.attributes || {};
-
-          // API корзины: product.images = { local_images:[], images:[] }
-          // мы кладём в product.local_images / product.images, как у тебя в CartItem
-          const imagesObj = attrs.images || attrs.images === '' ? attrs.images : null;
-
           return {
             ...item,
             product: {
               ...item.product,
               name_ru: attrs.name_ru || item.product?.name_ru || item.product?.name,
               collection: attrs.collection || item.product?.collection,
-
-              // важное: CartItem читает product.local_images
               local_images:
                 attrs.local_images ??
-                imagesObj?.local_images ??
                 item.product?.local_images ??
                 item.product?.images?.local_images,
-
-              // если где-то понадобится, оставляем
               images:
-                imagesObj?.images ??
                 item.product?.images ??
                 item.product?.images?.images,
             },
           };
-        } catch (e) {
-          console.error(`Не удалось загрузить данные для SKU ${item.sku}`);
+        } catch {
           return item;
         }
       })
     );
-
     return { ...cartObj, items: enrichedItems };
   }, []);
-
-  // ==================== ЗАГРУЗКА КОРЗИНЫ ====================
 
   const fetchCart = useCallback(async () => {
     try {
       setLoading(true);
-
       const response = await cartAPI.getCart();
       let nextCart = response.cart ? await enrichCartItems(response.cart) : null;
-
-      // ← Грузим популярные товары всегда, независимо от состояния корзины
       try {
         const popularData = await getPopularProducts({ page: 1, per_page: 10 });
         const recs = popularData.data || [];
-        if (nextCart) {
-          nextCart = { ...nextCart, recommendations: recs };
-        } else {
-          // корзина пустая — храним рекомендации отдельно
-          nextCart = { recommendations: recs };
-        }
-      } catch (e) {
-        console.error('Не удалось загрузить популярные товары');
-      }
-
+        nextCart = nextCart
+          ? { ...nextCart, recommendations: recs }
+          : { recommendations: recs };
+      } catch {}
       setCart(nextCart);
       setError(null);
     } catch (err) {
@@ -91,23 +73,17 @@ export function CartProvider({ children }) {
     }
   }, [enrichCartItems]);
 
+  useEffect(() => { fetchCart(); }, [fetchCart]);
 
-  useEffect(() => {
-    fetchCart();
-  }, [fetchCart]);
-
-  // ==================== ОПЕРАЦИИ С КОРЗИНОЙ ====================
-
-const addToCart = useCallback(
-  async (sku, quantity = 1) => {
+  const addToCart = useCallback(async (sku, quantity = 1) => {
     try {
       setLoading(true);
       const response = await cartAPI.addToCart(sku, quantity);
       const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
-
-      setCart((prevCart) => ({
+      setCart((prev) => ({
         ...nextCart,
-        recommendations: prevCart?.recommendations || nextCart?.recommendations || [],
+        recommendations: prev?.recommendations || [],
+        items: mergeWithOrder(prev?.items, nextCart?.items),
       }));
       setError(null);
       return response;
@@ -117,20 +93,17 @@ const addToCart = useCallback(
     } finally {
       setLoading(false);
     }
-  },
-  [enrichCartItems]
-);
+  }, [enrichCartItems]);
 
-const removeFromCart = useCallback(
-  async (sku) => {
+  const removeFromCart = useCallback(async (sku) => {
     try {
       setLoading(true);
       const response = await cartAPI.removeFromCart(sku);
       const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
-
-      setCart((prevCart) => ({
+      setCart((prev) => ({
         ...nextCart,
-        recommendations: prevCart?.recommendations || nextCart?.recommendations || [],
+        recommendations: prev?.recommendations || [],
+        items: mergeWithOrder(prev?.items, nextCart?.items),
       }));
       setError(null);
       return response;
@@ -140,46 +113,36 @@ const removeFromCart = useCallback(
     } finally {
       setLoading(false);
     }
-  },
-  [enrichCartItems]
-);
+  }, [enrichCartItems]);
 
-  // bulk удаление (для "удалить выбранные")
-  const removeManyFromCart = useCallback(
-    async ({ skus = [], delete_all = false } = {}) => {
-      try {
-        setLoading(true);
-        const response = await cartAPI.removeManyFromCart({ skus, delete_all });
-        const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
+  const removeManyFromCart = useCallback(async ({ skus = [], delete_all = false } = {}) => {
+    try {
+      setLoading(true);
+      const response = await cartAPI.removeManyFromCart({ skus, delete_all });
+      const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
+      setCart((prev) => ({
+        ...nextCart,
+        recommendations: prev?.recommendations || [],
+      }));
+      setError(null);
+      return response;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [enrichCartItems]);
 
-        setCart(nextCart);
-        setError(null);
-        return response;
-      } catch (err) {
-        setError(err.message);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [enrichCartItems]
-  );
-
-  /**
-   * Изменить количество (PATCH)
-   * оставляем оптимистичное обновление + debounce, но серверный вызов теперь лёгкий и правильный
-   */
-const updateQuantity = useCallback(
-  async (sku, newQuantity) => {
+  const updateQuantity = useCallback(async (sku, newQuantity) => {
     if (newQuantity === 0) return removeFromCart(sku);
 
-    // оптимистично — сохраняем recommendations
-    setCart((prevCart) => {
-      if (!prevCart) return prevCart;
+    // Оптимистичное обновление
+    setCart((prev) => {
+      if (!prev) return prev;
       return {
-        ...prevCart,
-        recommendations: prevCart.recommendations, // ← явно сохраняем
-        items: (prevCart.items || []).map((it) =>
+        ...prev,
+        items: (prev.items || []).map(it =>
           it.sku === sku ? { ...it, quantity: newQuantity } : it
         ),
       };
@@ -191,23 +154,19 @@ const updateQuantity = useCallback(
       try {
         const response = await cartAPI.updateCartItemQuantity(sku, newQuantity);
         const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
-
-        // после ответа сервера тоже сохраняем recommendations
-        setCart((prevCart) => ({
+        setCart((prev) => ({
           ...nextCart,
-          recommendations: prevCart?.recommendations || nextCart?.recommendations || [],
+          recommendations: prev?.recommendations || [],
+          // ← сохраняем порядок
+          items: mergeWithOrder(prev?.items, nextCart?.items),
         }));
-
         setError(null);
       } catch (err) {
         await fetchCart();
         setError(err.message);
       }
     }, 400);
-  },
-  [enrichCartItems, fetchCart, removeFromCart]
-);
-
+  }, [enrichCartItems, fetchCart, removeFromCart]);
 
   const clearCart = useCallback(async () => {
     try {
@@ -223,51 +182,45 @@ const updateQuantity = useCallback(
     }
   }, []);
 
-  const applyPromo = useCallback(
-    async (code) => {
-      try {
-        setLoading(true);
+  const applyPromo = useCallback(async (code) => {
+    try {
+      setLoading(true);
+      const response = await cartAPI.applyPromoCode(code);
+      const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
+      setCart((prev) => ({
+        ...nextCart,
+        recommendations: prev?.recommendations || [],
+        items: mergeWithOrder(prev?.items, nextCart?.items),
+      }));
+      setError(null);
+      return response;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [enrichCartItems]);
 
-        // Применяем промокод
-        const response = await cartAPI.applyPromoCode(code);
-
-        // API сразу возвращает обновлённую корзину — используем её
-        const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
-
-        setCart(nextCart);
-        setError(null);
-
-        return response;
-      } catch (err) {
-        setError(err.message);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [enrichCartItems]
-  );
-
-
-  const removePromo = useCallback(
-    async () => {
-      try {
-        setLoading(true);
-        const response = await cartAPI.removePromoCode();
-        const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
-
-        setCart(nextCart);
-        setError(null);
-        return response;
-      } catch (err) {
-        setError(err.message);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [enrichCartItems]
-  );
+  const removePromo = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await cartAPI.removePromoCode();
+      const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
+      setCart((prev) => ({
+        ...nextCart,
+        recommendations: prev?.recommendations || [],
+        items: mergeWithOrder(prev?.items, nextCart?.items),
+      }));
+      setError(null);
+      return response;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [enrichCartItems]);
 
   const checkout = useCallback(async (orderData) => {
     try {
@@ -284,42 +237,26 @@ const updateQuantity = useCallback(
     }
   }, []);
 
-  // ==================== ВЫЧИСЛЯЕМЫЕ ====================
-
   const itemsCount = cart?.items_count || 0;
   const items = cart?.items || [];
   const totals = cart?.totals || {};
   const flags = cart?.flags || {};
   const recommendations = cart?.recommendations || [];
+  const availableItems = items.filter(it => it.available);
+  const unavailableItems = items.filter(it => !it.available);
 
-  const availableItems = items.filter((item) => item.available);
-  const unavailableItems = items.filter((item) => !item.available);
-
-  const value = {
-    cart,
-    loading,
-    error,
-
-    addToCart,
-    removeFromCart,
-    removeManyFromCart, // ⬅️ новое
-    updateQuantity,
-    clearCart,
-    applyPromo,
-    removePromo,
-    checkout,
-    refreshCart: fetchCart,
-
-    itemsCount,
-    items,
-    availableItems,
-    unavailableItems,
-    totals,
-    flags,
-    recommendations,
-  };
-
-  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+  return (
+    <CartContext.Provider value={{
+      cart, loading, error,
+      addToCart, removeFromCart, removeManyFromCart,
+      updateQuantity, clearCart, applyPromo, removePromo,
+      checkout, refreshCart: fetchCart,
+      itemsCount, items, availableItems, unavailableItems,
+      totals, flags, recommendations,
+    }}>
+      {children}
+    </CartContext.Provider>
+  );
 }
 
 export function useCart() {
