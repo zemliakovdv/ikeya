@@ -145,7 +145,7 @@ export default function CartSummary({
           <p>Доставка в Беларусь</p>
           <div></div>
           <p className="summery-row__cost-delivery">
-            {deliveryLoading ? '...' : delivery === 0 ? '0' : `${delivery.toFixed(2)} р.`}
+            {deliveryLoading ? '...' : delivery === 0 ? '0 р.' : `${delivery.toFixed(2)} р.`}
           </p>
         </div>
 

@@ -5089,7 +5089,7 @@ main {
     white-space: nowrap;
 }
 
-.cart-item__issue{
+.cart-item__issue {
     display: none;
 }
 
@@ -5244,12 +5244,12 @@ main {
     color: #181818;
 }
 
-.btn--ghost-small:hover{
+.btn--ghost-small:hover {
     background-color: #0058a3;
     color: #fff;
 }
 
-.btn--ghost-small:hover svg path{
+.btn--ghost-small:hover svg path {
     fill: #fff;
 }
 
@@ -5364,12 +5364,13 @@ main {
     color: #fff;
 }
 
-.cart-summary__checkout-btn.non-active {
+
+.cart-summary__checkout-btn:disabled {
     background: #e0e0e0;
     color: #9e9e9e;
     cursor: not-allowed;
     pointer-events: none;
-    user-select: none;
+    user-select: none
 }
 
 .cart-summary__note {
@@ -7833,17 +7834,17 @@ main {
 }
 
 .footer-cookie-btn {
-  background: none;
-  border: none;
-  padding: 0;
-  color: inherit;
-  font-size: inherit;
-  cursor: pointer;
-  text-align: left;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 0.5px;
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: 0.5px;
 }
 
 /* ─── Toggle Switch ─────────────────────────────────────────────────────────── */
