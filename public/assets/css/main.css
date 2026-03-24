@@ -5052,14 +5052,9 @@ main {
     border-radius: 4px;
 }
 
-.cart-item__select {
-    margin-right: 16px;
-}
-
 .cart-item__image {
     max-width: 96px;
     max-height: 96px;
-    margin-right: 16px;
 }
 
 .cart-item__image img {
@@ -5073,7 +5068,6 @@ main {
     width: 530px;
     max-width: 620px;
     overflow: hidden;
-    margin-right: 24px;
 }
 
 .cart-item__name {
@@ -5248,6 +5242,15 @@ main {
     letter-spacing: 0.01em;
     text-align: center;
     color: #181818;
+}
+
+.btn--ghost-small:hover{
+    background-color: #0058a3;
+    color: #fff;
+}
+
+.btn--ghost-small:hover svg path{
+    fill: #fff;
 }
 
 .cart-section--unavailable {

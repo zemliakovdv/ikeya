@@ -153,6 +153,13 @@
         gap: 0px 20px;
     }
 
+
+    /* Корзина 1400 */
+
+    .cart-item__info{
+        width: 480px;
+    }
+
 }
 
 /* Large Tablet / Small Desktop (992px - 1199px) */
