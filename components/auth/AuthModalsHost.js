@@ -59,6 +59,7 @@ export function AuthModalsProvider({ children }) {
 
   function openRegister() {
     resetUi();
+    setPhoneDigits('');
     setFlow('register');
     setActive('register');
   }
