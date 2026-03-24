@@ -34,7 +34,7 @@ export default function CartPage() {
 
   // Подчищаем выбор если товары исчезли
   useEffect(() => {
-    setSelectedItems(prev => prev.filter(sku => availableSkus.includes(sku)));
+    setSelectedItems(availableSkus);
   }, [availableSkus]);
 
   // Пересчёт доставки при изменении выбранных товаров
@@ -190,7 +190,7 @@ export default function CartPage() {
                             selectedItems={selectedItems}
                             onQuantityChange={handleQuantityChange}
                             onDelete={handleDelete}
-                            onFavorite={() => {}}
+                            onFavorite={() => { }}
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
@@ -204,10 +204,10 @@ export default function CartPage() {
                             isUnavailable={true}
                             selectedItems={[]}
                             onDelete={handleDelete}
-                            onFavorite={() => {}}
-                            onSelectAll={() => {}}
-                            onDeleteSelected={() => {}}
-                            onCheckChange={() => {}}
+                            onFavorite={() => { }}
+                            onSelectAll={() => { }}
+                            onDeleteSelected={() => { }}
+                            onCheckChange={() => { }}
                             loading={loading}
                           />
                         )}
