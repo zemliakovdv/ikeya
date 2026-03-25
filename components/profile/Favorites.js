@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import FavoriteProductCard from './FavoriteProductCard';
+import { Suspense } from 'react';
+import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 
 const SORT_OPTIONS = [
   { value: 'popular', label: 'Популярные' },
@@ -43,20 +45,22 @@ export default function Favorites() {
 
   if (products.length === 0) {
     return (
-      <div className="orders-lists">
-        <div className="empty">
-          <div className="empty-illustration">
-            <img src="/assets/img/profile/no-favorite.png" alt="" />
+      <>
+        <div className="orders-lists">
+          <div className="empty">
+            <div className="empty-illustration">
+              <img src="/assets/img/profile/no-favorite.png" alt="" />
+            </div>
+            <div className="empty-title">В избранном пусто</div>
+            <div className="empty-text">
+              Добавляйте товары с помощью ❤️️
+            </div>
+            <button className="empty-btn" onClick={() => router.push('/')}>
+              Перейти к покупкам
+            </button>
           </div>
-          <div className="empty-title">В избранном пусто</div>
-          <div className="empty-text">
-            Добавляйте товары с помощью ❤️️
-          </div>
-          <button className="empty-btn" onClick={() => router.push('/')}>
-            Перейти к покупкам
-          </button>
         </div>
-      </div>
+      </>
     );
   }
 

@@ -8028,3 +8028,69 @@ main {
     height: 100%;
     object-fit: cover;
 }
+
+.guest-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 12px;
+    padding-bottom: 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.guest-sidebar__title {
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 133%;
+    color: #181818;
+    margin-bottom: 12px;
+}
+
+.guest-sidebar__text {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    letter-spacing: 0.03em;
+    color: #181818;
+    margin-bottom: 12px;
+}
+
+.guest-sidebar__btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    text-align: center;
+    color: #fff;
+}
+
+.guest-sidebar__btn--primary {
+    background: #0058A3;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.guest-sidebar__btn--outline {
+    background: #fff;
+    color: #0058A3;
+    border: none;
+    margin-bottom: 16px;
+}
+
+.guest-sidebar__favorites-link {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #fafafa;
+    padding: 14px 16px;
+    border-radius: 4px;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #0058a3;
+}

@@ -28,6 +28,11 @@
         padding: 16px 12px;
     }
 
+    .zakazi .quest-bar {
+        max-height: 336px;
+        padding: 8px 12px;
+    }
+
     .user-card {
         display: flex;
         gap: 12px;
@@ -2579,7 +2584,7 @@
 
     }
 
-    .form-row:last-child .form-group{
+    .form-row:last-child .form-group {
         margin-bottom: 0;
     }
 

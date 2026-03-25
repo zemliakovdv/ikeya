@@ -40,7 +40,7 @@
         padding: 10px 8px;
     }
 
-    .product-card-inner {
+    .product-card-inner, .zakazi .product-card-inner {
         min-width: 258px;
         max-width: 258px;
     }
@@ -299,7 +299,7 @@
         margin-bottom: 16px;
     }
 
-    .the-detail__content .product-card-inner {
+    .the-detail__content .product-card-inner, .zakazi .product-card-inner {
         min-width: 200px;
         max-width: 200px;
     }
