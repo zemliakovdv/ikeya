@@ -101,7 +101,7 @@ export default function Favorites() {
           {/* Карточки */}
           <div className="shopping-cards">
             <div className="all-catalog-items">
-              {sorted.map(item => (
+              {sorted.filter(item => item.product).map(item => (
                 <FavoriteProductCard
                   key={item.sku}
                   product={item.product}
