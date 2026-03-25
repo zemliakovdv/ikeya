@@ -53,8 +53,9 @@ export default function ProductCard({ product }) {
     router.push(`/product/${slug}`);
   }, [router, attr.sku, product.id]);
 
-  const price = Math.floor(attr.price);
-  const priceDecimal = ((attr.price % 1) * 100).toFixed(0).padStart(2, '0');
+  const priceNum = parseFloat(attr.price_byn || attr.price || 0);
+  const price = Math.floor(priceNum);
+  const priceDecimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
 
   let imagesList = [];
 
@@ -73,9 +74,9 @@ export default function ProductCard({ product }) {
 
   const images = imagesList.length > 0
     ? imagesList.map(img => {
-        const cleanPath = img.startsWith('/') ? img.slice(1) : img;
-        return `${API_BASE_URL}/${cleanPath}`;
-      })
+      const cleanPath = img.startsWith('/') ? img.slice(1) : img;
+      return `${API_BASE_URL}/${cleanPath}`;
+    })
     : [PLACEHOLDER_IMAGE];
 
   const thumbs = images;
@@ -86,22 +87,17 @@ export default function ProductCard({ product }) {
 
   return (
     <div className="col product-card-inner">
-      <div className="product-card">
-        <ProductGallery
-          images={images}
-          thumbs={thumbs}
-          galleryId={`product-${product.id}`}
-        />
+      <div className="product-card" onClick={handleProductClick} style={{ cursor: 'pointer' }}>
+        <div onClick={(e) => e.stopPropagation()}>
+          <ProductGallery
+            images={images}
+            thumbs={thumbs}
+            galleryId={`product-${product.id}`}
+          />
+        </div>
 
         <div className="product-card__info">
-          <div
-            className="product-card__header clickable"
-            onClick={handleProductClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => e.key === 'Enter' && handleProductClick()}
-            title={`Перейти к товару: ${title}`}
-          >
+          <div className="product-card__header">
             <h3 className="product-card__title">{title}</h3>
             {description && (
               <p className="product-card__description">{description}</p>
@@ -114,13 +110,13 @@ export default function ProductCard({ product }) {
           </p>
 
           {quantity > 0 ? (
-            <div style={{ marginBottom: 0 }}>
+            <div style={{ marginBottom: 0 }} onClick={(e) => e.stopPropagation()}>
               <CartCounter sku={sku} className="added-fullwidth" />
             </div>
           ) : (
             <button
               className="shop_button"
-              onClick={handleAddToCart}
+              onClick={(e) => { e.stopPropagation(); handleAddToCart(); }}
               type="button"
             >
               <img src="/assets/img/icons/shopping-cart.svg" alt="Добавить в корзину" />
@@ -140,12 +136,12 @@ export default function ProductCard({ product }) {
 
         <button
           className={`like ${isLiked ? 'active' : ''}`}
-          onClick={handleToggleLike}
+          onClick={(e) => { e.stopPropagation(); handleToggleLike(); }}
           aria-label={isLiked ? 'Удалить из избранного' : 'Добавить в избранное'}
           type="button"
         >
           <svg width="20" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 17.22C9.34 17.22 8.67 17.01 8.1 16.58C5.66 14.76 0 10.04 0 5.53C0 2.43 2.35 0 5.35 0C7.01 0 8.43 0.62 10 2.06C11.57 0.62 12.99 0 14.65 0C17.65 0 20 2.43 20 5.53C20 10.03 14.33 14.75 11.9 16.58C11.33 17 10.67 17.22 10 17.22ZM5.35 1.4C3.1 1.4 1.4 3.18 1.4 5.53C1.4 9.51 7.17 14.13 8.94 15.46C9.57 15.93 10.43 15.93 11.06 15.46C12.83 14.14 18.6 9.51 18.6 5.53C18.6 3.17 16.9 1.4 14.65 1.4C13.59 1.4 12.36 1.66 10.49 3.52C10.22 3.79 9.78 3.79 9.5 3.52C7.64 1.66 6.4 1.4 5.34 1.4H5.35Z" fill="#181818"/>
+            <path d="M10 17.22C9.34 17.22 8.67 17.01 8.1 16.58C5.66 14.76 0 10.04 0 5.53C0 2.43 2.35 0 5.35 0C7.01 0 8.43 0.62 10 2.06C11.57 0.62 12.99 0 14.65 0C17.65 0 20 2.43 20 5.53C20 10.03 14.33 14.75 11.9 16.58C11.33 17 10.67 17.22 10 17.22ZM5.35 1.4C3.1 1.4 1.4 3.18 1.4 5.53C1.4 9.51 7.17 14.13 8.94 15.46C9.57 15.93 10.43 15.93 11.06 15.46C12.83 14.14 18.6 9.51 18.6 5.53C18.6 3.17 16.9 1.4 14.65 1.4C13.59 1.4 12.36 1.66 10.49 3.52C10.22 3.79 9.78 3.79 9.5 3.52C7.64 1.66 6.4 1.4 5.34 1.4H5.35Z" fill="#181818" />
           </svg>
         </button>
       </div>

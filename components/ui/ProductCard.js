@@ -3,6 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import CartCounter from '@/components/cart/CartCounter';
 import { useFavorites } from '@/contexts/FavoritesContext';
@@ -28,6 +29,13 @@ export default function ProductCard({
   const { openLogin } = useAuthModals();
   const isLiked = sku ? isFavorite(sku) : false;
   const { addToCart, items } = useCart();
+
+  const router = useRouter();
+
+  // Парсим цену
+  const priceNum = parseFloat((price || '0').toString().replace(',', '.')) || 0;
+  const priceWhole = Math.floor(priceNum);
+  const priceDecimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
 
   const productImages = images.length > 0 ? images : [PLACEHOLDER_IMAGE];
   const productDescription = description || 'Описание скоро появится';
@@ -77,7 +85,8 @@ const handleLikeClick = async (e) => {
 
   return (
     <div className="col product-card-inner">
-      <div className="product-card">
+      <div className="product-card" onClick={() => url !== '#' && router.push(url)} style={{ cursor: url !== '#' ? 'pointer' : 'default' }}>
+        <div onClick={(e) => e.stopPropagation()}>
         <Link href={url}>
           <div className="product-card__gallery">
             <div
@@ -128,15 +137,14 @@ const handleLikeClick = async (e) => {
             </div>
           </div>
         </Link>
+        </div>
 
         <div className="product-card__info">
-          <Link href={url}>
-            <h3 className="product-card__title">{title}</h3>
-          </Link>
+          <h3 className="product-card__title">{title}</h3>
           <p className="product-card__description">{productDescription}</p>
           <p className="product-card__price">
-            {price}
-            <span>.00 р.</span>
+            {priceWhole}
+            <span>.{priceDecimal} р.</span>
           </p>
 
           {quantity > 0 ? (
@@ -148,7 +156,7 @@ const handleLikeClick = async (e) => {
           ) : (
             <button
               className="shop_button add-to-cart"
-              onClick={handleAddToCart}
+              onClick={(e) => { e.stopPropagation(); handleAddToCart(e); }}
               type="button"
               disabled={!sku}
               aria-disabled={!sku}

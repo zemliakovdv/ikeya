@@ -151,9 +151,9 @@ export default function ProductTabsSection({
                                       description={product.description}
                                       price={product.price}
                                       images={product.images}
-                                      salesHit={product.salesHit}
-                                      promo={product.promo}
-                                      isNew={product.isNew}
+                                      salesHit={product.badges?.includes('hit')}
+                                      promo={product.badges?.includes('promo')}
+                                      isNew={product.badges?.includes('new')}
                                       url={product.url}
                                     />
                                   ))}
