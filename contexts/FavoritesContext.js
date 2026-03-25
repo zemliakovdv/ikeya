@@ -2,14 +2,34 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { getFavorites, addFavorite, removeFavorite as apiRemoveFavorite } from '@/lib/api/account';
+import { getProductBySku } from '@/lib/api/ikea';
 import { useAuth } from '@/contexts/AuthContext';
 
 const STORAGE_KEY = 'guest_favorites';
+const API_BASE_URL = 'http://45.135.234.22';
 
 const FavoritesContext = createContext({
   count: 0, items: [], loading: true,
   add: () => {}, remove: () => {}, isFavorite: () => false, reload: () => {},
 });
+
+async function fetchProductBySku(sku) {
+  try {
+    const data = await getProductBySku(sku);
+    const attr = data?.data?.attributes || {};
+    return {
+      sku: attr.sku || sku,
+      name_ru: attr.name_ru || attr.name || 'Товар',
+      price_byn: attr.price_byn || attr.price || '0',
+      collection: attr.collection || '',
+      local_images: attr.local_images,
+      images: { local_images: attr.local_images },
+      is_bestseller: attr.is_bestseller,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export function FavoritesProvider({ children }) {
   const { isAuth, isHydrated } = useAuth();
@@ -18,20 +38,33 @@ export function FavoritesProvider({ children }) {
 
   useEffect(() => {
     if (!isHydrated) return;
-    if (!isAuth) {
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      setItems(stored);
-      setLoading(false);
-      return;
-    }
+    if (!isAuth) { loadGuestFavorites(); return; }
     load();
   }, [isAuth, isHydrated]);
+
+  async function loadGuestFavorites() {
+    setLoading(true);
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (!stored.length) { setItems([]); return; }
+      const enriched = await Promise.all(
+        stored.map(async ({ sku }) => {
+          const product = await fetchProductBySku(sku);
+          return { sku, product };
+        })
+      );
+      setItems(enriched);
+    } catch (e) {
+      console.error('FavoritesContext: ошибка загрузки гостевых избранных', e);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function load() {
     try {
       setLoading(true);
       const data = await getFavorites();
-      // API: { favorite: { token, items_count, items: [{ sku, added_at, product: {...} }] } }
       setItems(data?.favorite?.items ?? []);
     } catch (e) {
       console.error('FavoritesContext: ошибка загрузки', e);
@@ -45,35 +78,28 @@ export function FavoritesProvider({ children }) {
       await addFavorite(sku);
       await load();
     } else {
-      setItems(prev => {
-        const updated = [...prev, { sku }];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-        return updated;
-      });
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (stored.some(p => p.sku === sku)) return;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...stored, { sku }]));
+      const product = await fetchProductBySku(sku);
+      setItems(prev => [...prev, { sku, product }]);
     }
   }
 
-async function remove(sku) {
-  // Сразу убираем из стейта оптимистично
-  setItems(prev => {
-    const updated = prev.filter(p => p.sku !== sku);
-    if (!isAuth) localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return updated;
-  });
-
-  if (isAuth) {
-    try {
-      await apiRemoveFavorite(sku);
-    } catch (e) {
-      // 404 — товар уже не существует на сервере, просто игнорируем
-      if (e.status !== 404) {
-        console.error('Ошибка удаления из избранного', e);
-        // откатываем только если реальная ошибка
-        await load();
+  async function remove(sku) {
+    setItems(prev => {
+      const updated = prev.filter(p => p.sku !== sku);
+      if (!isAuth) localStorage.setItem(STORAGE_KEY, JSON.stringify(updated.map(p => ({ sku: p.sku }))));
+      return updated;
+    });
+    if (isAuth) {
+      try {
+        await apiRemoveFavorite(sku);
+      } catch (e) {
+        if (e.status !== 404) { await load(); }
       }
     }
   }
-}
 
   function isFavorite(sku) {
     return items.some(p => p.sku === sku);
