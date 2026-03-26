@@ -4,36 +4,47 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
+const API_BASE = 'http://45.135.234.22'
+
 // Модульный кеш — живёт пока открыта вкладка браузера
-let _cachedCategories = null
+let _cachedTree = null
+
+// Строим путь к категории.
+// Теперь slug берём из самого объекта — дерево уже содержит нужную структуру.
+// Для полного пути нужно знать slug всех предков — передаём их через ancestorSlugs.
+function buildPath(cat, ancestorSlugs = []) {
+  const slug = cat.attributes?.slug || cat.id
+  return `/catalog/${[...ancestorSlugs, slug].join('/')}/`
+}
+
+// Нормализуем icon_url — может быть относительным или абсолютным
+function resolveIcon(url) {
+  if (!url) return null
+  if (url.startsWith('http')) return url
+  return `${API_BASE}${url}`
+}
 
 export default function MegaMenu({ isOpen, onClose }) {
-  const [allCategories, setAllCategories] = useState([])
+  const [tree, setTree] = useState([]) // корневые категории с вложенными children
   const [activeRootId, setActiveRootId] = useState(null)
   const menuRef = useRef(null)
 
-  // Загружаем категории
+  // Загружаем дерево категорий
   useEffect(() => {
     async function load() {
+      if (_cachedTree) {
+        setTree(_cachedTree)
+        return
+      }
       try {
-        let allCategories = []
-        let page = 1
-        const perPage = 100
-
-        while (true) {
-          const res = await fetch(
-            `http://45.135.234.22/api/v1/categories?per_page=${perPage}&page=${page}`,
-            { cache: 'no-store' }
-          )
-          if (!res.ok) throw new Error(`API Error: ${res.status}`)
-          const data = await res.json()
-          const cats = data.data || []
-          allCategories = allCategories.concat(cats)
-          if (cats.length < perPage || page >= (data.meta?.total_pages || 1)) break
-          page++
-        }
-
-        setAllCategories(allCategories)
+        const res = await fetch(`${API_BASE}/api/v1/categories/tree`, {
+          cache: 'no-store',
+        })
+        if (!res.ok) throw new Error(`API Error: ${res.status}`)
+        const data = await res.json()
+        const roots = data.data || []
+        _cachedTree = roots
+        setTree(roots)
       } catch (e) {
         console.error('MegaMenu: ошибка загрузки категорий', e)
       }
@@ -41,7 +52,7 @@ export default function MegaMenu({ isOpen, onClose }) {
     load()
   }, [])
 
-  // Закрытие по клику вне
+  // Закрытие по клику вне меню
   useEffect(() => {
     if (!isOpen) return
     function onDocClick(e) {
@@ -67,77 +78,39 @@ export default function MegaMenu({ isOpen, onClose }) {
 
   if (!isOpen) return null
 
-  // Строим дерево категорий
-  const allIds = new Set(allCategories.map((c) => c.id))
-
-  // Корневые категории (parent_ids не содержат существующих категорий)
-  const rootCategories = allCategories.filter((cat) => {
-    const parentIds = cat.attributes?.parent_ids || []
-    return parentIds.every((pid) => !allIds.has(pid))
-  })
-
-  // Дочерние первого уровня для активной корневой
+  // Активная корневая категория (по hover или первая по умолчанию)
   const activeRoot = activeRootId
-    ? allCategories.find((c) => c.id === activeRootId)
-    : rootCategories[0]
+    ? tree.find((c) => c.id === activeRootId)
+    : tree[0]
 
-  const activeRootIdResolved = activeRoot?.id
+  // Секции правой части — дочерние активной корневой (children[])
+  const sections = activeRoot?.children || []
 
-  // Дочерние активной корневой — это "секции" мегаменю
-  const sections = allCategories.filter((cat) => {
-    const parentIds = cat.attributes?.parent_ids || []
-    return parentIds[parentIds.length - 1] === activeRootIdResolved
-  })
+  // slug активной корневой — нужен для построения пути к секциям и их детям
+  const rootSlug = activeRoot?.attributes?.slug || activeRoot?.id || ''
 
-  // Для каждой секции — её дочерние (подкатегории)
-  function getChildren(parentId) {
-    return allCategories.filter((cat) => {
-      const parentIds = cat.attributes?.parent_ids || []
-      return parentIds[parentIds.length - 1] === parentId
-    })
-  }
-
-  // Строим путь к категории через slug предков
-  function buildPath(cat) {
-    const parentIds = cat.attributes?.parent_ids || []
-    const slugParts = []
-    for (const pid of parentIds) {
-      const parent = allCategories.find((c) => c.id === pid)
-      if (parent && allIds.has(pid)) {
-        slugParts.push(parent.attributes?.slug || pid)
-      }
-    }
-    slugParts.push(cat.attributes?.slug || cat.id)
-    return `/catalog/${slugParts.join('/')}/`
-  }
+  const MAX_VISIBLE = 5
 
   return (
     <div className="mega-menu-overlay" ref={menuRef}>
       <div className="container-menu">
+
         {/* Левый сайдбар — корневые категории */}
         <div className="sidebar">
-          {rootCategories.map((cat) => {
+          {tree.map((cat) => {
             const attrs = cat.attributes || {}
-            const isActive = (activeRootIdResolved === cat.id) ||
-              (!activeRootId && cat.id === rootCategories[0]?.id)
+            const isActive = cat.id === (activeRoot?.id)
+            const iconUrl = resolveIcon(attrs.pictogram_url || attrs.icon_url)
+
             return (
               <div
                 key={cat.id}
                 className={`menu-item${isActive ? ' active' : ''}`}
                 onMouseEnter={() => setActiveRootId(cat.id)}
               >
-                {(attrs.pictogram_url || attrs.icon_url) && (
+                {iconUrl && (
                   <div className="menu-item-icon">
-                    <img
-                      src={
-                        attrs.pictogram_url
-                          ? `http://45.135.234.22${attrs.pictogram_url}`
-                          : attrs.icon_url
-                      }
-                      alt=""
-                      width={24}
-                      height={24}
-                    />
+                    <img src={iconUrl} alt="" width={24} height={24} />
                   </div>
                 )}
                 <span className="menu-item-text">
@@ -149,23 +122,25 @@ export default function MegaMenu({ isOpen, onClose }) {
           })}
         </div>
 
-        {/* Правая часть — подкатегории активной корневой */}
+        {/* Правая часть — секции и подкатегории активной корневой */}
         <div className="mega-menu">
           {sections.map((section) => {
             const attrs = section.attributes || {}
-            const children = getChildren(section.id)
-            const MAX_VISIBLE = 5
+            const sectionSlug = attrs.slug || section.id
+            const sectionPath = buildPath(section, [rootSlug])
+            const iconUrl = resolveIcon(attrs.icon_url)
+            const children = section.children || []
 
             return (
               <div className="mega-menu-section" key={section.id}>
                 <div className="section-header">
-                  {attrs.icon_url && (
+                  {iconUrl && (
                     <div className="section-icon">
-                      <img src={attrs.icon_url} alt="" width={40} height={40} />
+                      <img src={iconUrl} alt="" width={40} height={40} />
                     </div>
                   )}
                   <Link
-                    href={buildPath(section)}
+                    href={sectionPath}
                     className="section-title"
                     onClick={onClose}
                   >
@@ -177,7 +152,10 @@ export default function MegaMenu({ isOpen, onClose }) {
                   <ul className="section-links">
                     {children.slice(0, MAX_VISIBLE).map((child) => (
                       <li key={child.id}>
-                        <Link href={buildPath(child)} onClick={onClose}>
+                        <Link
+                          href={buildPath(child, [rootSlug, sectionSlug])}
+                          onClick={onClose}
+                        >
                           {child.attributes?.translated_name || child.attributes?.name}
                         </Link>
                       </li>
@@ -185,7 +163,7 @@ export default function MegaMenu({ isOpen, onClose }) {
                     {children.length > MAX_VISIBLE && (
                       <li>
                         <Link
-                          href={buildPath(section)}
+                          href={sectionPath}
                           className="catalog-show__more"
                           onClick={onClose}
                         >
@@ -199,6 +177,7 @@ export default function MegaMenu({ isOpen, onClose }) {
             )
           })}
         </div>
+
       </div>
     </div>
   )
