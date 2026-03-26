@@ -5,8 +5,9 @@ import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductSort from '@/components/catalog/ProductSort';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
-import { getCachedCategories, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
+import { getCachedCategoriesTree, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
 import {
+  flattenCategoriesTree,
   findCategoryBySlug,
   buildCategoryChain,
   buildBreadcrumbs,
@@ -38,10 +39,8 @@ function getPriceRangeFromFilters(filters) {
 }
 
 export default async function CategoryPage({ params, searchParams }) {
-  // ✅ Next.js 15: params и searchParams — это Promise
   const { slug } = await params;
   const sp = await searchParams;
-  console.log('🔍 searchParams:', JSON.stringify(sp));
 
   const currentSlug = slug[slug.length - 1];
 
@@ -49,7 +48,10 @@ export default async function CategoryPage({ params, searchParams }) {
     const allowedSorts = ['popular', 'newest', 'cheapest', 'expensive'];
     const sort = allowedSorts.includes(sp?.sort) ? sp.sort : null;
 
-    const allCategories = await getCachedCategories();
+    // Один запрос вместо пагинации
+    const tree = await getCachedCategoriesTree();
+    const allCategories = flattenCategoriesTree(tree);
+
     const currentCategory = findCategoryBySlug(allCategories, currentSlug);
 
     if (!currentCategory) {
@@ -64,13 +66,13 @@ export default async function CategoryPage({ params, searchParams }) {
     const availableFilters = categoryWithFilters.available_filters || [];
     const priceRange = getPriceRangeFromFilters(availableFilters);
 
-    // Словарь id -> label для чипсов
     const filterLabels = {};
     availableFilters.forEach(f => {
       (f.values || []).forEach(v => {
         if (v.id !== undefined) filterLabels[String(v.id)] = v.translated_name || v.name || String(v.id);
       });
     });
+
     const childCategories = getChildCategories(allCategories, currentCategory.id);
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbs(categoryChain);
@@ -81,7 +83,6 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const initialProducts = productsResponse.data || [];
 
-    // Строка фильтров для InfiniteProductGrid (подгрузка следующих страниц)
     const queryParams = new URLSearchParams();
     if (sort) queryParams.set('sort', sort);
     if (sp?.min_price) queryParams.set('min_price', sp.min_price);
@@ -93,7 +94,6 @@ export default async function CategoryPage({ params, searchParams }) {
     }
     const productsQueryString = queryParams.toString();
 
-    // Данные для сайдбара
     const categoryData = {
       parentCategory: categoryChain[categoryChain.length - 2] || null,
       grandParentCategory: categoryChain[categoryChain.length - 3] || null,
@@ -101,15 +101,13 @@ export default async function CategoryPage({ params, searchParams }) {
       subcategories: childCategories,
     };
 
-    const rootCategories = allCategories
-      .filter((cat) => !cat.attributes?.parent_ids?.length)
-      .map((cat) => ({
-        slug: cat.attributes.slug,
-        name: cat.attributes.translated_name || cat.attributes.name,
-      }));
+    const rootCategories = tree.map((cat) => ({
+      slug: cat.attributes?.slug || cat.id,
+      name: cat.attributes?.translated_name || cat.attributes?.name || 'Категория',
+    }));
 
     const basePath = `/catalog/${categoryChain.map((c) => c.attributes.slug).join('/')}`;
-    console.log('📦 initialProducts count:', initialProducts.length, 'queryString:', productsQueryString);
+
     return (
       <main className="main catalog-inner">
         <Breadcrumbs items={breadcrumbs} />
@@ -138,7 +136,7 @@ export default async function CategoryPage({ params, searchParams }) {
                 {initialProducts.length > 0 ? (
                   <>
                     <ProductSort currentSort={sort} />
-                    <FilterChips  filterLabels={filterLabels} />
+                    <FilterChips filterLabels={filterLabels} />
                     <InfiniteProductGrid
                       key={`${currentCategory.id}-${productsQueryString}`}
                       initialProducts={initialProducts}

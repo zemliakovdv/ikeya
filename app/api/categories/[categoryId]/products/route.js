@@ -1,4 +1,6 @@
 // app/api/categories/[categoryId]/products/route.js
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
@@ -7,12 +9,10 @@ export async function GET(request, { params }) {
   const { categoryId } = params;
   const { searchParams } = new URL(request.url);
 
-  // Берём page/per_page из запроса, чтобы контролировать пагинацию (и убрать дубли)
   const page = parseInt(searchParams.get('page'), 10) || 1;
   const perPage = parseInt(searchParams.get('per_page'), 10) || 20;
 
   try {
-    // Собираем query заново: копируем всё, кроме page/per_page, затем ставим их один раз
     const forwardParams = new URLSearchParams();
 
     for (const [key, value] of searchParams.entries()) {

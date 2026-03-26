@@ -1,4 +1,6 @@
 // app/api/products/route.js
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
@@ -9,7 +11,6 @@ export async function GET(request) {
   const page = parseInt(searchParams.get('page'), 10) || 1;
   const perPage = parseInt(searchParams.get('per_page'), 10) || 20;
 
-  // (на всякий случай) если потом захочешь сортировку/фильтры в общем списке
   const sort = searchParams.get('sort');
 
   try {

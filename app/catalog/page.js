@@ -8,26 +8,23 @@ import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
-import { getCachedCategories, getProducts } from '@/lib/api/ikea';
+import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
+import { flattenCategoriesTree } from '@/lib/utils/categoryHelpers';
 
 export default async function CatalogPage() {
-  const [allCategories, productsResponse] = await Promise.all([
-    getCachedCategories(),
+  const [tree, productsResponse] = await Promise.all([
+    getCachedCategoriesTree(),
     getProducts({ page: 1, per_page: 20 })
   ]);
 
-  const allCategoryIds = new Set(allCategories.map((c) => c.id));
-  const rootCategories = allCategories.filter((cat) => {
-    const parentIds = cat?.attributes?.parent_ids || [];
-    return parentIds.every((pid) => !allCategoryIds.has(pid));
-  });
+  // Плоский список нужен для сайдбара (rootCategories)
+  const allCategories = flattenCategoriesTree(tree);
 
-  const simplifiedRootCategories = rootCategories
-    .map((cat) => ({
-      slug: cat?.attributes?.slug || cat?.id,
-      name: cat?.attributes?.translated_name || cat?.attributes?.name || 'Категория'
-    }))
-    .filter((c) => c.slug);
+  // Корневые категории — верхний уровень дерева
+  const rootCategories = tree.map((cat) => ({
+    slug: cat.attributes?.slug || cat.id,
+    name: cat.attributes?.translated_name || cat.attributes?.name || 'Категория',
+  }));
 
   const products = productsResponse.data || [];
   const meta = productsResponse.meta || {};
@@ -45,9 +42,9 @@ export default async function CatalogPage() {
         <div className="container">
           <h1>Каталог</h1>
 
-          {rootCategories.length > 0 && (
+          {tree.length > 0 && (
             <div className="catalog-categories">
-              <CategoriesGrid categories={rootCategories} />
+              <CategoriesGrid categories={tree} />
             </div>
           )}
 
@@ -55,7 +52,7 @@ export default async function CatalogPage() {
             <Suspense fallback={null}>
               <FilterAside
                 showAllFilters={false}
-                rootCategories={simplifiedRootCategories}
+                rootCategories={rootCategories}
                 level={0}
               />
             </Suspense>

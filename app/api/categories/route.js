@@ -1,4 +1,6 @@
 // app/api/categories/route.js
+export const dynamic = 'force-dynamic'
+
 import { NextResponse } from 'next/server'
 import { getCachedCategories } from '@/lib/api/ikea'
 
