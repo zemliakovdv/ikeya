@@ -1,8 +1,11 @@
 // components/home/RecommendedSection.js
-import { getAllRecommended, getAllCategories, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import { getProducts, getCachedCategoriesTree, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import { flattenCategoriesTree } from '@/lib/utils/categoryHelpers';
 import ProductTabsSection from '@/components/home/ProductTabsSection';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+const MAX_TABS = 7;
+const PRODUCTS_PER_TAB = 15;
+const FETCH_LIMIT = MAX_TABS * PRODUCTS_PER_TAB * 3;
 
 function mapProductToCard(product) {
   const attr = product.attributes;
@@ -28,78 +31,63 @@ function mapProductToCard(product) {
 }
 
 export default async function RecommendedSection() {
-  const [allProducts, allCategoriesData] = await Promise.all([
-    getAllRecommended(),
-    getAllCategories()
+  const [productsResponse, tree] = await Promise.all([
+    getProducts({ page: 1, per_page: FETCH_LIMIT, is_popular: true }),
+    getCachedCategoriesTree(),
   ]);
 
-  if (!allProducts.length) return null;
+  const products = (productsResponse.data || []).map(mapProductToCard);
 
-  const allMapped = allProducts.map(mapProductToCard);
+  if (!products.length) return null;
 
+  // categoryMap из закешированного дерева
+  const allCategories = flattenCategoriesTree(tree);
   const categoryMap = new Map();
-  if (Array.isArray(allCategoriesData)) {
-    allCategoriesData.forEach(cat => {
-      const name = cat.attributes?.translated_name || cat.attributes?.name;
-      if (name) categoryMap.set(cat.id, name);
-    });
-  }
+  allCategories.forEach(cat => {
+    const name = cat.attributes?.translated_name || cat.attributes?.name;
+    if (name) categoryMap.set(cat.id, name);
+  });
 
-  const uniqueCategoryIds = [...new Set(allMapped.map(p => p.categoryId).filter(Boolean))];
-  const missingIds = uniqueCategoryIds.filter(id => !categoryMap.has(id));
-
-  if (missingIds.length > 0) {
-    await Promise.all(
-      missingIds.map(async (id) => {
-        try {
-          const response = await getCategory(id);
-          const cat = response?.data;
-          if (cat) {
-            const name = cat.attributes?.translated_name || cat.attributes?.name;
-            if (name) categoryMap.set(cat.id, name);
-          }
-        } catch (e) { }
-      })
-    );
-  }
-
+  // Группируем по категориям
   const groupedByCategory = {};
-  allMapped.forEach(product => {
+  products.forEach(product => {
     const catId = product.categoryId;
     if (!catId || !categoryMap.has(catId)) return;
 
     if (!groupedByCategory[catId]) {
-      groupedByCategory[catId] = { categoryName: categoryMap.get(catId), products: [] };
+      groupedByCategory[catId] = {
+        categoryName: categoryMap.get(catId),
+        products: []
+      };
     }
     groupedByCategory[catId].products.push(product);
   });
 
+  // Формируем табы
   let tabs = [];
   const allTabProducts = {};
 
   Object.entries(groupedByCategory).forEach(([catId, { categoryName, products }]) => {
-    const limited = products.slice(0, 15);
+    const limited = products.slice(0, PRODUCTS_PER_TAB);
     if (!limited.length) return;
     tabs.push({ id: catId, label: categoryName });
     allTabProducts[catId] = limited;
   });
 
   tabs.sort((a, b) => a.label.localeCompare(b.label, 'ru'));
-
-  const MAX_TABS = 7;
-  const limitedTabs = tabs.slice(0, MAX_TABS);
+  tabs = tabs.slice(0, MAX_TABS);
 
   const limitedTabProducts = {};
-  limitedTabs.forEach(tab => {
+  tabs.forEach(tab => {
     limitedTabProducts[tab.id] = allTabProducts[tab.id];
   });
 
-  if (!limitedTabs.length) return null;
+  if (!tabs.length) return null;
 
   return (
     <ProductTabsSection
       title="Рекомендованные товары"
-      tabs={limitedTabs}
+      tabs={tabs}
       tabProducts={limitedTabProducts}
       sectionClass="recommended-tabs"
     />

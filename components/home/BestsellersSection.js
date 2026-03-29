@@ -1,6 +1,11 @@
 // components/home/BestsellersSection.js
-import { getAllBestsellers, getAllCategories, getCategory, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import { getBestsellers, getCachedCategoriesTree, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import { flattenCategoriesTree } from '@/lib/utils/categoryHelpers';
 import ProductTabsSection from '@/components/home/ProductTabsSection';
+
+const MAX_TABS = 7;
+const PRODUCTS_PER_TAB = 15;
+const FETCH_LIMIT = MAX_TABS * PRODUCTS_PER_TAB * 3; // берём с запасом для группировки
 
 function mapProductToCard(product) {
   const attr = product.attributes;
@@ -21,97 +26,71 @@ function mapProductToCard(product) {
       || 'Описание скоро появится',
     price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',
     images: images,
-    badges: ['hit'].filter(Boolean),
+    badges: ['hit'],
     url: `/product/${attr.slug}-${attr.sku}`,
     categoryId: attr.category_id,
   };
 }
 
 export default async function BestsellersSection() {
-  const [allProducts, allCategoriesData] = await Promise.all([
-    getAllBestsellers(),
-    getAllCategories()
+  // Один запрос вместо пагинации — берём с запасом для группировки по категориям
+  const [productsResponse, tree] = await Promise.all([
+    getBestsellers({ page: 1, per_page: FETCH_LIMIT }),
+    getCachedCategoriesTree(),
   ]);
 
-  const allBestsellers = allProducts.map(mapProductToCard);
+  const products = (productsResponse.data || []).map(mapProductToCard);
 
-  // Строим categoryMap из плоского списка
+  if (products.length === 0) return null;
+
+  // Строим categoryMap из дерева (уже закешировано)
+  const allCategories = flattenCategoriesTree(tree);
   const categoryMap = new Map();
-  if (Array.isArray(allCategoriesData)) {
-    allCategoriesData.forEach(cat => {
-      const name = cat.attributes?.translated_name || cat.attributes?.name;
-      if (name) categoryMap.set(cat.id, name);
-    });
-  }
+  allCategories.forEach(cat => {
+    const name = cat.attributes?.translated_name || cat.attributes?.name;
+    if (name) categoryMap.set(cat.id, name);
+  });
 
-  // Собираем уникальные category_id из товаров
-  const uniqueCategoryIds = [...new Set(allBestsellers.map(p => p.categoryId).filter(Boolean))];
-
-  // Догружаем категории которых нет в списке (корневые и т.д.)
-  const missingIds = uniqueCategoryIds.filter(id => !categoryMap.has(id));
-
-  if (missingIds.length > 0) {
-    await Promise.all(
-      missingIds.map(async (id) => {
-        try {
-          const response = await getCategory(id);
-          const cat = response?.data;
-          if (cat) {
-            const name = cat.attributes?.translated_name || cat.attributes?.name;
-            if (name) categoryMap.set(cat.id, name);
-          }
-        } catch (e) {
-          // категория недоступна — пропускаем
-        }
-      })
-    );
-  }
-
-  // Группируем товары по categoryId
+  // Группируем по категориям
   const groupedByCategory = {};
-
-  allBestsellers.forEach(product => {
+  products.forEach(product => {
     const catId = product.categoryId;
-    if (!catId) return;
+    if (!catId || !categoryMap.has(catId)) return;
 
     if (!groupedByCategory[catId]) {
       groupedByCategory[catId] = {
-        categoryName: categoryMap.get(catId) || null,
+        categoryName: categoryMap.get(catId),
         products: []
       };
     }
     groupedByCategory[catId].products.push(product);
   });
 
-  // Формируем табы — пропускаем категории без названия
+  // Формируем табы
   let tabs = [];
   const allTabProducts = {};
 
   Object.entries(groupedByCategory).forEach(([catId, { categoryName, products }]) => {
-    if (!categoryName) return;
-    const limitedProducts = products.slice(0, 15);
-    if (limitedProducts.length === 0) return;
-
+    const limited = products.slice(0, PRODUCTS_PER_TAB);
+    if (limited.length === 0) return;
     tabs.push({ id: catId, label: categoryName });
-    allTabProducts[catId] = limitedProducts;
+    allTabProducts[catId] = limited;
   });
 
   tabs.sort((a, b) => a.label.localeCompare(b.label, 'ru'));
-
-  const MAX_TABS = 7;
-  const limitedTabs = tabs.slice(0, MAX_TABS);
+  tabs = tabs.slice(0, MAX_TABS);
 
   const limitedTabProducts = {};
-  limitedTabs.forEach(tab => {
+  tabs.forEach(tab => {
     limitedTabProducts[tab.id] = allTabProducts[tab.id];
   });
 
-  if (limitedTabs.length === 0) return null;
+  if (tabs.length === 0) return null;
 
   return (
     <ProductTabsSection
       title="Хиты продаж"
-      tabs={limitedTabs}
+      tabs={tabs}
       tabProducts={limitedTabProducts}
       sectionClass="bestsellers-tabs"
     />

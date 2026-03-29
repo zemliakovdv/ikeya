@@ -68,8 +68,6 @@ export default function ProductTabsSection({
           } : undefined,
         });
       });
-
-      console.log('✅ Слайдеры товаров инициализированы');
     }, 100);
 
     return () => {
