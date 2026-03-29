@@ -5,7 +5,7 @@ import ProductTabsSection from '@/components/home/ProductTabsSection';
 
 const MAX_TABS = 7;
 const PRODUCTS_PER_TAB = 15;
-const FETCH_LIMIT = MAX_TABS * PRODUCTS_PER_TAB * 3;
+const FETCH_LIMIT = 100;
 
 function mapProductToCard(product) {
   const attr = product.attributes;
@@ -17,24 +17,32 @@ function mapProductToCard(product) {
     );
   }
 
+  // Формируем массив бейджей для ProductTabsSection
+  const badges = [];
+  // Принудительно ставим 'new', так как это секция новинок
+  if (attr.is_new || true) badges.push('new'); 
+  if (attr.is_bestseller) badges.push('hit');
+  if (attr.promo) badges.push('promo');
+
   return {
     id: product.id,
     sku: attr.sku || product.id,
-    title: attr.name_ru || attr.name || 'Без названия',
-    description: attr.collection || attr.name_ru || 'Описание скоро появится',
-    price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',
+    // 1. Заголовок из small_desc_name
+    title: attr.small_desc_name || 'Товар IKEA', 
+    // 2. Описание из name_ru
+    description: attr.name_ru || 'Без названия', 
+    // 3. Цена из price_byn
+    price: attr.price_byn || '0.00', 
     images,
-    badges: [
-      attr.is_bestseller && 'hit',
-      attr.is_new && 'new',
-    ].filter(Boolean),
     url: `/product/${attr.slug}-${attr.sku}`,
-    categoryId: attr.category_id,
+    categoryId: String(attr.category_id), // Фикс типизации
+    badges: badges, // Передаем массив для корректного отображения чипсов
   };
 }
 
 export default async function NewArrivalsSection() {
   const [productsResponse, tree] = await Promise.all([
+    // Используем обновленную функцию из ikea.js для /products/new_arrivals
     getNewProducts({ page: 1, per_page: FETCH_LIMIT }),
     getCachedCategoriesTree(),
   ]);
@@ -43,15 +51,14 @@ export default async function NewArrivalsSection() {
 
   if (!products.length) return null;
 
-  // categoryMap из закешированного дерева
   const allCategories = flattenCategoriesTree(tree);
   const categoryMap = new Map();
   allCategories.forEach(cat => {
     const name = cat.attributes?.translated_name || cat.attributes?.name;
-    if (name) categoryMap.set(cat.id, name);
+    // Приведение ID к строке для поиска
+    if (name) categoryMap.set(String(cat.id), name); 
   });
 
-  // Группируем по категориям
   const groupedByCategory = {};
   products.forEach(product => {
     const catId = product.categoryId;
@@ -63,35 +70,29 @@ export default async function NewArrivalsSection() {
         products: []
       };
     }
-    groupedByCategory[catId].products.push(product);
+    
+    if (groupedByCategory[catId].products.length < PRODUCTS_PER_TAB) {
+      groupedByCategory[catId].products.push(product);
+    }
   });
 
-  // Формируем табы
-  let tabs = [];
-  const allTabProducts = {};
-
-  Object.entries(groupedByCategory).forEach(([catId, { categoryName, products }]) => {
-    const limited = products.slice(0, PRODUCTS_PER_TAB);
-    if (!limited.length) return;
-    tabs.push({ id: catId, label: categoryName });
-    allTabProducts[catId] = limited;
-  });
-
-  tabs.sort((a, b) => a.label.localeCompare(b.label, 'ru'));
-  tabs = tabs.slice(0, MAX_TABS);
-
-  const limitedTabProducts = {};
-  tabs.forEach(tab => {
-    limitedTabProducts[tab.id] = allTabProducts[tab.id];
-  });
+  let tabs = Object.entries(groupedByCategory)
+    .map(([id, data]) => ({ id, label: data.categoryName }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'ru'))
+    .slice(0, MAX_TABS);
 
   if (!tabs.length) return null;
+
+  const tabProducts = {};
+  tabs.forEach(tab => {
+    tabProducts[tab.id] = groupedByCategory[tab.id].products;
+  });
 
   return (
     <ProductTabsSection
       title="Новинки"
       tabs={tabs}
-      tabProducts={limitedTabProducts}
+      tabProducts={tabProducts}
       sectionClass="new-tabs"
       showNewBadge={true}
     />
