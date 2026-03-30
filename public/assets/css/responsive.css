@@ -7,7 +7,7 @@
 
 /* Large Desktop (1400px - 1919px) */
 @media (max-width: 1919px) {
-    /* Стили для макета 1400px */
+    /* Стили для макета 1200px */
 
     .container {
         max-width: 1336px;
@@ -40,7 +40,8 @@
         padding: 10px 8px;
     }
 
-    .product-card-inner, .zakazi .product-card-inner {
+    .product-card-inner,
+    .zakazi .product-card-inner {
         min-width: 258px;
         max-width: 258px;
     }
@@ -156,7 +157,7 @@
 
     /* Корзина 1400 */
 
-    .cart-item__info{
+    .cart-item__info {
         width: 480px;
     }
 
@@ -219,6 +220,8 @@
     .header-bottom {
         display: none;
     }
+
+
 
     /* Детальнаяя страница блога 992 */
 
@@ -299,7 +302,8 @@
         margin-bottom: 16px;
     }
 
-    .the-detail__content .product-card-inner, .zakazi .product-card-inner {
+    .the-detail__content .product-card-inner,
+    .zakazi .product-card-inner {
         min-width: 200px;
         max-width: 200px;
     }
@@ -521,6 +525,205 @@
 /* Mobile (360px - 575px) */
 @media (max-width: 575px) {
     /* Стили для макета 360px */
+
+    .container {
+        max-width: 328px;
+    }
+
+    .header-middle-start {
+        padding: 15px 0;
+    }
+
+    .header-middle-start .logo img {
+        max-width: 101px;
+        margin-right: 0;
+    }
+
+    .middle-searh-inner input::placeholder {
+        font-weight: 400;
+        font-size: 13px;
+        line-height: 138%;
+        letter-spacing: 0.02em;
+        color: #9e9e9e;
+    }
+
+    main {
+        padding-top: 16px;
+    }
+
+    .start-slider {
+        padding-bottom: 40px;
+        margin-bottom: 16px;
+    }
+
+    .start-slider__nav-next,
+    .start-slider__nav-prev {
+        display: none;
+    }
+
+    .start-slider__swiper {
+        border-radius: 8px;
+    }
+
+    .start-slider__swiper img {
+        height: 176px;
+        min-height: 176px;
+    }
+
+    h2 {
+        font-weight: 600;
+        font-size: 21px;
+        line-height: 124%;
+        color: #181818;
+        margin-bottom: 12px;
+    }
+
+    .popular-categories {
+        margin-bottom: 56px;
+    }
+
+    .popular-categories__nav {
+        display: none;
+    }
+
+    .popular-categories-item {
+        gap: 8px;
+    }
+
+    .categories-item-card {
+        min-width: 84px;
+        max-width: 84px;
+    }
+
+    .categories-card-img img {
+        max-width: 52px;
+    }
+
+    .categories-item-card p {
+        font-weight: 600;
+        font-size: 11px;
+        line-height: 145%;
+        letter-spacing: 0.05em;
+        text-align: center;
+    }
+
+    .products-tabs__link {
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 138%;
+        letter-spacing: 0.01em;
+        text-align: center;
+        padding: 16px 15px;
+    }
+
+    .products-tabs__content {
+        padding-top: 16px;
+    }
+
+    .products-slider .swiper-wrapper {
+        gap: 0px 8px;
+    }
+
+    .product-card {
+        padding: 8px;
+    }
+
+    .product-card-inner,
+    .zakazi .product-card-inner {
+        min-width: 160px;
+        max-width: 160px;
+    }
+
+    .product-gallery-main {
+        height: 144px;
+    }
+
+    .product-gallery-main img {
+        max-width: 144px;
+        max-height: 144px;
+    }
+
+    .product-gallery-thumbs img {
+        max-width: 28px;
+    }
+
+    .products-slider .product-gallery-thumbs .swiper-wrapper {
+        gap: 0 4px;
+    }
+
+    .product-card__title {
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 138%;
+        letter-spacing: 0.01em;
+    }
+
+    .product-card__description {
+        font-weight: 400;
+        font-size: 13px;
+        line-height: 138%;
+        letter-spacing: 0.02em;
+    }
+
+    .product-card__price {
+        font-weight: 600;
+        font-size: 21px;
+        line-height: 133%;
+    }
+
+    .product-card__price span {
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 138%;
+        letter-spacing: 0.01em;
+    }
+
+    .shop_button p {
+        font-size: 13px;
+        line-height: 138%;
+        letter-spacing: 0.01em;
+        text-align: center;
+    }
+
+    .sales-hit {
+        font-size: 10px;
+        line-height: 160%;
+        letter-spacing: 0.05em;
+        padding: 0 4px;
+    }
+
+    .bestsellers-tabs{
+        margin-bottom: 16px;
+    }
+
+    .recommended-tabs{
+        padding-bottom: 16px;
+    }
+
+    .ads-banner{
+        padding: 16px 0;
+    }
+
+    .ads-banner-slider__nav{
+        display: none;
+    }
+
+    .new-tabs{
+        padding-bottom: 16px;
+    }
+
+    .blog{
+        margin-bottom: 16px;
+    }
+
+    .blog-slider{
+        padding-bottom: 40px;
+    }
+
+    .blog-slider__nav{
+        display: none;
+    }
+
 }
 
 /* Small Mobile (320px - 359px) */
