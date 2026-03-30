@@ -49,6 +49,10 @@ export default function Breadcrumbs({ items }) {
                       <Link href={item.href} itemProp="item">
                         <span itemProp="name">{item.label}</span>
                       </Link>
+                    ) : item.onClick ? (
+                      <a href="#" onClick={item.onClick} itemProp="item" style={{ cursor: 'pointer' }}>
+                        <span itemProp="name">{item.label}</span>
+                      </a>
                     ) : (
                       <span itemProp="item">
                         <span itemProp="name">{item.label}</span>

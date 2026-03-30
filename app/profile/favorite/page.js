@@ -2,18 +2,24 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthModals } from '@/components/auth/AuthModalsHost';
 import Breadcrumbs from '@/components/profile/Breadcrumbs';
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
 import GuestFavoriteSidebar from '@/components/profile/GuestFavoriteSidebar';
 import Favorites from '@/components/profile/Favorites';
 
-const breadcrumbs = [
-  { label: 'Профиль', href: '/profile' },
-  { label: 'Избранное', href: null },
-];
-
 export default function FavoritesPage() {
   const { isAuth, isHydrated } = useAuth();
+  const { openLogin } = useAuthModals();
+
+  const breadcrumbs = [
+    {
+      label: 'Профиль',
+      href: isAuth ? '/profile' : null,
+      onClick: !isAuth ? (e) => { e.preventDefault(); openLogin(); } : null,
+    },
+    { label: 'Избранное', href: null },
+  ];
 
   return (
     <main className="zakazi">
@@ -35,7 +41,6 @@ export default function FavoritesPage() {
           </div>
         </div>
       </section>
-
     </main>
   );
 }
