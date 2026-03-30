@@ -12,7 +12,7 @@ export default function TextWithImageBlock({ block }) {
 
   return (
     <section className="text-with-big-image">
-      {block.content && <p>{block.content}</p>}
+      {block.content && <div dangerouslySetInnerHTML={{ __html: block.content }} />}
       {imageUrl && (
         <Image
           src={imageUrl}

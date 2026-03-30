@@ -2501,64 +2501,62 @@ main {
     gap: 0;
 }
 
-/* Родительские категории (breadcrumb) */
-.category-tree__item {
-    margin-left: 0;
-}
-
-.category-tree__item.level-1 {
-    margin-left: 0;
-}
-
-.category-tree__item.level-2 {
-    margin-left: 16px;
-}
-
-.category-tree__item.level-3 {
-    margin-left: 24px;
-}
-
-.category-tree__item.level-4 {
-    margin-left: 32px;
-}
-
 .category-tree__link {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    transition: color 0.2s;
-    padding: 10px 7px;
-    padding-right: 7px;
-    padding-right: 0;
-    gap: 6px;
     font-weight: 400;
     font-size: 14px;
     line-height: 143%;
-    letter-spacing: 0.02px;
+    letter-spacing: 0.02em;
+    color: #181818;
+    padding: 10px 0;
 }
 
-.category-tree__link:hover {
+.category-tree__link:hover{
     color: #0058a3;
 }
 
-.category-tree__link.current {
-    background: #fafafa;
-    padding: 10px 8px;
+/* Родительские категории (breadcrumb) */
+
+.category-tree__back {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #181818;
+    padding: 10px 0;
+}
+
+.category-tree__back:hover{
+    color: #0058a3;
+}
+
+.category-tree__parent {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #181818;
+    padding: 10px 0;
+}
+
+.category-tree__parent:hover{
+    color: #0058a3;
+}
+
+.category-tree__current {
     font-weight: 400;
     font-size: 14px;
     line-height: 143%;
     letter-spacing: 0.02em;
     color: #0058a3;
     border-radius: 4px;
+    padding: 12px 8px;
+    background: #fafafa;
+    margin-left: 10px;
 }
 
-.category-tree__link.current .chevron {
-    display: none;
-}
-
-.category-tree__link .chevron {
-    font-size: 16px;
-    color: #181818;
+.category-tree__current:hover{
+    background: transparent;
+    cursor: pointer;
 }
 
 /* Дочерние категории */
@@ -3482,8 +3480,10 @@ main {
 
 .the-mail {
     margin-top: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 0;
 }
+
+
 
 .form-floating label {
     color: #9E9E9E;
@@ -3503,17 +3503,21 @@ main {
 
 .form-floating>label {
     padding: 16px 16px;
-    top: -2px;
+    top: 0;
 }
 
 .form-control:focus {
     border-color: #BDBDBD;
     box-shadow: none;
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 16px;
+    font-size: 16px;
+    font-weight: 400;
     letter-spacing: 0.5px;
+    padding-bottom: 4px !important;
 
+}
+
+.policy-inner {
+    margin-top: 24px;
 }
 
 .form-check {
@@ -3618,11 +3622,8 @@ main {
 
 .goods-wrapper {
     display: flex;
-    margin-bottom: 16px
-}
-
-.goods-images {
-    margin-right: 32px;
+    margin-bottom: 16px;
+    gap: 32px;
 }
 
 .goods-images__inner {
@@ -3632,8 +3633,8 @@ main {
 }
 
 .goods-images__main {
-    width: 826px;
-    min-width: 826px;
+    width: 818px;
+    min-width: 818px;
     margin: 0;
 }
 
@@ -3660,8 +3661,8 @@ main {
 }
 
 .goods-main__item img {
-    max-width: 826px;
-    max-height: 826px;
+    max-width: 818px;
+    max-height: 818px;
     border-radius: 4px;
     object-fit: cover;
 }
@@ -3673,7 +3674,7 @@ main {
     height: 102px;
     border-radius: 4px;
     margin-right: 0 !important;
-    margin-bottom: 16px;
+    margin-bottom: 17px;
     cursor: pointer;
 }
 
@@ -4123,7 +4124,7 @@ main {
 }
 
 .more-inner .products-slider .swiper-wrapper {
-    gap: 0px 8px;
+    gap: 0px 16x;
 }
 
 .more-inner .product-gallery-thumbs .swiper-slide {
@@ -4771,7 +4772,7 @@ main {
     align-items: center;
     gap: 16px;
     width: 424px;
-    align-items: center;
+    justify-content: end;
 }
 
 .verh-card__action .goods-costs {
@@ -4797,9 +4798,10 @@ main {
 }
 
 .verh-like {
-    padding: 12px;
+    padding: 10px;
     background-color: transparent;
     border: none;
+    margin-left: 16px;
 }
 
 /* Конец табов карточки товара */
@@ -7048,7 +7050,7 @@ main {
     background: #fff;
     border-top: 1px solid #E0E0E0;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    max-height: 80vh;
+    max-height: 1000vh;
     overflow-y: auto;
 }
 
@@ -8094,4 +8096,15 @@ main {
     line-height: 143%;
     letter-spacing: 0.02em;
     color: #0058a3;
+}
+
+.filter-aside::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-aside {
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE */
 }

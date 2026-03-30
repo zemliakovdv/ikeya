@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as cartAPI from '@/lib/api/cart';
-import { getProductBySku, getPopularProducts } from '@/lib/api/ikea';
+import { getProductBySku, getRecommendedProducts } from '@/lib/api/ikea';
 
 const CartContext = createContext();
 
@@ -32,8 +32,14 @@ export function CartProvider({ children }) {
             ...item,
             product: {
               ...item.product,
+              // Название: берём small_desc_name как заголовок, name_ru как подзаголовок
+              name: attrs.small_desc_name || attrs.name_ru || item.product?.name,
               name_ru: attrs.name_ru || item.product?.name_ru || item.product?.name,
+              small_desc_name: attrs.small_desc_name || item.product?.small_desc_name,
               collection: attrs.collection || item.product?.collection,
+              // Цена: берём из product API, она актуальная
+              price_byn: attrs.price_byn || item.product?.price_byn,
+              price: attrs.price || item.product?.price,
               local_images:
                 attrs.local_images ??
                 item.product?.local_images ??
@@ -59,8 +65,26 @@ export function CartProvider({ children }) {
       const response = await cartAPI.getCart();
       let nextCart = response.cart ? await enrichCartItems(response.cart) : null;
       try {
-        const popularData = await getPopularProducts({ page: 1, per_page: 10 });
-        const recs = popularData.data || [];
+        const recsData = await getRecommendedProducts({ page: 1, per_page: 10 });
+        const recs = (recsData.data || []).map((item) => {
+          const attr = item.attributes || {};
+          const images = (attr.local_images || []).map((img) => {
+            const clean = img.startsWith('/') ? img.slice(1) : img;
+            return `http://45.135.234.22/${clean}`;
+          });
+          const fallback = '/assets/img/no-image.jpg';
+          return {
+            id:          item.id,
+            sku:         attr.sku,
+            title:       attr.small_desc_name || attr.name_ru || '',
+            description: attr.name_ru || '',
+            price:       parseFloat(attr.price_byn || attr.price || 0),
+            images:      images.length ? images : [fallback],
+            thumbs:      images.length ? images : [fallback],
+            isHit:       attr.is_bestseller || false,
+            promoCode:   attr.promo?.code || null,
+          };
+        });
         nextCart = nextCart
           ? { ...nextCart, recommendations: recs }
           : { recommendations: recs };

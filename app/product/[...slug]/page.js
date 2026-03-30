@@ -7,6 +7,7 @@ import ProductInfo from '@/components/product/ProductInfo';
 import ProductTabs from '@/components/product/ProductTabs';
 import RelatedProducts from '@/components/product/RelatedProducts';
 import SimilarProducts from '@/components/product/SimilarProducts';
+import { getCachedCategoriesTree } from '@/lib/api/ikea';
 
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
@@ -67,26 +68,46 @@ async function getCategoryProducts(categoryId, excludeSku) {
   }
 }
 
-// Строим breadcrumbs из данных API
-function buildBreadcrumbs(attr) {
+// Строим breadcrumbs из дерева категорий
+function buildProductBreadcrumbs(treeData, categoryId, attr) {
   const breadcrumbs = [
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' },
   ];
 
-  // Используем breadcrumbs из API если есть
-  if (Array.isArray(attr.breadcrumbs) && attr.breadcrumbs.length > 0) {
-    attr.breadcrumbs.forEach(crumb => {
-      if (crumb.title && crumb.url) {
-        breadcrumbs.push({ name: crumb.title, href: crumb.url });
+  // Ищем категорию рекурсивно по id в оригинальном дереве
+  function findById(nodeList, id) {
+    for (const node of nodeList) {
+      if (node?.id === String(id)) return { node, ancestors: [] };
+      const children = node.children || [];
+      if (children.length) {
+        const result = findById(children, id);
+        if (result) return { node: result.node, ancestors: [node, ...result.ancestors] };
+      }
+    }
+    return null;
+  }
+
+  const roots = Array.isArray(treeData) ? treeData : [];
+  const found = findById(roots, categoryId);
+
+  if (found) {
+    // ancestors идут от корня к родителю
+    const chain = [...found.ancestors, found.node];
+    let currentPath = '/catalog';
+    chain.forEach(c => {
+      const slug = c.attributes?.slug;
+      const name = c.attributes?.translated_name || c.attributes?.name;
+      if (slug && name) {
+        currentPath += `/${slug}`;
+        breadcrumbs.push({ name, href: currentPath });
       }
     });
   }
 
-  // Добавляем сам товар в конец
   breadcrumbs.push({
-    name: attr.name_ru || attr.name,
-    href: null
+    name: attr.small_desc_name || attr.name_ru || attr.name,
+    href: null,
   });
 
   return breadcrumbs;
@@ -118,7 +139,10 @@ export default async function ProductPage({ params }) {
   const productSlug = slugParts[slugParts.length - 1];
   const sku = extractSKU(productSlug);
 
-  const productData = await getProduct(sku);
+  const [productData, tree] = await Promise.all([
+    getProduct(sku),
+    getCachedCategoriesTree(),
+  ]);
 
   if (!productData || !productData.data) {
     notFound();
@@ -127,19 +151,31 @@ export default async function ProductPage({ params }) {
   const product = productData.data;
   const attr = product.attributes;
 
-  // Загружаем related и similar параллельно
- const relatedSkus = (Array.isArray(attr.related_products) ? attr.related_products : []).slice(0, 10);
+  // included_products — "К этому товару подходят" (приходит как массив JSON-строк)
+  const includedSkus = (() => {
+    const raw = attr.included_products || [];
+    try {
+      const parsed = typeof raw[0] === 'string' && raw[0].startsWith('[')
+        ? JSON.parse(raw[0])
+        : raw;
+      return parsed.slice(0, 10);
+    } catch {
+      return raw.slice(0, 10);
+    }
+  })();
+
+  // related_products — "Похожие товары"
+  const relatedSkus = (Array.isArray(attr.related_products) ? attr.related_products : []).slice(0, 10);
 
   const [relatedProducts, similarProducts] = await Promise.all([
+    getProductsBySKUs(includedSkus),
     getProductsBySKUs(relatedSkus),
-    getCategoryProducts(attr.category_id, attr.sku),
   ]);
 
   // Изображения
   const images = Array.isArray(attr.local_images) ? attr.local_images : [];
 
-  // Breadcrumbs из API
-  const breadcrumbs = buildBreadcrumbs(attr);
+  const breadcrumbs = buildProductBreadcrumbs(tree, attr.category_id, attr);
 
   return (
     <main className="shop-card">

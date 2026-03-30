@@ -24,9 +24,9 @@ function mapProduct(product) {
   return {
     id: product.id,
     sku: attr.sku, // ✅ ДОБАВИЛИ SKU (важно для корзины)
-    title: attr.name_ru || attr.name || 'Без названия',
-    description: attr.collection || '',
-    price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',
+    title: attr.small_desc_name || attr.name_ru || attr.name || 'Без названия',
+    description: attr.name_ru || attr.collection || '',
+    price: attr.price_byn ? `${parseFloat(attr.price_byn).toFixed(2)}` : '0.00',
     images: (Array.isArray(attr.local_images) ? attr.local_images : []).map(img =>
       `${IMAGES_BASE_URL}${img.startsWith('/') ? img : '/' + img}`
     ),

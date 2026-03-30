@@ -9,7 +9,7 @@ import { calculateDelivery } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
-import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
+import CartRecommendations from '@/components/cart/CartRecommendations';
 
 const MIN_ORDER_AMOUNT = 150; // BYN
 
@@ -20,7 +20,7 @@ export default function CartPage() {
   const {
     cart, updateQuantity, removeFromCart,
     availableItems, unavailableItems,
-    totals, recommendations, loading,
+    totals, loading,
   } = useCart();
 
   const [selectedItems, setSelectedItems] = useState([]);
@@ -272,7 +272,7 @@ export default function CartPage() {
         </div>
       </section>
 
-      <RecommendationsSection products={recommendations || []} />
+      {!hasAvailableItems && !hasUnavailableItems && <CartRecommendations />}
     </main>
   );
 }

@@ -4,6 +4,7 @@
 import Link from 'next/link';
 
 const API_BASE_URL = 'http://45.135.234.22';
+const PLACEHOLDER = '/assets/img/no-image.jpg';
 
 function normalizeBasePath(basePath) {
   if (!basePath) return '';
@@ -15,8 +16,6 @@ export default function CategoriesGrid({
   categories = [],
   limit = null,
   showTitle = false,
-  // ✅ опционально: если передашь basePath="/catalog/parent-slug",
-  // то дочерние категории будут вести на /catalog/parent-slug/child-slug
   basePath = ''
 }) {
   if (!categories || categories.length === 0) return null;
@@ -32,75 +31,49 @@ export default function CategoriesGrid({
         {displayCategories.map((category) => {
           if (!category) return null;
 
-          // 1) уже преобразованные данные
-          if (category.name && category.href) {
-            return (
-              <div key={category.id || category.href} className="catalog-categoties-card">
-                <Link href={category.href} className="catalog-categoties-card-link">
-                  <div className="catalog-categoties-banner">
-                    <img
-                      src={category.image}
-                      alt={category.name}
-                      onError={(e) => {
-                        e.target.src = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(
-                          category.name.slice(0, 15)
-                        )}`;
-                      }}
-                    />
-                  </div>
-                  <p>{category.name}</p>
-                </Link>
-              </div>
-            );
-          }
+          let name, url, image;
+          const id = category.id;
 
-          // 2) API формат {id, attributes}
-          if (!category.attributes) return null;
-
-          const categoryId = category.id;
-          const attr = category.attributes;
-
-          const name = attr.translated_name || attr.name || 'Категория';
-          const slug = attr.slug;
-
-          let image = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(
-            name.slice(0, 15)
-          )}`;
-
-          if (attr.icon_url) {
-            image = attr.icon_url.startsWith('http')
-              ? attr.icon_url
-              : `${API_BASE_URL}/${attr.icon_url}`;
-          } else if (attr.background_image_url) {
-            image = attr.background_image_url.startsWith('http')
-              ? attr.background_image_url
-              : `${API_BASE_URL}/${attr.background_image_url}`;
-          } else if (attr.local_image_path) {
-            image = attr.local_image_path.startsWith('http')
-              ? attr.local_image_path
-              : `${API_BASE_URL}/${attr.local_image_path}`;
-          } else if (attr.remote_image_url) {
-            image = attr.remote_image_url;
-          }
-
-          // ✅ URL: если есть basePath — делаем вложенный путь
-          // иначе — /catalog/{slug}
-          let url = '/catalog';
-          if (slug) {
+          // 1) Формат PopularCategory
+          if (category.name && (category.href || category.url)) {
+            name = category.name;
+            url = category.href || category.url;
+            image = category.image;
+          } 
+          // 2) Формат дерева API
+          else if (category.attributes) {
+            const attr = category.attributes;
+            name = attr.translated_name || attr.name || 'Категория';
+            const slug = attr.slug || id;
+            
             url = base ? `${base}/${slug}` : `/catalog/${slug}`;
+
+            // ЛОГИКА ПО ТВОЕМУ ЗАПРОСУ:
+            // Сначала icon_url, если нет — pictogram_url
+            const rawPath = attr.icon_url || attr.pictogram_url;
+
+            if (rawPath) {
+              if (rawPath.startsWith('http') || rawPath.startsWith('/assets')) {
+                image = rawPath;
+              } else {
+                const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+                image = `${API_BASE_URL}${cleanPath}`;
+              }
+            }
           }
+
+          const finalImage = image || '/assets/img/catalog-modal/placeholder.svg';
 
           return (
-            <div key={categoryId} className="catalog-categoties-card">
+            <div key={id || url} className="catalog-categoties-card">
               <Link href={url} className="catalog-categoties-card-link">
                 <div className="catalog-categoties-banner">
                   <img
-                    src={image}
+                    src={finalImage}
                     alt={name}
+                    loading="lazy"
                     onError={(e) => {
-                      e.target.src = `https://via.placeholder.com/300x300/e0e0e0/757575?text=${encodeURIComponent(
-                        name.slice(0, 15)
-                      )}`;
+                      e.target.src = PLACEHOLDER;
                     }}
                   />
                 </div>

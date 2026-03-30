@@ -7,7 +7,7 @@ export default function SuccessModal({
 
   // данные для текста
   username = 'Имя',
-  email = 'example@mail.ru',
+  email = '',
 }) {
   return (
     <div
@@ -32,13 +32,15 @@ export default function SuccessModal({
 
           <div className="modal-body">
             <div className="succssec-reg-inner">
-              <p className="congrats">
-                На ваш адрес{' '}
-                <a href="#" onClick={(e) => e.preventDefault()}>
-                  {email || 'example@mail.ru'}
-                </a>{' '}
-                отправлено письмо для подтверждения. Пожалуйста, проверьте почту и подтвердите.
-              </p>
+              {email && (
+                <p className="congrats">
+                  На ваш адрес{' '}
+                  <a href="#" onClick={(e) => e.preventDefault()}>
+                    {email}
+                  </a>{' '}
+                  отправлено письмо для подтверждения. Пожалуйста, проверьте почту и подтвердите.
+                </p>
+              )}
 
               <button
                 type="button"

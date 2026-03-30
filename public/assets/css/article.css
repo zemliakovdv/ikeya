@@ -26,7 +26,21 @@
     line-height: 150%;
     letter-spacing: 0.03em;
     color: #181818;
-    margin-bottom: 32px;
+    margin-bottom: 16px;
+}
+
+.the-detail__content ul {
+    margin-left: 20px;
+    list-style: disc;
+    margin-bottom: 20px;
+}
+
+.the-detail__content ul li{
+    margin-bottom: 5px;
+}
+
+.the-detail__content ul li:last-child{
+    margin-bottom: 0;
 }
 
 .the-detail__cheaps {
@@ -81,7 +95,7 @@
     border-radius: 8px;
 }
 
-.text-container{
+.text-container {
     width: 552px;
     max-width: 552px;
 }
@@ -112,7 +126,7 @@
     cursor: pointer;
 }
 
-.the-detail__content .products-slider__pagination{
+.the-detail__content .products-slider__pagination {
     bottom: 0 !important;
 }
 
@@ -132,7 +146,7 @@
     max-height: fit-content;
 }
 
-.the-detail__content .product-card-inner .product-gallery-main{
+.the-detail__content .product-card-inner .product-gallery-main {
     height: 254px;
 }
 

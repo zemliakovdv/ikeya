@@ -3,16 +3,19 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAuthModals } from '@/components/auth/AuthModalsHost';
 
 const API_BASE_URL = 'http://45.135.234.22';
 
 function HeartIcon({ active }) {
   return (
     <svg width="25" height="22" viewBox="0 0 25 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12.5 21.525C11.675 21.525 10.8375 21.2625 10.125 20.725C7.075 18.45 0 12.55 0 6.9125C0 3.0375 2.9375 0 6.6875 0C8.7625 0 10.5375 0.775 12.5 2.575C14.4625 0.775 16.2375 0 18.3125 0C22.0625 0 25 3.0375 25 6.9125C25 12.5375 17.9125 18.4375 14.875 20.725C14.1625 21.25 13.3375 21.525 12.5 21.525ZM6.6875 1.75C3.875 1.75 1.75 3.975 1.75 6.9125C1.75 11.8875 8.9625 17.6625 11.175 19.325C11.9625 19.9125 13.0375 19.9125 13.825 19.325C16.0375 17.675 23.25 11.8875 23.25 6.9125C23.25 3.9625 21.125 1.75 18.3125 1.75C16.9875 1.75 15.45 2.075 13.1125 4.4C12.775 4.7375 12.225 4.7375 11.875 4.4C9.55 2.075 8 1.75 6.675 1.75H6.6875Z"
-        fill={active ? '#ce0061' : '#181818'} />
+      {active ? (
+        <path d="M12.5 21.525C11.675 21.525 10.8375 21.2625 10.125 20.725C7.075 18.45 0 12.55 0 6.9125C0 3.0375 2.9375 0 6.6875 0C8.7625 0 10.5375 0.775 12.5 2.575C14.4625 0.775 16.2375 0 18.3125 0C22.0625 0 25 3.0375 25 6.9125C25 12.5375 17.9125 18.4375 14.875 20.725C14.1625 21.25 13.3375 21.525 12.5 21.525Z"
+          fill="#ce0061" />
+      ) : (
+        <path d="M12.5 21.525C11.675 21.525 10.8375 21.2625 10.125 20.725C7.075 18.45 0 12.55 0 6.9125C0 3.0375 2.9375 0 6.6875 0C8.7625 0 10.5375 0.775 12.5 2.575C14.4625 0.775 16.2375 0 18.3125 0C22.0625 0 25 3.0375 25 6.9125C25 12.5375 17.9125 18.4375 14.875 20.725C14.1625 21.25 13.3375 21.525 12.5 21.525ZM6.6875 1.75C3.875 1.75 1.75 3.975 1.75 6.9125C1.75 11.8875 8.9625 17.6625 11.175 19.325C11.9625 19.9125 13.0375 19.9125 13.825 19.325C16.0375 17.675 23.25 11.8875 23.25 6.9125C23.25 3.9625 21.125 1.75 18.3125 1.75C16.9875 1.75 15.45 2.075 13.1125 4.4C12.775 4.7375 12.225 4.7375 11.875 4.4C9.55 2.075 8 1.75 6.675 1.75H6.6875Z"
+          fill="#181818" />
+      )}
     </svg>
   );
 }
@@ -20,8 +23,6 @@ function HeartIcon({ active }) {
 export default function ProductStickyBar({ product }) {
   const { addToCart, updateQuantity, items } = useCart();
   const { isFavorite, add, remove } = useFavorites();
-  const { isAuth } = useAuth();
-  const { openLogin } = useAuthModals();
 
   const [visible, setVisible] = useState(false);
   const [addToCartLoading, setAddToCartLoading] = useState(false);
@@ -65,20 +66,19 @@ export default function ProductStickyBar({ product }) {
     e.preventDefault();
     e.stopPropagation();
     if (!sku) return;
-    if (!isAuth) { openLogin(); return; }
     try {
       if (isLiked) await remove(sku);
       else await add(sku);
     } catch (err) {
       console.error('Ошибка избранного:', err);
     }
-  }, [sku, isAuth, isLiked, openLogin, add, remove]);
+  }, [sku, isLiked, add, remove]);
 
   const image = Array.isArray(attr.local_images) && attr.local_images[0]
     ? `${API_BASE_URL}/${attr.local_images[0]}`
     : '/assets/img/no-image.jpg';
 
-  const price = parseFloat(attr.price) || 0;
+  const price = parseFloat(attr.price_byn) || 0;
   const priceInt = Math.floor(price);
   const priceDec = (price % 1).toFixed(2).slice(2);
 
@@ -105,10 +105,10 @@ export default function ProductStickyBar({ product }) {
             <div className="verh-inner">
               <div className="verh-card">
 
-                <img src={image} alt={attr.name_ru || ''} />
+                <img src={image} alt={attr.small_desc_name || attr.name_ru || ''} />
 
                 <div className="verh-card__info">
-                  <p>{attr.name_ru || attr.name}</p>
+                  <p>{attr.small_desc_name || attr.name_ru || attr.name}</p>
                   {ratingCount > 0 && (
                     <div className="goods-feedback">
                       <a href="#reviews">

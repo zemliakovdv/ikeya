@@ -8,6 +8,7 @@ import PriceFilter from './PriceFilter';
 import CheckboxFilter from './CheckboxFilter';
 import FilterNotification from './FilterNotification';
 
+
 function readAll(sp, key) {
   return sp.getAll(key).map(String);
 }
@@ -21,11 +22,9 @@ function safeNumberOrEmpty(v) {
 }
 
 export default function FilterAside({
+  treeData = [],
+  slugChain = [],
   showAllFilters = false,
-  currentCategory = null,
-  categoryData = null,
-  rootCategories = [],
-  level = 0,
   availableFilters = [],
   priceRange = { min: 0, max: 10000 },
 }) {
@@ -78,7 +77,6 @@ export default function FilterAside({
     isMountedRef.current = true;
   }, [searchParams, filtersKey]);
 
-  // Функция применения фильтров
   const applyFilters = useCallback((minP, maxP, filters) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -106,7 +104,6 @@ export default function FilterAside({
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }, [searchParams, pathname, router]);
 
-  // Автоприменение цены с дебаунсом 600мс
   const handlePriceChange = useCallback((minV, maxV) => {
     const min = String(minV);
     const max = String(maxV);
@@ -121,7 +118,6 @@ export default function FilterAside({
     }, 600);
   }, [applyFilters, draftFilters]);
 
-  // Автоприменение чекбоксов сразу при клике
   const toggleValue = useCallback((parameter, value) => {
     const v = String(value);
     setDraftFilters((prev) => {
@@ -135,7 +131,6 @@ export default function FilterAside({
     });
   }, [applyFilters, draftPriceMin, draftPriceMax]);
 
-  // Очистка всех фильтров
   const handleClear = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete('min_price');
@@ -147,13 +142,6 @@ export default function FilterAside({
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }, [pathname, router, searchParams]);
-
-  const {
-    parentCategory = null,
-    grandParentCategory = null,
-    greatGrandParentCategory = null,
-    subcategories = [],
-  } = categoryData || {};
 
   const currentMin = useMemo(() => {
     if (draftPriceMin === '') return priceRange.min;
@@ -167,32 +155,29 @@ export default function FilterAside({
     return Number.isFinite(n) ? n : priceRange.max;
   }, [draftPriceMax, priceRange.max]);
 
-  // Есть ли активные фильтры
   const hasActiveFilters = useMemo(() => {
     if (draftPriceMin !== '') return true;
     if (draftPriceMax !== '') return true;
     return Object.values(draftFilters).some((v) => Array.isArray(v) && v.length > 0);
   }, [draftPriceMin, draftPriceMax, draftFilters]);
 
+  const level = slugChain.length;
+
   return (
     <aside
       className="filter-aside"
       style={{
         position: 'sticky',
-        top: '0',
+        top: '68px',
         alignSelf: 'flex-start',
+        maxHeight: 'calc(100vh - 68px)',
         overflowY: 'auto',
         overflowX: 'hidden',
       }}
     >
       <CategoryNav
-        currentCategory={currentCategory}
-        parentCategory={parentCategory}
-        grandParentCategory={grandParentCategory}
-        greatGrandParentCategory={greatGrandParentCategory}
-        subcategories={subcategories}
-        rootCategories={rootCategories}
-        level={level}
+        treeData={treeData}
+        slugChain={slugChain}
       />
 
       <PriceFilter
@@ -203,25 +188,21 @@ export default function FilterAside({
         onChange={handlePriceChange}
       />
 
-      {showAllFilters && (
-        <>
-          {normalizedAvailableFilters.length > 0 ? (
-            normalizedAvailableFilters.map((f) => (
-              <CheckboxFilter
-                key={f.parameter}
-                title={f.title}
-                filterKey={f.parameter}
-                selectedOptions={draftFilters[f.parameter] || []}
-                onToggle={toggleValue}
-                options={f.values}
-                showMore
-              />
-            ))
-          ) : (
-            <FilterNotification />
-          )}
-        </>
+      {showAllFilters && normalizedAvailableFilters.length > 0 && (
+        normalizedAvailableFilters.map((f) => (
+          <CheckboxFilter
+            key={f.parameter}
+            title={f.title}
+            filterKey={f.parameter}
+            selectedOptions={draftFilters[f.parameter] || []}
+            onToggle={toggleValue}
+            options={f.values}
+            showMore
+          />
+        ))
       )}
+
+      {level < 2 && <FilterNotification />}
 
       {hasActiveFilters && (
         <button className="clear-filters" onClick={handleClear} type="button">

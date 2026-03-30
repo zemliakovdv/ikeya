@@ -24,7 +24,7 @@ export default function ImageLeftTextRightBlock({ block }) {
         />
       )}
       <div className="text-container">
-        {block.content && <p>{block.content}</p>}
+        {block.content && dangerouslySetInnerHTML}
         {block.button_enabled && buttonCategory && (
           <Link href={`/categories/${buttonCategory.ikea_id}`} className="article-detail-button-transparent">
             {block.button_text}

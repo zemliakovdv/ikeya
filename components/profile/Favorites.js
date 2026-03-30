@@ -60,6 +60,9 @@ export default function Favorites() {
             </button>
           </div>
         </div>
+        <Suspense fallback={null}>
+          <NotFoundRecommendations />
+        </Suspense>
       </>
     );
   }

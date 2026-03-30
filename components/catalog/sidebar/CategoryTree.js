@@ -3,152 +3,126 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { findNodeInTree } from '@/lib/utils/categoryHelpers';
 
-function buildPathFromChain(chain) {
-  const slugs = (chain || [])
-    .map((c) => c?.attributes?.slug)
-    .filter(Boolean);
-
-  return slugs.length ? `/catalog/${slugs.join('/')}` : '/catalog';
-}
-
-function getRootItemHref(item) {
-  // формат 1: { slug, name }
-  if (item?.slug) return `/catalog/${item.slug}`;
-
-  // формат 2: api node { id, attributes }
-  const slug = item?.attributes?.slug;
-  if (slug) return `/catalog/${slug}`;
-
-  return '/catalog';
-}
-
-function getRootItemName(item) {
-  if (item?.name) return item.name;
-  return item?.attributes?.translated_name || item?.attributes?.name || 'Категория';
-}
-
-export default function CategoryTree({
-  currentCategory = null,
-  parentCategory = null,
-  grandParentCategory = null,
-  greatGrandParentCategory = null,
-  subcategories = [],
-  rootCategories = [],
-  level = 0,
-  categoryChain = null,
-  childCategories = null
-}) {
-  const pathname = usePathname();
-
-// ✅ ЖЁСТКО: если мы на /catalog (нет текущей категории) — всегда показываем корневые категории
-if (!currentCategory) {
-  console.log('CategoryTree root mode, rootCategories:', rootCategories.length);
-  
+function getNodeName(node) {
   return (
-    <div className="category-sidebar">
-      <h3 className="category-sidebar__title">Категория</h3>
-
-      <nav className="category-tree">
-        <div className="category-tree__root">
-          {(rootCategories || []).map((cat, idx) => {
-            const href = getRootItemHref(cat);
-            const name = getRootItemName(cat);
-            const key = cat?.slug || cat?.id || `${href}-${idx}`;
-
-            return (
-              <Link
-                key={key}
-                href={href}
-                className={`category-tree__link ${pathname === href ? 'active' : ''}`}
-              >
-                {name}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-    </div>
+    node?.attributes?.translated_name ||
+    node?.attributes?.name ||
+    'Категория'
   );
 }
 
+function buildUrl(slugs) {
+  return slugs.length ? `/catalog/${slugs.join('/')}` : '/catalog';
+}
 
-  // 1) если пришла цепочка категорий — используем её
-  const chain =
-    Array.isArray(categoryChain) && categoryChain.length > 0
-      ? categoryChain
-      : (() => {
-          const arr = [];
-          if (greatGrandParentCategory) arr.push(greatGrandParentCategory);
-          if (grandParentCategory) arr.push(grandParentCategory);
-          if (parentCategory) arr.push(parentCategory);
-          if (currentCategory) arr.push(currentCategory);
-          return arr;
-        })();
+export default function CategoryTree({ treeData = [], slugChain = [] }) {
+  const pathname = usePathname();
+  const roots = Array.isArray(treeData) ? treeData : [];
 
-  const children = childCategories || subcategories || [];
+  // ── Уровень 0: /catalog ──────────────────────────────────────────────────
+  if (!slugChain || slugChain.length === 0) {
+    return (
+      <div className="category-sidebar">
+        <h3 className="category-sidebar__title">Категория</h3>
+        <nav className="category-tree">
+          {roots.map((cat) => {
+            const slug = cat?.attributes?.slug;
+            if (!slug) return null;
+            const href = `/catalog/${slug}`;
+            const isActive = pathname === href;
+            return (
+              <Link
+                key={cat.id || slug}
+                href={href}
+                className={`category-tree__link ${isActive ? 'active' : ''}`}
+              >
+                {getNodeName(cat)}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+    );
+  }
 
-  const breadcrumb = [
-    { name: 'Все категории', href: '/catalog', key: 'all' },
-    ...chain.map((cat, index) => {
-      const partialChain = chain.slice(0, index + 1);
-      const href = buildPathFromChain(partialChain);
-      return {
-        name: cat?.attributes?.translated_name || cat?.attributes?.name || 'Категория',
-        href,
-        key: cat?.id || href
-      };
-    })
-  ];
+  // ── Уровень 1+: ищем узел в дереве по slugChain ──────────────────────────
+  const { node, ancestors, siblings } = findNodeInTree(roots, slugChain);
 
-  const basePath = buildPathFromChain(chain);
+  if (!node) {
+    return (
+      <div className="category-sidebar">
+        <h3 className="category-sidebar__title">Категория</h3>
+        <nav className="category-tree">
+          <Link href="/catalog" className="category-tree__back">
+            ‹ Все категории
+          </Link>
+        </nav>
+      </div>
+    );
+  }
+
+  const children = node.children || [];
+  const hasChildren = children.length > 0;
+
+  // Список для вывода под текущей:
+  // есть дети — показываем детей, нет — показываем siblings
+  const subItems = hasChildren ? children : siblings;
+  // URL для subItems строится относительно slugChain (дети) или его родителя (siblings)
+  const subItemsBaseSlugs = hasChildren ? slugChain : slugChain.slice(0, -1);
 
   return (
     <div className="category-sidebar">
       <h3 className="category-sidebar__title">Категория</h3>
-
       <nav className="category-tree">
-        {breadcrumb.map((item, index) => {
-          const isLast = index === breadcrumb.length - 1;
 
+        {/* Кнопка возврата на уровень 0 */}
+        <Link href="/catalog" className="category-tree__back">
+          ‹ Все категории
+        </Link>
+
+        {/* Вся цепочка предков — каждый со ссылкой назад */}
+        {ancestors.map((ancestor, index) => {
+          const ancestorHref = buildUrl(slugChain.slice(0, index + 1));
           return (
-            <div key={item.key} className={`category-tree__item level-${index}`}>
-              <Link
-                href={item.href}
-                className={`category-tree__link ${isLast ? 'current' : ''}`}
-              >
-                <span className="chevron">‹</span>
-                {item.name}
-              </Link>
-            </div>
+            <Link
+              key={ancestor.id || ancestorHref}
+              href={ancestorHref}
+              className="category-tree__parent"
+            >
+              ‹ {getNodeName(ancestor)}
+            </Link>
           );
         })}
 
-        {children.length > 0 && (
+        {/* Текущая категория — выделена */}
+        <div className="category-tree__current">
+          {getNodeName(node)}
+        </div>
+
+        {/* Дети (если есть) или siblings (если детей нет) */}
+        {subItems.length > 0 && (
           <div className="category-tree__children">
-            {children.map((child) => {
-              const childSlug = child?.attributes?.slug;
-              if (!childSlug) return null;
-
-              const childHref =
-                basePath === '/catalog'
-                  ? `/catalog/${childSlug}`
-                  : `${basePath}/${childSlug}`;
-
-              const isActive = pathname === childHref;
-
+            {subItems.map((item) => {
+              const itemSlug = item?.attributes?.slug;
+              if (!itemSlug) return null;
+              const itemHref = buildUrl([...subItemsBaseSlugs, itemSlug]);
+              const isActive = pathname === itemHref;
+              const isCurrent = !hasChildren && item.id === node.id;
               return (
                 <Link
-                  key={child.id || childHref}
-                  href={childHref}
-                  className={`category-tree__child ${isActive ? 'active' : ''}`}
+                  key={item.id || itemSlug}
+                  href={itemHref}
+                  className={`category-tree__child ${isCurrent ? 'current' : ''} ${isActive ? 'active' : ''}`}
                 >
-                  {child?.attributes?.translated_name || child?.attributes?.name || 'Категория'}
+                  {getNodeName(item)}
                 </Link>
               );
             })}
           </div>
         )}
+
       </nav>
     </div>
   );

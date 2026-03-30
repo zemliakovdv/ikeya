@@ -87,6 +87,10 @@ export function AuthModalsProvider({ children }) {
         setErrorText('Введите имя.');
         return;
       }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setErrorText('Неверный формат электронной почты.');
+        return;
+      }
       if (!consentPersonal) {
         setErrorText('Нужно согласие на обработку персональных данных.');
         return;

@@ -4,8 +4,6 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAuthModals } from '@/components/auth/AuthModalsHost';
 import CartCounter from '@/components/cart/CartCounter';
 import ProductGallery from './ProductGallery';
 import ProductBadge from './ProductBadge';
@@ -17,8 +15,6 @@ export default function ProductCard({ product }) {
   const router = useRouter();
   const { addToCart, items } = useCart();
   const { isFavorite, add, remove } = useFavorites();
-  const { isAuth } = useAuth();
-  const { openLogin } = useAuthModals();
 
   // ← Guard после хуков
   if (!product || !product.attributes) return null;
@@ -26,13 +22,9 @@ export default function ProductCard({ product }) {
   const attr = product.attributes;
   const sku = attr.sku || product.id;
 
-  const title = attr.name_ru || attr.name || 'Товар';
+  const title = attr.small_desc_name || 'Товар IKEA'; // [cite: 2]
+  const description = attr.name_ru || 'Без названия'; // [cite: 1]  
 
-  const description = attr.short_description_ru
-    || attr.content_ru
-    || attr.collection
-    || attr.name_ru
-    || 'Описание скоро появится';
 
   const quantity = useMemo(() => {
     if (!sku) return 0;
@@ -43,14 +35,13 @@ export default function ProductCard({ product }) {
   const handleLike = useCallback(async (e) => {
     e.stopPropagation();
     if (!sku) return;
-    if (!isAuth) { openLogin(); return; }
     try {
       if (isFavorite(sku)) await remove(sku);
       else await add(sku);
     } catch (err) {
       console.error('Ошибка избранного:', err);
     }
-  }, [sku, isAuth, isFavorite, openLogin, add, remove]);
+  }, [sku, isFavorite, add, remove]);
 
   const handleAddToCart = useCallback(async () => {
     try {
@@ -95,8 +86,8 @@ export default function ProductCard({ product }) {
   const thumbs = images;
 
   const badges = [];
-  if (attr.is_bestseller) badges.push('Хит продаж');
-  if (attr.is_popular) badges.push('Хит продаж');
+  if (attr.is_bestseller || attr.is_popular) badges.push('Хит продаж'); // [cite: 3, 13]
+  if (attr.is_new) badges.push('Новинка'); // [cite: 56]
 
   return (
     <div className="col product-card-inner">

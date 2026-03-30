@@ -14,7 +14,7 @@ export default function TextImagesRowBlock({ block }) {
 
   return (
     <section className="text-button-two-image">
-      {block.content && <p>{block.content}</p>}
+      {block.content && <div dangerouslySetInnerHTML={{ __html: block.content }} />}
       {block.button_enabled && buttonCategory && (
         <Link href={`/categories/${buttonCategory.ikea_id}`} className="article-detail-button-transparent">
           {block.button_text}

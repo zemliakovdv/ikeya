@@ -2,12 +2,10 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
 import Breadcrumbs from '@/components/profile/Breadcrumbs';
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
 import GuestFavoriteSidebar from '@/components/profile/GuestFavoriteSidebar';
 import Favorites from '@/components/profile/Favorites';
-import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
 
 const breadcrumbs = [
   { label: 'Профиль', href: '/profile' },
@@ -16,7 +14,6 @@ const breadcrumbs = [
 
 export default function FavoritesPage() {
   const { isAuth, isHydrated } = useAuth();
-  const { recommendations } = useCart();
 
   return (
     <main className="zakazi">
@@ -39,9 +36,6 @@ export default function FavoritesPage() {
         </div>
       </section>
 
-      {isHydrated && !isAuth && (
-        <RecommendationsSection products={recommendations || []} />
-      )}
     </main>
   );
 }

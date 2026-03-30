@@ -30,7 +30,7 @@ function removeOneFilterValue(params, parameter, value) {
     .forEach((v) => params.append(key, v));
 }
 
-export default function FilterChips({ filterLabels = {} }) {
+export default function FilterChips({ filterLabels = {}, filterTitles = {} }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -72,10 +72,13 @@ export default function FilterChips({ filterLabels = {} }) {
 
     for (const [parameter, values] of paramToValues.entries()) {
       values.forEach((v) => {
+        const valueLabel = filterLabels[v] || v;
+        const paramTitle = filterTitles[parameter];
+        const label = paramTitle ? `${paramTitle}: ${valueLabel}` : valueLabel;
         list.push({
           id: `${parameter}:${v}`,
           type: 'filter',
-          label: filterLabels[v] || v,
+          label,
           parameter,
           value: v,
         });

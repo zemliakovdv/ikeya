@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useFavorites } from '@/contexts/FavoritesContext';
 
 export default function CartItem({
   item,
@@ -15,6 +16,18 @@ export default function CartItem({
   const product = item.product || {};
   const router = useRouter();
   const pricing = item.pricing || {};
+  const { isFavorite, add, remove } = useFavorites();
+
+  const isLiked = isFavorite(item.sku);
+
+  const handleFavorite = async () => {
+    try {
+      if (isLiked) await remove(item.sku);
+      else await add(item.sku);
+    } catch (err) {
+      console.error('Ошибка избранного:', err);
+    }
+  };
 
   // Изображение — images.local_images приходит как JSON-строка
   const getImageUrl = () => {
@@ -75,13 +88,13 @@ export default function CartItem({
 
       {/* Изображение */}
       <div className="cart-item__image">
-        <img src={imageUrl} alt={product.name || 'Товар'} />
+        <img src={imageUrl} alt={product.small_desc_name || product.name || 'Товар'} />
       </div>
 
       {/* Информация о товаре */}
       <div className="cart-item__info">
         <div className="cart-item__title-row">
-          <p className="cart-item__name">{product.name_ru || product.name || 'Без названия'}</p>
+          <p className="cart-item__name">{product.small_desc_name || product.name_ru || product.name || 'Без названия'}</p>
         </div>
         <p className="cart-item__desc">Артикул: {item.sku}</p>
 
@@ -94,13 +107,19 @@ export default function CartItem({
         <div className="cart-item__meta">
           <button
             className="cart-item__favorite"
-            onClick={() => onFavorite?.(item.sku)}
+            onClick={handleFavorite}
             disabled={loading}
             type="button"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 20.61C11.34 20.61 10.67 20.4 10.1 19.97C7.66 18.15 2 13.43 2 8.92001C2 5.82001 4.35 3.39001 7.35 3.39001C9.01 3.39001 10.43 4.01001 12 5.45001C13.57 4.01001 14.99 3.39001 16.65 3.39001C19.65 3.39001 22 5.82001 22 8.92001C22 13.42 16.33 18.14 13.9 19.97C13.33 20.39 12.67 20.61 12 20.61ZM7.35 4.79001C5.1 4.79001 3.4 6.57001 3.4 8.92001C3.4 12.9 9.17 17.52 10.94 18.85C11.57 19.32 12.43 19.32 13.06 18.85C14.83 17.53 20.6 12.9 20.6 8.92001C20.6 6.56001 18.9 4.79001 16.65 4.79001C15.59 4.79001 14.36 5.05001 12.49 6.91001C12.22 7.18001 11.78 7.18001 11.5 6.91001C9.64 5.05001 8.4 4.79001 7.34 4.79001H7.35Z" fill="#181818" />
-            </svg>
+            {isLiked ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 20.61C11.34 20.61 10.67 20.4 10.1 19.97C7.66 18.15 2 13.43 2 8.92001C2 5.82001 4.35 3.39001 7.35 3.39001C9.01 3.39001 10.43 4.01001 12 5.45001C13.57 4.01001 14.99 3.39001 16.65 3.39001C19.65 3.39001 22 5.82001 22 8.92001C22 13.42 16.33 18.14 13.9 19.97C13.33 20.39 12.67 20.61 12 20.61Z" fill="#ce0061" />
+              </svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 20.61C11.34 20.61 10.67 20.4 10.1 19.97C7.66 18.15 2 13.43 2 8.92001C2 5.82001 4.35 3.39001 7.35 3.39001C9.01 3.39001 10.43 4.01001 12 5.45001C13.57 4.01001 14.99 3.39001 16.65 3.39001C19.65 3.39001 22 5.82001 22 8.92001C22 13.42 16.33 18.14 13.9 19.97C13.33 20.39 12.67 20.61 12 20.61ZM7.35 4.79001C5.1 4.79001 3.4 6.57001 3.4 8.92001C3.4 12.9 9.17 17.52 10.94 18.85C11.57 19.32 12.43 19.32 13.06 18.85C14.83 17.53 20.6 12.9 20.6 8.92001C20.6 6.56001 18.9 4.79001 16.65 4.79001C15.59 4.79001 14.36 5.05001 12.49 6.91001C12.22 7.18001 11.78 7.18001 11.5 6.91001C9.64 5.05001 8.4 4.79001 7.34 4.79001H7.35Z" fill="#181818" />
+              </svg>
+            )}
           </button>
 
           <button

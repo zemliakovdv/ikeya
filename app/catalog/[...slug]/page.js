@@ -10,8 +10,9 @@ import {
   flattenCategoriesTree,
   findCategoryBySlug,
   buildCategoryChain,
-  buildBreadcrumbs,
+  buildBreadcrumbsFromTree,
   getChildCategories,
+
 } from '@/lib/utils/categoryHelpers';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -48,11 +49,14 @@ export default async function CategoryPage({ params, searchParams }) {
     const allowedSorts = ['popular', 'newest', 'cheapest', 'expensive'];
     const sort = allowedSorts.includes(sp?.sort) ? sp.sort : null;
 
-    // Один запрос вместо пагинации
     const tree = await getCachedCategoriesTree();
     const allCategories = flattenCategoriesTree(tree);
 
     const currentCategory = findCategoryBySlug(allCategories, currentSlug);
+
+    console.log('slug array:', slug);
+    console.log('currentSlug:', currentSlug);
+    console.log('currentCategory:', currentCategory?.id, currentCategory?.attributes?.slug);
 
     if (!currentCategory) {
       redirect('/catalog');
@@ -64,10 +68,13 @@ export default async function CategoryPage({ params, searchParams }) {
     ]);
 
     const availableFilters = categoryWithFilters.available_filters || [];
+    console.log('availableFilters:', JSON.stringify(availableFilters, null, 2));
     const priceRange = getPriceRangeFromFilters(availableFilters);
 
     const filterLabels = {};
+    const filterTitles = {};
     availableFilters.forEach(f => {
+      filterTitles[f.parameter] = f.translated_name || f.name || f.parameter;
       (f.values || []).forEach(v => {
         if (v.id !== undefined) filterLabels[String(v.id)] = v.translated_name || v.name || String(v.id);
       });
@@ -75,8 +82,8 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const childCategories = getChildCategories(allCategories, currentCategory.id);
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
-    const breadcrumbs = buildBreadcrumbs(categoryChain);
-    const level = categoryChain.length;
+    const breadcrumbs = buildBreadcrumbsFromTree(tree, slug);
+    const level = slug.length;
 
     const showCategoryGrid = level === 1 && childCategories.length > 0;
     const showAllFilters = level >= 2;
@@ -93,18 +100,6 @@ export default async function CategoryPage({ params, searchParams }) {
       values.forEach((v) => queryParams.append(key, v));
     }
     const productsQueryString = queryParams.toString();
-
-    const categoryData = {
-      parentCategory: categoryChain[categoryChain.length - 2] || null,
-      grandParentCategory: categoryChain[categoryChain.length - 3] || null,
-      greatGrandParentCategory: categoryChain[categoryChain.length - 4] || null,
-      subcategories: childCategories,
-    };
-
-    const rootCategories = tree.map((cat) => ({
-      slug: cat.attributes?.slug || cat.id,
-      name: cat.attributes?.translated_name || cat.attributes?.name || 'Категория',
-    }));
 
     const basePath = `/catalog/${categoryChain.map((c) => c.attributes.slug).join('/')}`;
 
@@ -124,19 +119,18 @@ export default async function CategoryPage({ params, searchParams }) {
 
             <div className="all-catalog-inner">
               <FilterAside
-                currentCategory={currentCategory}
-                categoryData={categoryData}
-                rootCategories={rootCategories}
-                level={level}
+                treeData={tree}
+                slugChain={slug}
                 showAllFilters={showAllFilters}
                 availableFilters={availableFilters}
+                priceRange={priceRange}
               />
 
               <div className="all-catalog-center" key={productsQueryString}>
+                <ProductSort currentSort={sort} />
+                <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
                 {initialProducts.length > 0 ? (
                   <>
-                    <ProductSort currentSort={sort} />
-                    <FilterChips filterLabels={filterLabels} />
                     <InfiniteProductGrid
                       key={`${currentCategory.id}-${productsQueryString}`}
                       initialProducts={initialProducts}

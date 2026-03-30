@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { getFavorites, addFavorite, removeFavorite as apiRemoveFavorite } from '@/lib/api/account';
 import { getProductBySku } from '@/lib/api/ikea';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,13 +35,54 @@ export function FavoritesProvider({ children }) {
   const { isAuth, isHydrated } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const prevIsAuth = useRef(null);
 
+  // Основной эффект — загрузка при смене состояния авторизации
   useEffect(() => {
     if (!isHydrated) return;
-    if (!isAuth) { loadGuestFavorites(); return; }
-    load();
+
+    const prev = prevIsAuth.current;
+    const curr = isAuth;
+
+    // Переход: гость → авторизован
+    if (prev === false && curr === true) {
+      mergeGuestToApi().then(() => {
+        prevIsAuth.current = curr;
+      });
+      return;
+    }
+
+    // Переход: авторизован → гость
+    if (prev === true && curr === false) {
+      saveCurrentToGuest();
+      prevIsAuth.current = curr;
+      loadGuestFavorites();
+      return;
+    }
+
+    // Первая загрузка
+    prevIsAuth.current = curr;
+    if (curr) {
+      load();
+    } else {
+      loadGuestFavorites();
+    }
   }, [isAuth, isHydrated]);
 
+  // Загрузка избранного авторизованного пользователя
+  async function load() {
+    try {
+      setLoading(true);
+      const data = await getFavorites();
+      setItems(data?.favorite?.items ?? []);
+    } catch (e) {
+      console.error('FavoritesContext: ошибка загрузки', e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Загрузка гостевого избранного из localStorage
   async function loadGuestFavorites() {
     setLoading(true);
     try {
@@ -61,15 +102,36 @@ export function FavoritesProvider({ children }) {
     }
   }
 
-  async function load() {
+  // При авторизации: переносим гостевые избранные в API
+  async function mergeGuestToApi() {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await getFavorites();
-      setItems(data?.favorite?.items ?? []);
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      if (stored.length > 0) {
+        // Добавляем все гостевые SKU в API параллельно
+        await Promise.allSettled(
+          stored.map(({ sku }) => addFavorite(sku))
+        );
+        // Чистим localStorage
+        localStorage.removeItem(STORAGE_KEY);
+      }
+      // Загружаем актуальное избранное с сервера
+      await load();
     } catch (e) {
-      console.error('FavoritesContext: ошибка загрузки', e);
-    } finally {
-      setLoading(false);
+      console.error('FavoritesContext: ошибка merge гостевых избранных', e);
+      await load();
+    }
+  }
+
+  // При выходе: сохраняем текущие избранные в localStorage
+  function saveCurrentToGuest() {
+    try {
+      const skus = items
+        .map(item => ({ sku: item.sku || item.product?.sku }))
+        .filter(({ sku }) => sku);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(skus));
+    } catch (e) {
+      console.error('FavoritesContext: ошибка сохранения в localStorage', e);
     }
   }
 

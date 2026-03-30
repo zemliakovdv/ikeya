@@ -31,7 +31,7 @@ export default function RegisterModal({
   const showEmailError = emailTouched && email && !isEmailValid;
 
   const hasPhoneError = showPhoneUsed || !!errorText;
-  const canSubmit = isPhoneComplete && !loading;
+  const canSubmit = isPhoneComplete && !loading && isEmailValid;
 
   return (
     <div
@@ -120,13 +120,16 @@ export default function RegisterModal({
             {/* Email */}
             <div className="form-floating the-mail">
               <input
-                type="email"
+                type="text"
                 className="form-control"
                 id="floatingInput"
                 placeholder="Электронная почта"
                 value={email}
-                onChange={(e) => setEmail?.(e.target.value)}
-                onBlur={() => setEmailTouched(true)}
+                onChange={(e) => setEmail?.(e.target.value.trim())}
+                onBlur={() => {
+                  setEmailTouched(true);
+                  setEmail?.(email.trim());
+                }}
                 style={{ borderColor: showEmailError ? '#B71C1C' : undefined }}
               />
               <label htmlFor="floatingInput">Электронная почта</label>

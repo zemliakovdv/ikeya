@@ -9,22 +9,12 @@ import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
 import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
-import { flattenCategoriesTree } from '@/lib/utils/categoryHelpers';
 
 export default async function CatalogPage() {
   const [tree, productsResponse] = await Promise.all([
     getCachedCategoriesTree(),
     getProducts({ page: 1, per_page: 20 })
   ]);
-
-  // Плоский список нужен для сайдбара (rootCategories)
-  const allCategories = flattenCategoriesTree(tree);
-
-  // Корневые категории — верхний уровень дерева
-  const rootCategories = tree.map((cat) => ({
-    slug: cat.attributes?.slug || cat.id,
-    name: cat.attributes?.translated_name || cat.attributes?.name || 'Категория',
-  }));
 
   const products = productsResponse.data || [];
   const meta = productsResponse.meta || {};
@@ -51,9 +41,9 @@ export default async function CatalogPage() {
           <div className="all-catalog-inner">
             <Suspense fallback={null}>
               <FilterAside
+                treeData={tree}
+                slugChain={[]}
                 showAllFilters={false}
-                rootCategories={rootCategories}
-                level={0}
               />
             </Suspense>
 
@@ -61,6 +51,8 @@ export default async function CatalogPage() {
               <Suspense fallback={null}>
                 <ProductSort currentSort={null} />
               </Suspense>
+
+              <FilterChips filterLabels={{}} filterTitles={{}} />
 
               <Suspense fallback={<div>Загрузка товаров...</div>}>
                 <InfiniteProductGrid
