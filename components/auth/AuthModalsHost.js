@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useMemo, useState } from 'react';
-import { phoneSend, phoneVerify } from '@/lib/api/auth';
+import { phoneSend, phoneVerify, phoneCheck } from '@/lib/api/auth';
 import { getCartToken } from '@/lib/api/cart';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
@@ -87,10 +87,6 @@ export function AuthModalsProvider({ children }) {
         setErrorText('Введите имя.');
         return;
       }
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setErrorText('Неверный формат электронной почты.');
-        return;
-      }
       if (!consentPersonal) {
         setErrorText('Нужно согласие на обработку персональных данных.');
         return;
@@ -99,6 +95,17 @@ export function AuthModalsProvider({ children }) {
 
     setLoading(true);
     try {
+      // Проверяем существование номера
+      const checkResp = await phoneCheck({ phone });
+      if (flow === 'login' && !checkResp.exists) {
+        setShowNotRegistered(true);
+        return;
+      }
+      if (flow === 'register' && checkResp.exists) {
+        setShowPhoneUsed(true);
+        return;
+      }
+
       const resp = await phoneSend({ phone });
       console.log('📞 phoneSend response:', resp);
       // resp = { message: "string" }
