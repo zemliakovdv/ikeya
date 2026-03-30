@@ -2495,7 +2495,7 @@ main {
     margin-bottom: 8px;
 }
 
-.category-tree {
+.category-tree, .category-tree__root {
     display: flex;
     flex-direction: column;
     gap: 0;

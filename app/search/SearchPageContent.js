@@ -5,6 +5,7 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import ProductCard from '@/components/catalog/products/ProductCard';
 import PriceFilter from '@/components/catalog/sidebar/PriceFilter';
 import CheckboxFilter from '@/components/catalog/sidebar/CheckboxFilter';
+import FilterChips from '@/components/catalog/FilterChips';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
@@ -225,6 +226,23 @@ export default function SearchPageContent() {
     return Object.values(draftFilters).some(v => Array.isArray(v) && v.length > 0);
   }, [draftPriceMin, draftPriceMax, draftFilters]);
 
+  const filterLabels = useMemo(() => {
+    const labels = {};
+    (results?.available_filters || []).forEach(f => {
+      (f.values || []).forEach(v => {
+        if (v.id !== undefined) labels[String(v.id)] = v.translated_name || v.name || String(v.id);
+      });
+    });
+    return labels;
+  }, [results]);
+
+  const filterTitles = useMemo(() => {
+    const titles = {};
+    (results?.available_filters || []).forEach(f => {
+      titles[f.parameter] = f.translated_name || f.name || f.parameter;
+    });
+    return titles;
+  }, [results]);
   const categories = results?.categories || [];
   const products = results?.products?.data || [];
   const hasResults = products.length > 0;
@@ -336,6 +354,9 @@ export default function SearchPageContent() {
                   )}
                 </div>
               </div>
+
+              {/* Чипсы фильтров */}
+              <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
 
               {/* Скелетон */}
               {loading && (
