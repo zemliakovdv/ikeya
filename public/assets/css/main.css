@@ -7121,7 +7121,7 @@ main {
     padding: 16px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px 16px;
+    gap: 0 16px;
     align-content: start;
 }
 
