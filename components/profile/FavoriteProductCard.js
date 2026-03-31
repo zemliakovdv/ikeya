@@ -43,8 +43,8 @@ export default function FavoriteProductCard({ product, onRemoved }) {
   const [removing,     setRemoving]     = useState(false);
 
   const sku   = product.sku;
-  const title = product.name_ru || product.name || 'Товар';
-  const desc  = product.collection || '';
+  const title = product.small_desc_name || 'Товар IKEYA';
+  const desc  = product.name_ru || product.name || '';
   const { int, dec } = formatPrice(product.price_byn);
 
   const images      = useMemo(() => buildImages(product.images), [product.images]);

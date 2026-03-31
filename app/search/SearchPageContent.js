@@ -63,14 +63,11 @@ export default function SearchPageContent() {
   const isMountedRef = useRef(false);
 
   const sortOptions = [
-    { value: '', label: 'По умолчанию' },
-    { value: 'popular', label: 'Популярные' },
-    { value: 'newest', label: 'Новинки' },
-    { value: 'cheapest', label: 'Сначала дешевле' },
-    { value: 'expensive', label: 'Сначала дороже' },
+    { value: 'cheapest', label: 'Дешевле' },
+    { value: 'expensive', label: 'Дороже' },
   ];
 
-  const currentSortLabel = sortOptions.find(o => o.value === sortParam)?.label || 'По умолчанию';
+  const currentSortLabel = sortOptions.find(o => o.value === sortParam)?.label || 'Сортировка';
 
   // Нормализуем фильтры из API (исключаем цену — она в PriceFilter)
   const normalizedFilters = useMemo(() => {
@@ -94,10 +91,14 @@ export default function SearchPageContent() {
     [normalizedFilters]
   );
 
-  const priceRange = useMemo(
-    () => getPriceRangeFromFilters(results?.available_filters || []),
-    [results]
-  );
+  const priceRange = useMemo(() => {
+    const prods = results?.products?.data || [];
+    const prices = prods
+      .map(p => parseFloat(p.attributes?.price_byn || p.attributes?.price || 0))
+      .filter(p => p > 0);
+    if (!prices.length) return { min: 0, max: 10000 };
+    return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
+  }, [results]);
 
   // Загружаем результаты при изменении URL
   useEffect(() => {
@@ -243,8 +244,16 @@ export default function SearchPageContent() {
     });
     return titles;
   }, [results]);
-  const categories = results?.categories || [];
-  const products = results?.products?.data || [];
+  const categories = results?.categories?.data || results?.categories || [];
+  const products = (results?.products?.data || []).map(p => ({
+    ...p,
+    attributes: {
+      ...p.attributes,
+      // Нормализуем название и цену под ProductCard
+      small_desc_name: p.attributes?.small_desc_name || p.attributes?.name_ru || p.attributes?.name,
+      price_byn: p.attributes?.price_byn || p.attributes?.price,
+    }
+  }));
   const hasResults = products.length > 0;
 
   if (!q) {
@@ -287,10 +296,10 @@ export default function SearchPageContent() {
                       {categories.map(cat => (
                         <a
                           key={cat.id}
-                          href={`/catalog/${cat.slug}/`}
+                          href={`/catalog/${cat.attributes?.slug || cat.slug || cat.id}/`}
                           className="category-tree__link"
                         >
-                          {cat.translated_name}
+                          {cat.attributes?.translated_name || cat.translated_name || cat.name}
                         </a>
                       ))}
                     </div>

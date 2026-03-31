@@ -33,8 +33,20 @@ export async function GET(request, { params }) {
 
     const data = await response.json();
 
+    const minPrice = parseFloat(searchParams.get('min_price') || '0') || 0;
+    const maxPrice = parseFloat(searchParams.get('max_price') || '0') || Infinity;
+
+    // Фильтруем на фронте — бэк игнорирует min_price/max_price
+    const filteredProducts = (data.data || []).filter(item => {
+      const price = parseFloat(item.attributes?.price_byn || item.attributes?.price || 0);
+      if (price <= 0) return false;
+      if (searchParams.get('min_price') && price < minPrice) return false;
+      if (searchParams.get('max_price') && price > maxPrice) return false;
+      return true;
+    });
+
     return NextResponse.json({
-      products: data.data || [],
+      products: filteredProducts,
       meta: data.meta || { total: 0, page: 1, per_page: perPage, total_pages: 0 }
     });
   } catch (error) {

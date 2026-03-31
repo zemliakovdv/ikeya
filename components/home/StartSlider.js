@@ -2,7 +2,6 @@
 
 // components/home/StartSlider.js
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
@@ -26,37 +25,6 @@ function getLinkUrl(banner) {
  *  - type    {string}  — 'single' | 'triple'
  */
 export default function StartSlider({ slides = [], type = 'single' }) {
-  useEffect(() => {
-    if (!slides.length || typeof window === 'undefined') return;
-
-    // Swiper доступен глобально через CDN
-    const initSwiper = () => {
-      if (!window.Swiper) return;
-      new window.Swiper('.start-slider__swiper', {
-        slidesPerView: 1,
-        spaceBetween: 0,
-        loop: true,
-        pagination: {
-          el: '.start-slider__pagination',
-          clickable: true,
-        },
-        navigation: {
-          nextEl: '.start-slider__nav-next',
-          prevEl: '.start-slider__nav-prev',
-        },
-      });
-    };
-
-    // Если Swiper уже загружен — инициализируем сразу
-    if (window.Swiper) {
-      initSwiper();
-    } else {
-      // Иначе ждём загрузки скрипта
-      window.addEventListener('swiper-ready', initSwiper, { once: true });
-      return () => window.removeEventListener('swiper-ready', initSwiper);
-    }
-  }, [slides]);
-
   if (!slides.length) return null;
 
   return (

@@ -86,7 +86,7 @@ export default async function CategoryPage({ params, searchParams }) {
     const level = slug.length;
 
     const showCategoryGrid = level === 1 && childCategories.length > 0;
-    const showAllFilters = level >= 2;
+    const showAllFilters = level >= 2 || childCategories.length === 0;
 
     const initialProducts = productsResponse.data || [];
 

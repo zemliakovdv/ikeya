@@ -1,30 +1,9 @@
 // components/home/AdsBannerSlider.js
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 
 export default function AdsBannerSlider({ slides }) {
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.Swiper) return;
-
-    const swiper = new window.Swiper('.ads-banner-inner', {
-      slidesPerView: 1,
-      spaceBetween: 0,
-      loop: slides.length > 1,
-      pagination: {
-        el: '.ads-banner-slider__pagination',
-        clickable: true,
-      },
-      navigation: {
-        nextEl: '.ads-banner-slider__nav-next',
-        prevEl: '.ads-banner-slider__nav-prev',
-      },
-    });
-
-    return () => swiper?.destroy(true, true);
-  }, [slides]);
-
   return (
     <section className="ads-banner">
       <div className="container">

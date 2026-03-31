@@ -202,7 +202,7 @@ export default function FilterAside({
         ))
       )}
 
-      {level < 2 && <FilterNotification />}
+      {!showAllFilters && <FilterNotification />}
 
       {hasActiveFilters && (
         <button className="clear-filters" onClick={handleClear} type="button">

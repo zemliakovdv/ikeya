@@ -510,6 +510,10 @@ h2 {
     text-align: center;
 }
 
+.header-middle-phone--mobile {
+    display: none;
+}
+
 .header-panel-item a {
     position: relative;
     text-align: center;
@@ -2495,7 +2499,8 @@ main {
     margin-bottom: 8px;
 }
 
-.category-tree, .category-tree__root {
+.category-tree,
+.category-tree__root {
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -2510,7 +2515,7 @@ main {
     padding: 10px 0;
 }
 
-.category-tree__link:hover{
+.category-tree__link:hover {
     color: #0058a3;
 }
 
@@ -2525,7 +2530,7 @@ main {
     padding: 10px 0;
 }
 
-.category-tree__back:hover{
+.category-tree__back:hover {
     color: #0058a3;
 }
 
@@ -2538,7 +2543,7 @@ main {
     padding: 10px 0;
 }
 
-.category-tree__parent:hover{
+.category-tree__parent:hover {
     color: #0058a3;
 }
 
@@ -2554,7 +2559,7 @@ main {
     margin-left: 10px;
 }
 
-.category-tree__current:hover{
+.category-tree__current:hover {
     background: transparent;
     cursor: pointer;
 }
@@ -5122,6 +5127,7 @@ main {
     border-radius: 8px;
     display: flex;
     align-items: center;
+    max-width: 102px;
 }
 
 .cart-item__qty button {
@@ -7131,6 +7137,7 @@ main {
     margin-bottom: 0;
     gap: 16px;
     padding-bottom: 0;
+    margin-bottom: 15px;
 }
 
 .mega-menu-overlay .section-icon {

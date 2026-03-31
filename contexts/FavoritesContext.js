@@ -19,6 +19,7 @@ async function fetchProductBySku(sku) {
     const attr = data?.data?.attributes || {};
     return {
       sku: attr.sku || sku,
+      small_desc_name: attr.small_desc_name || '',
       name_ru: attr.name_ru || attr.name || 'Товар',
       price_byn: attr.price_byn || attr.price || '0',
       collection: attr.collection || '',

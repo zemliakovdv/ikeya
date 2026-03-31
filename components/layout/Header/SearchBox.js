@@ -167,15 +167,14 @@ export default function SearchBox() {
 
   function formatPrice(price) {
     if (!price) return ''
-    return (price / 100).toLocaleString('ru-RU', {
-      style: 'currency',
-      currency: 'BYN',
-      minimumFractionDigits: 2,
-    })
+    const num = parseFloat(price)
+    if (!num) return ''
+    const [whole, cents] = num.toFixed(2).split('.')
+    return `${whole}.${cents} р.`
   }
 
   function categoryPath(cat) {
-    return `/catalog/${cat.attributes?.slug || cat.id}/`
+    return `/catalog/${cat.attributes?.slug || cat.slug || cat.id}/`
   }
 
   function productPath(product) {
@@ -300,7 +299,7 @@ export default function SearchBox() {
                           className="search-category-row"
                           onClick={() => setIsOpen(false)}
                         >
-                          <strong>{cat.attributes?.translated_name || cat.attributes?.name}</strong>
+                          <strong>{cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name}</strong>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                             <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -347,7 +346,7 @@ export default function SearchBox() {
                           className="search-category-row"
                           onClick={() => setIsOpen(false)}
                         >
-                          <strong>{highlight(cat.attributes?.translated_name || cat.attributes?.name || '', query)}</strong>
+                          <strong>{highlight(cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name || '', query)}</strong>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                             <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -383,14 +382,14 @@ export default function SearchBox() {
                             </div>
                             <div className="search-product-info">
                               <div className="search-product-name">
-                                {highlight(attrs.name_ru || attrs.name || '', query)}
+                                {highlight(attrs.small_desc_name || attrs.name_ru || attrs.name || '', query)}
                               </div>
                               {breadcrumbText && (
                                 <div className="search-product-breadcrumb">{breadcrumbText}</div>
                               )}
                             </div>
-                            {attrs.price > 0 && (
-                              <div className="search-product-price">{formatPrice(attrs.price)}</div>
+                            {(attrs.price_byn || attrs.price) > 0 && (
+                              <div className="search-product-price">{formatPrice(attrs.price_byn || attrs.price)}</div>
                             )}
                           </Link>
                         </li>

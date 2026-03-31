@@ -13,11 +13,8 @@ export default function ProductSort({ currentSort = null }) {
 
 const sortOptions = useMemo(
   () => [
-    { value: null,        label: 'По умолчанию' },
-    { value: 'popular',   label: 'Популярные' },
-    { value: 'newest',    label: 'Новинки' },
-    { value: 'cheapest',  label: 'Сначала дешевле' },
-    { value: 'expensive', label: 'Сначала дороже' },
+    { value: 'cheapest',  label: 'Дешевле' },
+    { value: 'expensive', label: 'Дороже' },
   ],
   []
 );
@@ -25,7 +22,7 @@ const sortOptions = useMemo(
 
   const currentLabel =
     sortOptions.find(opt => opt.value === currentSort)?.label ||
-    sortOptions[0].label;
+    'Сортировка';
 
   const toggleDropdown = useCallback(() => {
     setIsOpen(prev => !prev);

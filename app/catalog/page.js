@@ -10,14 +10,26 @@ import FilterChips from '@/components/catalog/FilterChips';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
 import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
 
-export default async function CatalogPage() {
+export default async function CatalogPage({ searchParams }) {
+  const sp = await searchParams;
+  const allowedSorts = ['cheapest', 'expensive'];
+  const sort = allowedSorts.includes(sp?.sort) ? sp.sort : null;
+
   const [tree, productsResponse] = await Promise.all([
     getCachedCategoriesTree(),
-    getProducts({ page: 1, per_page: 20 })
+    getProducts({ page: 1, per_page: 20, sort })
   ]);
 
   const products = productsResponse.data || [];
   const meta = productsResponse.meta || {};
+
+  const priceRange = { min: 0, max: 10000 };
+
+  const queryParams = new URLSearchParams();
+  if (sort) queryParams.set('sort', sort);
+  if (sp?.min_price) queryParams.set('min_price', sp.min_price);
+  if (sp?.max_price) queryParams.set('max_price', sp.max_price);
+  const productsQueryString = queryParams.toString();
 
   const breadcrumbs = [
     { name: 'Главная', href: '/' },
@@ -44,21 +56,24 @@ export default async function CatalogPage() {
                 treeData={tree}
                 slugChain={[]}
                 showAllFilters={false}
+                priceRange={priceRange}
               />
             </Suspense>
 
             <div className="all-catalog-center">
               <Suspense fallback={null}>
-                <ProductSort currentSort={null} />
+                <ProductSort currentSort={sort} />
               </Suspense>
 
               <FilterChips filterLabels={{}} filterTitles={{}} />
 
               <Suspense fallback={<div>Загрузка товаров...</div>}>
                 <InfiniteProductGrid
+                  key={productsQueryString}
                   initialProducts={products}
                   categoryId={null}
                   totalPages={meta.total_pages || Math.ceil((meta.total || 0) / 20)}
+                  queryString={productsQueryString}
                 />
               </Suspense>
             </div>

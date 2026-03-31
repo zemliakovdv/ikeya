@@ -124,58 +124,95 @@ export default function MegaMenu({ isOpen, onClose }) {
 
         {/* Правая часть — секции и подкатегории активной корневой */}
         <div className="mega-menu">
-          {sections.map((section) => {
-            const attrs = section.attributes || {}
-            const sectionSlug = attrs.slug || section.id
-            const sectionPath = buildPath(section, [rootSlug])
-            const iconUrl = resolveIcon(attrs.icon_url)
-            const children = section.children || []
+          {(() => {
+            // Группируем секции: с детьми — отдельная колонка, без детей — по 3 в одну
+            const columns = []
+            let leafGroup = []
 
-            return (
-              <div className="mega-menu-section" key={section.id}>
-                <div className="section-header">
-                  {iconUrl && (
-                    <div className="section-icon">
-                      <img src={iconUrl} alt="" width={40} height={40} />
+            sections.forEach((section) => {
+              if ((section.children || []).length > 0) {
+                if (leafGroup.length) {
+                  columns.push({ type: 'group', items: leafGroup })
+                  leafGroup = []
+                }
+                columns.push({ type: 'section', item: section })
+              } else {
+                leafGroup.push(section)
+                if (leafGroup.length === 3) {
+                  columns.push({ type: 'group', items: leafGroup })
+                  leafGroup = []
+                }
+              }
+            })
+            if (leafGroup.length) columns.push({ type: 'group', items: leafGroup })
+
+            return columns.map((col, colIdx) => {
+              if (col.type === 'section') {
+                const section = col.item
+                const attrs = section.attributes || {}
+                const sectionSlug = attrs.slug || section.id
+                const sectionPath = buildPath(section, [rootSlug])
+                const iconUrl = resolveIcon(attrs.icon_url)
+                const children = section.children || []
+
+                return (
+                  <div className="mega-menu-section" key={section.id}>
+                    <div className="section-header">
+                      {iconUrl && (
+                        <div className="section-icon">
+                          <img src={iconUrl} alt="" width={40} height={40} />
+                        </div>
+                      )}
+                      <Link href={sectionPath} className="section-title" onClick={onClose}>
+                        {attrs.translated_name || attrs.name}
+                      </Link>
                     </div>
-                  )}
-                  <Link
-                    href={sectionPath}
-                    className="section-title"
-                    onClick={onClose}
-                  >
-                    {attrs.translated_name || attrs.name}
-                  </Link>
-                </div>
-
-                {children.length > 0 && (
-                  <ul className="section-links">
-                    {children.slice(0, MAX_VISIBLE).map((child) => (
-                      <li key={child.id}>
-                        <Link
-                          href={buildPath(child, [rootSlug, sectionSlug])}
-                          onClick={onClose}
-                        >
-                          {child.attributes?.translated_name || child.attributes?.name}
-                        </Link>
-                      </li>
-                    ))}
-                    {children.length > MAX_VISIBLE && (
-                      <li>
-                        <Link
-                          href={sectionPath}
-                          className="catalog-show__more"
-                          onClick={onClose}
-                        >
-                          Показать ещё ›
-                        </Link>
-                      </li>
+                    {children.length > 0 && (
+                      <ul className="section-links">
+                        {children.slice(0, MAX_VISIBLE).map((child) => (
+                          <li key={child.id}>
+                            <Link href={buildPath(child, [rootSlug, sectionSlug])} onClick={onClose}>
+                              {child.attributes?.translated_name || child.attributes?.name}
+                            </Link>
+                          </li>
+                        ))}
+                        {children.length > MAX_VISIBLE && (
+                          <li>
+                            <Link href={sectionPath} className="catalog-show__more" onClick={onClose}>
+                              Показать ещё ›
+                            </Link>
+                          </li>
+                        )}
+                      </ul>
                     )}
-                  </ul>
-                )}
-              </div>
-            )
-          })}
+                  </div>
+                )
+              }
+
+              // type === 'group': несколько секций без детей в одной колонке
+              return (
+                <div className="mega-menu-section" key={"group-" + colIdx}>
+                  {col.items.map((section) => {
+                    const attrs = section.attributes || {}
+                    const sectionPath = buildPath(section, [rootSlug])
+                    const iconUrl = resolveIcon(attrs.icon_url)
+                    return (
+                      <div className="section-header" key={section.id}>
+                        {iconUrl && (
+                          <div className="section-icon">
+                            <img src={iconUrl} alt="" width={40} height={40} />
+                          </div>
+                        )}
+                        <Link href={sectionPath} className="section-title" onClick={onClose}>
+                          {attrs.translated_name || attrs.name}
+                        </Link>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })
+          })()}
         </div>
 
       </div>

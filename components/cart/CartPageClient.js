@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import PageLoader from '@/components/ui/PageLoader';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,15 +13,18 @@ import CartSummary from './CartSummary';
 
 const MIN_ORDER_AMOUNT = 150; // BYN
 
-export default function CartPage() {
+export default function CartPageClient() {
   const router = useRouter();
   const { isAuth } = useAuth();
   const { openLogin } = useAuthModals();
   const {
     cart, updateQuantity, removeFromCart,
     availableItems, unavailableItems,
-    totals, loading,
+    totals, loading, items,
   } = useCart();
+
+  // Показываем лоадер только при первой загрузке
+  const isInitialLoading = loading && (items || []).length === 0;
 
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
@@ -188,6 +192,8 @@ export default function CartPage() {
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
 
+  if (isInitialLoading) return <PageLoader />;
+
   return (
     <main className="korzina">
       <section className="zakaz">
@@ -284,6 +290,7 @@ export default function CartPage() {
         </div>
       </section>
 
+      {/* CartRecommendations рендерится в CartPageWrapper, вне client-компонента */}
     </main>
   );
 }

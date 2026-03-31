@@ -2,7 +2,6 @@
 
 // components/home/PopularCategory.js
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -23,33 +22,6 @@ export default function PopularCategory({ categories = [] }) {
     slides.push(displayCategories.slice(i, i + 8));
   }
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const init = () => {
-      if (!window.Swiper) return;
-      new window.Swiper('.popular-categories-inner', {
-        slidesPerView: 1,
-        spaceBetween: 0,
-        loop: slides.length > 1,
-        pagination: {
-          el: '.popular-categories__pagination',
-          clickable: true,
-        },
-        navigation: {
-          nextEl: '.popular-categories__nav-next',
-          prevEl: '.popular-categories__nav-prev',
-        },
-      });
-    };
-
-    if (window.Swiper) {
-      init();
-    } else {
-      window.addEventListener('swiper-ready', init, { once: true });
-      return () => window.removeEventListener('swiper-ready', init);
-    }
-  }, [slides.length]);
 
   return (
     <section className="popular-category">

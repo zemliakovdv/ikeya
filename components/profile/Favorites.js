@@ -10,8 +10,6 @@ import { Suspense } from 'react';
 import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 
 const SORT_OPTIONS = [
-  { value: 'popular', label: 'Популярные' },
-  { value: 'price-asc', label: 'Новинки' },
   { value: 'price-desc', label: 'Дешевле' },
   { value: 'name-asc', label: 'Дороже' },
 ];

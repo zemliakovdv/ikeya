@@ -68,7 +68,7 @@ export default function CategoryTree({ treeData = [], slugChain = [] }) {
 
   // Список для вывода под текущей:
   // есть дети — показываем детей, нет — показываем siblings
-  const subItems = hasChildren ? children : siblings;
+  const subItems = hasChildren ? children : siblings.filter((s) => s.id !== node.id);
   // URL для subItems строится относительно slugChain (дети) или его родителя (siblings)
   const subItemsBaseSlugs = hasChildren ? slugChain : slugChain.slice(0, -1);
 
@@ -109,12 +109,11 @@ export default function CategoryTree({ treeData = [], slugChain = [] }) {
               if (!itemSlug) return null;
               const itemHref = buildUrl([...subItemsBaseSlugs, itemSlug]);
               const isActive = pathname === itemHref;
-              const isCurrent = !hasChildren && item.id === node.id;
               return (
                 <Link
                   key={item.id || itemSlug}
                   href={itemHref}
-                  className={`category-tree__child ${isCurrent ? 'current' : ''} ${isActive ? 'active' : ''}`}
+                  className={`category-tree__child ${isActive ? 'active' : ''}`}
                 >
                   {getNodeName(item)}
                 </Link>

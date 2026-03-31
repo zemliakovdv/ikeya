@@ -2,8 +2,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 export default function ClientScripts() {
+  const pathname = usePathname();
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -59,8 +62,10 @@ export default function ClientScripts() {
         const sliderEl = document.querySelector('.start-slider__swiper');
         if (!sliderEl) return;
 
+        const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+
         new Swiper('.start-slider__swiper', {
-          loop: true,
+          loop: slideCount > 2,
           slidesPerView: 1,
           spaceBetween: 0,
           speed: 600,
@@ -80,8 +85,10 @@ export default function ClientScripts() {
         const sliderEl = document.querySelector('.popular-categories-inner');
         if (!sliderEl) return;
 
+        const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+
         new Swiper('.popular-categories-inner', {
-          loop: true,
+          loop: slideCount > 2,
           slidesPerView: 1,
           spaceBetween: 0,
           speed: 600,
@@ -231,10 +238,12 @@ export default function ClientScripts() {
         const sliderEl = document.querySelector('.ads-banner-inner');
         if (!sliderEl) return;
 
+        const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+
         const adsBannerSlider = new Swiper('.ads-banner-inner', {
           slidesPerView: 1,
           spaceBetween: 20,
-          loop: true,
+          loop: slideCount > 2,
           speed: 600,
           watchOverflow: true,
 
@@ -1053,7 +1062,7 @@ export default function ClientScripts() {
     };
 
     initScripts();
-  }, []);
+  }, [pathname]);
 
   return null;
 }

@@ -5,8 +5,6 @@ import ProductCard from './ProductCard';
 
 const sanitize = (arr) => (arr || []).filter(p => p && p.attributes);
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
-
 export default function InfiniteProductGrid({ initialProducts, categoryId, totalPages, queryString = '' }) {
 
   const [products, setProducts] = useState(sanitize(initialProducts));
@@ -14,49 +12,65 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20);
 
-  // Сбрасываем state когда меняются initialProducts (новый фильтр/сортировка)
+  // Рефы для актуальных значений внутри колбэка observer — без них замыкание устаревает
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(hasMore);
+  const pageRef = useRef(2);
+
   useEffect(() => {
     setProducts(sanitize(initialProducts));
     setPage(2);
-    setHasMore(totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20);
+    pageRef.current = 2;
+    const more = totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20;
+    setHasMore(more);
+    hasMoreRef.current = more;
   }, [initialProducts, totalPages]);
+
   const observerRef = useRef(null);
 
   const loadMore = useCallback(async () => {
-    if (loading || !hasMore) return;
+    if (loadingRef.current || !hasMoreRef.current) return;
 
+    loadingRef.current = true;
     setLoading(true);
+
+    const currentPage = pageRef.current;
 
     try {
       const url = categoryId
-        ? `/api/categories/${categoryId}/products?${queryString}&page=${page}&per_page=20`
-        : `/api/products?page=${page}&per_page=20`;
+        ? `/api/categories/${categoryId}/products?${queryString}&page=${currentPage}&per_page=20`
+        : `/api/products?page=${currentPage}&per_page=20`;
 
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.products && data.products.length > 0) {
         setProducts(prev => [...prev, ...sanitize(data.products)]);
-        setPage(prev => prev + 1);
+        pageRef.current = currentPage + 1;
+        setPage(pageRef.current);
 
-        if (data.meta?.current_page >= data.meta?.total_pages) {
-          setHasMore(false);
-        }
+        const more = data.meta?.current_page < data.meta?.total_pages;
+        hasMoreRef.current = more;
+        setHasMore(more);
       } else {
+        hasMoreRef.current = false;
         setHasMore(false);
       }
     } catch (error) {
-      console.error('❌ Error loading more products:', error);
+      console.error('Error loading more products:', error);
+      hasMoreRef.current = false;
       setHasMore(false);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
-  }, [loading, hasMore, categoryId, page, queryString]);
+  }, [categoryId, queryString]); // ← только стабильные deps, без loading/hasMore/page
 
+  // Observer создаётся один раз — читает актуальное состояние через рефы
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
+        if (entries[0].isIntersecting) {
           loadMore();
         }
       },
@@ -66,7 +80,7 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
     if (observerRef.current) observer.observe(observerRef.current);
 
     return () => observer.disconnect();
-  }, [hasMore, loading, loadMore]);
+  }, [loadMore]); // loadMore теперь стабилен — не пересоздаётся
 
   return (
     <>

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useFavorites } from '@/contexts/FavoritesContext';
 
@@ -48,6 +49,8 @@ export default function CartItem({
 
   const imageUrl = getImageUrl();
 
+  const productUrl = `/product/${item.sku}`;
+
   // Цены — если pricing нули (бэк не посчитал), берём product.price_byn
   const productPrice = parseFloat(product.price_byn || 0);
   const pricingNew = parseFloat(pricing.unit_price_new_byn || 0);
@@ -88,13 +91,17 @@ export default function CartItem({
 
       {/* Изображение */}
       <div className="cart-item__image">
-        <img src={imageUrl} alt={product.small_desc_name || product.name || 'Товар'} />
+        <Link href={productUrl}>
+          <img src={imageUrl} alt={product.small_desc_name || product.name || 'Товар'} />
+        </Link>
       </div>
 
       {/* Информация о товаре */}
       <div className="cart-item__info">
         <div className="cart-item__title-row">
-          <p className="cart-item__name">{product.small_desc_name || product.name_ru || product.name || 'Без названия'}</p>
+          <Link href={productUrl} className="cart-item__name">
+            {product.small_desc_name || product.name_ru || product.name || 'Без названия'}
+          </Link>
         </div>
         <p className="cart-item__desc">Артикул: {item.sku}</p>
 
