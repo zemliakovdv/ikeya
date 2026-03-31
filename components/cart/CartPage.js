@@ -272,7 +272,7 @@ export default function CartPage() {
         </div>
       </section>
 
-      {!hasAvailableItems && !hasUnavailableItems && <CartRecommendations />}
+      { <CartRecommendations />}
     </main>
   );
 }

@@ -105,7 +105,7 @@ export default function RegisterModal({
                 type="tel"
                 className="phone-input"
                 id="phoneInput"
-                placeholder="25 895 26 84"
+                placeholder="Введите номер"
                 inputMode="numeric"
                 maxLength={9}
                 required
