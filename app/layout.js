@@ -42,18 +42,18 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/responsive.css" />
       </head>
       <body>
-        <CartProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <CartProvider>
             <AuthModalsProvider>
-              <FavoritesProvider>   {/* ← добавил */}
+              <FavoritesProvider>
                 <Header />
                 {children}
                 <Footer />
                 <FooterMob />
-              </FavoritesProvider>  {/* ← закрыл */}
+              </FavoritesProvider>
             </AuthModalsProvider>
-          </AuthProvider>
-        </CartProvider>
+          </CartProvider>
+        </AuthProvider>
 
         {/* Плавающая кнопка чата */}
         <FloatingChatButton />
