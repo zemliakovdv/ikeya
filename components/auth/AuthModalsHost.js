@@ -3,9 +3,8 @@
 
 import { createContext, useContext, useMemo, useState } from 'react';
 import { phoneSend, phoneVerify, phoneCheck } from '@/lib/api/auth';
-import { getCartToken } from '@/lib/api/cart';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
+import { getCartToken } from '@/lib/api/cart';
 
 import LoginModal    from '@/components/auth/LoginModal';
 import CodeModal     from '@/components/auth/CodeModal';
@@ -16,8 +15,6 @@ const AuthModalsContext = createContext(null);
 
 export function AuthModalsProvider({ children }) {
   const { setAuth } = useAuth();
-  const { refreshCart } = useCart();
-
   const [active, setActive]   = useState(null); // null|'login'|'register'|'code'|'success'
   const [flow,   setFlow]     = useState('login'); // 'login'|'register'
 
@@ -137,12 +134,10 @@ export function AuthModalsProvider({ children }) {
 
     setLoading(true);
     try {
-      const cart_token = getCartToken();
-
       const resp = await phoneVerify({
         phone,
         code,
-        cart_token,
+        cart_token: getCartToken(),
         // передаём username/email только при регистрации
         ...(flow === 'register' && {
           username: username.trim() || undefined,
@@ -154,8 +149,7 @@ export function AuthModalsProvider({ children }) {
       // resp = { token, user: { id, username, email, role }, is_new }
 
       setAuth({ token: resp.token, user: resp.user || null });
-
-      try { await refreshCart?.(); } catch {}
+      // refreshCart вызывается автоматически через 'auth-change' event в CartContext
 
       // показываем success если это была регистрация (is_new) или flow === 'register'
       if (resp.is_new || flow === 'register') {
