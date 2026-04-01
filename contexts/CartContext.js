@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as cartAPI from '@/lib/api/cart';
 import { getProductBySku, getRecommendedProducts } from '@/lib/api/ikea';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CartContext = createContext();
 
@@ -16,10 +17,12 @@ function mergeWithOrder(prevItems = [], nextItems = []) {
 }
 
 export function CartProvider({ children }) {
+  const { isAuth, isHydrated } = useAuth();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const updateTimeoutId = useRef(null);
+  const prevIsAuth = useRef(null);
 
   const enrichCartItems = useCallback(async (cartObj) => {
     if (!cartObj?.items?.length) return cartObj;
@@ -99,7 +102,24 @@ export function CartProvider({ children }) {
     }
   }, [enrichCartItems]);
 
-  useEffect(() => { fetchCart(); }, [fetchCart]);
+  // Загружаем корзину при маунте (после гидрации)
+  useEffect(() => {
+    if (isHydrated) fetchCart();
+  }, [isHydrated]);
+
+  // Перезагружаем корзину при смене авторизации
+  // При логине бэк смёрджит гостевую корзину (cart_token) с корзиной пользователя (Bearer token)
+  useEffect(() => {
+    if (!isHydrated) return;
+    if (prevIsAuth.current === null) {
+      prevIsAuth.current = isAuth;
+      return;
+    }
+    if (prevIsAuth.current !== isAuth) {
+      prevIsAuth.current = isAuth;
+      fetchCart();
+    }
+  }, [isAuth, isHydrated]);
 
   const addToCart = useCallback(async (sku, quantity = 1) => {
     try {
