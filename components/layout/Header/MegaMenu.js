@@ -103,10 +103,12 @@ export default function MegaMenu({ isOpen, onClose }) {
             const iconUrl = resolveIcon(attrs.pictogram_url || attrs.icon_url)
 
             return (
-              <div
+              <Link
                 key={cat.id}
+                href={`/catalog/${attrs.slug || cat.id}/`}
                 className={`menu-item${isActive ? ' active' : ''}`}
                 onMouseEnter={() => setActiveRootId(cat.id)}
+                onClick={onClose}
               >
                 {iconUrl && (
                   <div className="menu-item-icon">
@@ -117,7 +119,7 @@ export default function MegaMenu({ isOpen, onClose }) {
                   {attrs.translated_name || attrs.name || 'Категория'}
                 </span>
                 <span className="menu-item-arrow">›</span>
-              </div>
+              </Link>
             )
           })}
         </div>

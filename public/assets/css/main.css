@@ -7126,6 +7126,8 @@ main {
     background-color: #F5F5F5;
 }
 
+
+
 .mega-menu-overlay .menu-item-icon {
     width: 24px;
     height: 24px;
@@ -7138,7 +7140,15 @@ main {
 
 .mega-menu-overlay .menu-item-text {
     flex: 1;
+    font-weight: 400;
     font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #181818;
+}
+
+.mega-menu-overlay .menu-item.active .menu-item-text{
+    font-weight: 600;
 }
 
 .mega-menu-overlay .menu-item-arrow {
