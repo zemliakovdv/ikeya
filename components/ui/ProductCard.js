@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import CartCounter from '@/components/cart/CartCounter';
@@ -11,7 +10,6 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
 export default function ProductCard({
-  gallery,
   title,
   description,
   price,
@@ -25,8 +23,9 @@ export default function ProductCard({
   const { isFavorite, add, remove } = useFavorites();
   const isLiked = sku ? isFavorite(sku) : false;
   const { addToCart, items } = useCart();
-
   const router = useRouter();
+
+  const [isHovered, setIsHovered] = useState(false);
 
   // Парсим цену
   const priceNum = parseFloat((price || '0').toString().replace(',', '.')) || 0;
@@ -34,7 +33,11 @@ export default function ProductCard({
   const priceDecimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
 
   const productImages = images.length > 0 ? images : [PLACEHOLDER_IMAGE];
-  const productDescription = description || 'Описание скоро появится';
+  const mainImage = productImages[0];
+  const hoverImage = productImages[1] || productImages[0];
+  const hasHover = hoverImage !== mainImage;
+
+  const productDescription = description || '';
 
   const quantity = useMemo(() => {
     if (!sku) return 0;
@@ -42,35 +45,22 @@ export default function ProductCard({
     return Number(found?.quantity || 0);
   }, [items, sku]);
 
-  const handleImageError = (e) => {
-    e.target.src = PLACEHOLDER_IMAGE;
-  };
-
-const handleLikeClick = async (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-
-  if (!sku) return;
-
-  try {
-    if (isLiked) {
-      await remove(sku);
-    } else {
-      await add(sku);
+  const handleLikeClick = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!sku) return;
+    try {
+      if (isLiked) await remove(sku);
+      else await add(sku);
+    } catch (error) {
+      console.error('Ошибка избранного:', error);
     }
-  } catch (error) {
-    console.error('Ошибка избранного:', error);
-  }
-};
-
-
+  };
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (!sku) return;
-
     try {
       await addToCart(sku, 1);
     } catch (error) {
@@ -79,83 +69,77 @@ const handleLikeClick = async (e) => {
     }
   };
 
+  const handleCardClick = () => {
+    if (url !== '#') router.push(url);
+  };
+
   return (
     <div className="col product-card-inner">
-      <div className="product-card" onClick={() => url !== '#' && router.push(url)} style={{ cursor: url !== '#' ? 'pointer' : 'default' }}>
-        <div onClick={(e) => e.stopPropagation()}>
-        <Link href={url}>
-          <div className="product-card__gallery">
-            <div
-              style={{ '--swiper-navigation-color': '#fff', '--swiper-pagination-color': '#fff' }}
-              className="swiper product-gallery-main"
-              data-gallery={gallery}
-            >
-              <div className="swiper-wrapper">
-                {productImages.map((image, index) => (
-                  <div key={index} className="swiper-slide">
-                    <img
-                      src={image}
-                      alt={`${title} - изображение ${index + 1}`}
-                      loading="lazy"
-                      onError={handleImageError}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="swiper-button-next"></div>
-              <div className="swiper-button-prev"></div>
-            </div>
-
-            <div
-              thumbsslider=""
-              className="swiper product-gallery-thumbs"
-              data-gallery-thumbs={gallery}
-            >
-              <div className="swiper-wrapper">
-                {productImages.slice(0, 3).map((image, index) => (
-                  <div key={index} className="swiper-slide">
-                    <img
-                      src={image}
-                      alt={`${title} - миниатюра ${index + 1}`}
-                      onError={handleImageError}
-                    />
-                  </div>
-                ))}
-
-                {productImages.length > 3 && (
-                  <div className="swiper-slide product-gallery-thumbs__more">
-                    <span className="product-gallery-thumbs__count">
-                      +{productImages.length - 3}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </Link>
+      <div
+        className="product-card"
+        onClick={handleCardClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{ cursor: url !== '#' ? 'pointer' : 'default' }}
+      >
+        {/* Главное изображение с fade при наведении */}
+        <div className="product-card__img-wrap" style={{ position: 'relative', overflow: 'hidden' }}>
+          <img
+            src={mainImage}
+            alt={title}
+            className="product-card__img product-card__img--main"
+            onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+            style={{
+              width: '100%',
+              height: 'auto',
+              display: 'block',
+              opacity: isHovered && hasHover ? 0 : 1,
+              transition: 'opacity 0.3s ease',
+              position: 'relative',
+              zIndex: 1,
+            }}
+          />
+          {hasHover && (
+            <img
+              src={hoverImage}
+              alt={title}
+              className="product-card__img product-card__img--hover"
+              onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+              style={{
+                width: '100%',
+                height: 'auto',
+                display: 'block',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                opacity: isHovered ? 1 : 0,
+                transition: 'opacity 0.3s ease',
+                zIndex: 0,
+              }}
+            />
+          )}
         </div>
 
         <div className="product-card__info">
           <h3 className="product-card__title">{title}</h3>
-          <p className="product-card__description">{productDescription}</p>
+          {productDescription && (
+            <p className="product-card__description">{productDescription}</p>
+          )}
           <p className="product-card__price">
             {priceWhole}
             <span>.{priceDecimal} р.</span>
           </p>
 
           {quantity > 0 ? (
-            <div style={{ marginBottom: 0 }}>
-              <div style={{ width: '100%' }}>
-                <CartCounter sku={sku} className="added-fullwidth" />
-              </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <CartCounter sku={sku} className="added-fullwidth" />
             </div>
           ) : (
             <button
               className="shop_button add-to-cart"
-              onClick={(e) => { e.stopPropagation(); handleAddToCart(e); }}
+              onClick={handleAddToCart}
               type="button"
               disabled={!sku}
-              aria-disabled={!sku}
             >
               <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
               <p>В корзину</p>
@@ -173,7 +157,7 @@ const handleLikeClick = async (e) => {
           aria-label={isLiked ? 'Удалить из избранного' : 'Добавить в избранное'}
           type="button"
         >
-          <svg width="18" height="18" viewBox="0 0 20 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="18" height="18" viewBox="0 0 20 18" fill="none">
             {isLiked ? (
               <path d="M10 17.22C9.34 17.22 8.67 17.01 8.1 16.58C5.66 14.76 0 10.04 0 5.53C0 2.43 2.35 0 5.35 0C7.01 0 8.43 0.62 10 2.06C11.57 0.62 12.99 0 14.65 0C17.65 0 20 2.43 20 5.53C20 10.03 14.33 14.75 11.9 16.58C11.33 17 10.67 17.22 10 17.22Z" fill="#CE0061" />
             ) : (

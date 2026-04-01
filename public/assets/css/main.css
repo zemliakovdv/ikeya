@@ -1166,6 +1166,10 @@ main {
     display: inline-block;
 }
 
+.product-card__img-wrap img{
+    min-height: 234px;
+}
+
 .like {
     border: none;
     padding: 12px;
@@ -1178,6 +1182,30 @@ main {
 
 .like img {
     max-width: 24px;
+}
+
+.product-card__variants {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+
+}
+
+.product-card__variant-btn {
+    max-width: 36px;
+    max-height: 36px;
+    min-height: 36px;
+    border: 1px solid #E0E0E0;
+    border-radius: 4px;
+    background: transparent;
+    padding: 2px;
+}
+
+.product-card__variant-btn img {
+    width: 100%;
+    object-fit: cover;
 }
 
 /* Навигация слайдера товаров */
