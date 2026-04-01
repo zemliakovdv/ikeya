@@ -873,6 +873,7 @@ main {
     overflow-x: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    border-bottom: 2px solid #EEEEEE;
 }
 
 .products-tabs__nav::-webkit-scrollbar {
@@ -892,6 +893,8 @@ main {
     line-height: 143%;
     letter-spacing: 0.01em;
     text-align: center;
+    border-bottom: 2px solid transparent !important;
+    margin-bottom: -2px;
 }
 
 .products-tabs__link:hover {
@@ -902,7 +905,8 @@ main {
 .products-tabs__link.active {
     color: #0058A3;
     background: transparent;
-    border-color: #0058A3;
+    border-bottom: 2px solid #0058a3 !important;
+    margin-bottom: 0px;
 }
 
 /* Контент табов */
@@ -1166,7 +1170,7 @@ main {
     display: inline-block;
 }
 
-.product-card__img-wrap img{
+.product-card__img-wrap img {
     min-height: 234px;
 }
 
