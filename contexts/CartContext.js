@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as cartAPI from '@/lib/api/cart';
 import { getProductBySku, getRecommendedProducts } from '@/lib/api/ikea';
-import { useAuth } from '@/contexts/AuthContext';
+import { getCartToken } from '@/lib/api/cart';
 
 const CartContext = createContext();
 
@@ -17,12 +17,10 @@ function mergeWithOrder(prevItems = [], nextItems = []) {
 }
 
 export function CartProvider({ children }) {
-  const { isAuth, isHydrated } = useAuth();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const updateTimeoutId = useRef(null);
-  const prevIsAuth = useRef(null);
 
   const enrichCartItems = useCallback(async (cartObj) => {
     if (!cartObj?.items?.length) return cartObj;
@@ -102,24 +100,18 @@ export function CartProvider({ children }) {
     }
   }, [enrichCartItems]);
 
-  // Загружаем корзину при маунте (после гидрации)
-  useEffect(() => {
-    if (isHydrated) fetchCart();
-  }, [isHydrated]);
+  // Загружаем корзину при маунте
+  useEffect(() => { fetchCart(); }, [fetchCart]);
 
-  // Перезагружаем корзину при смене авторизации
-  // При логине бэк смёрджит гостевую корзину (cart_token) с корзиной пользователя (Bearer token)
+  // Перезагружаем корзину при логине/логауте
+  // AuthContext диспатчит событие 'auth-change' при смене авторизации
   useEffect(() => {
-    if (!isHydrated) return;
-    if (prevIsAuth.current === null) {
-      prevIsAuth.current = isAuth;
-      return;
-    }
-    if (prevIsAuth.current !== isAuth) {
-      prevIsAuth.current = isAuth;
+    function onAuthChange() {
       fetchCart();
     }
-  }, [isAuth, isHydrated]);
+    window.addEventListener('auth-change', onAuthChange);
+    return () => window.removeEventListener('auth-change', onAuthChange);
+  }, [fetchCart]);
 
   const addToCart = useCallback(async (sku, quantity = 1) => {
     try {
