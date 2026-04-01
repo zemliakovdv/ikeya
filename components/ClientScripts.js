@@ -159,8 +159,8 @@ export default function ClientScripts() {
           const btnPrev = slider.querySelector('.products-slider__nav-prev');
 
           const swiper = new Swiper(slider, {
-            slidesPerView: 1,
-            spaceBetween: 0,
+            slidesPerView: 5,
+            spaceBetween: 20,
             navigation: {
               nextEl: btnNext,
               prevEl: btnPrev,
@@ -168,6 +168,13 @@ export default function ClientScripts() {
             pagination: {
               el: slider.querySelector('.products-slider__pagination'),
               clickable: true,
+            },
+            breakpoints: {
+              320: { slidesPerView: 1, spaceBetween: 10 },
+              576: { slidesPerView: 2, spaceBetween: 15 },
+              768: { slidesPerView: 3, spaceBetween: 15 },
+              992: { slidesPerView: 4, spaceBetween: 20 },
+              1200: { slidesPerView: 5, spaceBetween: 20 },
             },
             on: {
               init: function () {
