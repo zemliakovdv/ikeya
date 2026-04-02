@@ -29,18 +29,13 @@ export function AuthProvider({ children }) {
 
   const isAuth = !!token;
 
-  function dispatchAuthChange() {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('auth-change'));
-    }
-  }
-
   function setAuth({ token: newToken, user: newUser }) {
     setTokenState(newToken);
     setUserState(newUser || null);
     setAuthToken(newToken);
     if (newUser) setStoredUser(newUser);
-    dispatchAuthChange();
+    // ✅ НЕ диспатчим auth-change здесь — это делает AuthModalsHost
+    // после завершения переноса гостевых товаров в корзину
   }
 
   function logout() {
@@ -48,7 +43,10 @@ export function AuthProvider({ children }) {
     setUserState(null);
     removeAuthToken();
     removeStoredUser();
-    dispatchAuthChange();
+    // ✅ При логауте диспатчим отдельное событие — перенос товаров не нужен
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth-logout'));
+    }
   }
 
   const value = useMemo(

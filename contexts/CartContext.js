@@ -103,14 +103,19 @@ export function CartProvider({ children }) {
   // Загружаем корзину при маунте
   useEffect(() => { fetchCart(); }, [fetchCart]);
 
-  // Перезагружаем корзину при логине/логауте
-  // AuthContext диспатчит событие 'auth-change' при смене авторизации
+  // ✅ Логин: ждём auth-change-done — диспатчится из AuthModalsHost
+  // ПОСЛЕ того как гостевые товары перенесены в авторизованную корзину
   useEffect(() => {
-    function onAuthChange() {
-      fetchCart();
-    }
-    window.addEventListener('auth-change', onAuthChange);
-    return () => window.removeEventListener('auth-change', onAuthChange);
+    function onAuthDone() { fetchCart(); }
+    window.addEventListener('auth-change-done', onAuthDone);
+    return () => window.removeEventListener('auth-change-done', onAuthDone);
+  }, [fetchCart]);
+
+  // ✅ Логаут: слушаем auth-logout — перенос товаров не нужен, сразу обновляем
+  useEffect(() => {
+    function onLogout() { fetchCart(); }
+    window.addEventListener('auth-logout', onLogout);
+    return () => window.removeEventListener('auth-logout', onLogout);
   }, [fetchCart]);
 
   const addToCart = useCallback(async (sku, quantity = 1) => {
@@ -206,6 +211,28 @@ export function CartProvider({ children }) {
     }, 400);
   }, [enrichCartItems, fetchCart, removeFromCart]);
 
+  const mergeGuestCart = useCallback(async (guestItems) => {
+    if (!guestItems?.length) return;
+    console.log('🔄 mergeGuestCart start', guestItems);
+    for (const item of guestItems) {
+      try {
+        console.log('➕ adding', item.sku);
+        const response = await cartAPI.addToCart(item.sku, item.quantity);
+        console.log('✅ added', item.sku, response?.cart?.items_count);
+        const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
+        if (nextCart) {
+          setCart((prev) => ({
+            ...nextCart,
+            recommendations: prev?.recommendations || [],
+            items: mergeWithOrder(prev?.items, nextCart?.items),
+          }));
+        }
+      } catch (err) {
+        console.error(`Ошибка переноса товара ${item.sku}:`, err.message);
+      }
+    }
+  }, [enrichCartItems]);
+
   const clearCart = useCallback(async () => {
     try {
       setLoading(true);
@@ -288,7 +315,7 @@ export function CartProvider({ children }) {
       cart, loading, error,
       addToCart, removeFromCart, removeManyFromCart,
       updateQuantity, clearCart, applyPromo, removePromo,
-      checkout, refreshCart: fetchCart,
+      checkout, refreshCart: fetchCart, mergeGuestCart,
       itemsCount, items, availableItems, unavailableItems,
       totals, flags, recommendations,
     }}>

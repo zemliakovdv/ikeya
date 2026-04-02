@@ -75,7 +75,15 @@ export function FavoritesProvider({ children }) {
     try {
       setLoading(true);
       const data = await getFavorites();
-      setItems(data?.favorite?.items ?? []);
+      const rawItems = data?.favorite?.items ?? [];
+      const enriched = await Promise.all(
+        rawItems.map(async (item) => {
+          const sku = item.sku || item.product?.sku;
+          const product = await fetchProductBySku(sku);
+          return { sku, product: product || item.product };
+        })
+      );
+      setItems(enriched);
     } catch (e) {
       console.error('FavoritesContext: ошибка загрузки', e);
     } finally {

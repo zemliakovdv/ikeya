@@ -4,7 +4,8 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import { phoneSend, phoneVerify, phoneCheck } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import { getCartToken } from '@/lib/api/cart';
+import { useCart } from '@/contexts/CartContext';
+import { getCartToken, getCart } from '@/lib/api/cart';
 
 import LoginModal    from '@/components/auth/LoginModal';
 import CodeModal     from '@/components/auth/CodeModal';
@@ -15,6 +16,7 @@ const AuthModalsContext = createContext(null);
 
 export function AuthModalsProvider({ children }) {
   const { setAuth } = useAuth();
+  const { mergeGuestCart } = useCart();
   const [active, setActive]   = useState(null); // null|'login'|'register'|'code'|'success'
   const [flow,   setFlow]     = useState('login'); // 'login'|'register'
 
@@ -105,7 +107,6 @@ export function AuthModalsProvider({ children }) {
 
       const resp = await phoneSend({ phone });
       console.log('📞 phoneSend response:', resp);
-      // resp = { message: "string" }
       setSendMessage(resp.message || '');
       setCodeDigits(['', '', '', '']);
       openCode();
@@ -134,11 +135,15 @@ export function AuthModalsProvider({ children }) {
 
     setLoading(true);
     try {
+      // ✅ Сохраняем гостевые товары ДО логина
+      const guestCartResp = await getCart();
+      const guestItems = guestCartResp?.cart?.items || [];
+      console.log('🛒 guestItems:', guestItems, 'cart:', guestCartResp?.cart);
+
       const resp = await phoneVerify({
         phone,
         code,
         cart_token: getCartToken(),
-        // передаём username/email только при регистрации
         ...(flow === 'register' && {
           username: username.trim() || undefined,
           email:    email.trim()    || undefined,
@@ -146,12 +151,17 @@ export function AuthModalsProvider({ children }) {
       });
 
       console.log('✅ phoneVerify response:', resp);
-      // resp = { token, user: { id, username, email, role }, is_new }
 
+      // ✅ Пишем auth_token в localStorage — addToCart уже уйдёт авторизованным
       setAuth({ token: resp.token, user: resp.user || null });
-      // refreshCart вызывается автоматически через 'auth-change' event в CartContext
 
-      // показываем success если это была регистрация (is_new) или flow === 'register'
+      // ✅ Переносим гостевые товары через CartContext — он знает актуальный токен и стейт
+      await mergeGuestCart(guestItems);
+
+      // ✅ Только теперь говорим CartContext перезагрузить корзину —
+      // все товары уже на сервере, получим актуальное состояние
+      window.dispatchEvent(new Event('auth-change-done'));
+
       if (resp.is_new || flow === 'register') {
         openSuccess();
       } else {
@@ -232,7 +242,6 @@ export function AuthModalsProvider({ children }) {
       <CodeModal
         isOpen={active === 'code'}
         onClose={closeAll}
-        // показываем сообщение от бэка или дефолтный текст
         displayMessage={
           sendMessage ||
           'Введите последние 4 цифры номера, с которого мы позвонили вам'

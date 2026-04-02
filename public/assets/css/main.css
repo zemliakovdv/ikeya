@@ -7089,7 +7089,7 @@ main {
     background: #fff;
     border-top: 1px solid #E0E0E0;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    max-height: 1000vh;
+    max-height: 100vh;
     overflow-y: auto;
 }
 
@@ -7098,14 +7098,22 @@ main {
     margin: 0 auto;
     display: flex;
     min-height: 400px;
+    align-items: flex-start;
 }
 
 /* Левая колонка — корневые категории */
 .mega-menu-overlay .sidebar {
     width: 300px;
+    max-height: 91vh;
     flex-shrink: 0;
     overflow-y: auto;
-    padding-top: 4px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
 }
 
 .mega-menu-overlay .menu-item {
@@ -7165,6 +7173,13 @@ main {
     grid-template-columns: repeat(3, 1fr);
     gap: 0 16px;
     align-content: start;
+    overflow-y: auto;
+    scrollbar-width: none;
+    max-height: 91vh;
+}
+
+.mega-menu::-webkit-scrollbar {
+  display: none;
 }
 
 .mega-menu-overlay .mega-menu-section {
@@ -7237,8 +7252,9 @@ main {
     gap: 4px;
     margin-top: 6px;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 600 !important;
     color: #0058A3;
+    text-decoration: underline;
 }
 
 .mega-menu-overlay .catalog-show__more:hover {

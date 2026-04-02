@@ -11,6 +11,7 @@ import { getTopCategories } from '@/lib/api/ikea'
 import MegaMenu from './MegaMenu'
 import SearchBox from './SearchBox'
 import PhoneDropdown from './PhoneDropdown'
+import MobilePhoneDropdown from './MobilePhoneDropdown'
 
 const FALLBACK_CATEGORIES = [
   { key: 'sofas', href: '/catalog', label: 'Диваны' },
@@ -149,7 +150,7 @@ export default function Header() {
                     <li><Link href="#">Сотрудничество</Link></li>
                   </ul>
                 </div>
-                <div className="header-top-phone">
+                <div className="header-top-phone header-top-phone--desktop">
                   <PhoneDropdown />
                 </div>
               </div>
@@ -168,6 +169,9 @@ export default function Header() {
                   <Link href="/" className="logo">
                     <img src="/assets/img/logo.svg" alt="Логотип" />
                   </Link>
+                  <div className="header-middle-phone--mobile">
+                    <MobilePhoneDropdown />
+                  </div>
                   <button
                     id="catalogButton"
                     className="catalog-btn"
