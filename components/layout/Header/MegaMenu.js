@@ -76,6 +76,18 @@ export default function MegaMenu({ isOpen, onClose }) {
     if (!isOpen) setActiveRootId(null)
   }, [isOpen])
 
+  // Блокируем скролл страницы при открытом меню
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
   // Активная корневая категория (по hover или первая по умолчанию)

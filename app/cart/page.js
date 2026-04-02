@@ -5,7 +5,9 @@ export default function CartPage() {
   return (
     <>
       <CartPageClient />
-      <CartRecommendations />
+      <div style={{ backgroundColor: '#FAFAFA' }}>
+        <CartRecommendations />
+      </div>
     </>
   );
 }
