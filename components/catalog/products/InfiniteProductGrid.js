@@ -37,9 +37,10 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
     const currentPage = pageRef.current;
 
     try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const url = categoryId
-        ? `/api/categories/${categoryId}/products?${queryString}&page=${currentPage}&per_page=20`
-        : `/api/products?page=${currentPage}&per_page=20`;
+        ? `${origin}/api/categories/${categoryId}/products?${queryString}&page=${currentPage}&per_page=20`
+        : `${origin}/api/products?page=${currentPage}&per_page=20`;
 
       const response = await fetch(url);
       const data = await response.json();
