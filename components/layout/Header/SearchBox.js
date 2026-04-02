@@ -122,11 +122,6 @@ export default function SearchBox() {
     setIsOpen(true)
   }
 
-  function handleClear() {
-    setQuery('')
-    setResults(null)
-    inputRef.current?.focus()
-  }
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -212,17 +207,9 @@ export default function SearchBox() {
           onFocus={handleFocus}
           autoComplete="off"
         />
-        {query ? (
-          <button type="button" className="search-but" onClick={handleClear} aria-label="Очистить">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6l12 12" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-          </button>
-        ) : (
-          <button type="submit" className="search-but">
-            <img src="/assets/img/icons/header-search.svg" alt="Поиск" />
-          </button>
-        )}
+        <button type="submit" className="search-but">
+          <img src="/assets/img/icons/header-search.svg" alt="Поиск" />
+        </button>
       </form>
 
       {isOpen && (
