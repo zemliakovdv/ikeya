@@ -89,6 +89,7 @@ export default async function CategoryPage({ params, searchParams }) {
     const showAllFilters = level >= 2 || childCategories.length === 0;
 
     const initialProducts = productsResponse.data || [];
+    console.log('productsResponse.meta:', JSON.stringify(productsResponse.meta));
 
     const queryParams = new URLSearchParams();
     if (sort) queryParams.set('sort', sort);
