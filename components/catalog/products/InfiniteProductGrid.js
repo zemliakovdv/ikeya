@@ -3,7 +3,24 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ProductCard from './ProductCard';
 
+const API_BASE_URL = 'http://45.135.234.22/api/v1';
+
 const sanitize = (arr) => (arr || []).filter(p => p && p.attributes);
+
+function filterByPrice(products, searchParams) {
+  const minPrice = parseFloat(searchParams.get('min_price') || '0') || 0;
+  const maxPrice = parseFloat(searchParams.get('max_price') || '0') || Infinity;
+  const hasMin = searchParams.get('min_price');
+  const hasMax = searchParams.get('max_price');
+  if (!hasMin && !hasMax) return products;
+  return products.filter(item => {
+    const price = parseFloat(item.attributes?.price_byn || item.attributes?.price || 0);
+    if (price <= 0) return false;
+    if (hasMin && price < minPrice) return false;
+    if (hasMax && price > maxPrice) return false;
+    return true;
+  });
+}
 
 export default function InfiniteProductGrid({ initialProducts, categoryId, totalPages, queryString = '' }) {
 
@@ -12,7 +29,6 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20);
 
-  // Рефы для актуальных значений внутри колбэка observer — без них замыкание устаревает
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
   const pageRef = useRef(2);
@@ -37,20 +53,26 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
     const currentPage = pageRef.current;
 
     try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const url = categoryId
-        ? `${origin}/api/categories/${categoryId}/products?${queryString}&page=${currentPage}&per_page=20`
-        : `${origin}/api/products?page=${currentPage}&per_page=20`;
+      const searchParams = new URLSearchParams(queryString);
+      searchParams.set('page', String(currentPage));
+      searchParams.set('per_page', '20');
 
-      const response = await fetch(url);
+      const url = categoryId
+        ? `${API_BASE_URL}/categories/${categoryId}/products?${searchParams.toString()}`
+        : `${API_BASE_URL}/products?${searchParams.toString()}`;
+
+      const response = await fetch(url, { cache: 'no-store' });
       const data = await response.json();
 
-      if (data.products && data.products.length > 0) {
-        setProducts(prev => [...prev, ...sanitize(data.products)]);
+      const rawProducts = data.data || [];
+      const filtered = filterByPrice(rawProducts, new URLSearchParams(queryString));
+
+      if (filtered.length > 0) {
+        setProducts(prev => [...prev, ...sanitize(filtered)]);
         pageRef.current = currentPage + 1;
         setPage(pageRef.current);
 
-        const more = data.meta?.current_page < data.meta?.total_pages;
+        const more = data.meta?.page < data.meta?.total_pages;
         hasMoreRef.current = more;
         setHasMore(more);
       } else {
@@ -65,9 +87,8 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [categoryId, queryString]); // ← только стабильные deps, без loading/hasMore/page
+  }, [categoryId, queryString]);
 
-  // Observer создаётся один раз — читает актуальное состояние через рефы
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -81,7 +102,7 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
     if (observerRef.current) observer.observe(observerRef.current);
 
     return () => observer.disconnect();
-  }, [loadMore]); // loadMore теперь стабилен — не пересоздаётся
+  }, [loadMore]);
 
   return (
     <>
@@ -103,7 +124,7 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
             justifyContent: 'center'
           }}
         >
-          {loading && <div className="loader">⏳ Загрузка...</div>}
+          {loading && <div className="page-loader__spinner" />}
         </div>
       )}
 
