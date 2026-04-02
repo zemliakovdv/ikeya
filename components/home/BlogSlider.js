@@ -1,38 +1,10 @@
 // components/home/BlogSlider.js
 'use client';
 
-import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function BlogSlider({ slides }) {
-  const swiperRef = useRef(null);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.Swiper) return;
-
-    const timer = setTimeout(() => {
-      swiperRef.current = new window.Swiper('.blog-inner', {
-        slidesPerView: 1,
-        spaceBetween: 24,
-        loop: slides.length > 1,
-        pagination: {
-          el: '.blog-slider__pagination',
-          clickable: true,
-        },
-        navigation: {
-          nextEl: '.blog-slider__nav-next',
-          prevEl: '.blog-slider__nav-prev',
-        },
-      });
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      if (swiperRef.current) swiperRef.current.destroy(true, true);
-    };
-  }, [slides]);
-
   return (
     <section className="blog">
       <div className="container">

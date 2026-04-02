@@ -271,10 +271,20 @@ export default function ClientScripts() {
         const sliderEl = document.querySelector('.blog-inner');
         if (!sliderEl) return;
 
+        const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+
+        // Скрываем стрелки если слайдов меньше 2
+        if (slideCount < 2) {
+          const prevBtn = document.querySelector('.blog-slider__nav-prev');
+          const nextBtn = document.querySelector('.blog-slider__nav-next');
+          if (prevBtn) prevBtn.style.display = 'none';
+          if (nextBtn) nextBtn.style.display = 'none';
+        }
+
         const blogSlider = new Swiper('.blog-inner', {
           slidesPerView: 1,
           spaceBetween: 0,
-          loop: true,
+          loop: slideCount > 1,
           speed: 600,
           watchOverflow: true,
 
