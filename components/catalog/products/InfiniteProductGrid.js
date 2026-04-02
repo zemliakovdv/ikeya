@@ -72,8 +72,10 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
         pageRef.current = currentPage + 1;
         setPage(pageRef.current);
 
+        console.log('meta after load:', JSON.stringify(data.meta));
         const currentPageNum = data.meta?.page || data.meta?.current_page;
         const more = currentPageNum < data.meta?.total_pages;
+        console.log('currentPageNum:', currentPageNum, 'total_pages:', data.meta?.total_pages, 'more:', more);
         hasMoreRef.current = more;
         setHasMore(more);
       } else {
