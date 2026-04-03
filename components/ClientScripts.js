@@ -272,13 +272,14 @@ export default function ClientScripts() {
         if (!sliderEl) return;
 
         const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+        const prevBtn = document.querySelector('.blog-slider__nav-prev');
+        const nextBtn = document.querySelector('.blog-slider__nav-next');
 
         // Скрываем стрелки если слайдов меньше 2
         if (slideCount < 2) {
-          const prevBtn = document.querySelector('.blog-slider__nav-prev');
-          const nextBtn = document.querySelector('.blog-slider__nav-next');
           if (prevBtn) prevBtn.style.display = 'none';
           if (nextBtn) nextBtn.style.display = 'none';
+          return;
         }
 
         const blogSlider = new Swiper('.blog-inner', {
@@ -296,6 +297,15 @@ export default function ClientScripts() {
           pagination: {
             el: '.blog-slider__pagination',
             clickable: true,
+          },
+
+          on: {
+            init: function () {
+              updateNavButtons(this, prevBtn, nextBtn);
+            },
+            slideChange: function () {
+              updateNavButtons(this, prevBtn, nextBtn);
+            }
           }
         });
       }
