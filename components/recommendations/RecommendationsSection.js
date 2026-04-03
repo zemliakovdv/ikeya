@@ -1,7 +1,7 @@
 // components/recommendations/RecommendationsSection.js
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import ProductCard from '@/components/catalog/products/ProductCard';
@@ -14,7 +14,6 @@ export default function RecommendationsSection({ products = [] }) {
   const prevRef = useRef(null);
   const nextRef = useRef(null);
   const paginationRef = useRef(null);
-  const [swiperReady, setSwiperReady] = useState(false);
 
   // Группируем товары по 5 в каждый слайд
   const groupedProducts = useMemo(() => {
@@ -24,11 +23,6 @@ export default function RecommendationsSection({ products = [] }) {
     }
     return grouped;
   }, [products]);
-
-  // Даём рефам проставиться до инициализации Swiper
-  useEffect(() => {
-    setSwiperReady(true);
-  }, []);
 
   return (
     <section className="reki">
@@ -44,33 +38,12 @@ export default function RecommendationsSection({ products = [] }) {
                     spaceBetween={0}
                     slidesPerView={1}
                     loop={groupedProducts.length > 1}
-                    // 👇 не используем глобальные селекторы — всё через refs
-                    navigation={swiperReady ? { prevEl: prevRef.current, nextEl: nextRef.current } : false}
-                    pagination={swiperReady ? { el: paginationRef.current, clickable: true } : false}
+                    navigation={{ prevEl: prevRef.current, nextEl: nextRef.current }}
+                    pagination={{ el: paginationRef.current, clickable: true }}
                     onBeforeInit={(swiper) => {
-                      // Swiper/react требует проставить элементы вручную до init
-                      if (!prevRef.current || !nextRef.current || !paginationRef.current) return;
-
                       swiper.params.navigation.prevEl = prevRef.current;
                       swiper.params.navigation.nextEl = nextRef.current;
                       swiper.params.pagination.el = paginationRef.current;
-                    }}
-                    onSwiper={(swiper) => {
-                      // На всякий случай — если refs подтянулись чуть позже
-                      if (!prevRef.current || !nextRef.current || !paginationRef.current) return;
-
-                      swiper.params.navigation.prevEl = prevRef.current;
-                      swiper.params.navigation.nextEl = nextRef.current;
-                      swiper.params.pagination.el = paginationRef.current;
-
-                      swiper.navigation?.destroy?.();
-                      swiper.navigation?.init?.();
-                      swiper.navigation?.update?.();
-
-                      swiper.pagination?.destroy?.();
-                      swiper.pagination?.init?.();
-                      swiper.pagination?.render?.();
-                      swiper.pagination?.update?.();
                     }}
                     className="products-slider"
                   >
