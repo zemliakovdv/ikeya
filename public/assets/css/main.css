@@ -30,6 +30,11 @@
     --web-page-category-list-max-width: 360px;
 }
 
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  display: none;
+}
+
 html,
 body {
     margin: 0;
