@@ -51,8 +51,8 @@ export default function ProductInfo({ product }) {
 
   // Пошлина
   const customsDuty = attr.customs_duty?.total_byn
-    ? Math.floor(attr.customs_duty.total_byn)
-    : Math.floor(parseFloat(attr.price) * 0.2);
+    ? Math.floor(attr.customs_duty.total_byn).toLocaleString('ru-RU')
+    : Math.floor(parseFloat(String(attr.price || 0).replace(/\s/g, '')) * 0.2).toLocaleString('ru-RU');
 
   // Промокод
   const promo = attr.promo;
@@ -95,8 +95,8 @@ export default function ProductInfo({ product }) {
         {/* Цена */}
         <div className="goods-costs">
           {(() => {
-            const price = parseFloat(attr.price_byn) || 0;
-            const priceInt = Math.floor(price);
+            const price = parseFloat(String(attr.price_byn || 0).replace(/\s/g, '')) || 0;
+            const priceInt = Math.floor(price).toLocaleString('ru-RU');
             const priceDec = (price % 1).toFixed(2).slice(2);
             return <p>{priceInt}<span>.{priceDec}</span></p>;
           })()}

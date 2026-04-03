@@ -78,8 +78,8 @@ export default function ProductStickyBar({ product }) {
     ? `${API_BASE_URL}/${attr.local_images[0]}`
     : '/assets/img/no-image.jpg';
 
-  const price = parseFloat(attr.price_byn) || 0;
-  const priceInt = Math.floor(price);
+  const price = parseFloat(String(attr.price_byn || 0).replace(/\s/g, '')) || 0;
+  const priceInt = Math.floor(price).toLocaleString('ru-RU');
   const priceDec = (price % 1).toFixed(2).slice(2);
 
   const rating = parseFloat(attr.rating_avg) || 0;

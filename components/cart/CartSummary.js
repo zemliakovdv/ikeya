@@ -160,7 +160,7 @@ export default function CartSummary({
           <p>Итого</p>
           <div></div>
           <p className="summery-total__total">
-            {Math.floor(finalTotal)}
+            {Math.floor(finalTotal).toLocaleString('ru-RU')}
             <span>.{(finalTotal % 1).toFixed(2).split('.')[1]} р.</span>
           </p>
         </div>

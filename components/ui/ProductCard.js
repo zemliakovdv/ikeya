@@ -28,8 +28,8 @@ export default function ProductCard({
   const [isHovered, setIsHovered] = useState(false);
 
   // Парсим цену
-  const priceNum = parseFloat((price || '0').toString().replace(',', '.')) || 0;
-  const priceWhole = Math.floor(priceNum);
+  const priceNum = parseFloat((price || '0').toString().replace(/\s/g, '').replace(',', '.')) || 0;
+  const priceWhole = Math.floor(priceNum).toLocaleString('ru-RU');
   const priceDecimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
 
   const productImages = images.length > 0 ? images : [PLACEHOLDER_IMAGE];

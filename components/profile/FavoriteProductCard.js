@@ -10,8 +10,8 @@ const API_BASE_URL = 'http://45.135.234.22';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
 
 function formatPrice(price) {
-  const num = Number(price || 0);
-  const int = Math.floor(num);
+  const num = parseFloat(String(price || 0).replace(/\s/g, ''));
+  const int = Math.floor(num).toLocaleString('ru-RU');
   const dec = ((num % 1) * 100).toFixed(0).padStart(2, '0');
   return { int, dec };
 }

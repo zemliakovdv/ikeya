@@ -52,9 +52,9 @@ export default function CartItem({
   const productUrl = `/product/${item.sku}`;
 
   // Цены — если pricing нули (бэк не посчитал), берём product.price_byn
-  const productPrice = parseFloat(product.price_byn || 0);
-  const pricingNew = parseFloat(pricing.unit_price_new_byn || 0);
-  const pricingOld = parseFloat(pricing.unit_price_old_byn || 0);
+  const productPrice = parseFloat(String(product.price_byn || 0).replace(/\s/g, ''));
+  const pricingNew = parseFloat(String(pricing.unit_price_new_byn || 0).replace(/\s/g, ''));
+  const pricingOld = parseFloat(String(pricing.unit_price_old_byn || 0).replace(/\s/g, ''));
   const newPrice = pricingNew > 0 ? pricingNew : productPrice;
   const oldPrice = pricingOld > 0 ? pricingOld : productPrice;
   const discount = parseFloat(pricing.unit_discount_byn || 0);
@@ -62,7 +62,7 @@ export default function CartItem({
 
   const formatPrice = (price) => {
     const [whole, cents] = price.toFixed(2).split('.');
-    return { whole, cents };
+    return { whole: Number(whole).toLocaleString('ru-RU'), cents };
   };
 
   const oldPriceFormatted = formatPrice(oldPrice);

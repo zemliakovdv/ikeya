@@ -94,7 +94,7 @@ export default function SearchPageContent() {
   const priceRange = useMemo(() => {
     const prods = results?.products?.data || [];
     const prices = prods
-      .map(p => parseFloat(p.attributes?.price_byn || p.attributes?.price || 0))
+      .map(p => parseFloat(String(p.attributes?.price_byn || p.attributes?.price || 0).replace(/\s/g, '')))
       .filter(p => p > 0);
     if (!prices.length) return { min: 0, max: 10000 };
     return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
@@ -279,7 +279,7 @@ export default function SearchPageContent() {
           <h1>
             {loading
               ? `Поиск по запросу «${q}»...`
-              : `По запросу «${q}» найдено ${products.length} товаров`
+              : `По запросу «${q}» найдено ${results?.meta?.total ?? products.length} товаров`
             }
           </h1>
 

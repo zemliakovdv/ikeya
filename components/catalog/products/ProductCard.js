@@ -105,8 +105,8 @@ export default function ProductCard({ product }) {
     setActiveVariantImg(variantImg);
   }, [activeVariantSku, router]);
 
-  const priceNum = parseFloat(attr.price_byn || attr.price || 0);
-  const price = Math.floor(priceNum);
+  const priceNum = parseFloat(String(attr.price_byn || attr.price || 0).replace(/\s/g, ''));
+  const price = Math.floor(priceNum).toLocaleString('ru-RU');
   const priceDecimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
 
   const badges = [];
