@@ -98,7 +98,7 @@ export default function ProductInfo({ product }) {
             const price = parseFloat(String(attr.price_byn || 0).replace(/\s/g, '')) || 0;
             const priceInt = Math.floor(price).toLocaleString('ru-RU');
             const priceDec = (price % 1).toFixed(2).slice(2);
-            return <p>{priceInt}<span>.{priceDec}</span></p>;
+            return <p>{priceInt}<span>.{priceDec} р.</span> </p>;
           })()}
 
           <div className="goods-delivery">
