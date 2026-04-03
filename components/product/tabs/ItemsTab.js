@@ -1,100 +1,135 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-export default function ItemsTab({ product }) {
-    const variants = product?.attributes?.variants || [];
+const API_BASE_URL = 'http://45.135.234.22';
 
-    if (variants.length === 0) {
-        return (
-            <div className="tab-predmety__content">
-                <p>Нет доступных вариантов.</p>
-            </div>
+function parseIncludedSkus(included_products) {
+  if (!Array.isArray(included_products) || included_products.length === 0) return [];
+  const raw = included_products[0];
+  if (!raw) return [];
+  if (typeof raw === 'string') {
+    try { return JSON.parse(raw); } catch { return []; }
+  }
+  if (Array.isArray(raw)) return raw;
+  return [];
+}
+
+function resolveImage(path) {
+  if (!path) return '/assets/img/no-image.jpg';
+  if (path.startsWith('http')) return path;
+  const clean = path.startsWith('/') ? path.slice(1) : path;
+  return `${API_BASE_URL}/${clean}`;
+}
+
+export default function ItemsTab({ product }) {
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+  const paginationRef = useRef(null);
+
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const skus = parseIncludedSkus(product?.attributes?.included_products);
+
+  useEffect(() => {
+    if (skus.length === 0) { setLoading(false); return; }
+
+    async function loadItems() {
+      setLoading(true);
+      try {
+        const results = await Promise.all(
+          skus.map(sku =>
+            fetch(`${API_BASE_URL}/api/v1/products/${sku}`)
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          )
         );
+        setItems(results.filter(Boolean).map(r => r.data).filter(Boolean));
+      } catch {
+        setItems([]);
+      } finally {
+        setLoading(false);
+      }
     }
 
+    loadItems();
+  }, [product?.id]);
+
+  if (loading) {
     return (
-        <div className="tab-predmety__content">
-            <div className="predmety-content__slider swiper">
-                <Swiper
-                    modules={[Navigation, Pagination]}
-                    spaceBetween={20}
-                    slidesPerView={1}
-                    navigation={{
-                        prevEl: '.predmety-slider__nav-prev',
-                        nextEl: '.predmety-slider__nav-next',
-                    }}
-                    pagination={{
-                        el: '.predmety-slider__pagination',
-                        clickable: true
-                    }}
-                    breakpoints={{
-                        640: { slidesPerView: 2 },
-                        992: { slidesPerView: 3 },
-                        1200: { slidesPerView: 4 }
-                    }}
-                    className="swiper-wrapper"
-                >
-                    {variants.map((variant, index) => {
-                        // Проверяем наличие локальных изображений
-                        let imageUrl = '/assets/img/no-image.jpg';
-                        
-                        if (variant.local_images) {
-                            if (typeof variant.local_images === 'string') {
-                                // Если строка - парсим JSON
-                                try {
-                                    const images = JSON.parse(variant.local_images);
-                                    if (images && images.length > 0) {
-                                        imageUrl = images[0];
-                                    }
-                                } catch (e) {
-                                    // Если не JSON, используем как есть
-                                    imageUrl = variant.local_images;
-                                }
-                            } else if (Array.isArray(variant.local_images) && variant.local_images.length > 0) {
-                                // Если массив
-                                imageUrl = variant.local_images[0];
-                            }
-                        }
-                        
-                        const name = variant.name || 'Товар';
-                        const typeName = variant.typeName || '';
-
-                        return (
-                            <SwiperSlide key={variant.id || index} className="predmety-slider__card swiper-slide">
-                                <img src={imageUrl} alt={name} />
-                                <span className="sales-hit pink">-10% промокод IKEYA</span>
-                                <button className="like">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 20.6106C11.34 20.6106 10.67 20.4006 10.1 19.9706C7.66 18.1506 2 13.4306 2 8.92062C2 5.82062 4.35 3.39062 7.35 3.39062C9.01 3.39062 10.43 4.01062 12 5.45062C13.57 4.01062 14.99 3.39062 16.65 3.39062C19.65 3.39062 22 5.82062 22 8.92062C22 13.4206 16.33 18.1406 13.9 19.9706C13.33 20.3906 12.67 20.6106 12 20.6106ZM7.35 4.79062C5.1 4.79062 3.4 6.57062 3.4 8.92062C3.4 12.9006 9.17 17.5206 10.94 18.8506C11.57 19.3206 12.43 19.3206 13.06 18.8506C14.83 17.5306 20.6 12.9006 20.6 8.92062C20.6 6.56062 18.9 4.79062 16.65 4.79062C15.59 4.79062 14.36 5.05062 12.49 6.91062C12.22 7.18062 11.78 7.18062 11.5 6.91062C9.64 5.05062 8.4 4.79062 7.34 4.79062H7.35Z" fill="#181818" />
-                                    </svg>
-                                </button>
-                                <p className="predmety-card__title">{name}</p>
-                                <span>{typeName}</span>
-                            </SwiperSlide>
-                        );
-                    })}
-                </Swiper>
-
-                {/* Пагинация */}
-                <div className="predmety-slider__pagination"></div>
-
-                {/* Навигация */}
-                <button className="predmety-slider__nav predmety-slider__nav-prev">
-                    <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                </button>
-                <button className="predmety-slider__nav predmety-slider__nav-next">
-                    <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                </button>
-            </div>
-        </div>
+      <div className="tab-predmety__content">
+        <p>Загрузка...</p>
+      </div>
     );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="tab-predmety__content">
+        <p>Нет доступных предметов в наборе.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="tab-predmety__content">
+      <div className="predmety-content__slider">
+        <Swiper
+          modules={[Navigation, Pagination]}
+          spaceBetween={20}
+          slidesPerView={1}
+          navigation={{ prevEl: prevRef.current, nextEl: nextRef.current }}
+          pagination={{ el: paginationRef.current, clickable: true }}
+          onBeforeInit={(swiper) => {
+            swiper.params.navigation.prevEl = prevRef.current;
+            swiper.params.navigation.nextEl = nextRef.current;
+            swiper.params.pagination.el = paginationRef.current;
+          }}
+          breakpoints={{
+            640: { slidesPerView: 2 },
+            992: { slidesPerView: 3 },
+            1200: { slidesPerView: 4 },
+          }}
+        >
+          {items.map((item) => {
+            const attr = item.attributes || {};
+            const img = resolveImage(attr.local_images?.[0]);
+            const name = attr.small_desc_name || attr.name_ru || attr.name || 'Товар';
+            const sku = attr.sku || item.id;
+
+            return (
+              <SwiperSlide key={item.id} className="predmety-slider__card">
+                <a href={`/product/${sku}`}>
+                  <img src={img} alt={name} onError={(e) => { e.target.src = '/assets/img/no-image.jpg'; }} />
+                  <p className="predmety-card__title">{name}</p>
+                  <p className="predmety-card__sku">Арт. {sku}</p>
+                </a>
+              </SwiperSlide>
+            );
+          })}
+        </Swiper>
+
+        {/* Пагинация */}
+        <div className="predmety-slider__pagination" ref={paginationRef} />
+
+        {/* Навигация */}
+        <button className="predmety-slider__nav predmety-slider__nav-prev" ref={prevRef} type="button">
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+            <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button className="predmety-slider__nav predmety-slider__nav-next" ref={nextRef} type="button">
+          <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+            <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
 }

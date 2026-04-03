@@ -20,7 +20,7 @@ export default function ProductTabs({ product }) {
   );
   const hasSizes        = Boolean(fa.size && Object.keys(fa.size).length > 0);
   const hasMaterials    = Boolean(fa.materials?.materials || fa.materials?.desc);
-  const hasItems        = false; // скрыт до появления данных в API
+  const hasItems        = Boolean(attr.included_products && attr.included_products.length > 0);
   const hasInstructions = Boolean(fa.instructions?.files && fa.instructions.files.length > 0);
   const hasReviews      = Boolean(attr.rating_count && attr.rating_count > 0);
   const hasDelivery     = true;

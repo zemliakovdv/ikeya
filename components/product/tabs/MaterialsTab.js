@@ -19,26 +19,27 @@ export default function MaterialsTab({ product }) {
     <div className="tab-pane fade show active">
       <div className="tab-material__content">
 
-        {/* Состав по частям */}
         {materialEntries.length > 0 && (
           <>
-            <h5>Материалы</h5>
-            {materialEntries.map(([part, value]) => (
-              <div key={part} className="size-info__item">
-                <p>{part}:</p>
-                <p>{value}</p>
-              </div>
-            ))}
+            <h2 className="tab-material__title">Материалы</h2>
+            <div className="tab-material__list">
+              {materialEntries.map(([part, value]) => (
+                <div key={part} className="tab-material__item">
+                  <p className="tab-material__label"><strong>{part}:</strong></p>
+                  <p className="tab-material__value">{value}</p>
+                </div>
+              ))}
+            </div>
           </>
         )}
 
-        {/* Уход */}
         {careDesc && (
-          <>
-            <h5 style={{ marginTop: '24px' }}>Уход</h5>
-            <p>{careDesc}</p>
-          </>
+          <div className="tab-material__care">
+            <h2 className="tab-material__title">Уход</h2>
+            <p className="tab-material__care-text">{careDesc}</p>
+          </div>
         )}
+
       </div>
     </div>
   )

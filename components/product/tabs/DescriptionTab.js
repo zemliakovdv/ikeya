@@ -19,11 +19,11 @@ export default function DescriptionTab({ product }) {
       <div className="tab-description__content">
         {shortDescription && <p>{shortDescription}</p>}
         {bulletPoints.length > 0 && (
-          <ul>
+          <div>
             {bulletPoints.map((point, i) => (
-              <li key={i}>{point}</li>
+              <p key={i}>{point}</p>
             ))}
-          </ul>
+          </div>
         )}
       </div>
     </div>
