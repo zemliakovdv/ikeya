@@ -4,11 +4,6 @@ export default function DeliveryTab({ product }) {
   return (
     <div className="tab-pane fade show active">
       <div className="tab-delivery__content">
-
-        {/* Самовывоз */}
-        <p>
-          Самовывоз <a href="#">со склада г. Минск</a>
-        </p>
         
         {/* Услуги в Минске */}
         <div className="delivery-not__minsk">
