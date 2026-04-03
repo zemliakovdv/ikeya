@@ -17,6 +17,14 @@ const POPULAR_QUERIES = [
   'Настольные лампы',
 ]
 
+// Статичные категории для блока "Часто ищут" — соответствуют POPULAR_QUERIES
+const POPULAR_CATEGORIES = [
+  { slug: 'sistemy-khraneniya', name: 'Системы хранения' },
+  { slug: 'sad-i-balkon', name: 'Сад и балкон' },
+  { slug: 'shkafy', name: 'Шкафы' },
+  { slug: 'nastolnye-lampy', name: 'Настольные лампы' },
+]
+
 function getHistory() {
   if (typeof window === 'undefined') return []
   try {
@@ -44,7 +52,6 @@ export default function SearchBox() {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState([])
-  const [popularCategories, setPopularCategories] = useState([])
   const wrapperRef = useRef(null)
   const inputRef = useRef(null)
   const debounceRef = useRef(null)
@@ -52,20 +59,6 @@ export default function SearchBox() {
 
   useEffect(() => {
     setHistory(getHistory())
-  }, [])
-
-  useEffect(() => {
-    async function loadPopular() {
-      try {
-        const res = await fetch(`${API_BASE_URL}/search/suggest?q=диван`)
-        if (!res.ok) return
-        const data = await res.json()
-        setPopularCategories((data?.categories?.data || []).slice(0, 4))
-      } catch {
-        // тихо игнорируем
-      }
-    }
-    loadPopular()
   }, [])
 
   useEffect(() => {
@@ -88,6 +81,18 @@ export default function SearchBox() {
     window.addEventListener('keydown', onEsc)
     return () => window.removeEventListener('keydown', onEsc)
   }, [])
+
+  // Блокировка скролла страницы при открытом дропдауне
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
   const fetchSuggestions = useCallback(async (q) => {
     if (!q || q.trim().length < 2) {
@@ -122,6 +127,13 @@ export default function SearchBox() {
     setIsOpen(true)
   }
 
+  // Правка #3: очистка поля по кнопке ×
+  function handleClear() {
+    setQuery('')
+    setResults(null)
+    setIsOpen(true)
+    inputRef.current?.focus()
+  }
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -160,14 +172,6 @@ export default function SearchBox() {
     )
   }
 
-  function formatPrice(price) {
-    if (!price) return ''
-    const num = parseFloat(price)
-    if (!num) return ''
-    const [whole, cents] = num.toFixed(2).split('.')
-    return `${whole}.${cents} р.`
-  }
-
   function categoryPath(cat) {
     return `/catalog/${cat.attributes?.slug || cat.slug || cat.id}/`
   }
@@ -191,8 +195,9 @@ export default function SearchBox() {
 
   const hasQuery = query.trim().length >= 2
   const suggestions = results?.suggestions || []
-  const categories = results?.categories?.data || []
+  const categories = results?.categories?.data || results?.categories || []
   const products = results?.products?.data || []
+  const isArticleQuery = /^[\d\s.,-]+$/.test(query.trim())
 
   return (
     <div className="header-middle-search search-box" ref={wrapperRef}>
@@ -207,6 +212,19 @@ export default function SearchBox() {
           onFocus={handleFocus}
           autoComplete="off"
         />
+        {/* Правка #3: кнопка × появляется когда есть текст */}
+        {query.length > 0 && (
+          <button
+            type="button"
+            className="search-clear"
+            onClick={handleClear}
+            aria-label="Очистить"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6l12 12" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
         <button type="submit" className="search-but">
           <img src="/assets/img/icons/header-search.svg" alt="Поиск" />
         </button>
@@ -251,7 +269,7 @@ export default function SearchBox() {
             </div>
           )}
 
-          {/* Поле пустое — нет истории: часто ищут + категории */}
+          {/* Поле пустое — нет истории: часто ищут + статичные категории */}
           {!hasQuery && history.length === 0 && (
             <>
               <div className="search-section">
@@ -275,27 +293,26 @@ export default function SearchBox() {
                 </ul>
               </div>
 
-              {popularCategories.length > 0 && (
-                <div className="search-section">
-                  <div className="search-section-title">Категории</div>
-                  <ul className="search-categories-list">
-                    {popularCategories.map((cat) => (
-                      <li key={cat.id}>
-                        <Link
-                          href={categoryPath(cat)}
-                          className="search-category-row"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          <strong>{cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name}</strong>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              {/* Правка #1: статичные категории вместо динамических из API */}
+              <div className="search-section">
+                <div className="search-section-title">Категории</div>
+                <ul className="search-categories-list">
+                  {POPULAR_CATEGORIES.map((cat) => (
+                    <li key={cat.slug}>
+                      <Link
+                        href={`/catalog/${cat.slug}/`}
+                        className="search-category-row"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <strong>{cat.name}</strong>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                          <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </>
           )}
 
@@ -322,7 +339,7 @@ export default function SearchBox() {
                 </ul>
               )}
 
-              {categories.length > 0 && (
+              {categories.length > 0 && !isArticleQuery && (
                 <div className="search-section">
                   <div className="search-section-title">Категории</div>
                   <ul className="search-categories-list">
@@ -333,7 +350,7 @@ export default function SearchBox() {
                           className="search-category-row"
                           onClick={() => setIsOpen(false)}
                         >
-                          <strong>{highlight(cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name || '', query)}</strong>
+                          {highlight(cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name || '', query)}
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                             <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -367,6 +384,7 @@ export default function SearchBox() {
                                 <div className="search-product-img-placeholder" />
                               )}
                             </div>
+                            {/* Правка #2: убрана цена, только название + хлебные крошки */}
                             <div className="search-product-info">
                               <div className="search-product-name">
                                 {highlight(attrs.small_desc_name || attrs.name_ru || attrs.name || '', query)}
@@ -375,9 +393,6 @@ export default function SearchBox() {
                                 <div className="search-product-breadcrumb">{breadcrumbText}</div>
                               )}
                             </div>
-                            {(attrs.price_byn || attrs.price) > 0 && (
-                              <div className="search-product-price">{formatPrice(attrs.price_byn || attrs.price)}</div>
-                            )}
                           </Link>
                         </li>
                       )
