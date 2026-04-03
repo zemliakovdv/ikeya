@@ -12,7 +12,7 @@ export default function RelatedProducts({ products }) {
         <div className="row">
           <div className="col-12">
             <div className="more-inner">
-              <h2>К этому товару подходят</h2>
+              <h2>Похожие товары</h2>
               <div className="products-card-slider">
                 <div className="products-slider swiper">
                   <div className="swiper-wrapper">
