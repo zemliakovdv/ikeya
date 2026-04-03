@@ -428,6 +428,7 @@ h2 {
 
 .search-category-row strong {
     font-weight: 600;
+    color: #181818;
 }
 
 /* Товары */
@@ -483,10 +484,14 @@ h2 {
 
 .search-product-name {
     font-size: 14px;
-    color: #333;
+    color: #181818;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.search-product-name strong{
+    color: #181818;
 }
 
 .search-product-breadcrumb {
@@ -7205,6 +7210,7 @@ main {
     display: flex;
     flex-direction: column;
     max-width: 380px;
+    margin-bottom: 15px;
 }
 
 .mega-menu-overlay .section-header {

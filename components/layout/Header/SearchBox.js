@@ -350,7 +350,7 @@ export default function SearchBox() {
                           className="search-category-row"
                           onClick={() => setIsOpen(false)}
                         >
-                          {highlight(cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name || '', query)}
+                          <span>{highlight(cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name || '', query)}</span>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                             <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
