@@ -61,8 +61,8 @@ export default function ProductInfo({ product }) {
     <div className="goods-content">
       <div className="goods-content__inner">
 
-        {attr.collection && (
-          <span className="goods-category">{attr.collection}</span>
+        {attr.name_ru && (
+          <span className="goods-category">{attr.name_ru}</span>
         )}
 
         <h1>{attr.small_desc_name || attr.name_ru || attr.name}</h1>
