@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import * as cartAPI from '@/lib/api/cart';
 import { getProductBySku, getRecommendedProducts } from '@/lib/api/ikea';
 import { getCartToken } from '@/lib/api/cart';
+import { useAuth } from '@/contexts/AuthContext';
 
 const CartContext = createContext();
 
@@ -17,6 +18,7 @@ function mergeWithOrder(prevItems = [], nextItems = []) {
 }
 
 export function CartProvider({ children }) {
+  const { isHydrated } = useAuth();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -61,6 +63,7 @@ export function CartProvider({ children }) {
   }, []);
 
   const fetchCart = useCallback(async () => {
+    console.log('fetchCart called, isHydrated:', isHydrated);
     try {
       setLoading(true);
       const response = await cartAPI.getCart();
@@ -100,8 +103,8 @@ export function CartProvider({ children }) {
     }
   }, [enrichCartItems]);
 
-  // Загружаем корзину при маунте
-  useEffect(() => { fetchCart(); }, [fetchCart]);
+  // Загружаем корзину при маунте — ждём пока AuthContext восстановит токен из localStorage
+  useEffect(() => { if (isHydrated) fetchCart(); }, [fetchCart, isHydrated]);
 
   // ✅ Логин: ждём auth-change-done — диспатчится из AuthModalsHost
   // ПОСЛЕ того как гостевые товары перенесены в авторизованную корзину

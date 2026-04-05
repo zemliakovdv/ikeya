@@ -6,6 +6,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import CartSummary from '@/components/cart/CartSummary';
 import DeliveryPickupModal from '@/components/profile/modals/DeliveryPickupModal';
+import EditPersonalDataModal from '@/components/profile/modals/EditPersonalDataModal';
+import EditPassportModal from '@/components/profile/modals/EditPassportModal';
 import { getProfile, checkout } from '@/lib/api/cart';
 
 export default function CheckoutPage() {
@@ -22,6 +24,8 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [showPvzModal, setShowPvzModal] = useState(false)
   const [showPassportData, setShowPassportData] = useState(false)
+  const [showPersonalModal, setShowPersonalModal] = useState(false)
+  const [showPassportModal, setShowPassportModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -47,6 +51,10 @@ export default function CheckoutPage() {
 
   // Паспорт заполнен?
   const hasPassport = Boolean(profile?.passport_data?.number && profile?.passport_data?.series)
+
+  // Адрес прописки заполнен?
+  const passportAddress = profile?.passport_data
+  const hasAddress = Boolean(passportAddress?.city || passportAddress?.street)
 
   // Можно оформить?
   const canCheckout = !!(fullName && profile?.phone && selectedPvz && items.length > 0 && !submitting)
@@ -113,7 +121,7 @@ export default function CheckoutPage() {
                           {/* ===== ПУНКТ ВЫДАЧИ ===== */}
                           <section className="checkout-section pickup-section">
                             <div className="section-header">
-                              <h2 className="section-title">Пункт выдачи</h2>
+                              <h2 className="section-title">Выберите способ получения</h2>
                             </div>
 
                             {selectedPvz ? (
@@ -152,9 +160,8 @@ export default function CheckoutPage() {
                                 className="select-button"
                                 type="button"
                                 onClick={() => setShowPvzModal(true)}
-                                style={{ marginTop: '12px' }}
                               >
-                                Выбрать пункт выдачи
+                                Выбрать
                               </button>
                             )}
                           </section>
@@ -166,13 +173,14 @@ export default function CheckoutPage() {
                             </div>
 
                             <div className="payment-methods">
+                              {/* Картой онлайн */}
                               <label className="payment-method">
                                 <input type="radio" name="payment_method" value="card"
                                   checked={paymentMethod === 'card'}
                                   onChange={e => setPaymentMethod(e.target.value)} />
                                 <div className="payment-card">
                                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                                    <path d="M27.7867 7.33333C27.5467 7.05333 27.2667 6.8 26.9867 6.57333C25.1733 5.14667 22.7333 5.14667 17.8667 5.14667H14.1467C9.27999 5.14667 6.82666 5.14667 5.02666 6.57333C4.73333 6.8 4.46666 7.05333 4.22666 7.33333C2.67999 9.06667 2.67999 11.3867 2.67999 16C2.67999 20.6133 2.67999 22.9333 4.22666 24.6667C4.46666 24.9333 4.74666 25.2 5.02666 25.4267C6.83999 26.8533 9.27999 26.8533 14.1467 26.8533H17.8667C22.7333 26.8533 25.1867 26.8533 27 25.4267C27.2933 25.2 27.56 24.9467 27.8 24.6667C29.3467 22.9333 29.3467 20.6133 29.3467 16C29.3467 11.3867 29.3467 9.06667 27.8 7.33333H27.7867Z" fill="#181818" />
+                                    <path d="M27.7867 7.33333C27.5467 7.05333 27.2667 6.8 26.9867 6.57333C25.1733 5.14667 22.7333 5.14667 17.8667 5.14667H14.1467C9.27999 5.14667 6.82666 5.14667 5.02666 6.57333C4.73333 6.8 4.46666 7.05333 4.22666 7.33333C2.67999 9.06667 2.67999 11.3867 2.67999 16C2.67999 20.6133 2.67999 22.9333 4.22666 24.6667C4.46666 24.9333 4.74666 25.2 5.02666 25.4267C6.83999 26.8533 9.27999 26.8533 14.1467 26.8533H17.8667C22.7333 26.8533 25.1867 26.8533 27 25.4267C27.2933 25.2 27.56 24.9467 27.8 24.6667C29.3467 22.9333 29.3467 20.6133 29.3467 16C29.3467 11.3867 29.3467 9.06667 27.8 7.33333H27.7867ZM5.58666 8.57333C5.75999 8.37333 5.94666 8.2 6.15999 8.04C7.46666 7.01333 9.69333 7.01333 14.1333 7.01333H17.8533C22.2933 7.01333 24.52 7.01333 25.8267 8.04C26.0267 8.2 26.2267 8.38667 26.4 8.57333C26.96 9.2 27.2267 10.08 27.3467 11.3467H4.65333C4.78666 10.0667 5.03999 9.2 5.59999 8.57333H5.58666ZM26.4 23.4267C26.2267 23.6267 26.0267 23.8 25.8267 23.96C24.52 24.9867 22.2933 24.9867 17.8533 24.9867H14.1333C9.69333 24.9867 7.46666 24.9867 6.15999 23.96C5.94666 23.8 5.75999 23.6133 5.58666 23.4267C4.51999 22.2267 4.51999 20.1467 4.51999 16C4.51999 14.9467 4.51999 14.0133 4.53333 13.2133H27.4533C27.4667 14.0267 27.4667 14.9467 27.4667 16C27.4667 20.1467 27.4667 22.2267 26.4 23.4267Z" fill="#181818" />
                                     <path d="M15.3733 20.0267H13.5067C12.9867 20.0267 12.5733 20.44 12.5733 20.96C12.5733 21.48 12.9867 21.8933 13.5067 21.8933H15.3733C15.8933 21.8933 16.3067 21.48 16.3067 20.96C16.3067 20.44 15.8933 20.0267 15.3733 20.0267Z" fill="#181818" />
                                     <path d="M23.44 20.0267H19.0933C18.5733 20.0267 18.16 20.44 18.16 20.96C18.16 21.48 18.5733 21.8933 19.0933 21.8933H23.44C23.96 21.8933 24.3733 21.48 24.3733 20.96C24.3733 20.44 23.96 20.0267 23.44 20.0267Z" fill="#181818" />
                                   </svg>
@@ -180,33 +188,13 @@ export default function CheckoutPage() {
                                 </div>
                               </label>
 
-                              <label className="payment-method">
-                                <input type="radio" name="payment_method" value="card_installment"
-                                  checked={paymentMethod === 'card_installment'}
-                                  onChange={e => setPaymentMethod(e.target.value)} />
-                                <div className="payment-card">
-                                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                                    <path d="M28.4 20.6533H24.9867V17.24C24.9867 16.72 24.5733 16.3067 24.0533 16.3067C23.5333 16.3067 23.12 16.72 23.12 17.24V20.6533H19.7067C19.1867 20.6533 18.7733 21.0667 18.7733 21.5867C18.7733 22.1067 19.1867 22.52 19.7067 22.52H23.12V25.9333C23.12 26.4533 23.5333 26.8667 24.0533 26.8667C24.5733 26.8667 24.9867 26.4533 24.9867 25.9333V22.52H28.4C28.92 22.52 29.3333 22.1067 29.3333 21.5867C29.3333 21.0667 28.92 20.6533 28.4 20.6533Z" fill="#757575" />
-                                  </svg>
-                                  <span>Картой рассрочки</span>
-                                </div>
-                              </label>
-
+                              {/* ЕРИП */}
                               <label className="payment-method">
                                 <input type="radio" name="payment_method" value="erip"
                                   checked={paymentMethod === 'erip'}
                                   onChange={e => setPaymentMethod(e.target.value)} />
                                 <div className="payment-card">
                                   <img src="/assets/img/cart/erip.png" alt="ЕРИП" width="89" height="49" />
-                                </div>
-                              </label>
-
-                              <label className="payment-method">
-                                <input type="radio" name="payment_method" value="oplati"
-                                  checked={paymentMethod === 'oplati'}
-                                  onChange={e => setPaymentMethod(e.target.value)} />
-                                <div className="payment-card">
-                                  <img src="/assets/img/cart/oplati.png" alt="Оплати" width="89" height="48" />
                                 </div>
                               </label>
                             </div>
@@ -216,6 +204,15 @@ export default function CheckoutPage() {
                           <section className="checkout-section">
                             <div className="section-header">
                               <h2 className="section-title">Получатель</h2>
+                              {profile && (
+                                <button
+                                  className="change-link"
+                                  type="button"
+                                  onClick={() => setShowPersonalModal(true)}
+                                >
+                                  Изменить
+                                </button>
+                              )}
                             </div>
 
                             {loadingProfile ? (
@@ -259,6 +256,13 @@ export default function CheckoutPage() {
                             <section className="checkout-section">
                               <div className="section-header">
                                 <h2 className="section-title">Паспортные данные</h2>
+                                <button
+                                  className="change-link"
+                                  type="button"
+                                  onClick={() => setShowPassportModal(true)}
+                                >
+                                  {hasPassport ? 'Изменить' : 'Изменить'}
+                                </button>
                               </div>
 
                               {!hasPassport ? (
@@ -319,9 +323,75 @@ export default function CheckoutPage() {
                             </section>
                           )}
 
-                          {/* Ошибка */}
+                          {/* ===== АДРЕС ПРОПИСКИ ===== */}
+                          {profile && hasAddress && (
+                            <section className="checkout-section address-section">
+                              <h2 className="section-title">Адрес прописки</h2>
+                              <div className="address-data">
+                                {(passportAddress.region || passportAddress.city) && (
+                                  <div className="data-row data-row-split">
+                                    {passportAddress.region && (
+                                      <div className="data-column">
+                                        <span className="data-label">Область</span>
+                                        <span className="data-value">{passportAddress.region}</span>
+                                      </div>
+                                    )}
+                                    {passportAddress.city && (
+                                      <div className="data-column">
+                                        <span className="data-label">Город</span>
+                                        <span className="data-value">{passportAddress.city}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {(passportAddress.postcode || passportAddress.street) && (
+                                  <div className="data-row data-row-split">
+                                    {passportAddress.postcode && (
+                                      <div className="data-column">
+                                        <span className="data-label">Индекс</span>
+                                        <span className="data-value">{passportAddress.postcode}</span>
+                                      </div>
+                                    )}
+                                    {passportAddress.street && (
+                                      <div className="data-column">
+                                        <span className="data-label">Улица</span>
+                                        <span className="data-value">{passportAddress.street}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {(passportAddress.house || passportAddress.building) && (
+                                  <div className="data-row data-row-split">
+                                    {passportAddress.house && (
+                                      <div className="data-column">
+                                        <span className="data-label">Дом</span>
+                                        <span className="data-value">{passportAddress.house}</span>
+                                      </div>
+                                    )}
+                                    {passportAddress.building && (
+                                      <div className="data-column">
+                                        <span className="data-label">Корпус</span>
+                                        <span className="data-value">{passportAddress.building}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {passportAddress.apartment && (
+                                  <div className="data-row">
+                                    <span className="data-label">Квартира</span>
+                                    <span className="data-value">{passportAddress.apartment}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </section>
+                          )}
+
+                          {/* Ошибка оформления */}
                           {error && (
                             <div className="alert alert-warning" style={{ marginTop: '16px' }}>
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
+                              </svg>
                               <span>{error}</span>
                             </div>
                           )}
@@ -356,6 +426,30 @@ export default function CheckoutPage() {
         <DeliveryPickupModal
           onClose={() => setShowPvzModal(false)}
           onSelect={handlePvzSelect}
+        />
+      )}
+
+      {/* Модалка редактирования личных данных */}
+      {showPersonalModal && (
+        <EditPersonalDataModal
+          profile={profile}
+          onClose={() => setShowPersonalModal(false)}
+          onSave={(updated) => {
+            setProfile(updated)
+            setShowPersonalModal(false)
+          }}
+        />
+      )}
+
+      {/* Модалка редактирования паспортных данных */}
+      {showPassportModal && (
+        <EditPassportModal
+          profile={profile}
+          onClose={() => setShowPassportModal(false)}
+          onSave={(updated) => {
+            setProfile(updated)
+            setShowPassportModal(false)
+          }}
         />
       )}
     </main>

@@ -6098,14 +6098,14 @@ main {
 
 /* ========== СПОСОБЫ ОПЛАТЫ ========== */
 .payment-methods {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    display: flex;
     gap: 16px;
 }
 
 .payment-method {
     position: relative;
     cursor: pointer;
+    max-width: 156px;
 }
 
 .payment-method input[type="radio"] {
@@ -6127,6 +6127,7 @@ main {
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     transition: all 0.3s;
+    width: 156px;
 }
 
 .payment-card svg path {
@@ -6232,11 +6233,6 @@ main {
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 16px;
-}
-
-.pickup-section .section-header {
-    padding-bottom: 16px;
-    border-bottom: 1px solid #e0e0e0;
 }
 
 .pickup-section .alert {
