@@ -5,11 +5,17 @@ import { useState } from 'react';
 
 const API_BASE_URL = 'http://45.135.234.22';
 
+// Нормализует любой путь к картинке — убирает двойные слеши
+function resolveImage(path) {
+  if (!path) return '/assets/img/placeholder.png';
+  if (path.startsWith('http')) return path;
+  const clean = path.replace(/^\/+/, '');
+  return `${API_BASE_URL}/${clean}`;
+}
+
 export default function ProductColors({ variants, currentSku, localImages }) {
   const [selectedSku, setSelectedSku] = useState(currentSku);
 
-  // variants приходит как массив { color, item } из API
-  // Фильтруем только те, у которых есть item.sku
   const colorVariants = variants.filter(v => v.item?.sku);
 
   if (colorVariants.length === 0) {
@@ -28,16 +34,9 @@ export default function ProductColors({ variants, currentSku, localImages }) {
           const item = variant.item;
           const isActive = item.sku === selectedSku;
 
-          // Берём изображение из item.images, иначе fallback из localImages
-          const variantImg = Array.isArray(item.images) && item.images.length > 0
-            ? item.images[0]
-            : null;
-          const fallbackImg = localImages && localImages[index]
-            ? `${API_BASE_URL}/${localImages[index]}`
-            : '/assets/img/placeholder.png';
-          const imgSrc = variantImg
-            ? (variantImg.startsWith('http') ? variantImg : `${API_BASE_URL}/${variantImg}`)
-            : fallbackImg;
+          const imgSrc = Array.isArray(item.images) && item.images.length > 0
+            ? resolveImage(item.images[0])
+            : resolveImage(localImages?.[index]);
 
           return (
             <button

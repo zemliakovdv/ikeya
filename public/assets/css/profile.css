@@ -202,6 +202,29 @@
         cursor: pointer;
     }
 
+    .help-links {
+        display: flex;
+        align-content: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding-top: 12px;
+    }
+
+    .help-link-card {
+        width: 33%;
+        max-width: 357px;
+        padding: 16px 18px;
+        background: #fafafa;
+        border: none;
+        display: flex;
+        gap: 16px;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 143%;
+        letter-spacing: 0.02em;
+        color: #181818;
+    }
+
     .orders {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -225,6 +248,29 @@
         gap: 12px;
         align-items: center;
         cursor: pointer;
+    }
+
+    .profile-warning-banner {
+        display: flex;
+        align-items: center;
+        background: #fff;
+        padding: 16px;
+        border-radius: 8px;
+        gap: 16px;
+    }
+
+    .profile-warning-banner p {
+        margin-bottom: 0;
+        font-weight: 400;
+        font-size: 14px;
+        line-height: 143%;
+        letter-spacing: 0.02em;
+        color: #b71c1c;
+    }
+
+    .profile-warning-banner p strong {
+        font-weight: 600;
+        letter-spacing: 0.01em;
     }
 
     .order-image {
@@ -2117,6 +2163,49 @@
         flex-shrink: 0;
     }
 
+    .email-status {
+        margin-top: 8px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        line-height: 133%;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+    }
+
+    .email-status--unverified {
+        color: #b71c1c;
+    }
+
+    .email-status--verified {
+        color: #00910a;
+    }
+
+    .btn-confirm-email {
+        border-radius: 8px;
+        padding: 10px 16px;
+        background: #0058a3;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 143%;
+        letter-spacing: 0.01em;
+        text-align: center;
+        color: #fff;
+    }
+
+    #editPhoneModal {
+        --bs-modal-width: 560px !important;
+    }
+
+    #editPhoneModal .form-info .info-text .info-link {
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: #0058a3;
+    }
+
     /* ========== АДРЕСА ДОСТАВКИ ========== */
 
     .address-item {
@@ -2254,9 +2343,8 @@
 
     .passport-data .data-section__title {
         font-weight: 600;
-        font-size: 14px;
-        line-height: 143%;
-        letter-spacing: 0.01em;
+        font-size: 18px;
+        line-height: 133%;
         color: #181818;
         margin: 0;
     }
@@ -2283,6 +2371,14 @@
 
     .data-section__body p {
         margin-bottom: 0;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 150%;
+        letter-spacing: 0.03em;
+        color: #181818;
+    }
+
+    .data-section__body .data-item__value--empty {
         font-weight: 400;
         font-size: 14px;
         line-height: 143%;
@@ -2445,6 +2541,8 @@
         color: #fff;
     }
 
+
+
     #editPersonalDataModal .radio-group .radio-item input {
         width: 20px;
         height: 20px;
@@ -2541,6 +2639,60 @@
     #editPassportModal .modal-body {
         padding: 8px 24px 24px 24px;
         flex: unset;
+    }
+
+    .passport-country {
+        margin-bottom: 16px;
+    }
+
+    .fio-row .form-group {
+        width: 33%;
+        max-width: 280px;
+    }
+
+    .passport-row--series .datepicker-wrap {
+        max-width: 428px;
+    }
+
+    .who-group textarea {
+        max-height: 104px;
+    }
+
+    .who-group textarea::placeholder {
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 150%;
+        letter-spacing: 0.03em;
+        color: #9e9e9e;
+    }
+
+    .passport-row--id .form-group {
+        width: 50%;
+        max-width: 428px;
+    }
+
+    .passport-row--id .datepicker-wrap {
+        width: 50%;
+        max-width: 428px;
+    }
+
+    .passport-row--address1 .form-group {
+        width: 25%;
+        max-width: 206px;
+    }
+
+    .passport-row--address1 .form-group:first-child {
+        width: 50%;
+        max-width: 428px;
+    }
+
+    .passport-row--address2 .form-group:first-child {
+        width: 50%;
+        max-width: 428px;
+    }
+
+    .passport-row--address2 .form-group {
+        max-width: 132px;
     }
 
     /* ========== ВЫБОР СТРАНЫ ========== */
@@ -2739,6 +2891,15 @@
     .btn-primary:hover {
         background: #004080;
         border-color: #004080;
+    }
+
+    .modal-footer-buttons .btn-primary:disabled {
+        background: #e0e0e0;
+        color: #9e9e9e;
+        cursor: not-allowed;
+        pointer-events: none;
+        user-select: none;
+        border: none;
     }
 
     /* Скроллбар для модального окна */

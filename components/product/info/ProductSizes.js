@@ -5,22 +5,22 @@ import Link from 'next/link';
 
 const API_BASE_URL = 'http://45.135.234.22';
 
+// Нормализует любой путь к картинке — убирает двойные слеши
 function resolveImage(path) {
   if (!path) return '/assets/img/no-image.jpg';
   if (path.startsWith('http')) return path;
-  const clean = path.startsWith('/') ? path.slice(1) : path;
+  const clean = path.replace(/^\/+/, '');
   return `${API_BASE_URL}/${clean}`;
 }
 
 export default function ProductSizes({ variants, currentPrice, productImage }) {
-  // variants приходит как массив { size, item } из API
   const sizeVariants = variants.filter(v => v.item?.sku);
 
   if (sizeVariants.length === 0) {
     return null;
   }
 
-  const imageUrl = productImage ? resolveImage(productImage) : '/assets/img/no-image.jpg';
+  const imageUrl = resolveImage(productImage);
 
   return (
     <div className="goods-sizes">
