@@ -5,7 +5,6 @@
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import PvzMapContent from '@/components/pvz/PvzMapContent';
-import { updateProfile } from '@/lib/api/account';
 
 const YMAPS_API_KEY = 'ee57964a-5010-4536-9733-41c78d29d531';
 const YMAPS_SRC = `https://api-maps.yandex.ru/2.1/?apikey=${YMAPS_API_KEY}&lang=ru_RU`;
@@ -37,12 +36,7 @@ export default function DeliveryPickupModal({ onClose, onSelect }) {
     setNeedScript(true);
   }, []);
 
-  const handleSelect = async (point) => {
-    try {
-      await updateProfile({ pickup_point_id: point.id });
-    } catch (e) {
-      console.error('Ошибка сохранения ПВЗ:', e);
-    }
+  const handleSelect = (point) => {
     onSelect?.(point);
     onClose?.();
   };

@@ -69,6 +69,7 @@ export default function DatePicker({
     const [viewYear, setViewYear] = useState(selected?.getFullYear() ?? today.getFullYear());
     const [viewMonth, setViewMonth] = useState(selected?.getMonth() ?? today.getMonth());
     const [open, setOpen] = useState(false);
+    const [yearPickerOpen, setYearPickerOpen] = useState(false);
 
     const wrapRef = useRef(null);
 
@@ -198,21 +199,28 @@ export default function DatePicker({
                         <button
                             type="button"
                             className="datepicker-nav"
-                            onClick={e => { e.stopPropagation(); prevMonth(); }}
+                            onClick={e => { e.stopPropagation(); if (!yearPickerOpen) prevMonth(); }}
                         >
                             <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
                                 <path d="M7 1L1 7L7 13" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                         </button>
 
-                        <span className="datepicker-title">
+                        <button
+                            type="button"
+                            className="datepicker-title datepicker-title--btn"
+                            onClick={e => { e.stopPropagation(); setYearPickerOpen(v => !v); }}
+                        >
                             {MONTHS_RU[viewMonth]} {viewYear}
-                        </span>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ marginLeft: 4 }}>
+                                <path d={yearPickerOpen ? "M2 8L6 4L10 8" : "M2 4L6 8L10 4"} stroke="#757575" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                        </button>
 
                         <button
                             type="button"
                             className="datepicker-nav"
-                            onClick={e => { e.stopPropagation(); nextMonth(); }}
+                            onClick={e => { e.stopPropagation(); if (!yearPickerOpen) nextMonth(); }}
                         >
                             <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
                                 <path d="M1 1L7 7L1 13" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -220,14 +228,33 @@ export default function DatePicker({
                         </button>
                     </div>
 
+                    {/* Выбор года */}
+                    {yearPickerOpen && (
+                        <div className="datepicker-year-grid">
+                            {Array.from({ length: 100 }, (_, i) => today.getFullYear() - 99 + i).reverse().map(year => (
+                                <button
+                                    key={year}
+                                    type="button"
+                                    className={`datepicker-year ${year === viewYear ? 'datepicker-year--selected' : ''}`}
+                                    onClick={e => { e.stopPropagation(); setViewYear(year); setYearPickerOpen(false); }}
+                                >
+                                    {year}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Дни недели */}
+                    {!yearPickerOpen && (
                     <div className="datepicker-weekdays">
                         {DAYS_RU.map(d => (
                             <span key={d} className="datepicker-weekday">{d}</span>
                         ))}
                     </div>
+                    )}
 
                     {/* Сетка дней */}
+                    {!yearPickerOpen && (
                     <div className="datepicker-grid">
                         {cells.map((cell, idx) => {
                             const sel = cell.current && isSelected(cell.day);
@@ -249,8 +276,10 @@ export default function DatePicker({
                             );
                         })}
                     </div>
+                    )}
 
                     {/* Очистить */}
+                    {!yearPickerOpen && (
                     <div className="datepicker-footer">
                         <button
                             type="button"
@@ -260,6 +289,7 @@ export default function DatePicker({
                             Очистить
                         </button>
                     </div>
+                    )}
 
                 </div>
             )}

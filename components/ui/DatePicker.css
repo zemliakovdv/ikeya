@@ -185,3 +185,71 @@
 .req {
   color: #b71c1c;
 }
+
+/* ─── Кнопка заголовка (месяц/год) ───────────────────────── */
+.datepicker-title--btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #181818;
+  padding: 0;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+
+.datepicker-title--btn:hover {
+  color: #0058A3;
+}
+
+/* ─── Сетка выбора года ───────────────────────────────────── */
+.datepicker-year-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 4px 0;
+  scrollbar-width: thin;
+  scrollbar-color: #e0e0e0 transparent;
+}
+
+.datepicker-year-grid::-webkit-scrollbar {
+  width: 4px;
+}
+
+.datepicker-year-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.datepicker-year-grid::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 4px;
+}
+
+.datepicker-year {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #181818;
+  text-align: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.datepicker-year:hover {
+  background: #e8f0fe;
+  color: #0058A3;
+}
+
+.datepicker-year--selected {
+  background: #0058A3;
+  color: #fff;
+  font-weight: 600;
+}
