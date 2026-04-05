@@ -47,7 +47,13 @@ export default function ProductInfo({ product }) {
   const rating = parseFloat(attr.rating_avg) || 0;
   const ratingCount = attr.rating_count || 0;
   const localImages = Array.isArray(attr.local_images) ? attr.local_images : [];
-  const variants = Array.isArray(attr.variants) ? attr.variants : [];
+
+  // Правильный парсинг variants: API отдаёт объект { type, data }, не массив
+  const variantsRaw = attr.variants && typeof attr.variants === 'object' && !Array.isArray(attr.variants)
+    ? attr.variants
+    : {};
+  const variantType = variantsRaw.type || null;         // 'color' | 'size' | null
+  const variantsData = Array.isArray(variantsRaw.data) ? variantsRaw.data : [];
 
   // Пошлина
   const customsDuty = attr.customs_duty?.total_byn
@@ -150,8 +156,24 @@ export default function ProductInfo({ product }) {
           </button>
         )}
 
-        <ProductColors variants={variants} currentSku={attr.sku} localImages={localImages} />
-        <ProductSizes variants={variants} currentPrice={parseFloat(attr.price)} productImage={localImages[0]} />
+        {/* Варианты по цвету — только если type === 'color' */}
+        {variantType === 'color' && variantsData.length > 0 && (
+          <ProductColors
+            variants={variantsData}
+            currentSku={attr.sku}
+            localImages={localImages}
+          />
+        )}
+
+        {/* Варианты по размеру — только если type === 'size' */}
+        {variantType === 'size' && variantsData.length > 0 && (
+          <ProductSizes
+            variants={variantsData}
+            currentPrice={parseFloat(attr.price)}
+            productImage={localImages[0]}
+          />
+        )}
+
         <ProductParameters product={product} />
         <ProductDeliveryLink />
         <ProductConsultation />

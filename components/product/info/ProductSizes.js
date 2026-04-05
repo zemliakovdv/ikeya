@@ -13,7 +13,10 @@ function resolveImage(path) {
 }
 
 export default function ProductSizes({ variants, currentPrice, productImage }) {
-  if (!variants || variants.length === 0) {
+  // variants приходит как массив { size, item } из API
+  const sizeVariants = variants.filter(v => v.item?.sku);
+
+  if (sizeVariants.length === 0) {
     return null;
   }
 
@@ -23,24 +26,25 @@ export default function ProductSizes({ variants, currentPrice, productImage }) {
     <div className="goods-sizes">
       <h2>Варианты:</h2>
       <div className="goods-sizes__card">
-        {variants.map((variant, index) => {
-          const variantPrice = parseFloat(String(variant.price || 0).replace(/\s/g, '')) || 0;
+        {sizeVariants.map((variant, index) => {
+          const item = variant.item;
+          const label = variant.size || item.small_desc_name || item.name_ru || `Вариант ${index + 1}`;
+
+          const variantPrice = parseFloat(String(item.price || 0).replace(/\s/g, '')) || 0;
           const basePrice = parseFloat(String(currentPrice || 0).replace(/\s/g, '')) || 0;
           const priceDiff = variantPrice - basePrice;
           const priceDiffAbs = Math.abs(priceDiff).toFixed(2);
           const isPositive = priceDiff > 0;
           const isZero = Math.abs(priceDiff) < 0.01;
 
-          const variantImg = Array.isArray(variant.images) && variant.images.length > 0
-            ? resolveImage(variant.images[0])
+          const variantImg = Array.isArray(item.images) && item.images.length > 0
+            ? resolveImage(item.images[0])
             : imageUrl;
-
-          const label = variant.name_ru || variant.small_desc_name || `Вариант ${index + 1}`;
 
           return (
             <Link
-              key={variant.sku || index}
-              href={`/product/${variant.sku}`}
+              key={item.sku}
+              href={`/product/${item.sku}`}
               className="goods-sizes__item"
             >
               <img src={variantImg} alt={label} />

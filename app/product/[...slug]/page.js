@@ -13,9 +13,17 @@ import { getCachedCategoriesTree } from '@/lib/api/ikea';
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
 // Извлекаем SKU из последнего сегмента slug
+// Если slug — чистое число (например "20530664"), возвращаем его как есть
+// Если slug содержит дефисы (например "lvdalen-20530664"), берём последний сегмент
 function extractSKU(slug) {
   const parts = slug.split('-');
-  return parts[parts.length - 1];
+  const last = parts[parts.length - 1];
+  // Если последний сегмент — число, это SKU
+  if (/^\d+$/.test(last)) return last;
+  // Если весь slug — число (передали SKU напрямую)
+  if (/^\d+$/.test(slug)) return slug;
+  // Иначе возвращаем как есть (fallback)
+  return slug;
 }
 
 // Получаем данные товара

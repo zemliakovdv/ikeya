@@ -8,49 +8,48 @@ const API_BASE_URL = 'http://45.135.234.22';
 export default function ProductColors({ variants, currentSku, localImages }) {
   const [selectedSku, setSelectedSku] = useState(currentSku);
 
-  // Варианты у которых есть имя (название цвета/варианта)
-  const colorVariants = variants.filter(v => v.sku && v.name);
+  // variants приходит как массив { color, item } из API
+  // Фильтруем только те, у которых есть item.sku
+  const colorVariants = variants.filter(v => v.item?.sku);
 
   if (colorVariants.length === 0) {
     return null;
   }
 
-  const activeVariant = colorVariants.find(v => v.sku === selectedSku) || colorVariants[0];
+  const activeVariant = colorVariants.find(v => v.item.sku === selectedSku) || colorVariants[0];
+  const activeColorName = activeVariant?.color || '—';
 
   return (
     <div className="goods-color">
-      <p>Вариант: <span>{activeVariant?.name || '—'}</span></p>
+      <p>Цвет: <span>{activeColorName}</span></p>
 
       <div className="goods-color__buttons">
         {colorVariants.map((variant, index) => {
-          // Берём изображение: сначала из самого варианта, потом из localImages по индексу
-          const variantImg = Array.isArray(variant.images) && variant.images.length > 0
-            ? variant.images[0]
-            : null
+          const item = variant.item;
+          const isActive = item.sku === selectedSku;
+
+          // Берём изображение из item.images, иначе fallback из localImages
+          const variantImg = Array.isArray(item.images) && item.images.length > 0
+            ? item.images[0]
+            : null;
           const fallbackImg = localImages && localImages[index]
             ? `${API_BASE_URL}/${localImages[index]}`
-            : '/assets/img/placeholder.png'
+            : '/assets/img/placeholder.png';
           const imgSrc = variantImg
             ? (variantImg.startsWith('http') ? variantImg : `${API_BASE_URL}/${variantImg}`)
-            : fallbackImg
-
-          const isActive = variant.sku === selectedSku;
+            : fallbackImg;
 
           return (
             <button
-              key={variant.sku}
+              key={item.sku}
               className={`goods-color__item ${isActive ? 'active' : ''}`}
-              title={variant.name}
+              title={variant.color}
               onClick={() => {
-                setSelectedSku(variant.sku);
-                const slug = `${(variant.name || 'product').toLowerCase().replace(/[^a-zа-я0-9]+/gi, '-')}-${variant.sku}`;
-                window.location.href = `/product/${slug}`;
+                setSelectedSku(item.sku);
+                window.location.href = `/product/${item.sku}`;
               }}
             >
-              <img
-                src={imgSrc}
-                alt={variant.name}
-              />
+              <img src={imgSrc} alt={variant.color || ''} />
             </button>
           );
         })}
