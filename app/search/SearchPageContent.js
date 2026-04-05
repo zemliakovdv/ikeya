@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import ProductCard from '@/components/catalog/products/ProductCard';
 import PriceFilter from '@/components/catalog/sidebar/PriceFilter';
 import CheckboxFilter from '@/components/catalog/sidebar/CheckboxFilter';
 import FilterChips from '@/components/catalog/FilterChips';
+import SearchNotFound from '@/components/catalog/SearchNotFound';
+import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
@@ -284,7 +286,8 @@ export default function SearchPageContent() {
           </h1>
 
           <div className="all-catalog-inner">
-            {/* Сайдбар */}
+            {/* Сайдбар — скрываем когда нет результатов */}
+            {(!(!loading && !hasResults && results !== null)) && (
             <aside className="filter-aside" style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', overflowY: 'auto', overflowX: 'hidden' }}>
 
               {/* Категории */}
@@ -335,11 +338,13 @@ export default function SearchPageContent() {
                 </button>
               )}
             </aside>
+            )}
 
             {/* Центральная колонка */}
-            <div className="all-catalog-center">
+            <div className="all-catalog-center" style={!loading && !hasResults && results !== null ? { width: '100%' } : {}}>
 
-              {/* Сортировка */}
+              {/* Сортировка — скрываем когда нет результатов */}
+              {(!(!loading && !hasResults && results !== null)) && (
               <div className="all-catalog-sort">
                 <div className="catalog-sort">
                   <div className="catalog-sort__selected" onClick={() => setSortOpen(v => !v)}>
@@ -363,6 +368,7 @@ export default function SearchPageContent() {
                   )}
                 </div>
               </div>
+              )}
 
               {/* Чипсы фильтров */}
               <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
@@ -387,14 +393,20 @@ export default function SearchPageContent() {
 
               {/* Нет результатов */}
               {!loading && !hasResults && results !== null && (
-                <div className="all-catalog-empty">
-                  <p>По запросу «{q}» ничего не найдено</p>
-                </div>
+                <SearchNotFound query={q} />
               )}
             </div>
           </div>
         </div>
       </section>
+
+      {/* Рекомендации — показываем когда ничего не найдено */}
+      {!loading && !hasResults && results !== null && (
+        <Suspense fallback={null}>
+          <NotFoundRecommendations />
+        </Suspense>
+      )}
+
     </main>
   );
 }

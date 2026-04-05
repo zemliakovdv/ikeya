@@ -1,37 +1,18 @@
 // components/profile/modals/EditPhoneModal.js
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { requestPhoneChange, verifyPhoneChange } from '@/lib/api/account';
+import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 
 const STEPS = { PHONE: 'phone', CODE: 'code', SUCCESS: 'success' };
-const RESEND_TIMEOUT = 30; // секунд
 
 export default function EditPhoneModal({ profile, onClose, onSave }) {
-  const [step,              setStep]              = useState(STEPS.PHONE);
-  const [phone,             setPhone]             = useState('');
-  const [digits,            setDigits]            = useState(['', '', '', '']);
-  const [callerMasked,      setCallerMasked]      = useState('');
-  const [loading,           setLoading]           = useState(false);
-  const [error,             setError]             = useState('');
-  const [countdown,         setCountdown]         = useState(0);
-
-  const inputRefs = useRef([]);
-  const timerRef  = useRef(null);
-
-  // Запускаем таймер обратного отсчёта
-  function startCountdown() {
-    setCountdown(RESEND_TIMEOUT);
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-  }
-
-  useEffect(() => () => clearInterval(timerRef.current), []);
+  const [step,         setStep]         = useState(STEPS.PHONE);
+  const [phone,        setPhone]        = useState('');
+  const [callerMasked, setCallerMasked] = useState('');
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
 
   // Шаг 1 — запрашиваем звонок
   const handleRequestCall = async (e) => {
@@ -41,7 +22,6 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
     try {
       const resp = await requestPhoneChange(phone);
       setCallerMasked(resp?.caller_number_masked || '');
-      startCountdown();
       setStep(STEPS.CODE);
     } catch (err) {
       setError(err.message || 'Ошибка отправки запроса');
@@ -50,42 +30,19 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
     }
   };
 
-  // Повторный запрос звонка
+  // Повторный запрос
   const handleResend = async () => {
-    if (countdown > 0) return;
     setError('');
     try {
       const resp = await requestPhoneChange(phone);
       setCallerMasked(resp?.caller_number_masked || '');
-      setDigits(['', '', '', '']);
-      startCountdown();
-      inputRefs.current[0]?.focus();
     } catch (err) {
       setError(err.message || 'Ошибка повторного запроса');
     }
   };
 
-  // Ввод цифры в отдельное поле
-  const handleDigitChange = (idx, value) => {
-    const digit = value.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[idx] = digit;
-    setDigits(next);
-    if (digit && idx < 3) {
-      inputRefs.current[idx + 1]?.focus();
-    }
-  };
-
-  const handleDigitKeyDown = (idx, e) => {
-    if (e.key === 'Backspace' && !digits[idx] && idx > 0) {
-      inputRefs.current[idx - 1]?.focus();
-    }
-  };
-
-  // Шаг 2 — подтверждаем
-  const handleVerifyCode = async () => {
-    const code = digits.join('');
-    if (code.length !== 4) return;
+  // Шаг 2 — подтверждаем код
+  const handleVerify = async (code) => {
     setLoading(true);
     setError('');
     try {
@@ -94,18 +51,25 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
       setStep(STEPS.SUCCESS);
     } catch (err) {
       setError(err.message || 'Неверный код');
-      setDigits(['', '', '', '']);
-      inputRefs.current[0]?.focus();
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCountdown = (s) => {
-    const mm = String(Math.floor(s / 60)).padStart(2, '0');
-    const ss = String(s % 60).padStart(2, '0');
-    return `${mm}:${ss}`;
-  };
+  // Шаг CODE — рендерим SmsVerifyModal
+  if (step === STEPS.CODE) {
+    return (
+      <SmsVerifyModal
+        userPhone={phone}
+        callerNumber={callerMasked}
+        onVerify={handleVerify}
+        onResend={handleResend}
+        onClose={onClose}
+        loading={loading}
+        error={error}
+      />
+    );
+  }
 
   return (
     <div className="modal fade show d-block" onClick={onClose} id="editPhoneModal">
@@ -133,88 +97,19 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
                   </div>
                   <div className="form-info">
                     <p className="info-text">
-                      Подробнее об <a href="#" className="info-link">условиях обработки</a> и <a href="#" className="info-link">правах, связанных с обработкой</a>
+                      Подробнее об <a href="#" className="info-link">условиях обработки и правах, связанных с обработкой</a>
                     </p>
                   </div>
                   {error && <p style={{ color: '#b71c1c', fontSize: '14px', marginBottom: '12px' }}>{error}</p>}
                   <div className="modal-footer-buttons">
-                    <button type="button" className="btn btn-outline" onClick={onClose} disabled={loading}>Отмена</button>
+                    <button type="button" className="btn btn-outline" onClick={onClose} disabled={loading}>
+                      Отмена
+                    </button>
                     <button type="submit" className="btn btn-primary" disabled={loading || !phone}>
                       {loading ? 'Отправляем…' : 'Получить звонок'}
                     </button>
                   </div>
                 </form>
-              </div>
-            </>
-          )}
-
-          {/* Шаг 2 — 4 отдельных поля для цифр */}
-          {step === STEPS.CODE && (
-            <>
-              <div className="modal-header">
-                <h5 className="modal-title">Идентификация пользователя</h5>
-                <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
-              </div>
-              <div className="modal-body">
-                <p className="confirmation-text" style={{ marginBottom: '20px' }}>
-                  Главное безопасность!<br />
-                  Введите последние 4 цифры номера, с которого мы звоним на Ваш номер:
-                  {callerMasked && <> <strong>{callerMasked}</strong></>}
-                </p>
-
-                {/* 4 отдельных поля */}
-                <div className="code-inputs">
-                  {digits.map((digit, idx) => (
-                    <input
-                      key={idx}
-                      ref={el => inputRefs.current[idx] = el}
-                      type="text"
-                      inputMode="numeric"
-                      className="code-input"
-                      maxLength={1}
-                      value={digit}
-                      onChange={e => handleDigitChange(idx, e.target.value)}
-                      onKeyDown={e => handleDigitKeyDown(idx, e)}
-                      autoFocus={idx === 0}
-                    />
-                  ))}
-                </div>
-
-                {error && <p style={{ color: '#b71c1c', fontSize: '14px', marginTop: '12px' }}>{error}</p>}
-
-                {/* Таймер повторного запроса */}
-                <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                  {countdown > 0 ? (
-                    <span className="resend-timer">
-                      Повторный запрос звонка через {formatCountdown(countdown)}
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="resend-link"
-                      onClick={handleResend}
-                    >
-                      Запросить звонок повторно
-                    </button>
-                  )}
-                </div>
-
-                <div className="modal-footer-buttons" style={{ marginTop: '20px' }}>
-                  <button
-                    type="button" className="btn btn-outline"
-                    onClick={() => { setStep(STEPS.PHONE); setDigits(['', '', '', '']); setError(''); }}
-                    disabled={loading}
-                  >
-                    Назад
-                  </button>
-                  <button
-                    type="button" className="btn btn-primary"
-                    onClick={handleVerifyCode}
-                    disabled={loading || digits.join('').length !== 4}
-                  >
-                    {loading ? 'Проверяем…' : 'Подтвердить'}
-                  </button>
-                </div>
               </div>
             </>
           )}
@@ -231,7 +126,9 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
                   Ваш номер телефона успешно изменён на <strong>{phone}</strong>
                 </p>
                 <div className="modal-footer-single">
-                  <button type="button" className="btn btn-primary btn-full" onClick={onClose}>Закрыть</button>
+                  <button type="button" className="btn btn-primary btn-full" onClick={onClose}>
+                    Закрыть
+                  </button>
                 </div>
               </div>
             </>

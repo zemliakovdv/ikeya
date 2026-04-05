@@ -6,10 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, updateProfile } from '@/lib/api/account';
 
 import EditPersonalDataModal from './modals/EditPersonalDataModal';
-import DeliveryPickupModal from './modals/DeliveryPickupModal';
-import EditPhoneModal from './modals/EditPhoneModal';
-import EditEmailModal from './modals/EditEmailModal';
-import EditPassportModal from './modals/EditPassportModal';
+import DeliveryPickupModal   from './modals/DeliveryPickupModal';
+import EditPhoneModal        from './modals/EditPhoneModal';
+import EditEmailModal        from './modals/EditEmailModal';
+import EditPassportModal     from './modals/EditPassportModal';
 
 // Маскирует строку: показывает первые N символов, остальное — звёздочки
 function mask(str, visible = 2) {
@@ -26,12 +26,12 @@ function maskDate(dateStr) {
 }
 
 export default function PersonalData() {
-  const { isAuth, isHydrated } = useAuth();
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showPassportData, setShowPassportData] = useState(false);
-  const [modal, setModal] = useState(null);
-  const [selectedPickupPoint, setSelectedPickupPoint] = useState(null);
+  const { isAuth, isHydrated, setUser, user } = useAuth();
+  const [profile,            setProfile]            = useState(null);
+  const [loading,            setLoading]            = useState(true);
+  const [showPassportData,   setShowPassportData]   = useState(false);
+  const [modal,              setModal]              = useState(null);
+  const [selectedPickupPoint,setSelectedPickupPoint]= useState(null);
 
   useEffect(() => {
     if (!isHydrated || !isAuth) return;
@@ -40,8 +40,8 @@ export default function PersonalData() {
         setProfile(data);
         if (data?.city && data?.address) {
           setSelectedPickupPoint({
-            name: data.city,
-            city: data.city,
+            name:    data.city,
+            city:    data.city,
             address: data.address,
           });
         }
@@ -51,7 +51,14 @@ export default function PersonalData() {
   }, [isHydrated, isAuth]);
 
   function handleSave(updated) {
-    if (updated) setProfile(updated);
+    if (updated) {
+      setProfile(updated);
+      // Обновляем имя в сайдбаре
+      if (updated.first_name || updated.last_name) {
+        const displayName = [updated.first_name, updated.last_name].filter(Boolean).join(' ');
+        setUser({ ...user, username: displayName });
+      }
+    }
   }
 
   const closeModal = () => setModal(null);
@@ -72,7 +79,7 @@ export default function PersonalData() {
   }
 
   function formatGender(val) {
-    if (val === 'male') return 'Мужской';
+    if (val === 'male')   return 'Мужской';
     if (val === 'female') return 'Женский';
     return '—';
   }
@@ -83,30 +90,34 @@ export default function PersonalData() {
   }
 
   // Определяем заполненность данных
-  const hasPersonalData = !!(profile?.last_name || profile?.first_name);
-  const hasEmail = !!profile?.email;
+  const hasPersonalData  = !!(profile?.last_name || profile?.first_name);
+  const hasEmail         = !!profile?.email;
   const hasEmailVerified = !!profile?.email_verified;
-  const hasPassport = !!profile?.passport_data?.series;
-  const hasAddress = !!selectedPickupPoint;
+  const hasPassport      = !!profile?.passport_data?.series;
+  const hasAddress       = !!selectedPickupPoint;
 
   // Баннер: показываем если нет личных данных ИЛИ нет паспорта
   const showBanner = !hasPersonalData || !hasPassport;
 
-  if (loading) return <div className="profile-loading">Загружаем данные…</div>;
+  if (loading) return (
+    <div className="profile-loading">
+      <div className="profile-loading__spinner" />
+    </div>
+  );
 
   return (
     <>
       {/* Баннер-предупреждение — над основным блоком */}
       {showBanner && (
         <div className="profile-warning-banner">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M10 1.66663C5.40833 1.66663 1.66667 5.40829 1.66667 9.99996C1.66667 14.5916 5.40833 18.3333 10 18.3333C14.5917 18.3333 18.3333 14.5916 18.3333 9.99996C18.3333 5.40829 14.5917 1.66663 10 1.66663ZM10 14.1666C9.54167 14.1666 9.16667 13.7916 9.16667 13.3333V9.99996C9.16667 9.54163 9.54167 9.16663 10 9.16663C10.4583 9.16663 10.8333 9.54163 10.8333 9.99996V13.3333C10.8333 13.7916 10.4583 14.1666 10 14.1666ZM10.8333 7.49996H9.16667V5.83329H10.8333V7.49996Z" fill="#B71C1C"/>
           </svg>
           <p>
             Для таможенного оформления посылок необходимо добавить{' '}
             {!hasPersonalData && (
               <strong
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => setModal('personal')}
               >
                 личные
@@ -115,7 +126,7 @@ export default function PersonalData() {
             {!hasPersonalData && !hasPassport && ' и '}
             {!hasPassport && (
               <strong
-                style={{ cursor: 'pointer' }}
+                style={{ cursor: 'pointer', textDecoration: 'underline' }}
                 onClick={() => setModal('passport')}
               >
                 паспортные данные
@@ -127,266 +138,248 @@ export default function PersonalData() {
       )}
 
       <div className="in_processing-layout persdat-layout">
-        <section className="profile-data-main">
-          <div className="profile-data">
+      <section className="profile-data-main">
+        <div className="profile-data">
 
-            {/* Личные данные */}
-            <div className="data-section">
-              <div className="data-section__header">
-                <h3 className="data-section__title">Личные данные</h3>
-                <button
-                  className="data-section__edit"
-                  onClick={() => setModal('personal')}
-                >
-                  {hasPersonalData ? 'Изменить' : 'Добавить'}
-                </button>
+          {/* Личные данные */}
+          <div className="data-section">
+            <div className="data-section__header">
+              <h3 className="data-section__title">Личные данные</h3>
+              <button
+                className="data-section__edit"
+                onClick={() => setModal('personal')}
+              >
+                {hasPersonalData ? 'Изменить' : 'Добавить'}
+              </button>
+            </div>
+            <div className="data-section__body">
+              {hasPersonalData ? (
+                <>
+                  <div className="data-item">
+                    <label className="data-item__label">ФИО</label>
+                    <p className="data-item__value">{formatFullName()}</p>
+                  </div>
+                  <div className="data-item">
+                    <label className="data-item__label">Дата рождения</label>
+                    <p className="data-item__value">{formatDate(profile?.dob)}</p>
+                  </div>
+                  <div className="data-item">
+                    <label className="data-item__label">Пол</label>
+                    <p className="data-item__value">{formatGender(profile?.gender)}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="data-item">
+                  <label className="data-item__label">ФИО</label>
+                  <p className="data-item__value">
+                    {profile?.username || 'Не заполнено'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Телефон */}
+          <div className="data-section">
+            <div className="data-section__header">
+              <h3 className="data-section__title">Телефон</h3>
+              <button className="data-section__edit" onClick={() => setModal('phone')}>
+                Изменить
+              </button>
+            </div>
+            <div className="data-section__body">
+              <div className="data-item">
+                <p className="data-item__value">{formatPhone(profile?.phone)}</p>
               </div>
-              <div className="data-section__body">
-                {hasPersonalData ? (
-                  <>
-                    <div className="data-item">
-                      <label className="data-item__label">ФИО</label>
-                      <p className="data-item__value">{formatFullName()}</p>
+            </div>
+          </div>
+
+          {/* Почта */}
+          <div className="data-section">
+            <div className="data-section__header">
+              <h3 className="data-section__title">Почта</h3>
+              <button className="data-section__edit" onClick={() => setModal('email')}>
+                {hasEmail ? 'Изменить' : 'Добавить'}
+              </button>
+            </div>
+            <div className="data-section__body">
+              {hasEmail ? (
+                <div className="data-item">
+                  <p className="data-item__value">{profile.email}</p>
+                  {hasEmailVerified ? (
+                    <div className="email-status email-status--verified">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M8 1.33337C4.32 1.33337 1.33333 4.32004 1.33333 8.00004C1.33333 11.68 4.32 14.6667 8 14.6667C11.68 14.6667 14.6667 11.68 14.6667 8.00004C14.6667 4.32004 11.68 1.33337 8 1.33337ZM6.66667 11L3.33333 7.66671L4.27333 6.72671L6.66667 9.11337L11.7267 4.05337L12.6667 5.00004L6.66667 11Z" fill="#04A31A"/>
+                      </svg>
+                      Почта подтверждена
                     </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Дата рождения</label>
-                      <p className="data-item__value">{formatDate(profile?.dob)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Пол</label>
-                      <p className="data-item__value">{formatGender(profile?.gender)}</p>
-                    </div>
-                  </>
-                ) : (
+                  ) : (
+                    <>
+                      <div className="email-status email-status--unverified">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M8 1.33337C4.32 1.33337 1.33333 4.32004 1.33333 8.00004C1.33333 11.68 4.32 14.6667 8 14.6667C11.68 14.6667 14.6667 11.68 14.6667 8.00004C14.6667 4.32004 11.68 1.33337 8 1.33337ZM8.66667 10.6667H7.33333V9.33337H8.66667V10.6667ZM8.66667 8.00004H7.33333V4.66671H8.66667V8.00004Z" fill="#B71C1C"/>
+                        </svg>
+                        Почта не подтверждена
+                      </div>
+                      <button
+                        className="btn-confirm-email"
+                        onClick={() => setModal('email-verify')}
+                        type="button"
+                      >
+                        Подтвердить
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="data-item">
+                  <p className="data-item__value data-item__value--empty">Не указана</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Адреса доставки */}
+          <div className="data-section">
+            <div className="data-section__header">
+              <h3 className="data-section__title">Адреса доставки</h3>
+              <button
+                className={`data-section__edit ${!hasAddress ? 'add' : ''}`}
+                onClick={() => setModal('address')}
+              >
+                {hasAddress ? 'Изменить' : 'Добавить'}
+              </button>
+            </div>
+            <div className="data-section__body">
+              {hasAddress ? (
+                <div className="data-item">
+                  <label className="data-item__label">{selectedPickupPoint.name}</label>
+                  <p className="data-item__value">
+                    {selectedPickupPoint.city}, {selectedPickupPoint.address}
+                  </p>
+                  {selectedPickupPoint.working_hours && (
+                    <p className="data-item__value" style={{ color: '#757575', fontSize: '13px' }}>
+                      {selectedPickupPoint.working_hours}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="data-item">
+                  <p className="data-item__value data-item__value--empty">
+                    Добавьте адрес доставки, чтобы не заполнять его каждый раз при оформлении заказа.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* Паспорт */}
+      <aside className="profile-data-aside">
+        <div className="passport-data">
+          <div className="data-section">
+            <div className="data-section__header">
+              <h3 className="data-section__title">Паспортные данные</h3>
+              <button className="data-section__edit" onClick={() => setModal('passport')}>
+                {hasPassport ? 'Изменить' : 'Добавить'}
+              </button>
+            </div>
+            <div className="data-section__body">
+
+              {!hasPassport ? (
+                <div className="data-item">
+                  <p className="data-item__value data-item__value--empty">
+                    Для таможенного оформления посылок необходимо добавить личные данные.
+                  </p>
+                </div>
+              ) : profile?.passport_verified ? (
+                <>
+                  {/* Данные — маскированные или открытые в зависимости от showPassportData */}
                   <div className="data-item">
                     <label className="data-item__label">ФИО</label>
                     <p className="data-item__value">
-                      {profile?.username || 'Не заполнено'}
+                      {showPassportData
+                        ? [profile.passport_data?.last_name, profile.passport_data?.first_name, profile.passport_data?.middle_name].filter(Boolean).join(' ') || '—'
+                        : <>{mask(profile.passport_data?.last_name, 5)}{' '}{mask(profile.passport_data?.first_name, 3)}{profile.passport_data?.middle_name ? ' ' + mask(profile.passport_data.middle_name, 3) : ''}</>
+                      }
                     </p>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Телефон */}
-            <div className="data-section">
-              <div className="data-section__header">
-                <h3 className="data-section__title">Телефон</h3>
-                <button className="data-section__edit" onClick={() => setModal('phone')}>
-                  Изменить
-                </button>
-              </div>
-              <div className="data-section__body">
-                <div className="data-item">
-                  <p className="data-item__value">{formatPhone(profile?.phone)}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Почта */}
-            <div className="data-section">
-              <div className="data-section__header">
-                <h3 className="data-section__title">Почта</h3>
-                <button className="data-section__edit" onClick={() => setModal('email')}>
-                  {hasEmail ? 'Изменить' : 'Добавить'}
-                </button>
-              </div>
-              <div className="data-section__body">
-                {hasEmail ? (
                   <div className="data-item">
-                    <p className="data-item__value">{profile.email}</p>
-                    {hasEmailVerified ? (
-                      <div className="email-status email-status--verified">
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M7.99998 1.33331C4.32665 1.33331 1.33331 4.32665 1.33331 7.99998C1.33331 11.6733 4.32665 14.6666 7.99998 14.6666C11.6733 14.6666 14.6666 11.6733 14.6666 7.99998C14.6666 4.32665 11.6733 1.33331 7.99998 1.33331ZM10.8266 6.45331L7.41331 10.1733C7.32665 10.2666 7.20665 10.32 7.07998 10.3266H7.07331C6.95331 10.3266 6.83331 10.28 6.74665 10.1933L5.19331 8.63998C5.01331 8.45998 5.01331 8.16665 5.19331 7.97998C5.37331 7.79998 5.66665 7.79998 5.85331 7.97998L7.05998 9.18665L10.14 5.82665C10.3133 5.63998 10.6066 5.62665 10.8 5.79998C10.9866 5.97331 11 6.26665 10.8266 6.45998V6.45331Z" fill="#00910A" />
-                        </svg>
-                        Почта подтверждена
-                      </div>
-                    ) : (
-                      <>
-                        <div className="email-status email-status--unverified">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7.99998 1.33301C4.32665 1.33301 1.33331 4.32634 1.33331 7.99967C1.33331 11.673 4.32665 14.6663 7.99998 14.6663C11.6733 14.6663 14.6666 11.673 14.6666 7.99967C14.6666 4.32634 11.6733 1.33301 7.99998 1.33301ZM7.53331 5.51967C7.53331 5.25967 7.73998 5.05301 7.99998 5.05301C8.25998 5.05301 8.46665 5.25967 8.46665 5.51967V8.31301C8.46665 8.57301 8.25998 8.77967 7.99998 8.77967C7.73998 8.77967 7.53331 8.57301 7.53331 8.31301V5.51967ZM8.55331 10.4797C8.55331 10.7863 8.30665 11.0397 7.99331 11.0397C7.67998 11.0397 7.43331 10.7863 7.43331 10.4797C7.43331 10.173 7.67998 9.91967 7.99331 9.91967C8.30665 9.91967 8.55331 10.1663 8.55331 10.473V10.4797Z" fill="#B71C1C" />
-                          </svg>
-                          Почта не подтверждена
-                        </div>
-                        <button
-                          className="btn-confirm-email"
-                          onClick={() => setModal('email-verify')}
-                          type="button"
-                        >
-                          Подтвердить
-                        </button>
-                      </>
-                    )}
+                    <label className="data-item__label">Серия паспорта</label>
+                    <p className="data-item__value">{profile.passport_data?.series || '—'}</p>
                   </div>
-                ) : (
                   <div className="data-item">
-                    <p className="data-item__value data-item__value--empty">Не указана</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Адреса доставки */}
-            <div className="data-section">
-              <div className="data-section__header">
-                <h3 className="data-section__title">Адреса доставки</h3>
-                <button
-                  className={`data-section__edit ${!hasAddress ? 'add' : ''}`}
-                  onClick={() => setModal('address')}
-                >
-                  {hasAddress ? 'Изменить' : 'Добавить'}
-                </button>
-              </div>
-              <div className="data-section__body">
-                {hasAddress ? (
-                  <div className="data-item">
-                    <label className="data-item__label">{selectedPickupPoint.name}</label>
+                    <label className="data-item__label">Номер паспорта</label>
                     <p className="data-item__value">
-                      {selectedPickupPoint.city}, {selectedPickupPoint.address}
+                      {showPassportData ? profile.passport_data?.number : mask(profile.passport_data?.number, 3)}
                     </p>
-                    {selectedPickupPoint.working_hours && (
-                      <p className="data-item__value" style={{ color: '#757575', fontSize: '13px' }}>
-                        {selectedPickupPoint.working_hours}
-                      </p>
-                    )}
                   </div>
-                ) : (
                   <div className="data-item">
-                    <p className="data-item__value data-item__value--empty">
-                      Добавьте адрес доставки, чтобы не заполнять его каждый раз при оформлении заказа.
+                    <label className="data-item__label">Дата выдачи</label>
+                    <p className="data-item__value">
+                      {showPassportData ? formatDate(profile.passport_data?.issue_date) : maskDate(profile.passport_data?.issue_date)}
                     </p>
                   </div>
-                )}
-              </div>
-            </div>
-
-          </div>
-        </section>
-
-        {/* Паспорт */}
-        <aside className="profile-data-aside">
-          <div className="passport-data">
-            <div className="data-section">
-              <div className="data-section__header">
-                <h3 className="data-section__title">Паспортные данные</h3>
-                <button className="data-section__edit" onClick={() => setModal('passport')}>
-                  {hasPassport ? 'Изменить' : 'Добавить'}
-                </button>
-              </div>
-              <div className="data-section__body">
-
-                {!hasPassport ? (
                   <div className="data-item">
-                    <p className="data-item__value data-item__value--empty">
-                      Для таможенного оформления посылок необходимо добавить личные данные.
+                    <label className="data-item__label">Кем выдан</label>
+                    <p className="data-item__value">
+                      {showPassportData ? profile.passport_data?.issued_by || '—' : mask(profile.passport_data?.issued_by, 4)}
                     </p>
                   </div>
-                ) : profile?.passport_verified ? (
-                  <>
-                    {/* Маскированные данные */}
-                    <div className="data-item">
-                      <label className="data-item__label">ФИО</label>
-                      <p className="data-item__value">
-                        {mask(profile.passport_data?.last_name, 5)}
-                        {' '}{mask(profile.passport_data?.first_name, 3)}
-                        {profile.passport_data?.middle_name ? ' ' + mask(profile.passport_data.middle_name, 3) : ''}
-                      </p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Серия паспорта</label>
-                      <p className="data-item__value">{profile.passport_data?.series || '—'}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Номер паспорта</label>
-                      <p className="data-item__value">{mask(profile.passport_data?.number, 3)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Дата выдачи</label>
-                      <p className="data-item__value">{maskDate(profile.passport_data?.issue_date)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Кем выдан</label>
-                      <p className="data-item__value">{mask(profile.passport_data?.issued_by, 4)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Идентификационный номер</label>
-                      <p className="data-item__value">{mask(profile.passport_data?.identification_number, 5)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Дата рождения</label>
-                      <p className="data-item__value">{maskDate(profile.passport_data?.dob)}</p>
-                    </div>
+                  <div className="data-item">
+                    <label className="data-item__label">Идентификационный номер</label>
+                    <p className="data-item__value">
+                      {showPassportData ? profile.passport_data?.identification_number || '—' : mask(profile.passport_data?.identification_number, 5)}
+                    </p>
+                  </div>
+                  <div className="data-item">
+                    <label className="data-item__label">Дата рождения</label>
+                    <p className="data-item__value">
+                      {showPassportData ? formatDate(profile.passport_data?.dob) : maskDate(profile.passport_data?.dob)}
+                    </p>
+                  </div>
 
-                    <button
-                      className="data-toggle"
-                      onClick={() => setShowPassportData(p => !p)}
-                    >
-                      {showPassportData ? 'Скрыть данные' : 'Показать данные'}
-                    </button>
+                  <button
+                    className="data-toggle"
+                    onClick={() => setShowPassportData(p => !p)}
+                  >
+                    {showPassportData ? 'Скрыть данные' : 'Показать данные'}
+                  </button>
 
-                    {showPassportData && (
-                      <div className="passport-details" style={{ marginTop: '12px' }}>
-                        <div className="data-item">
-                          <label className="data-item__label">ФИО</label>
-                          <p className="data-item__value">
-                            {[profile.passport_data?.last_name, profile.passport_data?.first_name, profile.passport_data?.middle_name].filter(Boolean).join(' ') || '—'}
-                          </p>
-                        </div>
-                        <div className="data-item">
-                          <label className="data-item__label">Серия / Номер</label>
-                          <p className="data-item__value">
-                            {profile.passport_data?.series} {profile.passport_data?.number}
-                          </p>
-                        </div>
-                        <div className="data-item">
-                          <label className="data-item__label">Дата выдачи</label>
-                          <p className="data-item__value">{formatDate(profile.passport_data?.issue_date)}</p>
-                        </div>
-                        <div className="data-item">
-                          <label className="data-item__label">Кем выдан</label>
-                          <p className="data-item__value">{profile.passport_data?.issued_by || '—'}</p>
-                        </div>
-                        <div className="data-item">
-                          <label className="data-item__label">Идентификационный номер</label>
-                          <p className="data-item__value">{profile.passport_data?.identification_number || '—'}</p>
-                        </div>
+                  {/* Адрес прописки — отдельный блок */}
+                  <div className="passport-address" style={{ marginTop: '24px' }}>
+                    <h4 className="data-section__title" style={{ marginBottom: '12px' }}>Адрес прописки</h4>
+                    {[
+                      ['Область',  profile.passport_data?.region],
+                      ['Город',    profile.passport_data?.city],
+                      ['Индекс',   profile.passport_data?.postcode],
+                      ['Улица',    profile.passport_data?.street],
+                      ['Дом',      profile.passport_data?.house],
+                      ['Корпус',   profile.passport_data?.building],
+                      ['Квартира', profile.passport_data?.apartment],
+                    ].map(([label, value]) => value ? (
+                      <div className="data-item" key={label}>
+                        <label className="data-item__label">{label}</label>
+                        <p className="data-item__value">{value}</p>
                       </div>
-                    )}
-
-                    {/* Адрес прописки — отдельный блок */}
-                    <div className="passport-address" style={{ marginTop: '24px' }}>
-                      <h4 className="data-section__title" style={{ marginBottom: '12px' }}>Адрес прописки</h4>
-                      {[
-                        ['Область', profile.passport_data?.region],
-                        ['Город', profile.passport_data?.city],
-                        ['Индекс', profile.passport_data?.postcode],
-                        ['Улица', profile.passport_data?.street],
-                        ['Дом', profile.passport_data?.house],
-                        ['Корпус', profile.passport_data?.building],
-                        ['Квартира', profile.passport_data?.apartment],
-                      ].map(([label, value]) => value ? (
-                        <div className="data-item" key={label}>
-                          <label className="data-item__label">{label}</label>
-                          <p className="data-item__value">{value}</p>
-                        </div>
-                      ) : null)}
-                    </div>
-                  </>
-                ) : (
-                  // Паспорт есть, но на проверке
-                  <div className="data-item">
-                    <p className="data-item__value" style={{ color: '#E65100' }}>
-                      На проверке у менеджера
-                    </p>
+                    ) : null)}
                   </div>
-                )}
+                </>
+              ) : (
+                // Паспорт есть, но на проверке
+                <div className="data-item">
+                  <p className="data-item__value" style={{ color: '#E65100' }}>
+                    На проверке у менеджера
+                  </p>
+                </div>
+              )}
 
-              </div>
             </div>
           </div>
-        </aside>
+        </div>
+      </aside>
       </div>{/* end in_processing-layout persdat-layout */}
 
       {/* Модалки */}

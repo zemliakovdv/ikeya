@@ -1,165 +1,156 @@
+// components/profile/modals/SmsVerifyModal.js
 'use client';
 
-import { useState } from 'react';
-import { requestPhoneChange, verifyPhoneChange } from '@/lib/api/account';
+import { useState, useRef, useEffect } from 'react';
 
-const STEPS = { PHONE: 'phone', CODE: 'code', SUCCESS: 'success' };
+const RESEND_TIMEOUT = 30;
 
-export default function EditPhoneModal({ profile, onClose, onSave }) {
-  const [step,    setStep]    = useState(STEPS.PHONE);
-  const [phone,   setPhone]   = useState('');
-  const [code,    setCode]    = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+/**
+ * Универсальная модалка верификации по звонку.
+ *
+ * Props:
+ *   userPhone     {string}   — номер пользователя (показываем в тексте "звоним на Ваш номер")
+ *   callerNumber  {string}   — маскированный номер звонящего (не показываем пользователю)
+ *   onVerify      {function} — (digits: string) => Promise<void>
+ *   onResend      {function} — () => Promise<void>
+ *   onClose       {function}
+ *   loading       {boolean}
+ *   error         {string}
+ */
+export default function SmsVerifyModal({
+  userPhone = '',
+  callerNumber = '',
+  onVerify,
+  onResend,
+  onClose,
+  loading = false,
+  error = '',
+}) {
+  const [digits,    setDigits]    = useState(['', '', '', '']);
+  const [countdown, setCountdown] = useState(RESEND_TIMEOUT);
 
-  // Шаг 1 — вводим новый номер, бэк инициирует звонок
-  const handleRequestCall = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+  const inputRefs = useRef([]);
+  const timerRef  = useRef(null);
 
-    try {
-      await requestPhoneChange(phone);
-      setStep(STEPS.CODE);
-    } catch (err) {
-      setError(err.message || 'Ошибка отправки запроса');
-    } finally {
-      setLoading(false);
+  // Запускаем таймер при монтировании
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  function formatCountdown(s) {
+    const mm = String(Math.floor(s / 60)).padStart(2, '0');
+    const ss = String(s % 60).padStart(2, '0');
+    return `${mm}:${ss}`;
+  }
+
+  function handleDigitChange(idx, value) {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const next = [...digits];
+    next[idx] = digit;
+    setDigits(next);
+    if (digit && idx < 3) {
+      inputRefs.current[idx + 1]?.focus();
     }
-  };
+    // Автосабмит когда введена последняя цифра
+    if (digit && idx === 3) {
+      const code = [...next].join('');
+      if (code.length === 4) onVerify?.(code);
+    }
+  }
 
-  // Шаг 2 — вводим последние 4 цифры входящего звонка
-  const handleVerifyCode = async () => {
+  function handleKeyDown(idx, e) {
+    if (e.key === 'Backspace' && !digits[idx] && idx > 0) {
+      inputRefs.current[idx - 1]?.focus();
+    }
+  }
+
+  async function handleResend() {
+    if (countdown > 0) return;
+    await onResend?.();
+    setDigits(['', '', '', '']);
+    setCountdown(RESEND_TIMEOUT);
+    clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    inputRefs.current[0]?.focus();
+  }
+
+  function handleSubmit() {
+    const code = digits.join('');
     if (code.length !== 4) return;
-    setLoading(true);
-    setError('');
+    onVerify?.(code);
+  }
 
-    try {
-      const updated = await verifyPhoneChange(phone, code);
-      onSave?.(updated);
-      setStep(STEPS.SUCCESS);
-    } catch (err) {
-      setError(err.message || 'Неверный код');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isFilled = digits.join('').length === 4;
 
   return (
-    <div className="modal fade show d-block" onClick={onClose} id="editPhoneModal">
+    <div className="modal fade show d-block" onClick={onClose}>
       <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
         <div className="modal-content">
 
-          {/* Шаг 1 — ввод нового номера */}
-          {step === STEPS.PHONE && (
-            <>
-              <div className="modal-header">
-                <h5 className="modal-title">Смена телефона</h5>
-                <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
-              </div>
-              <div className="modal-body">
-                <form onSubmit={handleRequestCall}>
-                  <div className="form-group form-floating">
-                    <input
-                      type="tel" className="form-control" id="phone"
-                      placeholder="375291112233"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
-                      required
-                    />
-                    <label htmlFor="phone">Новый номер телефона</label>
-                  </div>
+          <div className="modal-header">
+            <h5 className="modal-title">Идентификация пользователя</h5>
+            <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
+          </div>
 
-                  <div className="form-info">
-                    <p className="info-text">
-                      Подробнее об <a href="#" className="info-link">условиях обработки и правах, связанных с обработкой</a>
-                    </p>
-                  </div>
+          <div className="modal-body">
+            <p className="sms-verify__text">
+              Главное безопасность!<br />
+              Введите последние 4 цифры номера, с которого мы звоним на Ваш номер:
+              {userPhone && <> <strong>{userPhone}</strong></>}
+            </p>
 
-                  {error && (
-                    <p style={{ color: '#b71c1c', fontSize: '14px', marginBottom: '12px' }}>{error}</p>
-                  )}
+            {/* 4 отдельных поля */}
+            <div className="sms-verify__inputs">
+              {digits.map((digit, idx) => (
+                <input
+                  key={idx}
+                  ref={el => inputRefs.current[idx] = el}
+                  type="text"
+                  inputMode="numeric"
+                  className="sms-verify__input"
+                  maxLength={1}
+                  value={digit}
+                  onChange={e => handleDigitChange(idx, e.target.value)}
+                  onKeyDown={e => handleKeyDown(idx, e)}
+                  autoFocus={idx === 0}
+                  disabled={loading}
+                />
+              ))}
+            </div>
 
-                  <div className="modal-footer-buttons">
-                    <button type="button" className="btn btn-outline" onClick={onClose} disabled={loading}>
-                      Отмена
-                    </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading || !phone}>
-                      {loading ? 'Отправляем…' : 'Получить звонок'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </>
-          )}
+            {error && (
+              <p className="sms-verify__error">{error}</p>
+            )}
 
-          {/* Шаг 2 — ввод последних 4 цифр звонка */}
-          {step === STEPS.CODE && (
-            <>
-              <div className="modal-header">
-                <h5 className="modal-title">Подтверждение по звонку</h5>
-                <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
-              </div>
-              <div className="modal-body">
-                <p className="confirmation-text" style={{ marginBottom: '16px' }}>
-                  На номер <strong>{phone}</strong> поступит входящий звонок.<br />
-                  Введите последние <strong>4 цифры</strong> номера звонящего.
-                </p>
-
-                <div className="form-group form-floating">
-                  <input
-                    type="text" className="form-control" id="code"
-                    placeholder="4 цифры"
-                    value={code}
-                    onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
-                    maxLength={4} autoFocus
-                  />
-                  <label htmlFor="code">4 цифры входящего номера</label>
-                </div>
-
-                {error && (
-                  <p style={{ color: '#b71c1c', fontSize: '14px', marginTop: '8px' }}>{error}</p>
-                )}
-
-                <div className="modal-footer-buttons" style={{ marginTop: '16px' }}>
-                  <button
-                    type="button" className="btn btn-outline"
-                    onClick={() => { setStep(STEPS.PHONE); setCode(''); setError(''); }}
-                    disabled={loading}
-                  >
-                    Назад
-                  </button>
-                  <button
-                    type="button" className="btn btn-primary"
-                    onClick={handleVerifyCode}
-                    disabled={loading || code.length !== 4}
-                  >
-                    {loading ? 'Проверяем…' : 'Подтвердить'}
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Шаг 3 — успех */}
-          {step === STEPS.SUCCESS && (
-            <>
-              <div className="modal-header">
-                <h5 className="modal-title">Телефон изменён</h5>
-                <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
-              </div>
-              <div className="modal-body">
-                <p className="confirmation-text">
-                  Ваш номер телефона успешно изменён на <strong>{phone}</strong>
-                </p>
-                <div className="modal-footer-single">
-                  <button type="button" className="btn btn-primary btn-full" onClick={onClose}>
-                    Закрыть
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+            {/* Таймер / повторный запрос */}
+            <div className="sms-verify__resend">
+              {countdown > 0 ? (
+                <span className="sms-verify__resend-timer">
+                  Повторный запрос звонка через {formatCountdown(countdown)}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="sms-verify__resend-btn"
+                  onClick={handleResend}
+                  disabled={loading}
+                >
+                  Запросить звонок повторно
+                </button>
+              )}
+            </div>
+          </div>
 
         </div>
       </div>

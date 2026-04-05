@@ -2,10 +2,9 @@
 'use client';
 
 import { useState } from 'react';
-import { updateProfile, getProfile } from '@/lib/api/account';
+import { updateProfile, getProfile, requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import DatePicker from '@/components/ui/DatePicker';
-
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 
 const REGIONS = [
   'Брестская',
@@ -17,23 +16,6 @@ const REGIONS = [
 ];
 
 const STEPS = { FORM: 'form', CODE: 'code', SUCCESS: 'success' };
-
-async function fetchWithAuth(endpoint, options = {}) {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Ошибка ${res.status}`);
-  }
-  return res.json();
-}
 
 export default function EditPassportModal({ profile, onClose, onSave }) {
   const passport = profile?.passport_data || {};
@@ -61,7 +43,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
 
   const [verificationId,     setVerificationId]     = useState(null);
   const [callerNumberMasked, setCallerNumberMasked] = useState('');
-  const [digits,             setDigits]             = useState(['', '', '', '']);
   const [loading,            setLoading]            = useState(false);
   const [error,              setError]              = useState('');
 
@@ -78,11 +59,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
       const phone = profile?.phone;
       if (!phone) throw new Error('Телефон не указан в профиле');
 
-      const resp = await fetchWithAuth('/a1/request', {
-        method: 'POST',
-        body: JSON.stringify({ phone, context: 'passport_update' }),
-      });
-
+      const resp = await requestA1Verification(phone, 'passport_update');
       setVerificationId(resp.verification_id);
       setCallerNumberMasked(resp.caller_number_masked || '');
       setStep(STEPS.CODE);
@@ -93,40 +70,56 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     }
   };
 
-  // Ввод цифры
-  const inputRefs = [];
-  const handleDigitChange = (idx, value) => {
-    const digit = value.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[idx] = digit;
-    setDigits(next);
-    if (digit && idx < 3) inputRefs[idx + 1]?.focus();
-  };
-  const handleDigitKeyDown = (idx, e) => {
-    if (e.key === 'Backspace' && !digits[idx] && idx > 0) inputRefs[idx - 1]?.focus();
-  };
-
-  // Шаг 2 — подтвердить код
-  const handleVerify = async () => {
-    const code = digits.join('');
-    if (code.length !== 4) return;
-    setLoading(true);
+  // Повторный запрос звонка
+  const handleResend = async () => {
     setError('');
     try {
-      await fetchWithAuth('/a1/verify', {
-        method: 'POST',
-        body: JSON.stringify({ verification_id: verificationId, last4: code }),
-      });
-      const updated = await getProfile();
-      onSave?.(updated);
-      setStep(STEPS.SUCCESS);
+      const phone = profile?.phone;
+      const resp = await requestA1Verification(phone, 'passport_update');
+      setVerificationId(resp.verification_id);
+      setCallerNumberMasked(resp.caller_number_masked || '');
     } catch (err) {
-      setError(err.message || 'Неверный код');
-      setDigits(['', '', '', '']);
-    } finally {
-      setLoading(false);
+      setError(err.message || 'Ошибка повторного запроса');
     }
   };
+
+  // Шаг 2 — подтвердить код (вызывается из SmsVerifyModal)
+const handleVerify = async (code) => {
+  setLoading(true);
+  setError('');
+  try {
+    await verifyA1Code(verificationId, code);
+    const updated = await getProfile();
+    onSave?.({ ...updated, passport_verified: true });
+    setStep(STEPS.SUCCESS);
+  } catch (err) {
+    setError(err.message || 'Неверный код');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // Шаг CODE — рендерим SmsVerifyModal
+  if (step === STEPS.CODE) {
+    return (
+      <>
+        <SmsVerifyModal
+          userPhone={profile?.phone}
+          callerNumber={callerNumberMasked}
+          onVerify={handleVerify}
+          onResend={handleResend}
+          onClose={onClose}
+          loading={loading}
+          error={error}
+        />
+        <div
+          className="modal-backdrop fade show"
+          onClick={onClose}
+          style={{ zIndex: 1054, background: 'rgba(24, 24, 24, 0.36)' }}
+        />
+      </>
+    );
+  }
 
   return (
     <>
@@ -372,63 +365,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
               </>
             )}
 
-            {/* ШАГ 2 — верификация по звонку */}
-            {step === STEPS.CODE && (
-              <>
-                <div className="modal-header">
-                  <h5 className="modal-title">Идентификация пользователя</h5>
-                  <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
-                </div>
-                <div className="modal-body">
-                  <p className="confirmation-text" style={{ marginBottom: '20px' }}>
-                    Главное безопасность!<br />
-                    Введите последние 4 цифры номера, с которого мы звоним на Ваш номер:
-                    {callerNumberMasked && <> <strong>{callerNumberMasked}</strong></>}
-                  </p>
-
-                  <div className="code-inputs">
-                    {digits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={el => inputRefs[idx] = el}
-                        type="text"
-                        inputMode="numeric"
-                        className="code-input"
-                        maxLength={1}
-                        value={digit}
-                        onChange={e => handleDigitChange(idx, e.target.value)}
-                        onKeyDown={e => handleDigitKeyDown(idx, e)}
-                        autoFocus={idx === 0}
-                      />
-                    ))}
-                  </div>
-
-                  {error && (
-                    <p style={{ color: '#b71c1c', fontSize: '14px', marginTop: '12px' }}>{error}</p>
-                  )}
-
-                  <div className="modal-footer-buttons" style={{ marginTop: '20px' }}>
-                    <button
-                      type="button"
-                      className="btn btn-outline"
-                      onClick={() => { setStep(STEPS.FORM); setDigits(['', '', '', '']); setError(''); }}
-                      disabled={loading}
-                    >
-                      Назад
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={handleVerify}
-                      disabled={loading || digits.join('').length !== 4}
-                    >
-                      {loading ? 'Проверяем…' : 'Подтвердить'}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
             {/* ШАГ 3 — успех */}
             {step === STEPS.SUCCESS && (
               <>
@@ -438,9 +374,9 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                 </div>
                 <div className="modal-body">
                   <p className="confirmation-text">
-                    Паспортные данные сохранены и верифицированы.
+                    Паспортные данные сохранены и подтверждены.
                   </p>
-                  <div className="modal-footer-single">
+                  <div className="modal-footer-single passport-succes-info">
                     <button type="button" className="btn btn-primary btn-full" onClick={onClose}>
                       Закрыть
                     </button>
