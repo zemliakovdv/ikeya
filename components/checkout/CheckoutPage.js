@@ -89,11 +89,18 @@ export default function CheckoutPage() {
       .finally(() => setLoadingProfile(false))
   }, [token])
 
-  // Суммы из корзины
-  const subtotal = parseFloat(totals?.subtotal_new_byn || totals?.subtotal || 0)
-  const promoDiscount = parseFloat(totals?.discount_total_byn || totals?.discount || 0)
-  const deliveryCost = parseFloat(totals?.delivery || 0)
-  const totalWeight = totals?.total_weight_kg || 0
+  // Суммы из корзины — берём из sessionStorage (данные по выбранным товарам из CartPage)
+  const checkoutSummary = (() => {
+    if (typeof window === 'undefined') return null
+    try { return JSON.parse(sessionStorage.getItem('checkoutSummary') || 'null') } catch { return null }
+  })()
+
+  const subtotal = checkoutSummary?.subtotal ?? parseFloat(totals?.subtotal_new_byn || totals?.subtotal || 0)
+  const promoDiscount = checkoutSummary?.promoDiscount ?? parseFloat(totals?.discount_total_byn || totals?.discount || 0)
+  const deliveryCost = checkoutSummary?.delivery ?? parseFloat(totals?.delivery || 0)
+  const totalWeight = checkoutSummary?.totalWeight ?? (totals?.total_weight_kg || 0)
+  const customsDuty = checkoutSummary?.customsDuty ?? 0
+  const itemCount = checkoutSummary?.itemCount ?? items.length
 
   // Полное имя
   const fullName = profile
@@ -563,8 +570,9 @@ export default function CheckoutPage() {
                         promoDiscount={promoDiscount}
                         delivery={deliveryCost}
                         pvzDelivery={0}
-                        itemCount={items.length}
+                        itemCount={itemCount}
                         totalWeight={totalWeight}
+                        customsDuty={customsDuty}
                         canCheckout={canCheckout}
                         onCheckout={handleCheckout}
                         checkoutButtonText={submitting ? 'Оформляем...' : 'Оформить заказ'}

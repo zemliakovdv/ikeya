@@ -7,7 +7,9 @@ import PriceFilter from '@/components/catalog/sidebar/PriceFilter';
 import CheckboxFilter from '@/components/catalog/sidebar/CheckboxFilter';
 import FilterChips from '@/components/catalog/FilterChips';
 import SearchNotFound from '@/components/catalog/SearchNotFound';
+import Pagination from '@/components/catalog/Pagination';
 import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
+import PageLoader from '@/components/ui/PageLoader';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
@@ -127,6 +129,8 @@ export default function SearchPageContent() {
       const params = new URLSearchParams();
       params.set('q', q.trim());
       if (sortParam) params.set('sort', sortParam);
+      const pageParam = searchParams.get('page');
+      if (pageParam) params.set('page', pageParam);
       const minP = searchParams.get('min_price');
       const maxP = searchParams.get('max_price');
       if (minP) params.set('min_price', minP);
@@ -285,7 +289,9 @@ export default function SearchPageContent() {
             }
           </h1>
 
-          <div className="all-catalog-inner">
+          {loading && <PageLoader />}
+
+          <div className="all-catalog-inner" style={{ visibility: loading ? 'hidden' : 'visible' }}>
             {/* Сайдбар — скрываем когда нет результатов */}
             {(!(!loading && !hasResults && results !== null)) && (
             <aside className="filter-aside" style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', overflowY: 'auto', overflowX: 'hidden' }}>
@@ -373,15 +379,6 @@ export default function SearchPageContent() {
               {/* Чипсы фильтров */}
               <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
 
-              {/* Скелетон */}
-              {loading && (
-                <div className="products-grid">
-                  {[1,2,3,4,5,6,7,8].map(i => (
-                    <div key={i} style={{ height: 320, background: '#f5f5f5', borderRadius: 8 }} />
-                  ))}
-                </div>
-              )}
-
               {/* Товары */}
               {!loading && hasResults && (
                 <div className="products-grid">
@@ -389,6 +386,21 @@ export default function SearchPageContent() {
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
+              )}
+
+              {/* Пагинация */}
+              {!loading && hasResults && (results?.meta?.total_pages || 1) > 1 && (
+                <Pagination
+                  currentPage={Number(searchParams.get('page')) || 1}
+                  totalPages={results?.meta?.total_pages || 1}
+                  totalItems={results?.meta?.total || 0}
+                  basePath={pathname}
+                  queryString={(() => {
+                    const p = new URLSearchParams(searchParams.toString());
+                    p.delete('page');
+                    return p.toString();
+                  })()}
+                />
               )}
 
               {/* Нет результатов */}

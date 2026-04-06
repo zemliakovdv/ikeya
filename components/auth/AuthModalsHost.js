@@ -1,7 +1,8 @@
 // components/auth/AuthModalsHost.js
 'use client';
 
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { phoneSend, phoneVerify, phoneCheck } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
@@ -16,6 +17,8 @@ const AuthModalsContext = createContext(null);
 
 export function AuthModalsProvider({ children }) {
   const { setAuth } = useAuth();
+  const router = useRouter();
+  const redirectAfterAuth = useRef(null);
   const { mergeGuestCart } = useCart();
   const [active, setActive]   = useState(null); // null|'login'|'register'|'code'|'success'
   const [flow,   setFlow]     = useState('login'); // 'login'|'register'
@@ -50,8 +53,9 @@ export function AuthModalsProvider({ children }) {
     resetUi();
   }
 
-  function openLogin() {
+  function openLogin(redirectTo = null) {
     resetUi();
+    redirectAfterAuth.current = redirectTo;
     setFlow('login');
     setActive('login');
   }
@@ -166,6 +170,7 @@ export function AuthModalsProvider({ children }) {
         openSuccess();
       } else {
         closeAll();
+        if (redirectAfterAuth.current) { router.push(redirectAfterAuth.current); redirectAfterAuth.current = null; }
       }
     } catch (e) {
       const msg = e.message || 'Ошибка подтверждения.';
@@ -199,7 +204,7 @@ export function AuthModalsProvider({ children }) {
     await requestCall();
   }
 
-  const ctxValue = useMemo(() => ({ openLogin, openRegister, closeAll }), []);
+  const ctxValue = { openLogin, openRegister, closeAll };
 
   return (
     <AuthModalsContext.Provider value={ctxValue}>
@@ -257,7 +262,7 @@ export function AuthModalsProvider({ children }) {
 
       <SuccessModal
         isOpen={active === 'success'}
-        onClose={closeAll}
+        onClose={() => { closeAll(); if (redirectAfterAuth.current) { router.push(redirectAfterAuth.current); redirectAfterAuth.current = null; } }}
         username={username?.trim() || 'Имя'}
         email={email?.trim() || ''}
       />

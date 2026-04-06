@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import PageLoader from '@/components/ui/PageLoader';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
@@ -30,6 +30,19 @@ export default function CartPageClient() {
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [delivery, setDelivery] = useState(0);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
+
+  const pendingCheckout = useRef(false);
+
+  useEffect(() => {
+    function onAuthDone() {
+      if (pendingCheckout.current) {
+        pendingCheckout.current = false;
+        router.push('/checkout');
+      }
+    }
+    window.addEventListener('auth-change-done', onAuthDone);
+    return () => window.removeEventListener('auth-change-done', onAuthDone);
+  }, [router]);
 
   const availableSkus = useMemo(
     () => (availableItems || []).map(it => it?.sku).filter(Boolean),
@@ -97,10 +110,10 @@ export default function CartPageClient() {
     selected.forEach(it => {
       const qty = it.quantity || 1;
       // Если pricing нули — берём product.price_byn
-      const pricingNew = parseFloat(it.pricing?.unit_price_new_byn || 0);
-      const productPrice = parseFloat(it.product?.price_byn || 0);
+      const pricingNew = parseFloat(String(it.pricing?.unit_price_new_byn || 0).replace(/\s/g, ''));
+      const productPrice = parseFloat(String(it.product?.price_byn || 0).replace(/\s/g, ''));
       const price = pricingNew > 0 ? pricingNew : productPrice;
-      const discount = parseFloat(it.pricing?.unit_discount_byn || 0);
+      const discount = parseFloat(String(it.pricing?.unit_discount_byn || 0).replace(/\s/g, ''));
 
       subtotal += price * qty;
       promoDiscount += discount * qty;
@@ -185,9 +198,29 @@ export default function CartPageClient() {
   }, [removeFromCart, selectedItems]);
 
   const handleCheckout = useCallback(() => {
-    if (!isAuth) { openLogin(); return; }
+    if (!isAuth) {
+      sessionStorage.setItem('checkoutSummary', JSON.stringify({
+        subtotal: selectedData.subtotal,
+        promoDiscount: selectedData.promoDiscount,
+        itemCount: selectedData.itemCount,
+        totalWeight: selectedData.totalWeight,
+        customsDuty: selectedData.customsDuty,
+        delivery,
+      }));
+      pendingCheckout.current = true;
+      openLogin();
+      return;
+    }
+    sessionStorage.setItem('checkoutSummary', JSON.stringify({
+      subtotal: selectedData.subtotal,
+      promoDiscount: selectedData.promoDiscount,
+      itemCount: selectedData.itemCount,
+      totalWeight: selectedData.totalWeight,
+      customsDuty: selectedData.customsDuty,
+      delivery,
+    }));
     router.push('/checkout');
-  }, [router, isAuth, openLogin]);
+  }, [router, isAuth, openLogin, selectedData, delivery]);
 
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;

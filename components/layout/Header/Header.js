@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModals } from '@/components/auth/AuthModalsHost'
@@ -27,6 +28,8 @@ const FALLBACK_CATEGORIES = [
 export default function Header() {
   const { itemsCount } = useCart()
   const { isAuth, user, logout } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
   const { openLogin } = useAuthModals()
   const { count } = useFavorites()
 
@@ -130,6 +133,7 @@ export default function Header() {
   function handleLogout() {
     logout()
     setIsProfileOpen(false)
+    if (pathname.startsWith('/profile')) router.push('/')
   }
 
   return (
