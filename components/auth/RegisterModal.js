@@ -125,7 +125,7 @@ export default function RegisterModal({
                 id="floatingInput"
                 placeholder="Электронная почта"
                 value={email}
-                onChange={(e) => setEmail?.(e.target.value.trim())}
+                onChange={(e) => setEmail?.(e.target.value.trim().replace(/[а-яёА-ЯЁ]/g, ''))}
                 onBlur={() => {
                   setEmailTouched(true);
                   setEmail?.(email.trim());

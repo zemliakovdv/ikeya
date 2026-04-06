@@ -5917,8 +5917,8 @@ main {
 /* Выпадающее меню */
 .profile-dropdown {
     position: absolute;
-    top: 115px;
-    right: 200px;
+    top: 71%;
+    right: 9%;
     width: 332px;
     background: #fff;
     border-radius: 8px;
