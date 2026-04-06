@@ -4284,6 +4284,10 @@ main {
     max-width: 1040px;
 }
 
+.size-contet__info h5:not(:first-of-type) {
+  margin-top: 24px;
+}
+
 .size-contet__info p {
     font-size: 16px;
     font-weight: 400;
