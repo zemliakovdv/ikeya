@@ -18,8 +18,8 @@ function sortProducts(products, sort) {
   const arr = [...products];
   switch (sort) {
     case 'price-asc': return arr.sort((a, b) => (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0));
-    case 'price-desc': return arr.sort((a, b) => a.price - b.price);
-    case 'name-asc': return arr.sort((a, b) => b.price - a.price);
+    case 'price-desc': return arr.sort((a, b) => parseFloat(String(a.product?.price_byn || 0).replace(/\s/g, '')) - parseFloat(String(b.product?.price_byn || 0).replace(/\s/g, '')));
+    case 'name-asc': return arr.sort((a, b) => parseFloat(String(b.product?.price_byn || 0).replace(/\s/g, '')) - parseFloat(String(a.product?.price_byn || 0).replace(/\s/g, '')));
     default: return arr.sort((a, b) => (b.is_hit ? 1 : 0) - (a.is_hit ? 1 : 0));
   }
 }
