@@ -1188,6 +1188,7 @@ main {
 
 .product-card__img-wrap img {
     min-height: 234px;
+    max-height: 234px;
 }
 
 .like {
@@ -1205,6 +1206,7 @@ main {
 }
 
 .product-card__variants {
+    min-height: 36px;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -1220,12 +1222,17 @@ main {
     border: 1px solid #E0E0E0;
     border-radius: 4px;
     background: transparent;
-    padding: 2px;
+    padding: 0px;
+    min-width: 36px;
 }
 
 .product-card__variant-btn img {
     width: 100%;
     object-fit: cover;
+    max-width: 32px;
+    max-height: 32px;
+    min-width: 32px;
+    border-radius: 4px;
 }
 
 /* Навигация слайдера товаров */
@@ -2383,10 +2390,10 @@ main {
     margin-bottom: 16px;
 }
 
-.all-catalog-empty{
+.all-catalog-empty {
     padding-top: 16px;
     width: 100%;
-  text-align: center;
+    text-align: center;
 }
 
 .all-catalog-empty img {
@@ -3998,7 +4005,7 @@ main {
     padding: 4px 8px;
     text-align: center;
     min-height: 104px;
-    max-width: 93px;
+    max-width: 101фpx;
 }
 
 .goods-sizes__card .goods-sizes__item:hover {

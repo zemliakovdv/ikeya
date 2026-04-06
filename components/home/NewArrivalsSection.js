@@ -35,8 +35,9 @@ function mapProductToCard(product) {
     price: attr.price_byn || '0.00', 
     images,
     url: `/product/${attr.slug}-${attr.sku}`,
-    categoryId: String(attr.category_id), // Фикс типизации
-    badges: badges, // Передаем массив для корректного отображения чипсов
+    categoryId: String(attr.category_id),
+    variants: attr.variants || null,
+    badges: badges,
   };
 }
 

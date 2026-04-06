@@ -44,10 +44,10 @@ export default function ProductCard({ product }) {
   const mainImage = activeVariantImg || images[0];
   const hoverImage = images[1] || images[0];
 
-  // Цветовые варианты — фильтруем пустые
+  // Цветовые варианты — только type === 'color'
   const colorVariants = useMemo(() => {
-    if (!Array.isArray(attr.variants)) return [];
-    return attr.variants.filter(v => v.sku && v.name);
+    if (attr.variants?.type !== 'color') return [];
+    return (attr.variants?.data || []).filter(v => v.item?.sku);
   }, [attr.variants]);
 
   const hasVariants = colorVariants.length > 0;
@@ -92,17 +92,15 @@ export default function ProductCard({ product }) {
     e.stopPropagation();
 
     // Если уже выбран этот вариант — переходим на его страницу
-    if (activeVariantSku === variant.sku) {
-      router.push(`/product/${variant.sku}`);
+    if (activeVariantSku === variant.item.sku) {
+      router.push(`/product/${variant.item.sku}`);
       return;
     }
 
     // Иначе — выбираем вариант и меняем изображение
-    setActiveVariantSku(variant.sku);
-    const variantImg = Array.isArray(variant.images) && variant.images.length > 0
-      ? resolveImage(variant.images[0])
-      : null;
-    setActiveVariantImg(variantImg);
+    setActiveVariantSku(variant.item.sku);
+    const firstImg = variant.item.images?.[0];
+    setActiveVariantImg(firstImg ? resolveImage(firstImg) : null);
   }, [activeVariantSku, router]);
 
   const priceNum = parseFloat(String(attr.price_byn || attr.price || 0).replace(/\s/g, ''));
@@ -161,26 +159,25 @@ export default function ProductCard({ product }) {
         <div className="product-card__info">
 
           {/* Цветовые варианты */}
-          {hasVariants && (
-            <div className="product-card__variants" onClick={(e) => e.stopPropagation()}>
-              {visibleVariants.map((variant) => {
-                const variantImg = Array.isArray(variant.images) && variant.images.length > 0
-                  ? resolveImage(variant.images[0])
-                  : resolveImage(localImages[colorVariants.indexOf(variant)]);
-                const isActive = variant.sku === activeVariantSku;
+          <div className="product-card__variants" onClick={(e) => e.stopPropagation()}>
+              {hasVariants && visibleVariants.map((variant) => {
+                const variantImg = variant.item.images?.[0]
+                  ? resolveImage(variant.item.images[0])
+                  : PLACEHOLDER_IMAGE;
+                const isActive = variant.item.sku === activeVariantSku;
                 return (
                   <button
-                    key={variant.sku}
+                    key={variant.item.sku}
                     className={`product-card__variant-btn${isActive ? ' active' : ''}`}
-                    title={variant.name}
+                    title={variant.color}
                     onClick={(e) => handleVariantClick(e, variant)}
                     type="button"
                   >
-                    <img src={variantImg} alt={variant.name} />
+                    <img src={variantImg} alt={variant.color} />
                   </button>
                 );
               })}
-              {hiddenCount > 0 && (
+              {hasVariants && hiddenCount > 0 && (
                 <button
                   className="product-card__variant-btn product-card__variant-more"
                   onClick={(e) => { e.stopPropagation(); router.push(`/product/${sku}`); }}
@@ -190,7 +187,6 @@ export default function ProductCard({ product }) {
                 </button>
               )}
             </div>
-          )}
 
           <div className="product-card__header">
             <h3 className="product-card__title">{title}</h3>

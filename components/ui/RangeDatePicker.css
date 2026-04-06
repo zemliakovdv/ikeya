@@ -1,0 +1,121 @@
+/* components/ui/RangeDatePicker.css */
+
+/* ─── Обёртка ─────────────────────────────────────────────── */
+.rdp-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+/* ─── Инпут ───────────────────────────────────────────────── */
+.rdp-input {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  min-width: 240px;
+  transition: border-color 0.15s;
+  user-select: none;
+}
+
+.rdp-input:hover,
+.rdp-input--open {
+  border-color: #0058A3;
+}
+
+.rdp-input__text {
+  font-size: 14px;
+  color: #181818;
+  white-space: nowrap;
+}
+
+.rdp-input__placeholder {
+  color: #9e9e9e;
+}
+
+.rdp-input__icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ─── Дропдаун ────────────────────────────────────────────── */
+.rdp-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 999;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  padding: 16px;
+  width: 300px;
+  user-select: none;
+}
+
+/* ─── Ячейка-обёртка дня (для выделения диапазона) ───────── */
+.rdp-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Фон диапазона — растянутая полоска */
+.rdp-cell--in-range::before,
+.rdp-cell--start::after,
+.rdp-cell--end::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 36px;
+  background: #e8f0fe;
+  z-index: 0;
+}
+
+/* Диапазон — полная ячейка */
+.rdp-cell--in-range::before {
+  left: 0;
+  right: 0;
+}
+
+/* Start — правая половина */
+.rdp-cell--start::after {
+  left: 50%;
+  right: 0;
+}
+
+/* End — левая половина */
+.rdp-cell--end::before {
+  left: 0;
+  right: 50%;
+}
+
+/* Если start и end одна ячейка — убираем полоски */
+.rdp-cell--start.rdp-cell--end::after,
+.rdp-cell--start.rdp-cell--end::before {
+  display: none;
+}
+
+/* Кнопка дня поверх фона */
+.rdp-cell .datepicker-day {
+  position: relative;
+  z-index: 1;
+}
+
+/* День внутри диапазона */
+.rdp-day--in-range {
+  color: #0058A3;
+  font-weight: 500;
+  background: transparent !important;
+}
+
+.rdp-day--in-range:hover {
+  background: transparent !important;
+  color: #0058A3;
+}

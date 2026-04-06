@@ -169,6 +169,7 @@ export default function ProductInfo({ product }) {
         {variantType === 'size' && variantsData.length > 0 && (
           <ProductSizes
             variants={variantsData}
+            currentSku={attr.sku}
             currentPrice={parseFloat(attr.price)}
             productImage={localImages[0]}
           />

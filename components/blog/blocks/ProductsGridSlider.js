@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import ProductCard from '@/components/ui/ProductCard';
+import ProductCard from '@/components/catalog/products/ProductCard';
 
 export default function ProductsGridSlider({ slides, blockId }) {
   const swiperRef = useRef(null);
@@ -122,13 +122,21 @@ export default function ProductsGridSlider({ slides, blockId }) {
                 {slideProducts.map(product => (
                   <ProductCard
                     key={product.id}
-                    gallery={`${blockId}-${product.id}`}
-                    title={product.title}
-                    description={product.description}
-                    price={product.price}
-                    images={product.images}
-                    url={product.url}
-                    sku={product.sku}
+                    product={{
+                      id: product.id,
+                      attributes: {
+                        sku: product.sku,
+                        small_desc_name: product.title,
+                        name_ru: product.description,
+                        price_byn: product.price,
+                        local_images: (product.images || []).map(img =>
+                          img.replace('http://45.135.234.22/', '')
+                        ),
+                        variants: product.variants || null,
+                        is_bestseller: product.badges?.includes('hit'),
+                        is_new: product.badges?.includes('new'),
+                      }
+                    }}
                   />
                 ))}
               </div>

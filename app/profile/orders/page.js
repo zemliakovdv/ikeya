@@ -7,66 +7,69 @@ import ProfileLayout from '@/components/profile/ProfileLayout';
 import ActiveOrders from '@/components/profile/ActiveOrders';
 import OrderHistory from '@/components/profile/OrderHistory';
 import Purchases from '@/components/profile/Purchases';
-import { getOrders, getOrderById, getPurchases, isActiveOrder, reorder } from '@/lib/api/account';
+import { getOrders, getPurchases, isActiveOrder, reorder } from '@/lib/api/account';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 
 const breadcrumbs = [
   { label: 'Профиль', href: '/profile' },
   { label: 'Заказы', href: null },
 ];
 
-// Маппер: API формат → формат компонентов
-function mapApiOrder(apiOrder, included = []) {
+function mapApiOrder(apiOrder) {
   const a = apiOrder.attributes;
 
-  // Статусы: API (underscore) → компонент (hyphen)
   const statusMap = {
-    awaiting_payment:   'awaiting',
-    pending:            'assembly',
-    processing:         'assembly',
-    assembly:           'assembly',
-    assembly_process:   'assembly-process',
-    transit:            'transit',
-    customs_poland:     'customs-poland',
-    customs_belarus:    'customs-belarus',
-    available_warehouse:'available-warehouse',
-    delivering:         'in-transit-pvz',
-    delivered_to_pvz:   'arrived-pvz',
-    delivered:          'delivered',
-    completed:          'delivered',
-    canceled:           'canceled',
-    cancelled:          'canceled',
-    returned:           'canceled',
+    awaiting_payment:    'awaiting',
+    pending:             'assembly',
+    processing:          'assembly',
+    assembly:            'assembly',
+    assembly_process:    'assembly-process',
+    transit:             'transit',
+    customs_poland:      'customs-poland',
+    customs_belarus:     'customs-belarus',
+    available_warehouse: 'available-warehouse',
+    delivering:          'in-transit-pvz',
+    delivered_to_pvz:    'arrived-pvz',
+    delivered:           'delivered',
+    completed:           'delivered',
+    canceled:            'canceled',
+    cancelled:           'canceled',
+    returned:            'canceled',
   };
-
-  const items = (included || []).map(item => ({
-    image:    item.attributes.image_url || '/assets/img/profile/active_1.png',
-    name:     item.attributes.name      || '—',
-    desc:     item.attributes.product_sku || '',
-    quantity: item.attributes.quantity  || 1,
-    price:    item.attributes.price_byn || 0,
-  }));
 
   return {
     id:          a.id,
     status:      statusMap[a.status] || 'assembly',
     rawStatus:   a.status,
+    rawDate:     a.created_at,
     date:        new Date(a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
     dateRange:   '—',
-    price:       a.total_amount       || 0,
-    trackNumber: a.track_number       || '',
-    items,
+    price:       a.total_amount  || 0,
+    trackNumber: a.track_number  || '',
   };
+}
+
+// Группируем purchases по order_id → { [order_id]: [purchase, ...] }
+function groupPurchasesByOrderId(purchases) {
+  return (purchases || []).reduce((acc, p) => {
+    const key = p.order_id;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(p);
+    return acc;
+  }, {});
 }
 
 export default function OrdersPage() {
   const { isAuth, isHydrated } = useAuth();
+  const { refreshCart } = useCart();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('active');
 
-  const [activeOrders,  setActiveOrders]  = useState([]);
-  const [historyOrders, setHistoryOrders] = useState([]);
-  const [purchases,     setPurchases]     = useState([]);
+  const [activeOrders,        setActiveOrders]        = useState([]);
+  const [historyOrders,       setHistoryOrders]       = useState([]);
+  const [purchasesByOrderId,  setPurchasesByOrderId]  = useState({});
+  const [allPurchases,        setAllPurchases]        = useState([]);
 
   const [loadingOrders,    setLoadingOrders]    = useState(true);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
@@ -80,22 +83,9 @@ export default function OrdersPage() {
       try {
         const resp = await getOrders({ per_page: 50 });
         const all = resp.data || [];
-
-        // Загружаем детали всех заказов параллельно (нужны товары из included[])
-        const detailed = await Promise.all(
-          all.map(async (order) => {
-            try {
-              const detail = await getOrderById(order.attributes.id);
-              return mapApiOrder(detail.data, detail.included || []);
-            } catch {
-              // Если детали не загрузились — показываем без товаров
-              return mapApiOrder(order, []);
-            }
-          })
-        );
-
-        setActiveOrders(detailed.filter(o => isActiveOrder(o.rawStatus)));
-        setHistoryOrders(detailed.filter(o => !isActiveOrder(o.rawStatus)));
+        const mapped = all.map(o => mapApiOrder(o));
+        setActiveOrders(mapped.filter(o => isActiveOrder(o.rawStatus)));
+        setHistoryOrders(mapped.filter(o => !isActiveOrder(o.rawStatus)));
       } catch (e) {
         setError(e.message || 'Не удалось загрузить заказы');
       } finally {
@@ -103,27 +93,31 @@ export default function OrdersPage() {
       }
     }
 
-    loadOrders();
-  }, [isHydrated, isAuth]);
-
-  useEffect(() => {
-    if (!isHydrated || !isAuth) return;
-    if (activeTab !== 'purchases') return;
-
     async function loadPurchases() {
       setLoadingPurchases(true);
       try {
-        const resp = await getPurchases({ sort: 'newest' });
-        setPurchases(resp.purchases || []);
+        let allPages = [];
+        let page = 1;
+        while (true) {
+          const resp = await getPurchases({ sort: 'newest', page, per_page: 100 });
+          const purchases = resp.purchases || [];
+          allPages = [...allPages, ...purchases];
+          if (page >= (resp.meta?.total_pages || 1)) break;
+          page++;
+        }
+        setAllPurchases(allPages);
+        setPurchasesByOrderId(groupPurchasesByOrderId(allPages));
       } catch (e) {
-        setError(e.message || 'Не удалось загрузить покупки');
+        // не блокируем UI — purchases опциональны
+        console.error('Не удалось загрузить покупки:', e.message);
       } finally {
         setLoadingPurchases(false);
       }
     }
 
+    loadOrders();
     loadPurchases();
-  }, [isHydrated, isAuth, activeTab]);
+  }, [isHydrated, isAuth]);
 
   async function handleReorder(orderId) {
     try {
@@ -131,6 +125,7 @@ export default function OrdersPage() {
       if (resp.has_missing) {
         alert(`Часть товаров недоступна: ${resp.missing_skus?.join(', ')}`);
       }
+      await refreshCart();
       router.push('/cart');
     } catch (e) {
       alert(e.message || 'Не удалось повторить заказ');
@@ -222,7 +217,11 @@ export default function OrdersPage() {
                         </button>
                       </div>
                     ) : (
-                      <OrderHistory orders={historyOrders} onReorder={handleReorder} />
+                      <OrderHistory
+                        orders={historyOrders}
+                        purchasesByOrderId={purchasesByOrderId}
+                        onReorder={handleReorder}
+                      />
                     )}
                   </div>
                 </div>
@@ -235,7 +234,7 @@ export default function OrdersPage() {
                   <div className="orders-shopping">
                     {loadingPurchases ? (
                       <div className="orders-loading">Загружаем покупки…</div>
-                    ) : purchases.length === 0 ? (
+                    ) : allPurchases.length === 0 ? (
                       <div className="empty">
                         <div className="empty-illustration">
                           <img src="/assets/img/profile/empty-buys.svg" alt="" />
@@ -247,7 +246,7 @@ export default function OrdersPage() {
                         </button>
                       </div>
                     ) : (
-                      <Purchases products={purchases} />
+                      <Purchases products={allPurchases} />
                     )}
                   </div>
                 </div>

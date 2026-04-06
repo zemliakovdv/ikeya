@@ -35,9 +35,8 @@ function mapProductToCard(product) {
     images,
     url: `/product/${attr.slug}-${attr.sku}`,
     categoryId: String(attr.category_id),
-    
-    // Передаем именно badges, так как ProductTabsSection ищет их
-    badges: badges, 
+    variants: attr.variants || null,
+    badges: badges,
   };
 }
 

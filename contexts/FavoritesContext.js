@@ -26,6 +26,7 @@ async function fetchProductBySku(sku) {
       local_images: attr.local_images,
       images: { local_images: attr.local_images },
       is_bestseller: attr.is_bestseller,
+      variants: attr.variants || null,
     };
   } catch {
     return null;

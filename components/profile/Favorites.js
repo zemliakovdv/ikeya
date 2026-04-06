@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import FavoriteProductCard from './FavoriteProductCard';
+import ProductCard from '@/components/catalog/products/ProductCard';
 import { Suspense } from 'react';
 import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 
@@ -103,10 +103,20 @@ export default function Favorites() {
           <div className="shopping-cards">
             <div className="all-catalog-items">
               {sorted.filter(item => item.product).map(item => (
-                <FavoriteProductCard
+                <ProductCard
                   key={item.sku}
-                  product={item.product}
-                  onRemoved={sku => handleRemoved(sku)}
+                  product={{
+                    id: item.sku,
+                    attributes: {
+                      sku: item.product.sku,
+                      small_desc_name: item.product.small_desc_name,
+                      name_ru: item.product.name_ru,
+                      price_byn: item.product.price_byn,
+                      local_images: item.product.local_images || [],
+                      variants: item.product.variants || null,
+                      is_bestseller: item.product.is_bestseller,
+                    }
+                  }}
                 />
               ))}
             </div>
