@@ -6,7 +6,6 @@ import ProfileLayout from '@/components/profile/ProfileLayout';
 import ReturnOffcanvas from '@/components/profile/ReturnOffcanvas';
 
 const breadcrumbs = [
-  { label: 'Главная',  href: '/' },
   { label: 'Профиль', href: '/profile' },
   { label: 'Возвраты', href: null },
 ];

@@ -620,6 +620,7 @@ h2 {
 
 .header-bottom-swiper .swiper-wrapper {
     gap: 16px;
+    justify-content: space-between;
 }
 
 .header-bottom-slide {
@@ -4285,7 +4286,7 @@ main {
 }
 
 .size-contet__info h5:not(:first-of-type) {
-  margin-top: 24px;
+    margin-top: 24px;
 }
 
 .size-contet__info p {
@@ -7760,6 +7761,9 @@ main {
     font-size: 14px;
     color: #181818;
     transition: background 0.15s;
+    background: transparent;
+    border: none;
+    width: 100%;
 }
 
 .phone-dropdown__item:hover {

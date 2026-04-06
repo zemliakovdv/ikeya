@@ -3,6 +3,7 @@
 // components/layout/Header/PhoneDropdown.js
 
 import { useState, useRef, useEffect } from 'react';
+import { openJivoChat } from '@/components/FloatingChatButton';
 
 export default function PhoneDropdown() {
     const [isOpen, setIsOpen] = useState(false);
@@ -47,17 +48,16 @@ export default function PhoneDropdown() {
 
                     <div className="phone-dropdown__divider" />
 
-                    <a
-                        href="https://t.me/ikeyaby"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <button
+                        type="button"
                         className="phone-dropdown__item"
+                        onClick={() => { setIsOpen(false); openJivoChat(); }}
                     >
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M17.2082 3.42104L2.44473 8.85162C1.43719 9.23764 1.44302 9.77379 2.25988 10.0129L6.05025 11.1408L14.8201 5.8627C15.2347 5.62203 15.6136 5.7515 15.3022 6.0152L8.19691 12.132H8.19524L8.19691 12.1328L7.93544 15.8597C8.31848 15.8597 8.48751 15.6921 8.70234 15.4943L10.5434 13.7866L14.3729 16.4848C15.079 16.8557 15.5861 16.6651 15.7618 15.8612L18.2757 4.56006C18.533 3.57593 17.8818 3.13033 17.2082 3.42104V3.42104Z" fill="#039BE5" />
                         </svg>
                         Telegram Чат-бот
-                    </a>
+                    </button>
 
                     <a href="mailto:info@ikeya.by" className="phone-dropdown__item">
                         <svg width="17" height="15" viewBox="0 0 17 15" fill="none" xmlns="http://www.w3.org/2000/svg">
