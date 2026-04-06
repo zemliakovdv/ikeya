@@ -2383,6 +2383,35 @@ main {
     margin-bottom: 16px;
 }
 
+.all-catalog-empty{
+    padding-top: 16px;
+    width: 100%;
+  text-align: center;
+}
+
+.all-catalog-empty img {
+    margin-bottom: 24px;
+}
+
+.all-catalog-empty h3 {
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 127%;
+    text-align: center;
+    color: #181818;
+    margin-bottom: 16px;
+}
+
+.all-catalog-empty p {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    letter-spacing: 0.03em;
+    text-align: center;
+    color: #181818;
+    margin-bottom: 0;
+}
+
 
 /* Фильтры */
 .filter-aside {

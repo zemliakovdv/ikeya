@@ -86,6 +86,11 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const initialProducts = productsResponse.data || [];
 
+    const hasActiveFilters = !!(
+      sp?.min_price || sp?.max_price ||
+      Object.keys(sp || {}).some(k => k.startsWith('filters['))
+    );
+
     const queryParams = new URLSearchParams();
     if (sort) queryParams.set('sort', sort);
     if (sp?.min_price) queryParams.set('min_price', sp.min_price);
@@ -122,7 +127,7 @@ export default async function CategoryPage({ params, searchParams }) {
                 hasChildren={childCategories.length > 0}
               />
 
-              <div className="all-catalog-center" key={productsQueryString}>
+              <div className="all-catalog-center" key={productsQueryString} style={initialProducts.length === 0 ? { width: '100%' } : {}}>
                 <ProductSort currentSort={sort} />
                 <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
                 {initialProducts.length > 0 ? (
@@ -144,7 +149,15 @@ export default async function CategoryPage({ params, searchParams }) {
                   </>
                 ) : (
                   <div className="all-catalog-empty">
-                    <p>В этой категории пока нет товаров</p>
+                    {hasActiveFilters ? (
+                      <>
+                        <img src="/assets/img/catalog-page/not-found.png" alt="Ничего не найдено" />
+                        <h3>Ничего не найдено</h3>
+                        <p>По выбранным фильтрам товары не найдены.<br />Попробуйте изменить параметры фильтрации или сбросьте фильтры.</p>
+                      </>
+                    ) : (
+                      <p>В этой категории пока нет товаров</p>
+                    )}
                   </div>
                 )}
               </div>
