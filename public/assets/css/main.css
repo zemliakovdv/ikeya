@@ -5437,6 +5437,7 @@ main {
     background-color: #fff;
     border-radius: 8px;
     padding: 16px;
+    margin-bottom: 16px;
 }
 
 .cart-summary__inner .no_promokod {

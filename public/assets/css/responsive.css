@@ -161,6 +161,11 @@
         width: 480px;
     }
 
+    .service-price {
+        width: 25%;
+        text-align: right;
+    }
+
 }
 
 /* Large Tablet / Small Desktop (992px - 1199px) */

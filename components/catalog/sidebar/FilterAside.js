@@ -216,7 +216,7 @@ export default function FilterAside({
       {seriesFilter && (
         <CheckboxFilter
           key={seriesFilter.parameter}
-          title={seriesFilter.title}
+          title="Коллекции"
           filterKey={seriesFilter.parameter}
           selectedOptions={draftFilters[seriesFilter.parameter] || []}
           onToggle={toggleValue}
