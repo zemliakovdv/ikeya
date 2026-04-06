@@ -65,8 +65,8 @@ export default function CartItem({
     return { whole: Number(whole).toLocaleString('ru-RU'), cents };
   };
 
-  const oldPriceFormatted = formatPrice(oldPrice);
-  const newPriceFormatted = formatPrice(newPrice);
+  const oldPriceFormatted = formatPrice(oldPrice * (item.quantity || 1));
+  const newPriceFormatted = formatPrice(newPrice * (item.quantity || 1));
 
   const handleMinus = () => {
     if (item.quantity > 1) onQuantityChange?.(item.sku, item.quantity - 1);

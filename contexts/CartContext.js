@@ -41,7 +41,7 @@ export function CartProvider({ children }) {
               small_desc_name: attrs.small_desc_name || item.product?.small_desc_name,
               collection: attrs.collection || item.product?.collection,
               // Цена: берём из product API, она актуальная
-              price_byn: attrs.price_byn || item.product?.price_byn,
+              price_byn: String(attrs.price_byn || item.product?.price_byn || 0).replace(/\s/g, ''),
               price: attrs.price || item.product?.price,
               local_images:
                 attrs.local_images ??

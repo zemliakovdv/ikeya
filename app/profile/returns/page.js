@@ -34,7 +34,7 @@ export default function ReturnsPage() {
                 Причины возврата товара
               </button>
             </h2>
-            <div id="collapseOne" className="accordion-collapse collapse" data-bs-parent="#accordionReturn">
+            <div id="collapseOne" className="accordion-collapse collapse">
               <div className="accordion-body">
                 <div className="return-reasons">
                   <div className="return-table">
@@ -81,12 +81,12 @@ export default function ReturnsPage() {
                 Как подать заявку на возврат
               </button>
             </h2>
-            <div id="collapseTwo" className="accordion-collapse collapse" data-bs-parent="#accordionReturn">
+            <div id="collapseTwo" className="accordion-collapse collapse">
               <div className="accordion-body">
                 <div className="returns-text">
                   <p>Заполните заявку любым удобным способом:</p>
                   <ul>
-                    <li>На сайте в <a href="#">личном кабинете.</a></li>
+                    <li>На сайте в <a href="/profile">личном кабинете.</a></li>
                     <li>Приложите фото, подтверждающее наличие дефекта.</li>
                     <li>Напишите в <a href="#">чат</a></li>
                     <li>Позвоните по телефону горячей линии <a href="tel:2626">2626.</a></li>
@@ -98,6 +98,7 @@ export default function ReturnsPage() {
                     <li>Инструкцию по сдаче отправления в отделение Европочты / Белпочты;</li>
                     <li>Контакт поддержки на случай вопросов.</li>
                   </ul>
+                  <p>Возвратная накладная формируется Продавцом. Вам будет сообщён только трек-номер, а сам ярлык распечатают сотрудники отделения Европочты, Autolight или Белпочты при сдаче посылки.</p>
                 </div>
               </div>
             </div>
@@ -109,12 +110,12 @@ export default function ReturnsPage() {
                 Подготовка товара
               </button>
             </h2>
-            <div id="collapseThree" className="accordion-collapse collapse" data-bs-parent="#accordionReturn">
+            <div id="collapseThree" className="accordion-collapse collapse">
               <div className="accordion-body">
                 <div className="returns-text">
                   <ul>
                     <li>Упакуйте товар в оригинальную упаковку (если сохранилась).</li>
-                    <li>Приложите копию чека или подтверждения заказа.</li>
+                    <li>Приложите копию <a href="/profile/electronic-receipts">чека</a> или подтверждения заказа.</li>
                     <li>Убедитесь, что товар не был в употреблении и сохранён товарный вид.</li>
                   </ul>
                 </div>
@@ -128,7 +129,7 @@ export default function ReturnsPage() {
                 Отправка возврата
               </button>
             </h2>
-            <div id="collapseFour" className="accordion-collapse collapse" data-bs-parent="#accordionReturn">
+            <div id="collapseFour" className="accordion-collapse collapse">
               <div className="accordion-body">
                 <div className="returns-text">
                   <p>Отнесите посылку в ближайшее отделение:</p>
@@ -150,7 +151,7 @@ export default function ReturnsPage() {
                 Проверка и возврат средств
               </button>
             </h2>
-            <div id="collapseFive" className="accordion-collapse collapse" data-bs-parent="#accordionReturn">
+            <div id="collapseFive" className="accordion-collapse collapse">
               <div className="accordion-body">
                 <div className="returns-text">
                   <p>После получения и проверки возврата (в течение 5 рабочих дней) мы уведомим вас по email.</p>

@@ -1,67 +1,82 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { getOrderById } from '@/lib/api/account';
+import { resolveImageUrl } from '@/lib/api/ikea';
+
+const TIMER_SECONDS = 20 * 60;
+
+const PAYMENT_LABELS = {
+  card: 'Оплата картой онлайн',
+  erip: 'Оплата через ЕРИП',
+};
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function formatAmount(amount) {
+  if (!amount && amount !== 0) return '0,00 р.';
+  return Number(amount).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' р.';
+}
+
+const PROVIDER_NAMES = { europost: 'Европочта', autolight: 'Автолайт' };
 
 export default function OrderSuccessPage() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get('order_id');
 
-  const orderData = {
-    number: '66518',
-    payment: {
-      method: 'Оплата картой онлайн',
-      status: 'Ждет оплаты'
-    },
-    delivery: {
-      isFree: true,
-      type: 'Доставка до ПВЗ'
-    },
-    total: 2556.93,
-    estimatedDate: '28-29 ноября',
-    pickupPoint: {
-      name: 'Склад IKEYA',
-      address: 'Марьина Горка, Минская обл., ул. Новая Заря, 6'
-    },
-    services: [
-      'Подъем и занос мебели',
-      'Сборка мебели'
-    ],
-    recipient: {
-      fullName: 'Христорождественский Иннокентий Адольфович',
-      phone: '+375 (12) 598-23-56',
-      email: 'qwerty@gmail.com'
-    },
-    items: [
-      {
-        id: 1,
-        name: 'NATTSLÄNDA',
-        description: 'Пододеяльник и наволочка, разноцветный цветочный узор, 150x200/50x60 см',
-        quantity: 1,
-        price: 143.93,
-        image: '/assets/img/profile/zakaz_1.png'
-      },
-      {
-        id: 2,
-        name: 'VALEVÅG',
-        description: 'Матрас, пружины карманного типа, средней жесткости/светло‑голубой, 140x200 см',
-        quantity: 1,
-        price: 558.93,
-        image: '/assets/img/profile/zakaz_2.png'
-      },
-      {
-        id: 3,
-        name: 'MUGGSVEIK',
-        description: '9-местный диван-кровать с шезлонгом, с шерстяным покрытием/серый Гуннаред/темный серый',
-        quantity: 1,
-        price: 1856.07,
-        image: '/assets/img/profile/zakaz_3.png'
-      }
-    ]
-  };
+  const [order, setOrder]   = useState(null);
+  const [items, setItems]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
+  const timerRef = useRef(null);
 
-  const handlePayment = () => {
-    console.log('Redirect to payment');
-    // Логика оплаты
-  };
+  const [pvz, setPvz]           = useState(null);
+  const [services, setServices] = useState([]);
+
+  useEffect(() => {
+    try {
+      const storedPvz = sessionStorage.getItem('selectedPvz');
+      if (storedPvz) setPvz(JSON.parse(storedPvz));
+      const storedServices = sessionStorage.getItem('selectedServices');
+      if (storedServices) setServices(JSON.parse(storedServices));
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!orderId) { setLoading(false); return; }
+    getOrderById(orderId)
+      .then(data => {
+        setOrder(data.data?.attributes || null);
+        setItems(data.included || []);
+      })
+      .catch(() => setOrder(null))
+      .finally(() => setLoading(false));
+  }, [orderId]);
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  function handleCopy() {
+    if (!orderId) return;
+    navigator.clipboard.writeText(orderId).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  const timerStr = `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}`;
+  const attrs = order || {};
+  const paymentLabel = PAYMENT_LABELS[attrs.payment_method] || attrs.payment_method || 'Оплата картой онлайн';
+  const deliveryFree = !attrs.delivery_price || Number(attrs.delivery_price) === 0;
 
   return (
     <main className="orders-statused">
@@ -79,21 +94,33 @@ export default function OrderSuccessPage() {
                 <h1 className="success-title">Заказ успешно оформлен. Спасибо!</h1>
               </div>
 
-              {/* ========== АЛЕРТ О ПОДТВЕРЖДЕНИИ ========== */}
-              <div className="alert alert-info">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+              {/* ========== АЛЕРТ С ТАЙМЕРОМ ========== */}
+              <div className="alert alert-danger alert-payment">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#B71C1C"/>
                 </svg>
-                <span>Заказ требует подтверждения. В течение <strong>30 минут</strong> с вами свяжется сотрудник колл-центра.</span>
+                <span>
+                  Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.
+                </span>
+                <button className="btn-pay-order">Оплатить заказ</button>
               </div>
 
               {/* ========== ИНФОРМАЦИЯ О ЗАКАЗЕ ========== */}
               <section className="order-info-section">
                 <div className="order-number-block">
                   <div className="order-number-wrap">
-                    <h2 className="order-number">Заказ № {orderData.number}</h2>
-                    <button className="order-info-payment" onClick={handlePayment}>
-                      Оплатить заказ
+                    <h2 className="order-number">Заказ № {orderId}</h2>
+                    <button className="btn-copy-order" onClick={handleCopy} title="Скопировать номер заказа">
+                      {copied ? (
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                          <path d="M4 10L8 14L16 6" stroke="#00910A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      ) : (
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                          <rect x="7" y="7" width="10" height="10" rx="2" stroke="#9E9E9E" strokeWidth="1.5"/>
+                          <path d="M13 7V5C13 3.89543 12.1046 3 11 3H5C3.89543 3 3 3.89543 3 5V11C3 12.1046 3.89543 13 5 13H7" stroke="#9E9E9E" strokeWidth="1.5" strokeLinecap="round"/>
+                        </svg>
+                      )}
                     </button>
                   </div>
                   <p className="order-tracking">
@@ -111,23 +138,23 @@ export default function OrderSuccessPage() {
                     </svg>
                   </div>
                   <div className="detail-content">
-                    <h3 className="detail-title">{orderData.payment.method}</h3>
-                    <p className="detail-status">{orderData.payment.status}</p>
+                    <h3 className="detail-title">{paymentLabel}</h3>
+                    <p className="detail-status">Ждет оплаты</p>
                   </div>
                 </div>
 
                 {/* Доставка */}
                 <div className="order-detail-item delivery-free">
                   <div className="detail-content">
-                    <h3 className="detail-title">{orderData.delivery.isFree ? 'бесплатно' : ''}</h3>
-                    <p className="detail-subtitle">{orderData.delivery.type}</p>
+                    <h3 className="detail-title">{deliveryFree ? 'бесплатно' : formatAmount(attrs.delivery_price)}</h3>
+                    <p className="detail-subtitle">Доставка до ПВЗ</p>
                   </div>
                 </div>
 
                 {/* Сумма заказа */}
                 <div className="order-detail-item total-amount">
                   <div className="detail-content">
-                    <h3 className="detail-price">{orderData.total.toFixed(2).replace('.', ',')} р.</h3>
+                    <h3 className="detail-price">{formatAmount(attrs.total_amount)}</h3>
                     <p className="detail-subtitle">Сумма заказа</p>
                   </div>
                 </div>
@@ -141,91 +168,104 @@ export default function OrderSuccessPage() {
                     </svg>
                   </div>
                   <div className="detail-content">
-                    <h3 className="detail-title">{orderData.estimatedDate}</h3>
+                    <h3 className="detail-title">через 20 дней</h3>
                     <p className="detail-subtitle">Планируемая дата получения заказа</p>
                   </div>
                 </div>
 
                 {/* Пункт выдачи */}
+                {pvz && (
                 <div className="order-detail-item">
-                  <div className="detail-icon ikea-icon">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0C18.6274 0 24 5.37258 24 12Z" fill="white" />
-                      <path d="M22.8 12C22.8 17.9647 17.9647 22.8 12 22.8C6.03533 22.8 1.2 17.9647 1.2 12C1.2 6.03533 6.03533 1.2 12 1.2C17.9647 1.2 22.8 6.03533 22.8 12Z" fill="#FFDB00" />
-                      <path d="M5.52999 14.251V9.95803C5.52999 9.47881 5.52999 9.1194 5.51997 8.75999H7.92568C7.91566 9.12938 7.91566 9.45884 7.91566 9.95803V14.251C7.91566 14.9099 7.91566 15.3991 7.92568 15.8484H5.51997C5.52999 15.4091 5.52999 14.9199 5.52999 14.251Z" fill="#0058A3" />
-                      <path d="M9.05399 14.251V9.95803C9.05399 9.47881 9.05399 9.1194 9.04396 8.75999H11.4497C11.4397 9.12938 11.4397 9.45884 11.4397 9.95803V11.2459H12.7828C13.1136 10.9165 13.3843 10.6269 13.6248 10.3773L15.1585 8.75999H18.0754L18.0854 8.77995C17.4038 9.43888 15.7499 11.0762 14.6974 12.1045C15.78 13.2327 17.6243 15.1096 18.3561 15.8284L18.346 15.8484H15.4091L14.0759 14.4707C13.7652 14.1412 13.3542 13.7219 12.843 13.1927H11.4397V14.251C11.4397 14.9099 11.4397 15.3991 11.4497 15.8484H9.04396C9.05399 15.4091 9.05399 14.9199 9.05399 14.251Z" fill="#0058A3" />
-                    </svg>
+                  <div className="detail-icon">
+                    {pvz.provider === 'autolight' ? (
+                      <img src="/assets/img/icon/autolight.png" alt="Автолайт" width="24" height="24"/>
+                    ) : (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="12" fill="white"/>
+                        <circle cx="12" cy="12" r="10.8" fill="#FF0000"/>
+                        <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white"/>
+                        <path d="M12.7333 11.96V16.2533L14.1867 15.4133V12.52L16.3933 11.26V14.14L17.8533 13.3V9.04667H17.84L12.7333 11.96Z" fill="white"/>
+                        <path d="M12.7333 17.2267V18.6733H12.74L17.8533 15.7467V14.2867L12.7333 17.2267Z" fill="white"/>
+                        <path d="M11.54 18.6333V17.24L7.87333 15.16V13.8533L11.54 15.96V14.6333L7.87333 12.5333V11.1933L11.54 13.2867V11.96L7.87333 9.87333L6.42667 9.04667H6.41333V15.68L11.54 18.6333Z" fill="white"/>
+                      </svg>
+                    )}
                   </div>
                   <div className="detail-content">
-                    <h3 className="detail-title">{orderData.pickupPoint.address}</h3>
-                    <p className="detail-subtitle">{orderData.pickupPoint.name}</p>
+                    <h3 className="detail-title">{pvz.city}, {pvz.address}</h3>
+                    <p className="detail-subtitle">{PROVIDER_NAMES[pvz.provider] || pvz.provider}</p>
                   </div>
                 </div>
+                )}
               </section>
 
               {/* ========== ВЫБРАННЫЕ УСЛУГИ ========== */}
+              {(services.length > 0 || attrs.full_name) && (
               <section className="selected-services-section">
-                <div className="alert alert-info">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
-                  </svg>
-                  <span>Услуги оплачиваются отдельно. С Вами свяжется сотрудник колл-центра для уточнения всех деталей.</span>
-                </div>
-
-                <div className="services-header">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15.4199 11.64L16.5699 10.49C18.0399 10.88 19.6399 10.47 20.7399 9.36998C21.9499 8.15998 22.3299 6.34998 21.7099 4.75998C21.6299 4.53998 21.4299 4.37998 21.1999 4.32998C20.9699 4.27998 20.7299 4.34998 20.5599 4.51998L19.2899 5.78998H18.2099V4.70998L19.4699 3.43998C19.6399 3.26998 19.7099 3.02998 19.6599 2.79998C19.6099 2.56998 19.4499 2.37998 19.2299 2.28998C17.6399 1.66998 15.8299 2.05998 14.6199 3.25998C13.5199 4.35998 13.1099 5.94998 13.4999 7.42998L10.9499 9.97998L7.02989 6.05998L7.82989 5.25998C7.98989 5.09998 8.05989 4.87998 8.02989 4.64998C7.99989 4.41998 7.84989 4.23998 7.64989 4.13998L4.54989 2.58998C4.27989 2.45998 3.95989 2.50998 3.73989 2.71998L2.70989 3.74998C2.49989 3.95998 2.44989 4.28998 2.57989 4.55998L4.12989 7.65998C4.22989 7.85998 4.41989 7.99998 4.63989 8.03998C4.67989 8.03998 4.70989 8.03998 4.74989 8.03998C4.92989 8.03998 5.10989 7.96998 5.23989 7.83998L6.03989 7.03998L9.95989 10.96L7.40989 13.51C5.92989 13.11 4.33989 13.53 3.23989 14.63C2.02989 15.84 1.64989 17.65 2.26989 19.24C2.34989 19.46 2.54989 19.62 2.77989 19.67C3.00989 19.72 3.24989 19.65 3.41989 19.48L4.68989 18.22H5.76989V19.3L4.49989 20.57C4.32989 20.74 4.25989 20.98 4.30989 21.21C4.35989 21.44 4.51989 21.63 4.73989 21.72C5.24989 21.92 5.76989 22.01 6.29989 22.01C7.42989 22.01 8.52989 21.57 9.34989 20.75C10.4499 19.65 10.8599 18.06 10.4699 16.58L11.6199 15.43L17.0699 20.88C17.4799 21.29 18.0099 21.49 18.5499 21.49C19.0899 21.49 19.6199 21.29 20.0299 20.88L20.8499 20.06C21.6599 19.24 21.6599 17.91 20.8499 17.1L15.3999 11.65L15.4199 11.64ZM4.95989 6.16998L4.06989 4.37998L4.38989 4.05998L6.17989 4.94998L4.95989 6.16998ZM9.19989 15.89C8.99989 16.09 8.93989 16.38 9.03989 16.63C9.45989 17.71 9.19989 18.93 8.37989 19.75C7.85989 20.27 7.16989 20.57 6.44989 20.6L6.96989 20.08C7.09989 19.95 7.16989 19.77 7.16989 19.59V17.52C7.16989 17.13 6.85989 16.82 6.46989 16.82H4.39989C4.21989 16.82 4.03989 16.89 3.90989 17.02L3.38989 17.54C3.41989 16.83 3.71989 16.14 4.23989 15.61C5.05989 14.79 6.27989 14.53 7.35989 14.95C7.61989 15.05 7.90989 14.99 8.09989 14.79L14.7899 8.09998C14.9899 7.89998 15.0499 7.60998 14.9499 7.35998C14.5299 6.27998 14.7899 5.05998 15.6099 4.23998C16.1299 3.71998 16.8299 3.41998 17.5399 3.38998L17.0199 3.90998C16.8899 4.03998 16.8199 4.21998 16.8199 4.39998V6.46998C16.8199 6.85998 17.1299 7.16998 17.5199 7.16998H19.5899C19.7799 7.16998 19.9499 7.09998 20.0799 6.96998L20.5999 6.44998C20.5699 7.15998 20.2699 7.84998 19.7499 8.37998C18.9299 9.19998 17.7099 9.45998 16.6299 9.03998C16.3699 8.93998 16.0799 8.99998 15.8899 9.19998L9.19989 15.89ZM19.8899 19.07L19.0699 19.89C18.7999 20.16 18.3499 20.16 18.0799 19.89L12.6299 14.44L14.4399 12.63L19.8899 18.08C20.1599 18.35 20.1599 18.8 19.8899 19.07Z" fill="#757575" />
-                  </svg>
-                  <h3 className="services-title">Услуги:</h3>
-                </div>
-                
-                <ul className="services-list-simple">
-                  {orderData.services.map((service, index) => (
-                    <li key={index}>{service}</li>
-                  ))}
-                </ul>
-
-                {/* Информация о получателе */}
-                <div className="recipient-section">
-                  <div className="recipient-header">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M15.0499 13.53C16.9099 12.47 18.1699 10.47 18.1699 8.17C18.1699 4.77 15.3999 2 11.9999 2C8.59989 2 5.82989 4.77 5.82989 8.17C5.82989 10.46 7.08989 12.46 8.94989 13.53C5.84989 14.75 3.63989 17.77 3.63989 21.31C3.63989 21.7 3.94989 22.01 4.33989 22.01C4.72989 22.01 5.03989 21.7 5.03989 21.31C5.03989 17.47 8.15989 14.35 11.9999 14.35C15.8399 14.35 18.9599 17.47 18.9599 21.31C18.9599 21.7 19.2699 22.01 19.6599 22.01C20.0499 22.01 20.3599 21.7 20.3599 21.31C20.3599 17.78 18.1499 14.76 15.0499 13.54V13.53ZM7.22989 8.17C7.22989 5.54 9.36989 3.4 11.9999 3.4C14.6299 3.4 16.7699 5.54 16.7699 8.17C16.7699 10.8 14.6299 12.94 11.9999 12.94C9.36989 12.94 7.22989 10.8 7.22989 8.17Z" fill="#757575" />
-                    </svg>
-                    <h3 className="recipient-name">{orderData.recipient.fullName}</h3>
-                  </div>
-                  <div className="contact-info-list">
-                    <div className="contact-info-item">
-                      <span>{orderData.recipient.phone}</span>
+                {services.length > 0 && (
+                  <>
+                    <div className="alert alert-info">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+                      </svg>
+                      <span>Услуги оплачиваются отдельно. С Вами свяжется сотрудник колл-центра для уточнения всех деталей.</span>
                     </div>
-                    <div className="contact-info-item">
-                      <span>{orderData.recipient.email}</span>
+                    <div className="services-header">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.4199 11.64L16.5699 10.49C18.0399 10.88 19.6399 10.47 20.7399 9.36998C21.9499 8.15998 22.3299 6.34998 21.7099 4.75998C21.6299 4.53998 21.4299 4.37998 21.1999 4.32998C20.9699 4.27998 20.7299 4.34998 20.5599 4.51998L19.2899 5.78998H18.2099V4.70998L19.4699 3.43998C19.6399 3.26998 19.7099 3.02998 19.6599 2.79998C19.6099 2.56998 19.4499 2.37998 19.2299 2.28998C17.6399 1.66998 15.8299 2.05998 14.6199 3.25998C13.5199 4.35998 13.1099 5.94998 13.4999 7.42998L10.9499 9.97998L7.02989 6.05998L7.82989 5.25998C7.98989 5.09998 8.05989 4.87998 8.02989 4.64998C7.99989 4.41998 7.84989 4.23998 7.64989 4.13998L4.54989 2.58998C4.27989 2.45998 3.95989 2.50998 3.73989 2.71998L2.70989 3.74998C2.49989 3.95998 2.44989 4.28998 2.57989 4.55998L4.12989 7.65998C4.22989 7.85998 4.41989 7.99998 4.63989 8.03998C4.74989 8.03998 5.10989 7.96998 5.23989 7.83998L6.03989 7.03998L9.95989 10.96L7.40989 13.51C5.92989 13.11 4.33989 13.53 3.23989 14.63C2.02989 15.84 1.64989 17.65 2.26989 19.24C2.34989 19.46 2.54989 19.62 2.77989 19.67C3.00989 19.72 3.24989 19.65 3.41989 19.48L4.68989 18.22H5.76989V19.3L4.49989 20.57C4.32989 20.74 4.25989 20.98 4.30989 21.21C4.35989 21.44 4.51989 21.63 4.73989 21.72C5.24989 21.92 5.76989 22.01 6.29989 22.01C7.42989 22.01 8.52989 21.57 9.34989 20.75C10.4499 19.65 10.8599 18.06 10.4699 16.58L11.6199 15.43L17.0699 20.88C17.4799 21.29 18.0099 21.49 18.5499 21.49C19.0899 21.49 19.6199 21.29 20.0299 20.88L20.8499 20.06C21.6599 19.24 21.6599 17.91 20.8499 17.1L15.3999 11.65L15.4199 11.64Z" fill="#757575" />
+                      </svg>
+                      <h3 className="services-title">Услуги:</h3>
+                    </div>
+                    <ul className="services-list-simple">
+                      {services.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
+                  </>
+                )}
+
+                {/* Получатель */}
+                {attrs.full_name && (
+                  <div className="recipient-section">
+                    <div className="recipient-header">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.0499 13.53C16.9099 12.47 18.1699 10.47 18.1699 8.17C18.1699 4.77 15.3999 2 11.9999 2C8.59989 2 5.82989 4.77 5.82989 8.17C5.82989 10.46 7.08989 12.46 8.94989 13.53C5.84989 14.75 3.63989 17.77 3.63989 21.31C3.63989 21.7 3.94989 22.01 4.33989 22.01C4.72989 22.01 5.03989 21.7 5.03989 21.31C5.03989 17.47 8.15989 14.35 11.9999 14.35C15.8399 14.35 18.9599 17.47 18.9599 21.31C18.9599 21.7 19.2699 22.01 19.6599 22.01C20.0499 22.01 20.3599 21.7 20.3599 21.31C20.3599 17.78 18.1499 14.76 15.0499 13.54V13.53Z" fill="#757575" />
+                      </svg>
+                      <h3 className="recipient-name">{attrs.full_name}</h3>
+                    </div>
+                    <div className="contact-info-list">
+                      {attrs.phone && <div className="contact-info-item"><span>+{attrs.phone}</span></div>}
                     </div>
                   </div>
-                </div>
+                )}
               </section>
+              )}
 
               {/* ========== ТОВАРЫ В ЗАКАЗЕ ========== */}
+              {items.length > 0 && (
               <div className="products zakazi">
                 <div className="order-card">
                   <div className="order-items">
-                    {orderData.items.map((item) => (
-                      <div key={item.id} className="order-item">
-                        <img src={item.image} alt={item.name} className="item-image" />
-                        <div className="flex-grow-1">
-                          <div className="item-infos">
-                            <div className="item-name">{item.name}</div>
-                            <div className="item-desc">{item.description}</div>
-                          </div>
-                          <div className="item-meta">
-                            <span className="item-quantity">{item.quantity} шт</span>
-                            <span className="item-price">{item.price.toFixed(2).replace('.', ',')} р.</span>
+                    {items.map((item) => {
+                      const a = item.attributes || {};
+                      return (
+                        <div key={item.id} className="order-item">
+                          <img src={resolveImageUrl(a.image_url)} alt={a.name} className="item-image" />
+                          <div className="flex-grow-1">
+                            <div className="item-infos">
+                              <div className="item-name">{a.name}</div>
+                            </div>
+                            <div className="item-meta">
+                              <span className="item-quantity">{a.quantity} шт</span>
+                              <span className="item-price">{formatAmount(a.price_byn)}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
+              )}
+
+              {loading && <p style={{ textAlign: 'center', color: '#9e9e9e' }}>Загрузка...</p>}
             </div>
           </div>
         </div>

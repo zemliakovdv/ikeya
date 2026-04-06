@@ -5022,6 +5022,7 @@ main {
 
 .korzina {
     background-color: #FAFAFA;
+    padding-bottom: 48px;
 }
 
 .zakaz-inner h2 {
@@ -6045,6 +6046,11 @@ main {
     margin-bottom: 24px;
 }
 
+.for-white_bg .checkout-section {
+    margin-bottom: 0;
+    border-radius: 0;
+}
+
 .checkout-section .section-header {
     display: flex;
     justify-content: space-between;
@@ -6052,9 +6058,29 @@ main {
     padding-bottom: 0;
 }
 
+.for-white_bg .address-section {
+    padding-top: 0;
+}
+
+.pickup-provider-name {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #757575;
+    display: block;
+    margin-bottom: 4px;
+}
+
 .checkout-section .section-title {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
     color: #181818;
     margin: 0;
+    padding-left: 0;
+    padding-bottom: 0;
 }
 
 .zakaz-inner .checkout-section .section-header h2 {
@@ -6062,6 +6088,7 @@ main {
     font-size: 18px;
     line-height: 133%;
     color: #181818;
+    padding: 0;
     margin-bottom: 16px;
 }
 
@@ -6311,7 +6338,7 @@ main {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .contact-item {
@@ -6519,6 +6546,8 @@ main {
     letter-spacing: 0.01em;
     color: #181818;
     margin-bottom: 16px;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 16px;
 }
 
 /* ========== ДАННЫЕ (ПАСПОРТ И АДРЕС) ========== */
@@ -6581,6 +6610,7 @@ main {
     letter-spacing: 0.04em;
     color: #0058a3;
     margin-right: auto;
+    margin-top: 16px;
 }
 
 .show-data-btn:hover {

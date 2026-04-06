@@ -93,10 +93,10 @@ export default function CartPage() {
     selected.forEach(it => {
       const qty = it.quantity || 1;
       // Если pricing нули — берём product.price_byn
-      const pricingNew = parseFloat(it.pricing?.unit_price_new_byn || 0);
-      const productPrice = parseFloat(it.product?.price_byn || 0);
+      const pricingNew = parseFloat(String(it.pricing?.unit_price_new_byn || 0).replace(/\s/g, ''));
+      const productPrice = parseFloat(String(it.product?.price_byn || 0).replace(/\s/g, ''));
       const price = pricingNew > 0 ? pricingNew : productPrice;
-      const discount = parseFloat(it.pricing?.unit_discount_byn || 0);
+      const discount = parseFloat(String(it.pricing?.unit_discount_byn || 0).replace(/\s/g, ''));
 
       subtotal += price * qty;
       promoDiscount += discount * qty;

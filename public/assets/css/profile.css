@@ -69,11 +69,11 @@
         margin-top: 4px;
     }
 
-    .user-link:hover{
+    .user-link:hover {
         color: #0058A3;
     }
 
-    .user-link.active{
+    .user-link.active {
         color: #0058A3;
     }
 
@@ -113,7 +113,7 @@
         color: #0058a3;
     }
 
-    .sidebar .nav-item.active svg path{
+    .sidebar .nav-item.active svg path {
         fill: #0058a3;
     }
 
@@ -1033,7 +1033,8 @@
         background-color: #fff;
         color: #181818;
         box-shadow: none;
-        margin-bottom: 8px;
+        margin-bottom: 0;
+        padding-bottom: 0;
     }
 
     .accordion-button:focus {
@@ -1082,6 +1083,10 @@
         border-bottom: 1px solid #e0e0e0;
     }
 
+    .accordion-item:last-child{
+        border: none;
+    }
+
     .accordion-item:not(:first-of-type) {}
 
     /* Анимация иконки */
@@ -1100,14 +1105,14 @@
     .return-table_row {
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         padding-top: 16px;
         padding-bottom: 16px;
     }
 
     .return-table_header .return-table_row {
         padding-top: 18px;
-        padding-bottom: 18px;
+        padding-bottom: 8px;
     }
 
     .return-table_row {
@@ -1189,6 +1194,8 @@
         line-height: 150%;
         letter-spacing: 0.03em;
         color: #616161;
+        padding-top: 24px;
+        padding-bottom: 16px;
     }
 
     .returns-text p {
