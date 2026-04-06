@@ -1,6 +1,6 @@
 // app/catalog/[...slug]/page.js
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
-import CategoriesGrid from '@/components/catalog/CategoriesGrid';
+import ChildCategoriesSlider from '@/components/catalog/ChildCategoriesSlider';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductSort from '@/components/catalog/ProductSort';
@@ -13,7 +13,7 @@ import {
   buildCategoryChain,
   buildBreadcrumbsFromTree,
   getChildCategories,
-
+  findNodeInTree,
 } from '@/lib/utils/categoryHelpers';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -76,7 +76,8 @@ export default async function CategoryPage({ params, searchParams }) {
       });
     });
 
-    const childCategories = getChildCategories(allCategories, currentCategory.id);
+    const { node: currentNode } = findNodeInTree(tree, slug);
+    const childCategories = currentNode?.children || [];
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbsFromTree(tree, slug);
     const level = slug.length;
@@ -114,7 +115,7 @@ export default async function CategoryPage({ params, searchParams }) {
 
             {showCategoryGrid && (
               <div className="catalog-categories">
-                <CategoriesGrid categories={childCategories} basePath={basePath} />
+                <ChildCategoriesSlider categories={childCategories} basePath={basePath} />
               </div>
             )}
 
