@@ -22,7 +22,7 @@ export default function ProductSizes({ variants, currentSku, currentPrice, produ
 
   return (
     <div className="goods-sizes">
-      <h2>Варианты:</h2>
+      <h2>Варианты размеров:</h2>
       <div className="goods-sizes__card">
         {sizeVariants.map((variant, index) => {
           const item = variant.item;
