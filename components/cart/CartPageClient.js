@@ -30,8 +30,16 @@ export default function CartPageClient() {
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [delivery, setDelivery] = useState(0);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
+  const [eurRate, setEurRate] = useState(3.5); // fallback
 
   const pendingCheckout = useRef(false);
+
+  useEffect(() => {
+    fetch('https://api.nbrb.by/exrates/rates/EUR?parammode=2')
+      .then(r => r.json())
+      .then(data => { if (data?.Cur_OfficialRate) setEurRate(data.Cur_OfficialRate); })
+      .catch(() => {}); // оставляем fallback 3.5
+  }, []);
 
   useEffect(() => {
     function onAuthDone() {
@@ -91,6 +99,22 @@ export default function CartPageClient() {
       .finally(() => setDeliveryLoading(false));
   }, [selectedItems, availableItems]);
 
+  // Считаем таможенную пошлину по формуле НБРБ
+  function calculateCustomsDuty(totalEur, totalKg, rate) {
+    const COST_LIMIT = 200;
+    const WEIGHT_LIMIT = 31;
+    const COST_RATE = 0.15;
+    const WEIGHT_RATE = 2;
+    const FEE = 10;
+
+    const dutyByCost = Math.max(0, totalEur - COST_LIMIT) * COST_RATE;
+    const dutyByWeight = Math.max(0, totalKg - WEIGHT_LIMIT) * WEIGHT_RATE;
+    const dutyEur = Math.max(dutyByCost, dutyByWeight);
+
+    if (dutyEur === 0) return 0;
+    return parseFloat((dutyEur * rate + FEE).toFixed(2));
+  }
+
   // Считаем данные только для выбранных товаров
   const selectedData = useMemo(() => {
     if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0, totalWeight: 0 };
@@ -125,12 +149,17 @@ export default function CartPageClient() {
       }
     });
 
-    // Таможенная пошлина по выбранным товарам
-    let customsDuty = 0;
+    // Таможенная пошлина — считаем по всем выбранным товарам как единый заказ
+    let totalEur = 0;
+    let totalKg = 0;
     selected.forEach(it => {
-      const duty = parseFloat(it.customs_duty?.total_byn || 0);
-      customsDuty += duty * (it.quantity || 1);
+      const qty = it.quantity || 1;
+      const priceEur = parseFloat(String(it.product?.price || 0).replace(/\s/g, ''));
+      const weightKg = parseFloat(String(it.weight || 0).replace(/\s/g, ''));
+      totalEur += priceEur * qty;
+      totalKg += weightKg * qty;
     });
+    const customsDuty = calculateCustomsDuty(totalEur, totalKg, eurRate);
 
     return {
       subtotal: parseFloat(subtotal.toFixed(2)),
@@ -139,7 +168,7 @@ export default function CartPageClient() {
       totalWeight: parseFloat(totalWeight.toFixed(2)),
       customsDuty: parseFloat(customsDuty.toFixed(2)),
     };
-  }, [selectedItems, availableItems, totals]);
+  }, [selectedItems, availableItems, totals, eurRate]);
 
   const canCheckout = selectedItems.length > 0 && selectedData.subtotal >= MIN_ORDER_AMOUNT;
 
