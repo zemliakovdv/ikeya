@@ -23,9 +23,6 @@ export default async function CatalogPage({ searchParams }) {
 
   const products = productsResponse.data || [];
   const meta = productsResponse.meta || {};
-  console.log('catalog meta:', JSON.stringify(meta));
-
-  const priceRange = { min: 0, max: 10000 };
 
   const queryParams = new URLSearchParams();
   if (sort) queryParams.set('sort', sort);
@@ -41,34 +38,29 @@ export default async function CatalogPage({ searchParams }) {
   return (
     <main className="main catalog-inner">
       <Breadcrumbs items={breadcrumbs} />
-
       <section className="all-catalog">
         <div className="container">
           <h1>Каталог</h1>
-
           {tree.length > 0 && (
             <div className="catalog-categories">
               <CategoriesGrid categories={tree} />
             </div>
           )}
-
           <div className="all-catalog-inner">
             <Suspense fallback={null}>
               <FilterAside
                 treeData={tree}
                 slugChain={[]}
                 showAllFilters={false}
-                priceRange={priceRange}
+                hasChildren={true}
+                availableFilters={[]}
               />
             </Suspense>
-
             <div className="all-catalog-center">
               <Suspense fallback={null}>
                 <ProductSort currentSort={sort} />
               </Suspense>
-
               <FilterChips filterLabels={{}} filterTitles={{}} />
-
               <Suspense fallback={<div>Загрузка товаров...</div>}>
                 <InfiniteProductGrid
                   key={productsQueryString}
@@ -78,7 +70,6 @@ export default async function CatalogPage({ searchParams }) {
                   queryString={productsQueryString}
                 />
               </Suspense>
-
               <Pagination
                 currentPage={Number(sp?.page) || 1}
                 totalPages={meta.total_pages || Math.ceil((meta.total || 0) / 20)}

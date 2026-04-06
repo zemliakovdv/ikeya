@@ -8,6 +8,8 @@ import PriceFilter from './PriceFilter';
 import CheckboxFilter from './CheckboxFilter';
 import FilterNotification from './FilterNotification';
 
+const EXCLUDED_FILTERS = ['f-price-buckets', 'f-type'];
+const SERIES_PARAMETER = 'f-series';
 
 function readAll(sp, key) {
   return sp.getAll(key).map(String);
@@ -21,21 +23,36 @@ function safeNumberOrEmpty(v) {
   return Number.isFinite(n) ? s : '';
 }
 
+function extractPriceRange(availableFilters) {
+  const priceBucket = (availableFilters || []).find(f => f.parameter === 'f-price-buckets');
+  if (!priceBucket?.values?.length) return { min: 0, max: 10000 };
+  const v = priceBucket.values[0];
+  const min = parseFloat(v.min || 0);
+  const max = parseFloat(v.max || 10000);
+  return {
+    min: Number.isFinite(min) ? Math.floor(min) : 0,
+    max: Number.isFinite(max) ? Math.ceil(max) : 10000,
+  };
+}
+
 export default function FilterAside({
   treeData = [],
   slugChain = [],
   showAllFilters = false,
+  hasChildren = false,
   availableFilters = [],
-  priceRange = { min: 0, max: 10000 },
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const priceRange = useMemo(() => extractPriceRange(availableFilters), [availableFilters]);
+
   const normalizedAvailableFilters = useMemo(() => {
     if (!Array.isArray(availableFilters)) return [];
     return availableFilters
       .filter((f) => f && f.parameter && Array.isArray(f.values) && f.values.length > 0)
+      .filter((f) => !EXCLUDED_FILTERS.includes(f.parameter))
       .map((f) => ({
         parameter: String(f.parameter),
         title: f.translated_name || f.name || String(f.parameter),
@@ -48,10 +65,24 @@ export default function FilterAside({
       }));
   }, [availableFilters]);
 
+  const seriesFilter = useMemo(
+    () => normalizedAvailableFilters.find(f => f.parameter === SERIES_PARAMETER) || null,
+    [normalizedAvailableFilters]
+  );
+
+  const otherFilters = useMemo(
+    () => normalizedAvailableFilters.filter(f => f.parameter !== SERIES_PARAMETER),
+    [normalizedAvailableFilters]
+  );
+
   const filtersKey = useMemo(
     () => normalizedAvailableFilters.map((f) => f.parameter).join(','),
     [normalizedAvailableFilters]
   );
+
+  const level = slugChain.length;
+  const showNotification = level === 0 || (level === 1 && hasChildren);
+  const showOtherFilters = !showNotification && showAllFilters;
 
   const [draftPriceMin, setDraftPriceMin] = useState('');
   const [draftPriceMax, setDraftPriceMax] = useState('');
@@ -60,7 +91,6 @@ export default function FilterAside({
   const priceDebounceRef = useRef(null);
   const isMountedRef = useRef(false);
 
-  // Синхронизация draft <- URL
   useEffect(() => {
     const minPrice = safeNumberOrEmpty(searchParams.get('min_price'));
     const maxPrice = safeNumberOrEmpty(searchParams.get('max_price'));
@@ -161,8 +191,6 @@ export default function FilterAside({
     return Object.values(draftFilters).some((v) => Array.isArray(v) && v.length > 0);
   }, [draftPriceMin, draftPriceMax, draftFilters]);
 
-  const level = slugChain.length;
-
   return (
     <aside
       className="filter-aside"
@@ -175,10 +203,7 @@ export default function FilterAside({
         overflowX: 'hidden',
       }}
     >
-      <CategoryNav
-        treeData={treeData}
-        slugChain={slugChain}
-      />
+      <CategoryNav treeData={treeData} slugChain={slugChain} />
 
       <PriceFilter
         min={priceRange.min}
@@ -188,21 +213,31 @@ export default function FilterAside({
         onChange={handlePriceChange}
       />
 
-      {showAllFilters && normalizedAvailableFilters.length > 0 && (
-        normalizedAvailableFilters.map((f) => (
-          <CheckboxFilter
-            key={f.parameter}
-            title={f.title}
-            filterKey={f.parameter}
-            selectedOptions={draftFilters[f.parameter] || []}
-            onToggle={toggleValue}
-            options={f.values}
-            showMore
-          />
-        ))
+      {seriesFilter && (
+        <CheckboxFilter
+          key={seriesFilter.parameter}
+          title={seriesFilter.title}
+          filterKey={seriesFilter.parameter}
+          selectedOptions={draftFilters[seriesFilter.parameter] || []}
+          onToggle={toggleValue}
+          options={seriesFilter.values}
+          showMore
+        />
       )}
 
-      {!showAllFilters && <FilterNotification />}
+      {showOtherFilters && otherFilters.map((f) => (
+        <CheckboxFilter
+          key={f.parameter}
+          title={f.title}
+          filterKey={f.parameter}
+          selectedOptions={draftFilters[f.parameter] || []}
+          onToggle={toggleValue}
+          options={f.values}
+          showMore
+        />
+      ))}
+
+      {showNotification && <FilterNotification />}
 
       {hasActiveFilters && (
         <button className="clear-filters" onClick={handleClear} type="button">

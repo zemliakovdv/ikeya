@@ -119,7 +119,7 @@ export default async function CategoryPage({ params, searchParams }) {
                 slugChain={slug}
                 showAllFilters={showAllFilters}
                 availableFilters={availableFilters}
-                priceRange={priceRange}
+                hasChildren={childCategories.length > 0}
               />
 
               <div className="all-catalog-center" key={productsQueryString}>
