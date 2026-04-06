@@ -24,7 +24,7 @@ export default function PvzPage() {
           <div className="row">
             <div className="col-12">
               <div className="pvz-map">
-                <h1>Пункты выдачи</h1>
+                <h1>Пункты выдачи заказов IKEYA</h1>
                 <PvzClient />
               </div>
             </div>

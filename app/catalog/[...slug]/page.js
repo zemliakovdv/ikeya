@@ -5,6 +5,7 @@ import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductSort from '@/components/catalog/ProductSort';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
+import Pagination from '@/components/catalog/Pagination';
 import { getCachedCategoriesTree, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
 import {
   flattenCategoriesTree,
@@ -54,10 +55,6 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const currentCategory = findCategoryBySlug(allCategories, currentSlug);
 
-    console.log('slug array:', slug);
-    console.log('currentSlug:', currentSlug);
-    console.log('currentCategory:', currentCategory?.id, currentCategory?.attributes?.slug);
-
     if (!currentCategory) {
       redirect('/catalog');
     }
@@ -68,7 +65,6 @@ export default async function CategoryPage({ params, searchParams }) {
     ]);
 
     const availableFilters = categoryWithFilters.available_filters || [];
-    console.log('availableFilters:', JSON.stringify(availableFilters, null, 2));
     const priceRange = getPriceRangeFromFilters(availableFilters);
 
     const filterLabels = {};
@@ -89,7 +85,6 @@ export default async function CategoryPage({ params, searchParams }) {
     const showAllFilters = level >= 2 || childCategories.length === 0;
 
     const initialProducts = productsResponse.data || [];
-    console.log('productsResponse.meta:', JSON.stringify(productsResponse.meta));
 
     const queryParams = new URLSearchParams();
     if (sort) queryParams.set('sort', sort);
@@ -137,6 +132,13 @@ export default async function CategoryPage({ params, searchParams }) {
                       initialProducts={initialProducts}
                       categoryId={currentCategory.id}
                       totalPages={productsResponse.meta?.total_pages || 1}
+                      queryString={productsQueryString}
+                    />
+                    <Pagination
+                      currentPage={Number(sp?.page) || 1}
+                      totalPages={productsResponse.meta?.total_pages || 1}
+                      totalItems={productsResponse.meta?.total || 0}
+                      basePath={basePath}
                       queryString={productsQueryString}
                     />
                   </>

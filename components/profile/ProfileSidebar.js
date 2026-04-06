@@ -9,7 +9,7 @@ export default function ProfileSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  const isActive = (path) => pathname === path;
+  const isActive = (path) => pathname.replace(/\/$/, '') === path;
 
   function handleLogout() {
     logout();

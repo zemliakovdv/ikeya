@@ -14,13 +14,10 @@ export default function DeliveryPickupModal({ onClose, onSelect }) {
   const [needScript, setNeedScript] = useState(false);
 
   useEffect(() => {
-    // Если ymaps уже загружен (пришли со страницы /pvz) — сразу готово
     if (window.ymaps) {
       setYmapsReady(true);
       return;
     }
-
-    // Если скрипт уже добавлен в DOM но ещё грузится — поллим
     const existing = document.querySelector('script[src*="api-maps.yandex.ru"]');
     if (existing) {
       const timer = setInterval(() => {
@@ -31,8 +28,6 @@ export default function DeliveryPickupModal({ onClose, onSelect }) {
       }, 100);
       return () => clearInterval(timer);
     }
-
-    // Скрипта нет вообще — нужно загрузить
     setNeedScript(true);
   }, []);
 
@@ -53,9 +48,9 @@ export default function DeliveryPickupModal({ onClose, onSelect }) {
 
       <div className="modal fade show d-block" style={{ zIndex: 1055 }}>
         <div className="modal-dialog modal-fullscreen">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Выберите пункт выдачи</h5>
+          <div className="modal-content pvz-modal">
+            <div className="pvz-modal__header">
+              <h5 className="pvz-modal__title">Адреса доставки</h5>
               <button
                 type="button"
                 className="btn-close"
@@ -63,20 +58,22 @@ export default function DeliveryPickupModal({ onClose, onSelect }) {
                 aria-label="Закрыть"
               />
             </div>
-            <div className="modal-body p-0">
-              <div className="pvz-map" style={{ padding: '16px' }}>
-                <PvzMapContent
-                  mapId="pvz-modal-map"
-                  ymapsReady={ymapsReady}
-                  onSelect={handleSelect}
-                />
-              </div>
+            <div className="pvz-modal__body">
+              <PvzMapContent
+                mapId="pvz-modal-map"
+                ymapsReady={ymapsReady}
+                onSelect={handleSelect}
+              />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="modal-backdrop fade show" onClick={onClose} style={{ zIndex: 1054 }} />
+      <div
+        className="modal-backdrop fade show"
+        onClick={onClose}
+        style={{ zIndex: 1054 }}
+      />
     </>
   );
 }

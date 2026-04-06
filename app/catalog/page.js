@@ -9,6 +9,7 @@ import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
 import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
 import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
+import Pagination from '@/components/catalog/Pagination';
 
 export default async function CatalogPage({ searchParams }) {
   const sp = await searchParams;
@@ -22,6 +23,7 @@ export default async function CatalogPage({ searchParams }) {
 
   const products = productsResponse.data || [];
   const meta = productsResponse.meta || {};
+  console.log('catalog meta:', JSON.stringify(meta));
 
   const priceRange = { min: 0, max: 10000 };
 
@@ -76,6 +78,14 @@ export default async function CatalogPage({ searchParams }) {
                   queryString={productsQueryString}
                 />
               </Suspense>
+
+              <Pagination
+                currentPage={Number(sp?.page) || 1}
+                totalPages={meta.total_pages || Math.ceil((meta.total || 0) / 20)}
+                totalItems={meta.total || 0}
+                basePath="/catalog"
+                queryString={productsQueryString}
+              />
             </div>
           </div>
         </div>
