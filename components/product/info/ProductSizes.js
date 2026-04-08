@@ -5,7 +5,6 @@ import Link from 'next/link';
 
 const API_BASE_URL = 'http://45.135.234.22';
 
-// Нормализует любой путь к картинке — убирает двойные слеши
 function resolveImage(path) {
   if (!path) return '/assets/img/no-image.jpg';
   if (path.startsWith('http')) return path;
@@ -13,7 +12,7 @@ function resolveImage(path) {
   return `${API_BASE_URL}/${clean}`;
 }
 
-export default function ProductSizes({ variants, currentSku, currentPriceByn, productImage }) {
+export default function ProductSizes({ variants, currentSku, productImage }) {
   const sizeVariants = (variants || []).filter(v => v.item?.sku);
 
   if (sizeVariants.length === 0) return null;
@@ -27,17 +26,13 @@ export default function ProductSizes({ variants, currentSku, currentPriceByn, pr
         {sizeVariants.map((variant, index) => {
           const item = variant.item;
 
-          // Убираем "Ширина:" из метки
           const label = (variant.size || item.small_desc_name || `Вариант ${index + 1}`)
             .replace(/^ширина:\s*/i, '');
 
-          // Разница цен в BYN
+          // Показываем цену варианта напрямую в BYN — без разницы
           const variantPrice = parseFloat(String(item.price_byn || 0).replace(/\s/g, '')) || 0;
-          const basePrice = parseFloat(String(currentPriceByn || 0).replace(/\s/g, '')) || 0;
-          const priceDiff = variantPrice - basePrice;
-          const priceDiffAbs = Math.abs(priceDiff).toFixed(2);
-          const isPositive = priceDiff > 0;
-          const isZero = Math.abs(priceDiff) < 0.01;
+          const priceInt = Math.floor(variantPrice).toLocaleString('ru-RU');
+          const priceDec = (variantPrice % 1).toFixed(2).slice(2);
 
           const isCurrent = item.sku === currentSku;
 
@@ -55,12 +50,11 @@ export default function ProductSizes({ variants, currentSku, currentPriceByn, pr
               <p className="good-sizes__number">{label}</p>
               {isCurrent ? (
                 <p className="goods-sizes__current">Текущий</p>
-              ) : !isZero ? (
-                <p>
-                  {isPositive ? '+' : '-'}
-                  <span>{priceDiffAbs}</span> р.
+              ) : (
+                <p className="goods-sizes__price">
+                  {priceInt}<span>.{priceDec} р.</span>
                 </p>
-              ) : null}
+              )}
             </Link>
           );
         })}

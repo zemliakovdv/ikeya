@@ -41,9 +41,10 @@ export default function ProductCard({ product }) {
   const title = activeVariant?.small_desc_name || attr.small_desc_name || 'Товар IKEA';
   const description = activeVariant?.name_ru || attr.name_ru || '';
 
-  // Цена — price_byn из варианта напрямую, или из основного товара
+  // Цена — всегда от основного товара, не меняем при смене варианта
+  // price_byn в вариантах и attr.price_byn расходятся на бэке — цену показываем только со страницы товара
   const currentPriceNum = parseFloat(
-    String(activeVariant?.price_byn || attr.price_byn || attr.price || 0).replace(/\s/g, '')
+    String(attr.price_byn || attr.price || 0).replace(/\s/g, '')
   );
   const { floor: price, decimal: priceDecimal } = formatPrice(currentPriceNum);
 
@@ -108,15 +109,16 @@ export default function ProductCard({ product }) {
   const handleVariantClick = useCallback((e, variant) => {
     e.stopPropagation();
 
-    // Повторный клик по уже активному варианту — сбрасываем к основному товару
-    if (activeVariant?.sku === variant.item.sku) {
-      setActiveVariant(null);
+    // Клик по уже активному варианту — переходим на его страницу
+    const currentlyActive = activeVariant?.sku || sku;
+    if (currentlyActive === variant.item.sku) {
+      router.push(`/product/${variant.item.sku}`);
       return;
     }
 
-    // Первый клик — обновляем всё: картинки, заголовок, описание, цену
+    // Первый клик — обновляем картинки, заголовок, описание, цену
     setActiveVariant(variant.item);
-  }, [activeVariant]);
+  }, [activeVariant, sku, router]);
 
   const badges = [];
   if (attr.is_bestseller || attr.is_popular) badges.push('Хит продаж');
@@ -174,22 +176,14 @@ export default function ProductCard({ product }) {
 
           {/* Цветовые варианты */}
           <div className="product-card__variants" onClick={(e) => e.stopPropagation()}>
-            {/* Миниатюра основного товара — всегда первая */}
-            {hasVariants && (
-              <button
-                className={`product-card__variant-btn${!activeVariant ? ' active' : ''}`}
-                onClick={(e) => { e.stopPropagation(); setActiveVariant(null); }}
-                type="button"
-                title="Основной товар"
-              >
-                <img src={baseImages[0]} alt={attr.small_desc_name || 'Основной товар'} />
-              </button>
-            )}
             {hasVariants && visibleVariants.map((variant) => {
               const variantImg = variant.item.images?.[0]
                 ? resolveImage(variant.item.images[0])
                 : PLACEHOLDER_IMAGE;
-              const isActive = variant.item.sku === activeVariant?.sku;
+              // Активен: либо выбран явно, либо это вариант текущего основного товара
+              const isActive = activeVariant
+                ? variant.item.sku === activeVariant?.sku
+                : variant.item.sku === sku;
               return (
                 <button
                   key={variant.item.sku}
@@ -211,7 +205,6 @@ export default function ProductCard({ product }) {
                 +{hiddenCount}
               </button>
             )}
-
           </div>
 
           <div className="product-card__header">

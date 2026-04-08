@@ -176,7 +176,6 @@ export default function ProductInfo({ product }) {
           <ProductSizes
             variants={sizeVariants}
             currentSku={attr.sku}
-            currentPriceByn={parseFloat(String(attr.price_byn || 0).replace(/\s/g, ''))}
             productImage={localImages[0]}
           />
         )}
