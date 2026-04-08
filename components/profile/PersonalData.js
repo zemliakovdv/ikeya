@@ -107,13 +107,14 @@ export default function PersonalData() {
       .finally(() => setLoading(false));
   }, [isHydrated, isAuth]);
 
-  function handleSave(updated) {
+  // onSave вызывается из EditPersonalDataModal с (updatedProfile, firstName)
+  function handleSave(updated, firstName) {
     if (updated) {
       setProfile(updated);
-      // Обновляем имя в сайдбаре
-      if (updated.first_name || updated.last_name) {
-        const displayName = [updated.first_name, updated.last_name].filter(Boolean).join(' ');
-        setUser({ ...user, username: displayName });
+      // Сохраняем first_name в user — хедер и сайдбар читают user?.first_name
+      const name = firstName || updated.first_name;
+      if (name) {
+        setUser({ ...user, first_name: name });
       }
     }
   }

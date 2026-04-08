@@ -30,7 +30,8 @@ export default function EditPersonalDataModal({ profile, onClose, onSave }) {
         gender:      form.gender,
         email:       form.email || undefined,
       });
-      onSave?.(updated);
+      // Передаём first_name отдельно — нужно для обновления имени в хедере и сайдбаре
+      onSave?.(updated, form.first_name);
       onClose();
     } catch (err) {
       setError(err.message || 'Ошибка сохранения');

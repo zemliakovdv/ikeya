@@ -57,8 +57,10 @@ export function AuthProvider({ children }) {
       isHydrated,
       setAuth,
       setUser: (u) => {
-        setUserState(u);
-        if (u) setStoredUser(u);
+        // Мёржим с текущим user — чтобы не затирать уже сохранённые поля
+        const merged = u ? { ...(getStoredUser() || {}), ...u } : null;
+        setUserState(merged);
+        if (merged) setStoredUser(merged);
       },
       logout,
     }),

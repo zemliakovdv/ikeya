@@ -271,7 +271,7 @@ export default function Header() {
                   </svg>
                 </div>
                 <div className="profile-header__info">
-                  <h6 className="profile-name">{user?.username || 'Профиль'}</h6>
+                  <h6 className="profile-name">{user?.first_name || 'Профиль'}</h6>
                   <Link href="/profile/personal-data/" className="profile-details-link" onClick={() => setIsProfileOpen(false)}>
                     Личные данные
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
