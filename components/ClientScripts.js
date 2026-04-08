@@ -317,7 +317,6 @@ export default function ClientScripts() {
         const body = document.body;
 
         if (!catalogButton || !catalogModal) {
-          console.warn('Каталог: кнопка или модальное окно не найдены');
           return;
         }
 
@@ -710,7 +709,6 @@ export default function ClientScripts() {
         const filterAside = document.querySelector('.filter-aside');
 
         if (!filterAside) {
-          console.warn('Боковая панель не найдена');
           return;
         }
 

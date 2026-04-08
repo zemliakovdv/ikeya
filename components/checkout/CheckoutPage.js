@@ -9,10 +9,32 @@ import DeliveryPickupModal from '@/components/profile/modals/DeliveryPickupModal
 import EditPersonalDataModal from '@/components/profile/modals/EditPersonalDataModal';
 import EditPassportModal from '@/components/profile/modals/EditPassportModal';
 import { getProfile, checkout } from '@/lib/api/cart';
+import { requestA1Verification, verifyA1Code } from '@/lib/api/account';
+import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 
 const PROVIDER_NAMES = {
   europost:  'Европочта',
   autolight: 'Автолайт',
+}
+
+// Маскировка — те же функции что в PersonalData.js
+function mask(str, visible = 2) {
+  if (!str) return '—'
+  const s = String(str)
+  if (s.length <= visible) return s
+  return s.slice(0, visible) + '*'.repeat(s.length - visible)
+}
+
+function maskDate(dateStr) {
+  if (!dateStr) return '—'
+  const [y, m, d] = dateStr.split('-')
+  return `${d}.**,****`
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—'
+  const [y, m, d] = dateStr.split('-')
+  return `${d}.${m}.${y}`
 }
 
 // Иконки провайдеров
@@ -63,7 +85,23 @@ export default function CheckoutPage() {
   // Форма
   const [selectedPvz, setSelectedPvz] = useState(() => {
     if (typeof window === 'undefined') return null
-    try { return JSON.parse(sessionStorage.getItem('selectedPvz') || 'null') } catch { return null }
+    // 1. Сначала смотрим в sessionStorage — пользователь уже выбрал ПВЗ в этой сессии чекаута
+    try {
+      const fromSession = JSON.parse(sessionStorage.getItem('selectedPvz') || 'null')
+      if (fromSession) return fromSession
+    } catch {}
+    // 2. Иначе подтягиваем активный адрес из личного кабинета (localStorage)
+    try {
+      const addresses = JSON.parse(localStorage.getItem('delivery_addresses') || '[]')
+      const activeId = localStorage.getItem('delivery_address_active')
+      if (addresses.length > 0) {
+        const active = activeId
+          ? addresses.find(a => (a.localId || a.id) === activeId) || addresses[0]
+          : addresses[0]
+        return active || null
+      }
+    } catch {}
+    return null
   })
   const [paymentMethod, setPaymentMethod] = useState('card')
   const [selectedServices, setSelectedServices] = useState([])
@@ -79,6 +117,13 @@ export default function CheckoutPage() {
   const [showPassportModal, setShowPassportModal] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+
+  // A1-верификация паспорта
+  const [a1Modal, setA1Modal] = useState(false)
+  const [a1VerificationId, setA1VerificationId] = useState(null)
+  const [a1CallerNumber, setA1CallerNumber] = useState(null)
+  const [a1Loading, setA1Loading] = useState(false)
+  const [a1Error, setA1Error] = useState(null)
 
   // Загрузка профиля
   useEffect(() => {
@@ -123,35 +168,80 @@ export default function CheckoutPage() {
     setShowPvzModal(false)
   }
 
+  // Формируем orderData — используется и при первом чекауте и после A1
+  function buildOrderData(a1Id = null) {
+    const data = {
+      full_name: fullName,
+      phone: profile.phone,
+      delivery_type: 'pickup',
+      payment_method: paymentMethod,
+      pickup_point_id: selectedPvz.pickup_point_id || selectedPvz.id,
+      a1_verification_id: a1Id,
+    }
+    if (hasPassport) {
+      data.passport = {
+        passport_number: `${profile.passport_data.series}${profile.passport_data.number}`,
+        full_name: [profile.passport_data.last_name, profile.passport_data.first_name, profile.passport_data.middle_name].filter(Boolean).join(' '),
+        issue_date: profile.passport_data.issue_date,
+      }
+    }
+    return data
+  }
+
   async function handleCheckout() {
     if (!canCheckout) return
     setSubmitting(true)
     setError(null)
 
     try {
-      const orderData = {
-        full_name: fullName,
-        phone: profile.phone,
-        delivery_type: 'pickup',
-        payment_method: paymentMethod,
-        pickup_point_id: selectedPvz.id,
-        a1_verification_id: null,
-      }
-
-      if (hasPassport) {
-        orderData.passport = {
-          passport_number: `${profile.passport_data.series}${profile.passport_data.number}`,
-          full_name: [profile.passport_data.last_name, profile.passport_data.first_name, profile.passport_data.middle_name].filter(Boolean).join(' '),
-          issue_date: profile.passport_data.issue_date,
-        }
-      }
-
-      const response = await checkout(orderData, token)
+      const response = await checkout(buildOrderData(), token)
       sessionStorage.removeItem('selectedPvz')
       router.push(`/order-success?order_id=${response.order_id}`)
     } catch (err) {
+      // Бэк требует верификацию паспорта через звонок A1
+      if (err.payload?.code === 'passport_verification_required') {
+        setSubmitting(false)
+        await handleRequestA1()
+        return
+      }
       setError(err.message || 'Ошибка при оформлении заказа')
     } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Шаг 1: запрашиваем звонок A1
+  async function handleRequestA1() {
+    setA1Loading(true)
+    setA1Error(null)
+    try {
+      const res = await requestA1Verification(profile.phone, 'checkout')
+      setA1VerificationId(res.verification_id)
+      setA1CallerNumber(res.caller_number_masked || null)
+      setA1Modal(true)
+    } catch (err) {
+      setError('Не удалось запросить верификацию: ' + (err.message || ''))
+    } finally {
+      setA1Loading(false)
+    }
+  }
+
+  // Шаг 2: SmsVerifyModal передаёт code напрямую в onVerify(code)
+  async function handleA1Verify(code) {
+    setA1Loading(true)
+    setA1Error(null)
+    try {
+      await verifyA1Code(a1VerificationId, code)
+      setA1Modal(false)
+      // Повторяем чекаут с подтверждённым a1_verification_id
+      setSubmitting(true)
+      const response = await checkout(buildOrderData(a1VerificationId), token)
+      sessionStorage.removeItem('selectedPvz')
+      router.push(`/order-success?order_id=${response.order_id}`)
+    } catch (err) {
+      setA1Error(err.message || 'Неверный код, попробуйте ещё раз')
+    } finally {
+      setA1Loading(false)
       setSubmitting(false)
     }
   }
@@ -165,9 +255,9 @@ export default function CheckoutPage() {
               <div className="zakaz-inner">
 
                 {/* Заголовок */}
-                <div className="zakaz-title">
+                <div className="zakaz-title" onClick={() => router.push('/cart')} style={{ cursor: 'pointer' }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    onClick={() => router.push('/cart')} style={{ cursor: 'pointer' }}>
+                    >
                     <path d="M8.67004 12C8.67004 10.88 11.71 8.19999 14.25 6.14999C14.54 5.91999 14.96 5.95999 15.19 6.24999C15.42 6.53999 15.38 6.95999 15.09 7.18999C12.86 8.98999 10.35 11.29 10.02 12C10.35 12.71 12.86 15.01 15.09 16.81C15.38 17.04 15.42 17.46 15.19 17.75C14.96 18.04 14.54 18.08 14.25 17.85C11.7 15.8 8.67004 13.11 8.67004 12Z" fill="#181818" />
                   </svg>
                   <h2>Оформление заказа</h2>
@@ -446,7 +536,7 @@ export default function CheckoutPage() {
                                         <div className="data-column">
                                           <span className="data-label">Номер</span>
                                           <span className="data-value">
-                                            {showPassportData ? profile.passport_data.number : `${profile.passport_data.number.slice(0, 3)}****`}
+                                            {showPassportData ? profile.passport_data.number : mask(profile.passport_data.number, 3)}
                                           </span>
                                         </div>
                                       </div>
@@ -455,7 +545,7 @@ export default function CheckoutPage() {
                                       <div className="data-row">
                                         <span className="data-label">Дата выдачи</span>
                                         <span className="data-value">
-                                          {showPassportData ? profile.passport_data.issue_date : '**.**,****'}
+                                          {showPassportData ? formatDate(profile.passport_data.issue_date) : maskDate(profile.passport_data.issue_date)}
                                         </span>
                                       </div>
                                     )}
@@ -463,7 +553,7 @@ export default function CheckoutPage() {
                                       <div className="data-row">
                                         <span className="data-label">Кем выдан</span>
                                         <span className="data-value">
-                                          {showPassportData ? profile.passport_data.issued_by : `${profile.passport_data.issued_by.slice(0, 4)}****`}
+                                          {showPassportData ? profile.passport_data.issued_by : mask(profile.passport_data.issued_by, 4)}
                                         </span>
                                       </div>
                                     )}
@@ -471,7 +561,7 @@ export default function CheckoutPage() {
                                       <div className="data-row">
                                         <span className="data-label">Идентификационный номер</span>
                                         <span className="data-value">
-                                          {showPassportData ? profile.passport_data.identification_number : `${profile.passport_data.identification_number.slice(0, 5)}*****`}
+                                          {showPassportData ? profile.passport_data.identification_number : mask(profile.passport_data.identification_number, 5)}
                                         </span>
                                       </div>
                                     )}
@@ -616,6 +706,22 @@ export default function CheckoutPage() {
             setShowPassportModal(false)
           }}
         />
+      )}
+
+      {/* Модалка A1-верификации паспорта */}
+      {a1Modal && (
+        <>
+          <SmsVerifyModal
+            userPhone={profile?.phone ? `+${profile.phone}` : ''}
+            callerNumber={a1CallerNumber || ''}
+            onVerify={handleA1Verify}
+            onResend={handleRequestA1}
+            onClose={() => { setA1Modal(false); setA1Error(null) }}
+            loading={a1Loading}
+            error={a1Error || ''}
+          />
+          <div className="modal-backdrop fade show" style={{ zIndex: 1054 }} onClick={() => { setA1Modal(false); setA1Error(null) }} />
+        </>
       )}
     </main>
   )

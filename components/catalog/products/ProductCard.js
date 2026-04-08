@@ -18,33 +18,49 @@ function resolveImage(path) {
   return `${API_BASE_URL}/${clean}`;
 }
 
+function formatPrice(priceNum) {
+  const floor = Math.floor(priceNum).toLocaleString('ru-RU');
+  const decimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
+  return { floor, decimal };
+}
+
 export default function ProductCard({ product }) {
   const router = useRouter();
   const { addToCart, items } = useCart();
   const { isFavorite, add, remove } = useFavorites();
 
   const [isHovered, setIsHovered] = useState(false);
-  const [activeVariantSku, setActiveVariantSku] = useState(null);
-  const [activeVariantImg, setActiveVariantImg] = useState(null);
+  const [activeVariant, setActiveVariant] = useState(null);
 
   if (!product || !product.attributes) return null;
 
   const attr = product.attributes;
   const sku = attr.sku || product.id;
 
-  const title = attr.small_desc_name || 'Товар IKEA';
-  const description = attr.name_ru || '';
+  // Заголовок и описание — из варианта или из основного товара
+  const title = activeVariant?.small_desc_name || attr.small_desc_name || 'Товар IKEA';
+  const description = activeVariant?.name_ru || attr.name_ru || '';
 
-  // Изображения товара
-  const localImages = Array.isArray(attr.local_images) ? attr.local_images : [];
-  const images = localImages.length > 0
-    ? localImages.map(resolveImage)
+  // Цена — price_byn из варианта напрямую, или из основного товара
+  const currentPriceNum = parseFloat(
+    String(activeVariant?.price_byn || attr.price_byn || attr.price || 0).replace(/\s/g, '')
+  );
+  const { floor: price, decimal: priceDecimal } = formatPrice(currentPriceNum);
+
+  // Изображения — из варианта (если выбран) или из основного товара
+  const baseImages = Array.isArray(attr.local_images) && attr.local_images.length
+    ? attr.local_images.map(resolveImage)
     : [PLACEHOLDER_IMAGE];
 
-  const mainImage = activeVariantImg || images[0];
+  const variantImages = activeVariant?.images?.length
+    ? activeVariant.images.map(resolveImage)
+    : null;
+
+  const images = variantImages || baseImages;
+  const mainImage = images[0];
   const hoverImage = images[1] || images[0];
 
-  // Цветовые варианты — только type === 'color'
+  // Цветовые варианты
   const colorVariants = useMemo(() => {
     if (attr.variants?.type !== 'color') return [];
     return (attr.variants?.data || []).filter(v => v.item?.sku);
@@ -54,10 +70,8 @@ export default function ProductCard({ product }) {
   const visibleVariants = colorVariants.slice(0, MAX_VISIBLE_VARIANTS);
   const hiddenCount = colorVariants.length - MAX_VISIBLE_VARIANTS;
 
-  // Текущий SKU для ссылки (вариант или основной)
-  const currentSku = activeVariantSku || sku;
+  const currentSku = activeVariant?.sku || sku;
 
-  // Количество в корзине
   const quantity = useMemo(() => {
     const found = (items || []).find((it) => it?.sku === currentSku);
     return Number(found?.quantity || 0);
@@ -91,21 +105,15 @@ export default function ProductCard({ product }) {
   const handleVariantClick = useCallback((e, variant) => {
     e.stopPropagation();
 
-    // Если уже выбран этот вариант — переходим на его страницу
-    if (activeVariantSku === variant.item.sku) {
+    // Повторный клик по уже активному варианту — переходим на его страницу
+    if (activeVariant?.sku === variant.item.sku) {
       router.push(`/product/${variant.item.sku}`);
       return;
     }
 
-    // Иначе — выбираем вариант и меняем изображение
-    setActiveVariantSku(variant.item.sku);
-    const firstImg = variant.item.images?.[0];
-    setActiveVariantImg(firstImg ? resolveImage(firstImg) : null);
-  }, [activeVariantSku, router]);
-
-  const priceNum = parseFloat(String(attr.price_byn || attr.price || 0).replace(/\s/g, ''));
-  const price = Math.floor(priceNum).toLocaleString('ru-RU');
-  const priceDecimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
+    // Первый клик — обновляем всё: картинки, заголовок, описание, цену
+    setActiveVariant(variant.item);
+  }, [activeVariant, router]);
 
   const badges = [];
   if (attr.is_bestseller || attr.is_popular) badges.push('Хит продаж');
@@ -116,12 +124,15 @@ export default function ProductCard({ product }) {
       <div
         className="product-card"
         onClick={handleCardClick}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         style={{ cursor: 'pointer' }}
       >
-        {/* Главное изображение с fade при наведении */}
-        <div className="product-card__img-wrap" style={{ position: 'relative', overflow: 'hidden' }}>
+        {/* Hover только на блоке с изображением */}
+        <div
+          className="product-card__img-wrap"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
           <img
             src={mainImage}
             alt={title}
@@ -160,33 +171,33 @@ export default function ProductCard({ product }) {
 
           {/* Цветовые варианты */}
           <div className="product-card__variants" onClick={(e) => e.stopPropagation()}>
-              {hasVariants && visibleVariants.map((variant) => {
-                const variantImg = variant.item.images?.[0]
-                  ? resolveImage(variant.item.images[0])
-                  : PLACEHOLDER_IMAGE;
-                const isActive = variant.item.sku === activeVariantSku;
-                return (
-                  <button
-                    key={variant.item.sku}
-                    className={`product-card__variant-btn${isActive ? ' active' : ''}`}
-                    title={variant.color}
-                    onClick={(e) => handleVariantClick(e, variant)}
-                    type="button"
-                  >
-                    <img src={variantImg} alt={variant.color} />
-                  </button>
-                );
-              })}
-              {hasVariants && hiddenCount > 0 && (
+            {hasVariants && visibleVariants.map((variant) => {
+              const variantImg = variant.item.images?.[0]
+                ? resolveImage(variant.item.images[0])
+                : PLACEHOLDER_IMAGE;
+              const isActive = variant.item.sku === activeVariant?.sku;
+              return (
                 <button
-                  className="product-card__variant-btn product-card__variant-more"
-                  onClick={(e) => { e.stopPropagation(); router.push(`/product/${sku}`); }}
+                  key={variant.item.sku}
+                  className={`product-card__variant-btn${isActive ? ' active' : ''}`}
+                  title={variant.color}
+                  onClick={(e) => handleVariantClick(e, variant)}
                   type="button"
                 >
-                  +{hiddenCount}
+                  <img src={variantImg} alt={variant.color} />
                 </button>
-              )}
-            </div>
+              );
+            })}
+            {hasVariants && hiddenCount > 0 && (
+              <button
+                className="product-card__variant-btn product-card__variant-more"
+                onClick={(e) => { e.stopPropagation(); router.push(`/product/${sku}`); }}
+                type="button"
+              >
+                +{hiddenCount}
+              </button>
+            )}
+          </div>
 
           <div className="product-card__header">
             <h3 className="product-card__title">{title}</h3>

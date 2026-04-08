@@ -10,7 +10,7 @@ import ReviewsTab from './tabs/ReviewsTab';
 import DeliveryTab from './tabs/DeliveryTab';
 import AdvicesTab from './tabs/AdvicesTab';
 
-export default function ProductTabs({ product }) {
+export default function ProductTabs({ product, includedProducts = [] }) {
   const attr = product.attributes;
   const fa = attr.full_attributes_ru || {};
 
@@ -71,7 +71,7 @@ export default function ProductTabs({ product }) {
                   {hasDescription  && activeTab === 'description'  && <DescriptionTab  product={product} />}
                   {hasSizes        && activeTab === 'sizes'        && <SizesTab        product={product} />}
                   {hasMaterials    && activeTab === 'materials'    && <MaterialsTab    product={product} />}
-                  {hasItems        && activeTab === 'items'        && <ItemsTab        product={product} />}
+                  {hasItems        && activeTab === 'items'        && <ItemsTab        product={product} includedProducts={includedProducts} />}
                   {hasInstructions && activeTab === 'instructions' && <InstructionsTab product={product} />}
                   {hasReviews      && activeTab === 'reviews'      && <ReviewsTab      product={product} />}
                   {hasDelivery     && activeTab === 'delivery'     && <DeliveryTab     product={product} />}

@@ -6,12 +6,25 @@ import { getProductBySku } from '@/lib/api/ikea';
 import { useAuth } from '@/contexts/AuthContext';
 
 const STORAGE_KEY = 'guest_favorites';
-const API_BASE_URL = 'http://45.135.234.22';
+// Сохраняем favorite_token в localStorage — он нужен в каждом запросе
+const FAV_TOKEN_KEY = 'favorite_token';
 
 const FavoritesContext = createContext({
   count: 0, items: [], loading: true,
   add: () => {}, remove: () => {}, isFavorite: () => false, reload: () => {},
 });
+
+// Получить сохранённый favorite_token
+function getFavToken() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(FAV_TOKEN_KEY) || null;
+}
+
+// Сохранить favorite_token из ответа бэка
+function saveFavToken(token) {
+  if (typeof window === 'undefined' || !token) return;
+  localStorage.setItem(FAV_TOKEN_KEY, token);
+}
 
 async function fetchProductBySku(sku) {
   try {
@@ -39,7 +52,6 @@ export function FavoritesProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const prevIsAuth = useRef(null);
 
-  // Основной эффект — загрузка при смене состояния авторизации
   useEffect(() => {
     if (!isHydrated) return;
 
@@ -48,9 +60,7 @@ export function FavoritesProvider({ children }) {
 
     // Переход: гость → авторизован
     if (prev === false && curr === true) {
-      mergeGuestToApi().then(() => {
-        prevIsAuth.current = curr;
-      });
+      mergeGuestToApi().then(() => { prevIsAuth.current = curr; });
       return;
     }
 
@@ -71,11 +81,16 @@ export function FavoritesProvider({ children }) {
     }
   }, [isAuth, isHydrated]);
 
-  // Загрузка избранного авторизованного пользователя
+  // Загрузка избранного — сохраняем favorite_token из ответа
   async function load() {
     try {
       setLoading(true);
-      const data = await getFavorites();
+      const favToken = getFavToken();
+      const data = await getFavorites(favToken);
+
+      // Сохраняем актуальный токен из ответа
+      if (data?.favorite?.token) saveFavToken(data.favorite.token);
+
       const rawItems = data?.favorite?.items ?? [];
       const enriched = await Promise.all(
         rawItems.map(async (item) => {
@@ -92,7 +107,7 @@ export function FavoritesProvider({ children }) {
     }
   }
 
-  // Загрузка гостевого избранного из localStorage
+  // Гостевое избранное — через localStorage
   async function loadGuestFavorites() {
     setLoading(true);
     try {
@@ -112,20 +127,18 @@ export function FavoritesProvider({ children }) {
     }
   }
 
-  // При авторизации: переносим гостевые избранные в API
+  // При авторизации: переносим гостевые SKU в API с favorite_token
   async function mergeGuestToApi() {
     setLoading(true);
     try {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
       if (stored.length > 0) {
-        // Добавляем все гостевые SKU в API параллельно
+        const favToken = getFavToken();
         await Promise.allSettled(
-          stored.map(({ sku }) => addFavorite(sku))
+          stored.map(({ sku }) => addFavorite(sku, favToken))
         );
-        // Чистим localStorage
         localStorage.removeItem(STORAGE_KEY);
       }
-      // Загружаем актуальное избранное с сервера
       await load();
     } catch (e) {
       console.error('FavoritesContext: ошибка merge гостевых избранных', e);
@@ -133,7 +146,6 @@ export function FavoritesProvider({ children }) {
     }
   }
 
-  // При выходе: сохраняем текущие избранные в localStorage
   function saveCurrentToGuest() {
     try {
       const skus = items
@@ -147,7 +159,10 @@ export function FavoritesProvider({ children }) {
 
   async function add(sku) {
     if (isAuth) {
-      await addFavorite(sku);
+      const favToken = getFavToken();
+      const data = await addFavorite(sku, favToken);
+      // Обновляем токен если бэк вернул новый
+      if (data?.favorite?.token) saveFavToken(data.favorite.token);
       await load();
     } else {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
@@ -159,6 +174,7 @@ export function FavoritesProvider({ children }) {
   }
 
   async function remove(sku) {
+    // Оптимистично убираем из UI
     setItems(prev => {
       const updated = prev.filter(p => p.sku !== sku);
       if (!isAuth) localStorage.setItem(STORAGE_KEY, JSON.stringify(updated.map(p => ({ sku: p.sku }))));
@@ -166,9 +182,10 @@ export function FavoritesProvider({ children }) {
     });
     if (isAuth) {
       try {
-        await apiRemoveFavorite(sku);
+        const favToken = getFavToken();
+        await apiRemoveFavorite(sku, favToken);
       } catch (e) {
-        if (e.status !== 404) { await load(); }
+        if (e.status !== 404) await load();
       }
     }
   }

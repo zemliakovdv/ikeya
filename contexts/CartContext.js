@@ -63,7 +63,6 @@ export function CartProvider({ children }) {
   }, []);
 
   const fetchCart = useCallback(async () => {
-    console.log('fetchCart called, isHydrated:', isHydrated);
     try {
       setLoading(true);
       const response = await cartAPI.getCart();
