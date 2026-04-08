@@ -23,6 +23,31 @@ function extractSKU(slug) {
   return /^\d+$/.test(last) ? last : slug;
 }
 
+// Строим хлебные крошки из дерева категорий по category_id
+function buildBreadcrumbs(tree, categoryId, productName) {
+  // Рекурсивно ищем путь до нужной категории
+  function findPath(nodes, targetId, path = []) {
+    for (const node of nodes) {
+      const a = node.attributes || {};
+      const current = { name: a.translated_name || a.name || 'Категория', href: `/catalog/${a.slug}` };
+      if (node.id === targetId) return [...path, current];
+      if (node.children?.length) {
+        const found = findPath(node.children, targetId, [...path, current]);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  const categoryPath = findPath(tree, categoryId) || [];
+
+  return [
+    { name: 'Главная', href: '/' },
+    ...categoryPath,
+    { name: productName }, // последний элемент без ссылки
+  ];
+}
+
 // Загрузка одного товара по SKU
 async function getProduct(sku) {
   try {
@@ -91,8 +116,15 @@ export default async function ProductPage({ params }) {
     getSimilarProducts(attr.category_id, sku),          // Похожие товары
   ]);
 
+  const breadcrumbs = buildBreadcrumbs(
+    tree,
+    product.relationships?.category?.data?.id || attr.category_id,
+    attr.small_desc_name || attr.name_ru || 'Товар'
+  );
+
   return (
     <main className="shop-card">
+      <Breadcrumbs items={breadcrumbs} />
       <ProductStickyBar product={product} />
 
       <section className="goods">

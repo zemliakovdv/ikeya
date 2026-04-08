@@ -177,11 +177,9 @@ export default function SearchBox() {
   }
 
   function productPath(product) {
-    const breadcrumbs = product.attributes?.breadcrumbs || []
-    if (breadcrumbs.length > 0 && breadcrumbs[breadcrumbs.length - 1]?.url) {
-      return breadcrumbs[breadcrumbs.length - 1].url
-    }
-    return `/product/${product.attributes?.sku || product.id}/`
+    // Всегда используем SKU — надёжно и однозначно
+    const sku = product.attributes?.sku || product.id
+    return `/product/${sku}/`
   }
 
   function productImage(product) {

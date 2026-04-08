@@ -25,14 +25,14 @@ export default function OrderSuccessPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('order_id');
 
-  const [order, setOrder]   = useState(null);
-  const [items, setItems]   = useState([]);
+  const [order, setOrder] = useState(null);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
   const timerRef = useRef(null);
 
-  const [pvz, setPvz]           = useState(null);
+  const [pvz, setPvz] = useState(null);
   const [services, setServices] = useState([]);
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function OrderSuccessPage() {
       if (storedPvz) setPvz(JSON.parse(storedPvz));
       const storedServices = sessionStorage.getItem('selectedServices');
       if (storedServices) setServices(JSON.parse(storedServices));
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -96,12 +96,12 @@ export default function OrderSuccessPage() {
 
               {/* ========== АЛЕРТ С ТАЙМЕРОМ ========== */}
               <div className="alert alert-danger alert-payment">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#B71C1C"/>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#B71C1C" />
                 </svg>
-                <span>
-                  Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.
-                </span>
+                <p>
+                  Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. <strong>Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.</strong>
+                </p>
                 <button className="btn-pay-order">Оплатить заказ</button>
               </div>
 
@@ -113,12 +113,12 @@ export default function OrderSuccessPage() {
                     <button className="btn-copy-order" onClick={handleCopy} title="Скопировать номер заказа">
                       {copied ? (
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                          <path d="M4 10L8 14L16 6" stroke="#00910A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M4 10L8 14L16 6" stroke="#00910A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       ) : (
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                          <rect x="7" y="7" width="10" height="10" rx="2" stroke="#9E9E9E" strokeWidth="1.5"/>
-                          <path d="M13 7V5C13 3.89543 12.1046 3 11 3H5C3.89543 3 3 3.89543 3 5V11C3 12.1046 3.89543 13 5 13H7" stroke="#9E9E9E" strokeWidth="1.5" strokeLinecap="round"/>
+                          <rect x="7" y="7" width="10" height="10" rx="2" stroke="#9E9E9E" strokeWidth="1.5" />
+                          <path d="M13 7V5C13 3.89543 12.1046 3 11 3H5C3.89543 3 3 3.89543 3 5V11C3 12.1046 3.89543 13 5 13H7" stroke="#9E9E9E" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                       )}
                     </button>
@@ -175,94 +175,94 @@ export default function OrderSuccessPage() {
 
                 {/* Пункт выдачи */}
                 {pvz && (
-                <div className="order-detail-item">
-                  <div className="detail-icon">
-                    {pvz.provider === 'autolight' ? (
-                      <img src="/assets/img/icon/autolight.png" alt="Автолайт" width="24" height="24"/>
-                    ) : (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="12" fill="white"/>
-                        <circle cx="12" cy="12" r="10.8" fill="#FF0000"/>
-                        <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white"/>
-                        <path d="M12.7333 11.96V16.2533L14.1867 15.4133V12.52L16.3933 11.26V14.14L17.8533 13.3V9.04667H17.84L12.7333 11.96Z" fill="white"/>
-                        <path d="M12.7333 17.2267V18.6733H12.74L17.8533 15.7467V14.2867L12.7333 17.2267Z" fill="white"/>
-                        <path d="M11.54 18.6333V17.24L7.87333 15.16V13.8533L11.54 15.96V14.6333L7.87333 12.5333V11.1933L11.54 13.2867V11.96L7.87333 9.87333L6.42667 9.04667H6.41333V15.68L11.54 18.6333Z" fill="white"/>
-                      </svg>
-                    )}
+                  <div className="order-detail-item">
+                    <div className="detail-icon">
+                      {pvz.provider === 'autolight' ? (
+                        <img src="/assets/img/icon/autolight.png" alt="Автолайт" width="24" height="24" />
+                      ) : (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <circle cx="12" cy="12" r="12" fill="white" />
+                          <circle cx="12" cy="12" r="10.8" fill="#FF0000" />
+                          <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white" />
+                          <path d="M12.7333 11.96V16.2533L14.1867 15.4133V12.52L16.3933 11.26V14.14L17.8533 13.3V9.04667H17.84L12.7333 11.96Z" fill="white" />
+                          <path d="M12.7333 17.2267V18.6733H12.74L17.8533 15.7467V14.2867L12.7333 17.2267Z" fill="white" />
+                          <path d="M11.54 18.6333V17.24L7.87333 15.16V13.8533L11.54 15.96V14.6333L7.87333 12.5333V11.1933L11.54 13.2867V11.96L7.87333 9.87333L6.42667 9.04667H6.41333V15.68L11.54 18.6333Z" fill="white" />
+                        </svg>
+                      )}
+                    </div>
+                    <div className="detail-content">
+                      <h3 className="detail-title">{pvz.city}, {pvz.address}</h3>
+                      <p className="detail-subtitle">{PROVIDER_NAMES[pvz.provider] || pvz.provider}</p>
+                    </div>
                   </div>
-                  <div className="detail-content">
-                    <h3 className="detail-title">{pvz.city}, {pvz.address}</h3>
-                    <p className="detail-subtitle">{PROVIDER_NAMES[pvz.provider] || pvz.provider}</p>
-                  </div>
-                </div>
                 )}
               </section>
 
               {/* ========== ВЫБРАННЫЕ УСЛУГИ ========== */}
               {(services.length > 0 || attrs.full_name) && (
-              <section className="selected-services-section">
-                {services.length > 0 && (
-                  <>
-                    <div className="alert alert-info">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
-                      </svg>
-                      <span>Услуги оплачиваются отдельно. С Вами свяжется сотрудник колл-центра для уточнения всех деталей.</span>
-                    </div>
-                    <div className="services-header">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15.4199 11.64L16.5699 10.49C18.0399 10.88 19.6399 10.47 20.7399 9.36998C21.9499 8.15998 22.3299 6.34998 21.7099 4.75998C21.6299 4.53998 21.4299 4.37998 21.1999 4.32998C20.9699 4.27998 20.7299 4.34998 20.5599 4.51998L19.2899 5.78998H18.2099V4.70998L19.4699 3.43998C19.6399 3.26998 19.7099 3.02998 19.6599 2.79998C19.6099 2.56998 19.4499 2.37998 19.2299 2.28998C17.6399 1.66998 15.8299 2.05998 14.6199 3.25998C13.5199 4.35998 13.1099 5.94998 13.4999 7.42998L10.9499 9.97998L7.02989 6.05998L7.82989 5.25998C7.98989 5.09998 8.05989 4.87998 8.02989 4.64998C7.99989 4.41998 7.84989 4.23998 7.64989 4.13998L4.54989 2.58998C4.27989 2.45998 3.95989 2.50998 3.73989 2.71998L2.70989 3.74998C2.49989 3.95998 2.44989 4.28998 2.57989 4.55998L4.12989 7.65998C4.22989 7.85998 4.41989 7.99998 4.63989 8.03998C4.74989 8.03998 5.10989 7.96998 5.23989 7.83998L6.03989 7.03998L9.95989 10.96L7.40989 13.51C5.92989 13.11 4.33989 13.53 3.23989 14.63C2.02989 15.84 1.64989 17.65 2.26989 19.24C2.34989 19.46 2.54989 19.62 2.77989 19.67C3.00989 19.72 3.24989 19.65 3.41989 19.48L4.68989 18.22H5.76989V19.3L4.49989 20.57C4.32989 20.74 4.25989 20.98 4.30989 21.21C4.35989 21.44 4.51989 21.63 4.73989 21.72C5.24989 21.92 5.76989 22.01 6.29989 22.01C7.42989 22.01 8.52989 21.57 9.34989 20.75C10.4499 19.65 10.8599 18.06 10.4699 16.58L11.6199 15.43L17.0699 20.88C17.4799 21.29 18.0099 21.49 18.5499 21.49C19.0899 21.49 19.6199 21.29 20.0299 20.88L20.8499 20.06C21.6599 19.24 21.6599 17.91 20.8499 17.1L15.3999 11.65L15.4199 11.64Z" fill="#757575" />
-                      </svg>
-                      <h3 className="services-title">Услуги:</h3>
-                    </div>
-                    <ul className="services-list-simple">
-                      {services.map((s, i) => <li key={i}>{s}</li>)}
-                    </ul>
-                  </>
-                )}
+                <section className="selected-services-section">
+                  {services.length > 0 && (
+                    <>
+                      <div className="alert alert-info">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+                        </svg>
+                        <span>Услуги оплачиваются отдельно. С Вами свяжется сотрудник колл-центра для уточнения всех деталей.</span>
+                      </div>
+                      <div className="services-header">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15.4199 11.64L16.5699 10.49C18.0399 10.88 19.6399 10.47 20.7399 9.36998C21.9499 8.15998 22.3299 6.34998 21.7099 4.75998C21.6299 4.53998 21.4299 4.37998 21.1999 4.32998C20.9699 4.27998 20.7299 4.34998 20.5599 4.51998L19.2899 5.78998H18.2099V4.70998L19.4699 3.43998C19.6399 3.26998 19.7099 3.02998 19.6599 2.79998C19.6099 2.56998 19.4499 2.37998 19.2299 2.28998C17.6399 1.66998 15.8299 2.05998 14.6199 3.25998C13.5199 4.35998 13.1099 5.94998 13.4999 7.42998L10.9499 9.97998L7.02989 6.05998L7.82989 5.25998C7.98989 5.09998 8.05989 4.87998 8.02989 4.64998C7.99989 4.41998 7.84989 4.23998 7.64989 4.13998L4.54989 2.58998C4.27989 2.45998 3.95989 2.50998 3.73989 2.71998L2.70989 3.74998C2.49989 3.95998 2.44989 4.28998 2.57989 4.55998L4.12989 7.65998C4.22989 7.85998 4.41989 7.99998 4.63989 8.03998C4.74989 8.03998 5.10989 7.96998 5.23989 7.83998L6.03989 7.03998L9.95989 10.96L7.40989 13.51C5.92989 13.11 4.33989 13.53 3.23989 14.63C2.02989 15.84 1.64989 17.65 2.26989 19.24C2.34989 19.46 2.54989 19.62 2.77989 19.67C3.00989 19.72 3.24989 19.65 3.41989 19.48L4.68989 18.22H5.76989V19.3L4.49989 20.57C4.32989 20.74 4.25989 20.98 4.30989 21.21C4.35989 21.44 4.51989 21.63 4.73989 21.72C5.24989 21.92 5.76989 22.01 6.29989 22.01C7.42989 22.01 8.52989 21.57 9.34989 20.75C10.4499 19.65 10.8599 18.06 10.4699 16.58L11.6199 15.43L17.0699 20.88C17.4799 21.29 18.0099 21.49 18.5499 21.49C19.0899 21.49 19.6199 21.29 20.0299 20.88L20.8499 20.06C21.6599 19.24 21.6599 17.91 20.8499 17.1L15.3999 11.65L15.4199 11.64Z" fill="#757575" />
+                        </svg>
+                        <h3 className="services-title">Услуги:</h3>
+                      </div>
+                      <ul className="services-list-simple">
+                        {services.map((s, i) => <li key={i}>{s}</li>)}
+                      </ul>
+                    </>
+                  )}
 
-                {/* Получатель */}
-                {attrs.full_name && (
-                  <div className="recipient-section">
-                    <div className="recipient-header">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15.0499 13.53C16.9099 12.47 18.1699 10.47 18.1699 8.17C18.1699 4.77 15.3999 2 11.9999 2C8.59989 2 5.82989 4.77 5.82989 8.17C5.82989 10.46 7.08989 12.46 8.94989 13.53C5.84989 14.75 3.63989 17.77 3.63989 21.31C3.63989 21.7 3.94989 22.01 4.33989 22.01C4.72989 22.01 5.03989 21.7 5.03989 21.31C5.03989 17.47 8.15989 14.35 11.9999 14.35C15.8399 14.35 18.9599 17.47 18.9599 21.31C18.9599 21.7 19.2699 22.01 19.6599 22.01C20.0499 22.01 20.3599 21.7 20.3599 21.31C20.3599 17.78 18.1499 14.76 15.0499 13.54V13.53Z" fill="#757575" />
-                      </svg>
-                      <h3 className="recipient-name">{attrs.full_name}</h3>
+                  {/* Получатель */}
+                  {attrs.full_name && (
+                    <div className="recipient-section">
+                      <div className="recipient-header">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15.0499 13.53C16.9099 12.47 18.1699 10.47 18.1699 8.17C18.1699 4.77 15.3999 2 11.9999 2C8.59989 2 5.82989 4.77 5.82989 8.17C5.82989 10.46 7.08989 12.46 8.94989 13.53C5.84989 14.75 3.63989 17.77 3.63989 21.31C3.63989 21.7 3.94989 22.01 4.33989 22.01C4.72989 22.01 5.03989 21.7 5.03989 21.31C5.03989 17.47 8.15989 14.35 11.9999 14.35C15.8399 14.35 18.9599 17.47 18.9599 21.31C18.9599 21.7 19.2699 22.01 19.6599 22.01C20.0499 22.01 20.3599 21.7 20.3599 21.31C20.3599 17.78 18.1499 14.76 15.0499 13.54V13.53Z" fill="#757575" />
+                        </svg>
+                        <h3 className="recipient-name">{attrs.full_name}</h3>
+                      </div>
+                      <div className="contact-info-list">
+                        {attrs.phone && <div className="contact-info-item"><span>+{attrs.phone}</span></div>}
+                      </div>
                     </div>
-                    <div className="contact-info-list">
-                      {attrs.phone && <div className="contact-info-item"><span>+{attrs.phone}</span></div>}
-                    </div>
-                  </div>
-                )}
-              </section>
+                  )}
+                </section>
               )}
 
               {/* ========== ТОВАРЫ В ЗАКАЗЕ ========== */}
               {items.length > 0 && (
-              <div className="products zakazi">
-                <div className="order-card">
-                  <div className="order-items">
-                    {items.map((item) => {
-                      const a = item.attributes || {};
-                      return (
-                        <div key={item.id} className="order-item">
-                          <img src={resolveImageUrl(a.image_url)} alt={a.name} className="item-image" />
-                          <div className="flex-grow-1">
-                            <div className="item-infos">
-                              <div className="item-name">{a.name}</div>
-                            </div>
-                            <div className="item-meta">
-                              <span className="item-quantity">{a.quantity} шт</span>
-                              <span className="item-price">{formatAmount(a.price_byn)}</span>
+                <div className="products zakazi">
+                  <div className="order-card">
+                    <div className="order-items">
+                      {items.map((item) => {
+                        const a = item.attributes || {};
+                        return (
+                          <div key={item.id} className="order-item">
+                            <img src={resolveImageUrl(a.image_url)} alt={a.name} className="item-image" />
+                            <div className="flex-grow-1">
+                              <div className="item-infos">
+                                <div className="item-name">{a.name}</div>
+                              </div>
+                              <div className="item-meta">
+                                <span className="item-quantity">{a.quantity} шт</span>
+                                <span className="item-price">{formatAmount(a.price_byn)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
               )}
 
               {loading && <p style={{ textAlign: 'center', color: '#9e9e9e' }}>Загрузка...</p>}
