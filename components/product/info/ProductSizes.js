@@ -13,7 +13,7 @@ function resolveImage(path) {
   return `${API_BASE_URL}/${clean}`;
 }
 
-export default function ProductSizes({ variants, currentSku, currentPrice, productImage }) {
+export default function ProductSizes({ variants, currentSku, currentPriceByn, productImage }) {
   const sizeVariants = (variants || []).filter(v => v.item?.sku);
 
   if (sizeVariants.length === 0) return null;
@@ -31,8 +31,9 @@ export default function ProductSizes({ variants, currentSku, currentPrice, produ
           const label = (variant.size || item.small_desc_name || `Вариант ${index + 1}`)
             .replace(/^ширина:\s*/i, '');
 
-          const variantPrice = parseFloat(String(item.price || 0).replace(/\s/g, '')) || 0;
-          const basePrice = parseFloat(String(currentPrice || 0).replace(/\s/g, '')) || 0;
+          // Разница цен в BYN
+          const variantPrice = parseFloat(String(item.price_byn || 0).replace(/\s/g, '')) || 0;
+          const basePrice = parseFloat(String(currentPriceByn || 0).replace(/\s/g, '')) || 0;
           const priceDiff = variantPrice - basePrice;
           const priceDiffAbs = Math.abs(priceDiff).toFixed(2);
           const isPositive = priceDiff > 0;
@@ -52,12 +53,14 @@ export default function ProductSizes({ variants, currentSku, currentPrice, produ
             >
               <img src={variantImg} alt={label} />
               <p className="good-sizes__number">{label}</p>
-              {!isZero && (
+              {isCurrent ? (
+                <p className="goods-sizes__current">Текущий</p>
+              ) : !isZero ? (
                 <p>
                   {isPositive ? '+' : '-'}
                   <span>{priceDiffAbs}</span> р.
                 </p>
-              )}
+              ) : null}
             </Link>
           );
         })}

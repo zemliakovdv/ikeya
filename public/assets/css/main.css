@@ -1243,6 +1243,10 @@ main {
     min-width: 36px;
 }
 
+.product-card__variant-btn.active{
+    border-color: #181818;
+}
+
 .product-card__variant-btn img {
     width: 100%;
     object-fit: cover;
@@ -4026,7 +4030,8 @@ main {
     padding: 4px 8px;
     text-align: center;
     min-height: 104px;
-    max-width: 101фpx;
+    max-width: 93px;
+    width: 93px;
 }
 
 .goods-sizes__card .goods-sizes__item:hover {

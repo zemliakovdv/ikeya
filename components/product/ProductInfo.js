@@ -48,12 +48,18 @@ export default function ProductInfo({ product }) {
   const ratingCount = attr.rating_count || 0;
   const localImages = Array.isArray(attr.local_images) ? attr.local_images : [];
 
-  // Правильный парсинг variants: API отдаёт объект { type, data }, не массив
-  const variantsRaw = attr.variants && typeof attr.variants === 'object' && !Array.isArray(attr.variants)
-    ? attr.variants
-    : {};
-  const variantType = variantsRaw.type || null;         // 'color' | 'size' | null
-  const variantsData = Array.isArray(variantsRaw.data) ? variantsRaw.data : [];
+  // variants — массив групп [{ type, data }, ...], каждая группа — свой тип
+  const variantsArr = Array.isArray(attr.variants) ? attr.variants : [];
+  const colorGroup = variantsArr.find(g => g.type === 'color');
+  const sizeGroup  = variantsArr.find(g => g.type === 'size');
+  const colorVariants = colorGroup?.data || [];
+  const sizeVariants  = sizeGroup?.data  || [];
+
+  // SKU текущего цвета — ищем currentSku среди color-вариантов
+  // Если не найден (мы на странице size-варианта) — берём первый color-вариант
+  const colorSku = colorVariants.find(v => v.item?.sku === attr.sku)?.item?.sku
+    || colorVariants[0]?.item?.sku
+    || attr.sku;
 
   // Пошлина
   const customsDuty = attr.customs_duty?.total_byn
@@ -156,21 +162,21 @@ export default function ProductInfo({ product }) {
           </button>
         )}
 
-        {/* Варианты по цвету — только если type === 'color' */}
-        {variantType === 'color' && variantsData.length > 0 && (
+        {/* Варианты по цвету */}
+        {colorVariants.length > 0 && (
           <ProductColors
-            variants={variantsData}
-            currentSku={attr.sku}
+            variants={colorVariants}
+            currentSku={colorSku}
             localImages={localImages}
           />
         )}
 
-        {/* Варианты по размеру — только если type === 'size' */}
-        {variantType === 'size' && variantsData.length > 0 && (
+        {/* Варианты по размеру */}
+        {sizeVariants.length > 0 && (
           <ProductSizes
-            variants={variantsData}
+            variants={sizeVariants}
             currentSku={attr.sku}
-            currentPrice={parseFloat(attr.price)}
+            currentPriceByn={parseFloat(String(attr.price_byn || 0).replace(/\s/g, ''))}
             productImage={localImages[0]}
           />
         )}

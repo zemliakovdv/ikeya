@@ -60,13 +60,16 @@ export default function ProductCard({ product }) {
   const mainImage = images[0];
   const hoverImage = images[1] || images[0];
 
-  // Цветовые варианты
+  // Варианты — бэк отдаёт массив [{ type, data }, ...]
+  // Берём только color-варианты для отображения миниатюр на карточке
   const colorVariants = useMemo(() => {
-    if (attr.variants?.type !== 'color') return [];
-    return (attr.variants?.data || []).filter(v => v.item?.sku);
+    const variantsArr = Array.isArray(attr.variants) ? attr.variants : [];
+    const colorGroup = variantsArr.find(g => g.type === 'color');
+    return (colorGroup?.data || []).filter(v => v.item?.sku);
   }, [attr.variants]);
 
   const hasVariants = colorVariants.length > 0;
+  // +1 для кнопки сброса (возврат к основному товару)
   const visibleVariants = colorVariants.slice(0, MAX_VISIBLE_VARIANTS);
   const hiddenCount = colorVariants.length - MAX_VISIBLE_VARIANTS;
 
@@ -105,15 +108,15 @@ export default function ProductCard({ product }) {
   const handleVariantClick = useCallback((e, variant) => {
     e.stopPropagation();
 
-    // Повторный клик по уже активному варианту — переходим на его страницу
+    // Повторный клик по уже активному варианту — сбрасываем к основному товару
     if (activeVariant?.sku === variant.item.sku) {
-      router.push(`/product/${variant.item.sku}`);
+      setActiveVariant(null);
       return;
     }
 
     // Первый клик — обновляем всё: картинки, заголовок, описание, цену
     setActiveVariant(variant.item);
-  }, [activeVariant, router]);
+  }, [activeVariant]);
 
   const badges = [];
   if (attr.is_bestseller || attr.is_popular) badges.push('Хит продаж');
@@ -171,6 +174,17 @@ export default function ProductCard({ product }) {
 
           {/* Цветовые варианты */}
           <div className="product-card__variants" onClick={(e) => e.stopPropagation()}>
+            {/* Миниатюра основного товара — всегда первая */}
+            {hasVariants && (
+              <button
+                className={`product-card__variant-btn${!activeVariant ? ' active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); setActiveVariant(null); }}
+                type="button"
+                title="Основной товар"
+              >
+                <img src={baseImages[0]} alt={attr.small_desc_name || 'Основной товар'} />
+              </button>
+            )}
             {hasVariants && visibleVariants.map((variant) => {
               const variantImg = variant.item.images?.[0]
                 ? resolveImage(variant.item.images[0])
@@ -197,6 +211,7 @@ export default function ProductCard({ product }) {
                 +{hiddenCount}
               </button>
             )}
+
           </div>
 
           <div className="product-card__header">
