@@ -255,9 +255,9 @@ export default function CheckoutPage() {
               <div className="zakaz-inner">
 
                 {/* Заголовок */}
-                <div className="zakaz-title" onClick={() => router.push('/cart')} style={{ cursor: 'pointer' }}>
+                <div className="zakaz-title">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                    >
+                    onClick={() => router.push('/cart')} style={{ cursor: 'pointer' }}>
                     <path d="M8.67004 12C8.67004 10.88 11.71 8.19999 14.25 6.14999C14.54 5.91999 14.96 5.95999 15.19 6.24999C15.42 6.53999 15.38 6.95999 15.09 7.18999C12.86 8.98999 10.35 11.29 10.02 12C10.35 12.71 12.86 15.01 15.09 16.81C15.38 17.04 15.42 17.46 15.19 17.75C14.96 18.04 14.54 18.08 14.25 17.85C11.7 15.8 8.67004 13.11 8.67004 12Z" fill="#181818" />
                   </svg>
                   <h2>Оформление заказа</h2>
