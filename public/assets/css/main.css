@@ -5567,8 +5567,6 @@ main {
     background: #0058A3;
     color: #ffffff;
     cursor: pointer;
-    pointer-events: none;
-    user-select: none;
 }
 
 .cart-summary__note {
