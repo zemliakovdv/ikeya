@@ -4226,6 +4226,7 @@ main {
 
 .products-card-slider .swiper-slide-inner {
     margin: 0 !important;
+    flex-wrap: nowrap;
 }
 
 .products-card-slider .product-card-inner {
