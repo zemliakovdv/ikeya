@@ -108,17 +108,8 @@ export default function ProductCard({ product }) {
 
   const handleVariantClick = useCallback((e, variant) => {
     e.stopPropagation();
-
-    // Клик по уже активному варианту — переходим на его страницу
-    const currentlyActive = activeVariant?.sku || sku;
-    if (currentlyActive === variant.item.sku) {
-      router.push(`/product/${variant.item.sku}`);
-      return;
-    }
-
-    // Первый клик — обновляем картинки, заголовок, описание, цену
     setActiveVariant(variant.item);
-  }, [activeVariant, sku, router]);
+  }, []);
 
   const badges = [];
   if (attr.is_bestseller || attr.is_popular) badges.push('Хит продаж');
