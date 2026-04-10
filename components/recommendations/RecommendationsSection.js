@@ -38,12 +38,23 @@ export default function RecommendationsSection({ products = [] }) {
                     spaceBetween={0}
                     slidesPerView={1}
                     loop={groupedProducts.length > 1}
-                    navigation={{ prevEl: prevRef.current, nextEl: nextRef.current }}
-                    pagination={{ el: paginationRef.current, clickable: true }}
                     onBeforeInit={(swiper) => {
+                      // Передаём refs до того как Swiper инициализирует навигацию.
+                      // Это единственный надёжный способ — прямая передача через пропы
+                      // не работает при повторных рендерах т.к. refs ещё null в момент
+                      // создания пропов.
                       swiper.params.navigation.prevEl = prevRef.current;
                       swiper.params.navigation.nextEl = nextRef.current;
                       swiper.params.pagination.el = paginationRef.current;
+                    }}
+                    onSwiper={(swiper) => {
+                      // После инициализации принудительно обновляем навигацию и пагинацию.
+                      // Нужно при повторных рендерах — когда Swiper уже создан
+                      // но DOM-элементы навигации могли пересоздаться.
+                      swiper.navigation.init();
+                      swiper.navigation.update();
+                      swiper.pagination.init();
+                      swiper.pagination.update();
                     }}
                     className="products-slider"
                   >
@@ -60,7 +71,6 @@ export default function RecommendationsSection({ products = [] }) {
                       </SwiperSlide>
                     ))}
 
-                    {/* Навигация */}
                     <div
                       className="products-slider__nav products-slider__nav-prev"
                       ref={prevRef}
@@ -79,7 +89,6 @@ export default function RecommendationsSection({ products = [] }) {
                       </svg>
                     </div>
 
-                    {/* Пагинация */}
                     <div
                       className="products-slider__pagination"
                       ref={paginationRef}
