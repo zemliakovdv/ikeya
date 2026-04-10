@@ -13,16 +13,21 @@ import Pagination from '@/components/catalog/Pagination';
 
 export default async function CatalogPage({ searchParams }) {
   const sp = await searchParams;
+
   const allowedSorts = ['cheapest', 'expensive'];
   const sort = allowedSorts.includes(sp?.sort) ? sp.sort : null;
 
+  // Читаем номер страницы из URL — для прямых переходов по пагинации
+  const currentPage = Math.max(1, Number(sp?.page) || 1);
+
   const [tree, productsResponse] = await Promise.all([
     getCachedCategoriesTree(),
-    getProducts({ page: 1, per_page: 20, sort })
+    getProducts({ page: currentPage, per_page: 20, sort })
   ]);
 
   const products = productsResponse.data || [];
   const meta = productsResponse.meta || {};
+  const totalPages = meta.total_pages || Math.ceil((meta.total || 0) / 20);
 
   const queryParams = new URLSearchParams();
   if (sort) queryParams.set('sort', sort);
@@ -63,16 +68,18 @@ export default async function CatalogPage({ searchParams }) {
               <FilterChips filterLabels={{}} filterTitles={{}} />
               <Suspense fallback={<div>Загрузка товаров...</div>}>
                 <InfiniteProductGrid
-                  key={productsQueryString}
+                  key={`catalog-${currentPage}-${productsQueryString}`}
                   initialProducts={products}
                   categoryId={null}
-                  totalPages={meta.total_pages || Math.ceil((meta.total || 0) / 20)}
+                  totalPages={totalPages}
                   queryString={productsQueryString}
+                  initialPage={currentPage}
+                  basePath="/catalog"
                 />
               </Suspense>
               <Pagination
-                currentPage={Number(sp?.page) || 1}
-                totalPages={meta.total_pages || Math.ceil((meta.total || 0) / 20)}
+                currentPage={currentPage}
+                totalPages={totalPages}
                 totalItems={meta.total || 0}
                 basePath="/catalog"
                 queryString={productsQueryString}

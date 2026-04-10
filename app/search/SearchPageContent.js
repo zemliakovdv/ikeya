@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { Suspense } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
 import PriceFilter from '@/components/catalog/sidebar/PriceFilter';
 import CheckboxFilter from '@/components/catalog/sidebar/CheckboxFilter';
@@ -11,28 +12,15 @@ import Pagination from '@/components/catalog/Pagination';
 import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 import PageLoader from '@/components/ui/PageLoader';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+// Относительный путь — работает и на локалке и на сервере
+const API_BASE_URL = '/api/v1';
 
-function getPriceRangeFromFilters(filters) {
-  const priceBucket = (filters || []).find(f => f.parameter === 'f-price-buckets');
-  if (!priceBucket?.values?.length) return { min: 0, max: 10000 };
-
-  let min = Infinity;
-  let max = 0;
-
-  priceBucket.values.forEach(({ id }) => {
-    const match = id.match(/^PRICE_(\d+)_(\d+)$/);
-    if (!match) return;
-    const lo = parseInt(match[1]) / 100;
-    const hi = parseInt(match[2]) / 100;
-    if (lo < min) min = lo;
-    if (hi < 92233720368547 && hi > max) max = hi;
-  });
-
-  return {
-    min: min === Infinity ? 0 : Math.floor(min),
-    max: max === 0 ? 10000 : Math.ceil(max)
-  };
+function getPriceRangeFromProducts(products) {
+  const prices = products
+    .map(p => parseFloat(String(p.attributes?.price_byn || p.attributes?.price || 0).replace(/\s/g, '')))
+    .filter(p => p > 0);
+  if (!prices.length) return { min: 0, max: 10000 };
+  return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
 }
 
 function safeNumberOrEmpty(v) {
@@ -47,6 +35,17 @@ function readAll(sp, key) {
   return sp.getAll(key).map(String);
 }
 
+function normalizeProduct(p) {
+  return {
+    ...p,
+    attributes: {
+      ...p.attributes,
+      small_desc_name: p.attributes?.small_desc_name || p.attributes?.name_ru || p.attributes?.name,
+      price_byn: p.attributes?.price_byn || p.attributes?.price,
+    }
+  };
+}
+
 export default function SearchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -55,16 +54,28 @@ export default function SearchPageContent() {
   const q = searchParams.get('q') || '';
   const sortParam = searchParams.get('sort') || '';
 
-  const [results, setResults] = useState(null);
+  // Первая загрузка — результаты первой страницы + мета
+  const [firstPageData, setFirstPageData] = useState(null);
+  // Все товары включая подгруженные скроллом
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
 
+  const [sortOpen, setSortOpen] = useState(false);
   const [draftPriceMin, setDraftPriceMin] = useState('');
   const [draftPriceMax, setDraftPriceMax] = useState('');
   const [draftFilters, setDraftFilters] = useState({});
 
   const priceDebounceRef = useRef(null);
   const isMountedRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(false);
+  const pageRef = useRef(1);
+  const observerRef = useRef(null);
 
   const sortOptions = [
     { value: 'cheapest', label: 'Дешевле' },
@@ -73,9 +84,8 @@ export default function SearchPageContent() {
 
   const currentSortLabel = sortOptions.find(o => o.value === sortParam)?.label || 'Сортировка';
 
-  // Нормализуем фильтры из API (исключаем цену — она в PriceFilter)
   const normalizedFilters = useMemo(() => {
-    const filters = results?.available_filters || [];
+    const filters = firstPageData?.available_filters || [];
     return filters
       .filter(f => f.parameter !== 'f-price-buckets' && Array.isArray(f.values) && f.values.length > 0)
       .map(f => ({
@@ -88,26 +98,144 @@ export default function SearchPageContent() {
             label: v.name || String(v.id),
           })),
       }));
-  }, [results]);
+  }, [firstPageData]);
 
   const filtersKey = useMemo(
     () => normalizedFilters.map(f => f.parameter).join(','),
     [normalizedFilters]
   );
 
-  const priceRange = useMemo(() => {
-    const prods = results?.products?.data || [];
-    const prices = prods
-      .map(p => parseFloat(String(p.attributes?.price_byn || p.attributes?.price || 0).replace(/\s/g, '')))
-      .filter(p => p > 0);
-    if (!prices.length) return { min: 0, max: 10000 };
-    return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
-  }, [results]);
+  const priceRange = useMemo(() => getPriceRangeFromProducts(products), [products]);
 
-  // Загружаем результаты при изменении URL
+  const filterLabels = useMemo(() => {
+    const labels = {};
+    (firstPageData?.available_filters || []).forEach(f => {
+      (f.values || []).forEach(v => {
+        if (v.id !== undefined) labels[String(v.id)] = v.translated_name || v.name || String(v.id);
+      });
+    });
+    return labels;
+  }, [firstPageData]);
+
+  const filterTitles = useMemo(() => {
+    const titles = {};
+    (firstPageData?.available_filters || []).forEach(f => {
+      titles[f.parameter] = f.translated_name || f.name || f.parameter;
+    });
+    return titles;
+  }, [firstPageData]);
+
+  // Строим параметры запроса из текущего URL
+  const buildSearchParams = useCallback((page = 1) => {
+    const params = new URLSearchParams();
+    params.set('q', q.trim());
+    params.set('page', String(page));
+    if (sortParam) params.set('sort', sortParam);
+    const minP = searchParams.get('min_price');
+    const maxP = searchParams.get('max_price');
+    if (minP) params.set('min_price', minP);
+    if (maxP) params.set('max_price', maxP);
+    for (const [key, val] of searchParams.entries()) {
+      if (key.startsWith('filters[')) params.append(key, val);
+    }
+    return params;
+  }, [q, sortParam, searchParams]);
+
+  // Загрузка первой страницы — сбрасывает всё состояние
+  const fetchFirstPage = useCallback(async () => {
+    if (!q.trim()) {
+      setFirstPageData(null);
+      setProducts([]);
+      return;
+    }
+
+    setLoading(true);
+    setProducts([]);
+    setHasMore(false);
+    hasMoreRef.current = false;
+    pageRef.current = 1;
+
+    try {
+      const params = buildSearchParams(1);
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
+      if (!res.ok) throw new Error('Search error');
+      const data = await res.json();
+
+      const meta = data.meta || {};
+      const rawProducts = (data.products?.data || []).map(normalizeProduct);
+      const pages = meta.total_pages || 1;
+      const total = meta.total || rawProducts.length;
+
+      setFirstPageData(data);
+      setProducts(rawProducts);
+      setTotalPages(pages);
+      setTotalItems(total);
+      setCurrentPage(1);
+
+      const more = pages > 1;
+      setHasMore(more);
+      hasMoreRef.current = more;
+      pageRef.current = 2;
+    } catch (e) {
+      console.error('Search error:', e);
+      setFirstPageData(null);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [q, buildSearchParams]);
+
+  // Подгрузка следующей страницы скроллом
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || !hasMoreRef.current) return;
+
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+
+    const page = pageRef.current;
+
+    try {
+      const params = buildSearchParams(page);
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
+      if (!res.ok) throw new Error('Search error');
+      const data = await res.json();
+
+      const meta = data.meta || {};
+      const rawProducts = (data.products?.data || []).map(normalizeProduct);
+
+      if (rawProducts.length > 0) {
+        setProducts(prev => [...prev, ...rawProducts]);
+
+        const currentPageNum = meta.page ?? page;
+        const pages = meta.total_pages ?? totalPages;
+        const more = currentPageNum < pages;
+
+        pageRef.current = page + 1;
+        setCurrentPage(currentPageNum);
+        hasMoreRef.current = more;
+        setHasMore(more);
+
+        // Обновляем URL без перезагрузки
+        const urlParams = new URLSearchParams(searchParams.toString());
+        urlParams.set('page', String(currentPageNum));
+        window.history.replaceState(null, '', `${pathname}?${urlParams.toString()}`);
+      } else {
+        hasMoreRef.current = false;
+        setHasMore(false);
+      }
+    } catch (e) {
+      console.error('Load more error:', e);
+      hasMoreRef.current = false;
+      setHasMore(false);
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [buildSearchParams, totalPages, pathname, searchParams]);
+
+  // Перезагружаем при смене запроса/фильтров/сортировки
   useEffect(() => {
-    if (!q.trim()) { setResults(null); return; }
-    fetchResults();
+    fetchFirstPage();
   }, [q, sortParam, searchParams.toString()]);
 
   // Синхронизация draft <- URL
@@ -123,33 +251,20 @@ export default function SearchPageContent() {
     isMountedRef.current = true;
   }, [searchParams, filtersKey]);
 
-  async function fetchResults() {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('q', q.trim());
-      if (sortParam) params.set('sort', sortParam);
-      const pageParam = searchParams.get('page');
-      if (pageParam) params.set('page', pageParam);
-      const minP = searchParams.get('min_price');
-      const maxP = searchParams.get('max_price');
-      if (minP) params.set('min_price', minP);
-      if (maxP) params.set('max_price', maxP);
-      for (const [key, val] of searchParams.entries()) {
-        if (key.startsWith('filters[')) params.append(key, val);
-      }
+  // IntersectionObserver для infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
-      if (!res.ok) throw new Error('Search error');
-      const data = await res.json();
-      setResults(data);
-    } catch (e) {
-      console.error('Search error:', e);
-      setResults(null);
-    } finally {
-      setLoading(false);
-    }
-  }
+    if (observerRef.current) observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const applyFilters = useCallback((minP, maxP, filters) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -233,34 +348,15 @@ export default function SearchPageContent() {
     return Object.values(draftFilters).some(v => Array.isArray(v) && v.length > 0);
   }, [draftPriceMin, draftPriceMax, draftFilters]);
 
-  const filterLabels = useMemo(() => {
-    const labels = {};
-    (results?.available_filters || []).forEach(f => {
-      (f.values || []).forEach(v => {
-        if (v.id !== undefined) labels[String(v.id)] = v.translated_name || v.name || String(v.id);
-      });
-    });
-    return labels;
-  }, [results]);
-
-  const filterTitles = useMemo(() => {
-    const titles = {};
-    (results?.available_filters || []).forEach(f => {
-      titles[f.parameter] = f.translated_name || f.name || f.parameter;
-    });
-    return titles;
-  }, [results]);
-  const categories = results?.categories?.data || results?.categories || [];
-  const products = (results?.products?.data || []).map(p => ({
-    ...p,
-    attributes: {
-      ...p.attributes,
-      // Нормализуем название и цену под ProductCard
-      small_desc_name: p.attributes?.small_desc_name || p.attributes?.name_ru || p.attributes?.name,
-      price_byn: p.attributes?.price_byn || p.attributes?.price,
-    }
-  }));
+  const categories = firstPageData?.categories?.data || firstPageData?.categories || [];
   const hasResults = products.length > 0;
+
+  // Строка queryString для Pagination (без page)
+  const paginationQueryString = useMemo(() => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete('page');
+    return p.toString();
+  }, [searchParams]);
 
   if (!q) {
     return (
@@ -276,104 +372,104 @@ export default function SearchPageContent() {
     );
   }
 
+  const noResults = !loading && !hasResults && firstPageData !== null;
+  const hideSidebar = noResults;
+
   return (
     <main className="main catalog-inner">
       <section className="all-catalog">
         <div className="container">
 
-          {/* Заголовок */}
           <h1>
             {loading
               ? `Поиск по запросу «${q}»...`
-              : `По запросу «${q}» найдено ${results?.meta?.total ?? products.length} товаров`
+              : `По запросу «${q}» найдено ${totalItems} товаров`
             }
           </h1>
 
           {loading && <PageLoader />}
 
           <div className="all-catalog-inner" style={{ visibility: loading ? 'hidden' : 'visible' }}>
-            {/* Сайдбар — скрываем когда нет результатов */}
-            {(!(!loading && !hasResults && results !== null)) && (
-            <aside className="filter-aside" style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', overflowY: 'auto', overflowX: 'hidden' }}>
 
-              {/* Категории */}
-              {categories.length > 0 && (
-                <div className="category-sidebar">
-                  <h3 className="category-sidebar__title">Категория</h3>
-                  <nav className="category-tree">
-                    <div className="category-tree__root">
-                      {categories.map(cat => (
-                        <a
-                          key={cat.id}
-                          href={`/catalog/${cat.attributes?.slug || cat.slug || cat.id}/`}
-                          className="category-tree__link"
-                        >
-                          {cat.attributes?.translated_name || cat.translated_name || cat.name}
-                        </a>
-                      ))}
-                    </div>
-                  </nav>
-                </div>
-              )}
+            {/* Сайдбар */}
+            {!hideSidebar && (
+              <aside className="filter-aside" style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', overflowY: 'auto', overflowX: 'hidden' }}>
 
-              {/* Фильтр цены */}
-              <PriceFilter
-                min={priceRange.min}
-                max={priceRange.max}
-                currentMin={currentMin}
-                currentMax={currentMax}
-                onChange={handlePriceChange}
-              />
+                {categories.length > 0 && (
+                  <div className="category-sidebar">
+                    <h3 className="category-sidebar__title">Категория</h3>
+                    <nav className="category-tree">
+                      <div className="category-tree__root">
+                        {categories.map(cat => (
+                          <a
+                            key={cat.id}
+                            href={`/catalog/${cat.attributes?.slug || cat.slug || cat.id}/`}
+                            className="category-tree__link"
+                          >
+                            {cat.attributes?.translated_name || cat.translated_name || cat.name}
+                          </a>
+                        ))}
+                      </div>
+                    </nav>
+                  </div>
+                )}
 
-              {/* Чекбокс фильтры */}
-              {normalizedFilters.map(f => (
-                <CheckboxFilter
-                  key={f.parameter}
-                  title={f.title}
-                  filterKey={f.parameter}
-                  selectedOptions={draftFilters[f.parameter] || []}
-                  onToggle={toggleValue}
-                  options={f.values}
-                  showMore
+                <PriceFilter
+                  min={priceRange.min}
+                  max={priceRange.max}
+                  currentMin={currentMin}
+                  currentMax={currentMax}
+                  onChange={handlePriceChange}
                 />
-              ))}
 
-              {hasActiveFilters && (
-                <button className="clear-filters" onClick={handleClear} type="button">
-                  Очистить фильтры
-                </button>
-              )}
-            </aside>
+                {normalizedFilters.map(f => (
+                  <CheckboxFilter
+                    key={f.parameter}
+                    title={f.title}
+                    filterKey={f.parameter}
+                    selectedOptions={draftFilters[f.parameter] || []}
+                    onToggle={toggleValue}
+                    options={f.values}
+                    showMore
+                  />
+                ))}
+
+                {hasActiveFilters && (
+                  <button className="clear-filters" onClick={handleClear} type="button">
+                    Очистить фильтры
+                  </button>
+                )}
+              </aside>
             )}
 
             {/* Центральная колонка */}
-            <div className="all-catalog-center" style={!loading && !hasResults && results !== null ? { width: '100%' } : {}}>
+            <div className="all-catalog-center" style={hideSidebar ? { width: '100%' } : {}}>
 
-              {/* Сортировка — скрываем когда нет результатов */}
-              {(!(!loading && !hasResults && results !== null)) && (
-              <div className="all-catalog-sort">
-                <div className="catalog-sort">
-                  <div className="catalog-sort__selected" onClick={() => setSortOpen(v => !v)}>
-                    <span className="catalog-sort__current">{currentSortLabel}</span>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M7.99999 10.2201C7.25333 10.2201 5.46666 8.19343 4.09999 6.5001C3.94666 6.30677 3.97333 6.02677 4.16666 5.87343C4.35999 5.7201 4.63999 5.74677 4.79333 5.9401C5.99333 7.42677 7.52666 9.1001 7.99999 9.3201C8.47333 9.1001 10.0067 7.42677 11.2067 5.9401C11.36 5.74677 11.64 5.7201 11.8333 5.87343C12.0267 6.02677 12.0533 6.30677 11.9 6.5001C10.5333 8.2001 8.74 10.2201 7.99999 10.2201Z" fill="#757575"/>
-                    </svg>
+              {/* Сортировка */}
+              {!hideSidebar && (
+                <div className="all-catalog-sort">
+                  <div className="catalog-sort">
+                    <div className="catalog-sort__selected" onClick={() => setSortOpen(v => !v)}>
+                      <span className="catalog-sort__current">{currentSortLabel}</span>
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M7.99999 10.2201C7.25333 10.2201 5.46666 8.19343 4.09999 6.5001C3.94666 6.30677 3.97333 6.02677 4.16666 5.87343C4.35999 5.7201 4.63999 5.74677 4.79333 5.9401C5.99333 7.42677 7.52666 9.1001 7.99999 9.3201C8.47333 9.1001 10.0067 7.42677 11.2067 5.9401C11.36 5.74677 11.64 5.7201 11.8333 5.87343C12.0267 6.02677 12.0533 6.30677 11.9 6.5001C10.5333 8.2001 8.74 10.2201 7.99999 10.2201Z" fill="#757575"/>
+                      </svg>
+                    </div>
+                    {sortOpen && (
+                      <ul className="catalog-sort__dropdown">
+                        {sortOptions.map(opt => (
+                          <li
+                            key={opt.value}
+                            className={`catalog-sort__option ${opt.value === sortParam ? 'active' : ''}`}
+                            onClick={() => handleSort(opt.value)}
+                          >
+                            {opt.label}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {sortOpen && (
-                    <ul className="catalog-sort__dropdown">
-                      {sortOptions.map(opt => (
-                        <li
-                          key={opt.value}
-                          className={`catalog-sort__option ${opt.value === sortParam ? 'active' : ''}`}
-                          onClick={() => handleSort(opt.value)}
-                        >
-                          {opt.label}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                 </div>
-              </div>
               )}
 
               {/* Чипсы фильтров */}
@@ -381,44 +477,56 @@ export default function SearchPageContent() {
 
               {/* Товары */}
               {!loading && hasResults && (
-                <div className="products-grid">
-                  {products.map(product => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-              )}
+                <>
+                  <div className="products-grid">
+                    {products.map(product => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
 
-              {/* Пагинация */}
-              {!loading && hasResults && (results?.meta?.total_pages || 1) > 1 && (
-                <Pagination
-                  currentPage={Number(searchParams.get('page')) || 1}
-                  totalPages={results?.meta?.total_pages || 1}
-                  totalItems={results?.meta?.total || 0}
-                  basePath={pathname}
-                  queryString={(() => {
-                    const p = new URLSearchParams(searchParams.toString());
-                    p.delete('page');
-                    return p.toString();
-                  })()}
-                />
+                  {/* Триггер infinite scroll */}
+                  {hasMore && (
+                    <div
+                      ref={observerRef}
+                      className="loading-trigger"
+                      style={{
+                        height: '100px',
+                        margin: '40px 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      {loadingMore && <div className="page-loader__spinner" />}
+                    </div>
+                  )}
+
+                  {/* Пагинация — видна всегда, подсвечивает актуальную страницу */}
+                  {totalPages > 1 && (
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalItems={totalItems}
+                      basePath={pathname}
+                      queryString={paginationQueryString}
+                    />
+                  )}
+                </>
               )}
 
               {/* Нет результатов */}
-              {!loading && !hasResults && results !== null && (
-                <SearchNotFound query={q} />
-              )}
+              {noResults && <SearchNotFound query={q} />}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Рекомендации — показываем когда ничего не найдено */}
-      {!loading && !hasResults && results !== null && (
+      {/* Рекомендации когда ничего не найдено */}
+      {noResults && (
         <Suspense fallback={null}>
           <NotFoundRecommendations />
         </Suspense>
       )}
-
     </main>
   );
 }

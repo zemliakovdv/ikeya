@@ -4,7 +4,28 @@ const nextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true
-  }
-};
+  },
 
-export default nextConfig;
+  // Проксируем /api/v1/* через Next.js сервер на бэкенд.
+  // Браузер делает fetch на /api/v1/... (относительный путь),
+  // Next.js сервер перенаправляет на реальный бэкенд.
+  // Это решает проблему обрыва скролла на продакшене.
+  async rewrites() {
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: 'http://45.135.234.22/api/v1/:path*',
+      },
+    ];
+  },
+
+  webpack: (config) => {
+    config.module.rules.push({
+      test: /\.json$/,
+      type: 'json'
+    });
+    return config;
+  }
+}
+
+module.exports = nextConfig

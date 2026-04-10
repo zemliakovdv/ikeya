@@ -12,7 +12,6 @@ import {
   findCategoryBySlug,
   buildCategoryChain,
   buildBreadcrumbsFromTree,
-  getChildCategories,
   findNodeInTree,
 } from '@/lib/utils/categoryHelpers';
 import { redirect } from 'next/navigation';
@@ -50,9 +49,11 @@ export default async function CategoryPage({ params, searchParams }) {
     const allowedSorts = ['popular', 'newest', 'cheapest', 'expensive'];
     const sort = allowedSorts.includes(sp?.sort) ? sp.sort : null;
 
+    // Читаем номер страницы из URL — для прямых переходов по пагинации
+    const currentPage = Math.max(1, Number(sp?.page) || 1);
+
     const tree = await getCachedCategoriesTree();
     const allCategories = flattenCategoriesTree(tree);
-
     const currentCategory = findCategoryBySlug(allCategories, currentSlug);
 
     if (!currentCategory) {
@@ -61,7 +62,7 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const [categoryWithFilters, productsResponse] = await Promise.all([
       getCategoryWithFilters(currentCategory.id),
-      getCategoryProducts(currentCategory.id, 1, 20, sort, sp || {}),
+      getCategoryProducts(currentCategory.id, currentPage, 20, sort, sp || {}),
     ]);
 
     const availableFilters = categoryWithFilters.available_filters || [];
@@ -86,6 +87,8 @@ export default async function CategoryPage({ params, searchParams }) {
     const showAllFilters = level >= 2 || childCategories.length === 0;
 
     const initialProducts = productsResponse.data || [];
+    const meta = productsResponse.meta || {};
+    const totalPages = meta.total_pages || 1;
 
     const hasActiveFilters = !!(
       sp?.min_price || sp?.max_price ||
@@ -128,22 +131,24 @@ export default async function CategoryPage({ params, searchParams }) {
                 hasChildren={childCategories.length > 0}
               />
 
-              <div className="all-catalog-center" key={productsQueryString} style={initialProducts.length === 0 ? { width: '100%' } : {}}>
+              <div className="all-catalog-center" style={initialProducts.length === 0 ? { width: '100%' } : {}}>
                 <ProductSort currentSort={sort} />
                 <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
                 {initialProducts.length > 0 ? (
                   <>
                     <InfiniteProductGrid
-                      key={`${currentCategory.id}-${productsQueryString}`}
+                      key={`${currentCategory.id}-${currentPage}-${productsQueryString}`}
                       initialProducts={initialProducts}
                       categoryId={currentCategory.id}
-                      totalPages={productsResponse.meta?.total_pages || 1}
+                      totalPages={totalPages}
                       queryString={productsQueryString}
+                      initialPage={currentPage}
+                      basePath={basePath}
                     />
                     <Pagination
-                      currentPage={Number(sp?.page) || 1}
-                      totalPages={productsResponse.meta?.total_pages || 1}
-                      totalItems={productsResponse.meta?.total || 0}
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      totalItems={meta.total || 0}
                       basePath={basePath}
                       queryString={productsQueryString}
                     />

@@ -3,46 +3,55 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ProductCard from './ProductCard';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+// Относительный путь — работает и на локалке и на сервере без Mixed Content
+const API_BASE_URL = '/api/v1';
 
 const sanitize = (arr) => (arr || []).filter(p => p && p.attributes);
 
-function filterByPrice(products, searchParams) {
-  const minPrice = parseFloat(searchParams.get('min_price') || '0') || 0;
-  const maxPrice = parseFloat(searchParams.get('max_price') || '0') || Infinity;
-  const hasMin = searchParams.get('min_price');
-  const hasMax = searchParams.get('max_price');
-  if (!hasMin && !hasMax) return products;
-  return products.filter(item => {
-    const price = parseFloat(item.attributes?.price_byn || item.attributes?.price || 0);
-    if (price <= 0) return false;
-    if (hasMin && price < minPrice) return false;
-    if (hasMax && price > maxPrice) return false;
-    return true;
-  });
-}
-
-export default function InfiniteProductGrid({ initialProducts, categoryId, totalPages, queryString = '' }) {
+export default function InfiniteProductGrid({
+  initialProducts,
+  categoryId,
+  totalPages,
+  queryString = '',
+  initialPage = 1,   // какую страницу сервер уже отдал
+  basePath = '',     // нужен для replaceState
+}) {
 
   const [products, setProducts] = useState(sanitize(initialProducts));
-  const [page, setPage] = useState(2);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20);
+  const [hasMore, setHasMore] = useState(
+    totalPages ? (initialPage + 1) <= totalPages : (initialProducts?.length || 0) >= 20
+  );
 
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
-  const pageRef = useRef(2);
-
-  useEffect(() => {
-    setProducts(sanitize(initialProducts));
-    setPage(2);
-    pageRef.current = 2;
-    const more = totalPages ? 2 <= totalPages : (initialProducts?.length || 0) >= 20;
-    setHasMore(more);
-    hasMoreRef.current = more;
-  }, [initialProducts, totalPages]);
+  const pageRef = useRef(initialPage + 1); // следующая страница после той что уже на экране
 
   const observerRef = useRef(null);
+
+  // Сбрасываем состояние при смене фильтров/категории
+  useEffect(() => {
+    setProducts(sanitize(initialProducts));
+    pageRef.current = initialPage + 1;
+    const more = totalPages ? (initialPage + 1) <= totalPages : (initialProducts?.length || 0) >= 20;
+    setHasMore(more);
+    hasMoreRef.current = more;
+  }, [initialProducts, totalPages, initialPage]);
+
+  // Обновляем URL при скролле — без перезагрузки страницы
+  // Нужно чтобы пагинация подсвечивала актуальный номер
+  const updateUrl = useCallback((page) => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(queryString);
+    if (page <= 1) {
+      params.delete('page');
+    } else {
+      params.set('page', String(page));
+    }
+    const qs = params.toString();
+    const newUrl = qs ? `${basePath}?${qs}` : basePath;
+    window.history.replaceState(null, '', newUrl);
+  }, [queryString, basePath]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
@@ -57,27 +66,35 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
       searchParams.set('page', String(currentPage));
       searchParams.set('per_page', '20');
 
+      // Убираем price-параметры из клиентского запроса —
+      // фильтрация по цене уже делается на сервере в getCategoryProducts
+      // Здесь они только мешают и могут обрезать валидные товары
       const url = categoryId
         ? `${API_BASE_URL}/categories/${categoryId}/products?${searchParams.toString()}`
         : `${API_BASE_URL}/products?${searchParams.toString()}`;
 
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetch(url);
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
       const data = await response.json();
+      const rawProducts = sanitize(data.data || []);
 
-      const rawProducts = data.data || [];
-      const filtered = filterByPrice(rawProducts, new URLSearchParams(queryString));
+      if (rawProducts.length > 0) {
+        setProducts(prev => [...prev, ...rawProducts]);
 
-      if (filtered.length > 0) {
-        setProducts(prev => [...prev, ...sanitize(filtered)]);
+        const meta = data.meta || {};
+        // Бэк возвращает page или current_page — обрабатываем оба варианта
+        const currentPageNum = meta.page ?? meta.current_page ?? currentPage;
+        const serverTotalPages = meta.total_pages ?? Math.ceil((meta.total || 0) / 20);
+        const more = currentPageNum < serverTotalPages;
+
         pageRef.current = currentPage + 1;
-        setPage(pageRef.current);
-
-        console.log('meta after load:', JSON.stringify(data.meta));
-        const currentPageNum = data.meta?.page || data.meta?.current_page;
-        const more = currentPageNum < data.meta?.total_pages;
-        console.log('currentPageNum:', currentPageNum, 'total_pages:', data.meta?.total_pages, 'more:', more);
         hasMoreRef.current = more;
         setHasMore(more);
+
+        // Обновляем URL — пользователь видит актуальную страницу
+        updateUrl(currentPage);
       } else {
         hasMoreRef.current = false;
         setHasMore(false);
@@ -90,7 +107,7 @@ export default function InfiniteProductGrid({ initialProducts, categoryId, total
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [categoryId, queryString]);
+  }, [categoryId, queryString, updateUrl]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

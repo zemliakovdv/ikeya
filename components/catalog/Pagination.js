@@ -2,8 +2,6 @@
 
 export default function Pagination({ currentPage = 1, totalPages = 1, totalItems = 0, itemsPerPage = 20, basePath = '', queryString = '' }) {
 
-  console.log('Pagination props:', { currentPage, totalPages, totalItems });
-
   const buildHref = (page) => {
     const params = new URLSearchParams(queryString);
     if (page === 1) {
@@ -42,6 +40,8 @@ export default function Pagination({ currentPage = 1, totalPages = 1, totalItems
   const visiblePages = getVisiblePages();
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  if (totalPages <= 1) return null;
 
   return (
     <>
