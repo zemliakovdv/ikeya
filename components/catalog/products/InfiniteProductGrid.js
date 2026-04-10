@@ -25,7 +25,7 @@ export default function InfiniteProductGrid({
 
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
-  const pageRef = useRef(initialPage + 1); // следующая страница после той что уже на экране
+  const pageRef = useRef(initialPage + 1);
 
   const observerRef = useRef(null);
 
@@ -39,7 +39,6 @@ export default function InfiniteProductGrid({
   }, [initialProducts, totalPages, initialPage]);
 
   // Обновляем URL при скролле — без перезагрузки страницы
-  // Нужно чтобы пагинация подсвечивала актуальный номер
   const updateUrl = useCallback((page) => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(queryString);
@@ -53,49 +52,102 @@ export default function InfiniteProductGrid({
     window.history.replaceState(null, '', newUrl);
   }, [queryString, basePath]);
 
+  // Клиентская фильтрация по цене.
+  // Нужна потому что бэк игнорирует min_price/max_price — это known_issue.
+  // При сортировке "expensive" бэк отдаёт дорогие товары первыми,
+  // и страницы могут быть полностью пустыми после фильтрации.
+  const filterByPrice = useCallback((items) => {
+    const params = new URLSearchParams(queryString);
+    const hasMin = params.has('min_price');
+    const hasMax = params.has('max_price');
+    if (!hasMin && !hasMax) return items;
+
+    const minPrice = hasMin ? parseFloat(params.get('min_price')) : 0;
+    const maxPrice = hasMax ? parseFloat(params.get('max_price')) : Infinity;
+
+    return items.filter(item => {
+      const price = parseFloat(
+        String(item.attributes?.price_byn || item.attributes?.price || '0').replace(/\s/g, '')
+      );
+      if (price <= 0) return false;
+      if (hasMin && price < minPrice) return false;
+      if (hasMax && price > maxPrice) return false;
+      return true;
+    });
+  }, [queryString]);
+
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
 
     loadingRef.current = true;
     setLoading(true);
 
-    const currentPage = pageRef.current;
+    // Максимум попыток пропустить пустые страницы при активном фильтре цены.
+    // Например при сортировке "expensive" + фильтр до 100 BYN —
+    // бэк отдаёт дорогие товары, фронт их режет, страница пустая.
+    // Пробуем следующие страницы пока не найдём товары или не закончатся попытки.
+    const MAX_SKIP_ATTEMPTS = 5;
+    let attempts = 0;
+    let foundProducts = [];
+    let lastMeta = {};
+    let lastPage = pageRef.current;
 
     try {
-      const searchParams = new URLSearchParams(queryString);
-      searchParams.set('page', String(currentPage));
-      searchParams.set('per_page', '20');
+      while (attempts < MAX_SKIP_ATTEMPTS) {
+        const currentPage = pageRef.current;
+        const searchParams = new URLSearchParams(queryString);
+        searchParams.set('page', String(currentPage));
+        searchParams.set('per_page', '20');
 
-      // Убираем price-параметры из клиентского запроса —
-      // фильтрация по цене уже делается на сервере в getCategoryProducts
-      // Здесь они только мешают и могут обрезать валидные товары
-      const url = categoryId
-        ? `${API_BASE_URL}/categories/${categoryId}/products?${searchParams.toString()}`
-        : `${API_BASE_URL}/products?${searchParams.toString()}`;
+        const url = categoryId
+          ? `${API_BASE_URL}/categories/${categoryId}/products?${searchParams.toString()}`
+          : `${API_BASE_URL}/products?${searchParams.toString()}`;
 
-      const response = await fetch(url);
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const rawProducts = sanitize(data.data || []);
+        lastMeta = data.meta || {};
+        lastPage = currentPage;
 
-      const data = await response.json();
-      const rawProducts = sanitize(data.data || []);
+        const serverTotalPages = Number(lastMeta.total_pages) || Math.ceil((Number(lastMeta.total) || 0) / 20);
+        const currentPageNum = Number(lastMeta.page ?? lastMeta.current_page ?? currentPage);
 
-      if (rawProducts.length > 0) {
-        setProducts(prev => [...prev, ...rawProducts]);
-
-        const meta = data.meta || {};
-        // Бэк возвращает page или current_page — обрабатываем оба варианта
-        const currentPageNum = meta.page ?? meta.current_page ?? currentPage;
-        const serverTotalPages = meta.total_pages ?? Math.ceil((meta.total || 0) / 20);
-        const more = currentPageNum < serverTotalPages;
-
+        // Двигаем указатель вперёд до применения фильтра
         pageRef.current = currentPage + 1;
+
+        // Применяем клиентскую фильтрацию по цене
+        const filtered = filterByPrice(rawProducts);
+
+        if (filtered.length > 0) {
+          foundProducts = filtered;
+          break;
+        }
+
+        // Страница пустая после фильтрации — проверяем есть ли ещё страницы
+        if (currentPageNum >= serverTotalPages) {
+          hasMoreRef.current = false;
+          setHasMore(false);
+          loadingRef.current = false;
+          setLoading(false);
+          return;
+        }
+
+        attempts++;
+      }
+
+      if (foundProducts.length > 0) {
+        setProducts(prev => [...prev, ...foundProducts]);
+
+        const serverTotalPages = Number(lastMeta.total_pages) || Math.ceil((Number(lastMeta.total) || 0) / 20);
+        const more = pageRef.current <= serverTotalPages;
+
         hasMoreRef.current = more;
         setHasMore(more);
-
-        // Обновляем URL — пользователь видит актуальную страницу
-        updateUrl(currentPage);
+        updateUrl(lastPage);
       } else {
+        // Исчерпали MAX_SKIP_ATTEMPTS — товары в диапазоне закончились
         hasMoreRef.current = false;
         setHasMore(false);
       }
@@ -107,7 +159,7 @@ export default function InfiniteProductGrid({
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [categoryId, queryString, updateUrl]);
+  }, [categoryId, queryString, updateUrl, filterByPrice]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
