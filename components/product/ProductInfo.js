@@ -10,8 +10,9 @@ import ProductSizes from './info/ProductSizes';
 import ProductParameters from './info/ProductParameters';
 import ProductDeliveryLink from './info/ProductDeliveryLink';
 import ProductConsultation from './info/ProductConsultation';
+import IncludedProductsBlock from '@/components/product/IncludedProductsBlock';
 
-export default function ProductInfo({ product }) {
+export default function ProductInfo({ product, includedGroups = [] }) {
   const { addToCart, updateQuantity, items } = useCart();
   const [addToCartLoading, setAddToCartLoading] = useState(false);
   const [customsModalOpen, setCustomsModalOpen] = useState(false);
@@ -177,6 +178,14 @@ export default function ProductInfo({ product }) {
             variants={sizeVariants}
             currentSku={attr.sku}
             productImage={localImages[0]}
+          />
+        )}
+
+        {/* Комплектующие — товары из included_products, сгруппированные по категории */}
+        {includedGroups.length > 0 && (
+          <IncludedProductsBlock
+            groups={includedGroups}
+            basePrice={parseFloat(String(attr.price_byn || 0).replace(/\s/g, '')) || 0}
           />
         )}
 

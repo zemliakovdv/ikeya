@@ -80,6 +80,36 @@ async function getFullProducts(skus = []) {
     .map(r => r.value.data);
 }
 
+// Группируем included_products по category_id, название группы — из дерева категорий
+function groupIncludedProducts(products, tree) {
+  // Ищем название категории в дереве по id
+  function findCategoryName(nodes, targetId) {
+    for (const node of nodes) {
+      if (node.id === targetId) {
+        return node.attributes?.translated_name || node.attributes?.name || null;
+      }
+      if (node.children?.length) {
+        const found = findCategoryName(node.children, targetId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  // Группируем по category_id
+  const groupMap = new Map();
+  for (const product of products) {
+    const catId = product.attributes?.category_id;
+    if (!catId) continue;
+    if (!groupMap.has(catId)) {
+      const name = findCategoryName(tree, catId) || 'Комплектующие';
+      groupMap.set(catId, { groupName: name, products: [] });
+    }
+    groupMap.get(catId).products.push(product);
+  }
+  return Array.from(groupMap.values());
+}
+
 // Похожие товары: берём из той же категории, исключаем текущий товар
 async function getSimilarProducts(categoryId, excludeSku) {
   try {
@@ -123,6 +153,8 @@ export default async function ProductPage({ params }) {
     getSimilarProducts(attr.category_id, sku),          // Похожие товары
   ]);
 
+  const includedGroups = groupIncludedProducts(includedProducts, tree);
+
   const breadcrumbs = buildBreadcrumbs(
     tree,
     product.relationships?.category?.data?.id || attr.category_id,
@@ -138,7 +170,7 @@ export default async function ProductPage({ params }) {
         <div className="container">
           <div className="goods-wrapper">
             <ProductGallery images={attr.local_images || []} />
-            <ProductInfo product={product} />
+            <ProductInfo product={product} includedGroups={includedGroups} />
           </div>
         </div>
       </section>
