@@ -178,13 +178,6 @@ export default function CheckoutPage() {
       pickup_point_id: selectedPvz.pickup_point_id || selectedPvz.id,
       a1_verification_id: a1Id,
     }
-    if (hasPassport) {
-      data.passport = {
-        passport_number: `${profile.passport_data.series}${profile.passport_data.number}`,
-        full_name: [profile.passport_data.last_name, profile.passport_data.first_name, profile.passport_data.middle_name].filter(Boolean).join(' '),
-        issue_date: profile.passport_data.issue_date,
-      }
-    }
     return data
   }
 
