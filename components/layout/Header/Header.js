@@ -191,7 +191,7 @@ export default function Header() {
                     )}
                     <p>Каталог</p>
                   </button>
-                  <Link href="#">Услуги</Link>
+                  <Link href="/services">Услуги</Link>
                 </div>
 
                 <SearchBox />

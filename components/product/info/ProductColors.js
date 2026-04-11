@@ -13,6 +13,20 @@ function resolveImage(path) {
   return `${API_BASE_URL}/${clean}`;
 }
 
+// Берём первую локальную картинку из массива images варианта.
+// Бэк всегда кладёт ikea.com ссылку первой — её пропускаем.
+// Если локальных нет — fallback на localImages основного товара, затем плейсхолдер.
+function resolveVariantImage(images, localImages) {
+  if (Array.isArray(images) && images.length > 0) {
+    const local = images.find(img => !img.startsWith('http'));
+    if (local) return resolveImage(local);
+  }
+  if (Array.isArray(localImages) && localImages.length > 0) {
+    return resolveImage(localImages[0]);
+  }
+  return '/assets/img/placeholder.png';
+}
+
 export default function ProductColors({ variants, currentSku, localImages }) {
   const [selectedSku, setSelectedSku] = useState(currentSku);
 
@@ -21,9 +35,7 @@ export default function ProductColors({ variants, currentSku, localImages }) {
 
   // Находим вариант текущего товара среди всех — он будет первой миниатюрой
   const baseVariant = allVariants.find(v => v.item.sku === currentSku);
-  const baseImage = baseVariant?.item?.images?.[0]
-    ? resolveImage(baseVariant.item.images[0])
-    : resolveImage(localImages?.[0]);
+  const baseImage = resolveVariantImage(baseVariant?.item?.images, localImages);
   const baseColorName = baseVariant?.color || '—';
 
   // Остальные варианты — исключаем текущий товар чтобы не дублировать
@@ -55,9 +67,7 @@ export default function ProductColors({ variants, currentSku, localImages }) {
         {otherVariants.map((variant) => {
           const item = variant.item;
           const isActive = item.sku === selectedSku;
-          const imgSrc = Array.isArray(item.images) && item.images.length > 0
-            ? resolveImage(item.images[0])
-            : resolveImage(localImages?.[0]);
+          const imgSrc = resolveVariantImage(item.images, localImages);
 
           return (
             <button

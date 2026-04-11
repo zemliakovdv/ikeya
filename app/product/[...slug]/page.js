@@ -10,10 +10,17 @@ import { getCachedCategoriesTree } from '@/lib/api/ikea';
 
 const API_BASE_URL = 'http://45.135.234.22/api/v1';
 
-// Очистка артикулов от лишних символов (защита от кривых данных с бэка)
+// Очистка артикулов — обрабатывает два формата:
+// 1. Нормальный: ["60489549", "00417621", ...] → возвращаем как есть
+// 2. Кривой:     ["[\"60489549,00417621\""]   → парсим через join+split
 function cleanSkuArray(rawArray) {
   if (!rawArray || !Array.isArray(rawArray)) return [];
-  const joined = rawArray.join('');
+  // Если все элементы — чистые SKU (только буквы и цифры) → нормальный формат
+  if (rawArray.every(s => typeof s === 'string' && /^[a-zA-Z0-9]+$/.test(s.trim()))) {
+    return rawArray.map(s => s.trim()).filter(Boolean);
+  }
+  // Кривой формат — склеиваем через запятую и разбиваем обратно
+  const joined = rawArray.join(',');
   return joined.replace(/[\[\]\\"]/g, '').split(',').map(s => s.trim()).filter(Boolean);
 }
 

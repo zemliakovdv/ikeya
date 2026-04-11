@@ -18,6 +18,14 @@ function resolveImage(path) {
   return `${API_BASE_URL}/${clean}`;
 }
 
+// Для миниатюр вариантов берём первую локальную картинку.
+// Бэк всегда кладёт ikea.com ссылку первой, локальные — следом.
+function resolveVariantImage(images) {
+  if (!images?.length) return PLACEHOLDER_IMAGE;
+  const local = images.find(img => !img.startsWith('http'));
+  return local ? resolveImage(local) : PLACEHOLDER_IMAGE;
+}
+
 function formatPrice(priceNum) {
   const floor = Math.floor(priceNum).toLocaleString('ru-RU');
   const decimal = Math.round((priceNum % 1) * 100).toString().padStart(2, '0');
@@ -168,9 +176,7 @@ export default function ProductCard({ product }) {
           {/* Цветовые варианты */}
           <div className="product-card__variants" onClick={(e) => e.stopPropagation()}>
             {hasVariants && visibleVariants.map((variant) => {
-              const variantImg = variant.item.images?.[0]
-                ? resolveImage(variant.item.images[0])
-                : PLACEHOLDER_IMAGE;
+              const variantImg = resolveVariantImage(variant.item.images);
               // Активен: либо выбран явно, либо это вариант текущего основного товара
               const isActive = activeVariant
                 ? variant.item.sku === activeVariant?.sku

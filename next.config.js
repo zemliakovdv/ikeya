@@ -2,10 +2,20 @@
 const nextConfig = {
   output: 'standalone',
   trailingSlash: true,
-  images: {
-    unoptimized: true
-  },
-
+images: {
+  unoptimized: true,
+  dangerouslyAllowSVG: true,
+  remotePatterns: [
+    {
+      protocol: 'http',
+      hostname: '**',
+    },
+    {
+      protocol: 'https', 
+      hostname: '**',
+    },
+  ],
+},
   // Проксируем /api/v1/* через Next.js сервер на бэкенд.
   // Браузер делает fetch на /api/v1/... (относительный путь),
   // Next.js сервер перенаправляет на реальный бэкенд.
