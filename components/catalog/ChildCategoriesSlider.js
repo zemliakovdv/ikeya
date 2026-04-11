@@ -29,35 +29,27 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
     };
   });
 
-  // Разбиваем на слайды по 8
-  const slides = [];
-  for (let i = 0; i < items.length; i += 8) {
-    slides.push(items.slice(i, i + 8));
-  }
-
   return (
     <div className="popular-categories">
       <div className="popular-categories-inner swiper">
         <div className="swiper-wrapper">
-          {slides.map((slideItems, slideIndex) => (
-            <div key={slideIndex} className="swiper-slide popular-categories-item">
-              {slideItems.map((item) => (
-                <div key={item.id} className="categories-item-card">
-                  <div className="categories-card-img">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      width={120}
-                      height={120}
-                      priority={slideIndex === 0}
-                      onError={(e) => { e.target.src = PLACEHOLDER; }}
-                      style={{ width: '100%', height: 'auto' }}
-                    />
-                  </div>
-                  <p>{item.name}</p>
-                  <Link href={item.url} />
+          {items.map((item, index) => (
+            <div key={item.id} className="swiper-slide popular-categories-item">
+              <div className="categories-item-card">
+                <div className="categories-card-img">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    width={120}
+                    height={120}
+                    priority={index < 8}
+                    onError={(e) => { e.target.src = PLACEHOLDER; }}
+                    style={{ width: '100%', height: 'auto' }}
+                  />
                 </div>
-              ))}
+                <p>{item.name}</p>
+                <Link href={item.url} />
+              </div>
             </div>
           ))}
         </div>

@@ -161,7 +161,7 @@ export default function DatePicker({
     const displayValue = selected ? formatDisplay(selected) : '';
 
     return (
-        <div className="datepicker-wrap" ref={wrapRef}>
+        <div ref={wrapRef}>
             {/* Инпут */}
             <div
                 className={`datepicker-input form-floating ${open ? 'datepicker-input--open' : ''}`}

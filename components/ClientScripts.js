@@ -87,18 +87,31 @@ export default function ClientScripts() {
 
         const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
 
+        const prevBtn = document.querySelector('.popular-categories__nav-prev');
+        const nextBtn = document.querySelector('.popular-categories__nav-next');
+
+        // Скрываем стрелки если категорий 8 или меньше
+        if (slideCount <= 8) {
+          if (prevBtn) prevBtn.style.display = 'none';
+          if (nextBtn) nextBtn.style.display = 'none';
+          return;
+        }
+
         new Swiper('.popular-categories-inner', {
-          loop: slideCount > 2,
-          slidesPerView: 1,
-          spaceBetween: 0,
+          loop: slideCount > 8,
+          slidesPerView: 8,
+          spaceBetween: 16,
           speed: 600,
           navigation: {
             nextEl: '.popular-categories__nav-next',
             prevEl: '.popular-categories__nav-prev',
           },
-          pagination: {
-            el: '.popular-categories__pagination',
-            clickable: true,
+          breakpoints: {
+            320:  { slidesPerView: 2, spaceBetween: 10 },
+            480:  { slidesPerView: 3, spaceBetween: 12 },
+            768:  { slidesPerView: 4, spaceBetween: 14 },
+            992:  { slidesPerView: 6, spaceBetween: 16 },
+            1200: { slidesPerView: 8, spaceBetween: 16 },
           },
         });
       }

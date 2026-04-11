@@ -13,6 +13,7 @@ export default function ProductSort({ currentSort = null }) {
 
 const sortOptions = useMemo(
   () => [
+    { value: null,        label: 'По умолчанию' },
     { value: 'cheapest',  label: 'Дешевле' },
     { value: 'expensive', label: 'Дороже' },
   ],

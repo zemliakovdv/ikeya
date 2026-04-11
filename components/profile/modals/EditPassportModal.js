@@ -17,6 +17,90 @@ const REGIONS = [
 
 const STEPS = { FORM: 'form', CODE: 'code', SUCCESS: 'success' };
 
+// ─── Регулярки ───────────────────────────────────────────────────────────────
+const RE_CYRILLIC     = /^[а-яёА-ЯЁ]+$/;
+const RE_CYRILLIC_CITY = /^[а-яёА-ЯЁ][а-яёА-ЯЁ\- ]*$/;  // кириллица + дефис + пробел
+const RE_LATIN_ONLY   = /^[A-Za-z]+$/;
+const RE_DIGITS_ONLY  = /^\d+$/;
+const RE_ALPHANUMERIC_LATIN = /^[A-Za-z0-9]+$/;
+const RE_HOUSE        = /^[0-9]+([/А-ЯЁа-яёA-Za-z])?$/; // 12, 12А, 3/5
+
+// ─── Валидаторы ──────────────────────────────────────────────────────────────
+function validateForm(form) {
+  const errors = {};
+
+  // ФИО — только кириллица
+  if (!form.first_name.trim())
+    errors.first_name = 'Введите имя';
+  else if (!RE_CYRILLIC.test(form.first_name.trim()))
+    errors.first_name = 'Только кириллица, без цифр и символов';
+
+  if (!form.last_name.trim())
+    errors.last_name = 'Введите фамилию';
+  else if (!RE_CYRILLIC.test(form.last_name.trim()))
+    errors.last_name = 'Только кириллица, без цифр и символов';
+
+  if (!form.middle_name.trim())
+    errors.middle_name = 'Введите отчество';
+  else if (!RE_CYRILLIC.test(form.middle_name.trim()))
+    errors.middle_name = 'Только кириллица, без цифр и символов';
+
+  // Серия — ровно 2 латинские буквы
+  if (!form.series.trim())
+    errors.series = 'Введите серию паспорта';
+  else if (!RE_LATIN_ONLY.test(form.series.trim()) || form.series.trim().length !== 2)
+    errors.series = 'Ровно 2 латинские буквы (например MC)';
+
+  // Номер — ровно 7 цифр
+  if (!form.number.trim())
+    errors.number = 'Введите номер паспорта';
+  else if (!RE_DIGITS_ONLY.test(form.number.trim()) || form.number.trim().length !== 7)
+    errors.number = 'Ровно 7 цифр';
+
+  // Идентификационный номер — ровно 14 символов, латиница + цифры
+  if (!form.identification_number.trim())
+    errors.identification_number = 'Введите идентификационный номер';
+  else if (
+    !RE_ALPHANUMERIC_LATIN.test(form.identification_number.trim()) ||
+    form.identification_number.trim().length !== 14
+  )
+    errors.identification_number = 'Ровно 14 символов: цифры и латинские буквы';
+
+  // Дата рождения — от 14 до 100 лет
+  if (!form.dob)
+    errors.dob = 'Введите дату рождения';
+  else {
+    const dob = new Date(form.dob);
+    const now = new Date();
+    const age = now.getFullYear() - dob.getFullYear() -
+      (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+    if (age < 14)
+      errors.dob = 'Возраст должен быть не менее 14 лет';
+    else if (age > 100)
+      errors.dob = 'Возраст не может превышать 100 лет';
+  }
+
+  // Город — кириллица + дефис
+  if (!form.city.trim())
+    errors.city = 'Введите город';
+  else if (!RE_CYRILLIC_CITY.test(form.city.trim()))
+    errors.city = 'Только кириллица и дефис';
+
+  // Индекс — только цифры
+  if (!form.postcode.trim())
+    errors.postcode = 'Введите индекс';
+  else if (!RE_DIGITS_ONLY.test(form.postcode.trim()))
+    errors.postcode = 'Только цифры';
+
+  // Дом — цифры + буква или слэш
+  if (!form.house.trim())
+    errors.house = 'Введите номер дома';
+  else if (!RE_HOUSE.test(form.house.trim()))
+    errors.house = 'Например: 12, 12А или 3/5';
+
+  return errors;
+}
+
 export default function EditPassportModal({ profile, onClose, onSave }) {
   const passport = profile?.passport_data || {};
 
@@ -41,18 +125,31 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     apartment:             passport.apartment             || '',
   });
 
+  const [fieldErrors,        setFieldErrors]        = useState({});
   const [verificationId,     setVerificationId]     = useState(null);
   const [callerNumberMasked, setCallerNumberMasked] = useState('');
   const [loading,            setLoading]            = useState(false);
   const [error,              setError]              = useState('');
 
-  const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
+  const set = (key, val) => {
+    setForm(p => ({ ...p, [key]: val }));
+    // Сбрасываем ошибку поля при изменении
+    if (fieldErrors[key]) setFieldErrors(p => ({ ...p, [key]: '' }));
+  };
 
-  // Шаг 1 — сохранить паспорт и запросить звонок
+  // Шаг 1 — валидация + сохранить паспорт + запросить звонок
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    const errors = validateForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
+    setLoading(true);
     try {
       await updateProfile({ passport: form });
 
@@ -83,21 +180,21 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     }
   };
 
-  // Шаг 2 — подтвердить код (вызывается из SmsVerifyModal)
-const handleVerify = async (code) => {
-  setLoading(true);
-  setError('');
-  try {
-    await verifyA1Code(verificationId, code);
-    const updated = await getProfile();
-    onSave?.({ ...updated, passport_verified: true });
-    setStep(STEPS.SUCCESS);
-  } catch (err) {
-    setError(err.message || 'Неверный код');
-  } finally {
-    setLoading(false);
-  }
-};
+  // Шаг 2 — подтвердить код
+  const handleVerify = async (code) => {
+    setLoading(true);
+    setError('');
+    try {
+      await verifyA1Code(verificationId, code);
+      const updated = await getProfile();
+      onSave?.({ ...updated, passport_verified: true });
+      setStep(STEPS.SUCCESS);
+    } catch (err) {
+      setError(err.message || 'Неверный код');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Шаг CODE — рендерим SmsVerifyModal
   if (step === STEPS.CODE) {
@@ -121,6 +218,12 @@ const handleVerify = async (code) => {
     );
   }
 
+  // Хелпер для отображения ошибки поля
+  const FieldError = ({ name }) =>
+    fieldErrors[name]
+      ? <p style={{ color: '#b71c1c', fontSize: '12px', marginTop: '4px' }}>{fieldErrors[name]}</p>
+      : null;
+
   return (
     <>
       <div id="editPassportModal" className="modal fade show d-block" onClick={onClose} style={{ zIndex: 1055 }}>
@@ -139,9 +242,9 @@ const handleVerify = async (code) => {
                 </div>
 
                 <div className="modal-body">
-                  <form onSubmit={handleSubmit}>
+                  <form onSubmit={handleSubmit} noValidate>
 
-                    {/* Выбор страны — пока только Беларусь */}
+                    {/* Выбор страны */}
                     <div className="passport-country">
                       <label className="radio-item">
                         <input type="radio" name="country" defaultChecked readOnly />
@@ -155,35 +258,35 @@ const handleVerify = async (code) => {
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.first_name ? ' is-invalid' : ''}`}
                           placeholder="Имя"
                           value={form.first_name}
                           onChange={e => set('first_name', e.target.value)}
-                          required
                         />
                         <label>Имя <span className="req">*</span></label>
+                        <FieldError name="first_name" />
                       </div>
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.last_name ? ' is-invalid' : ''}`}
                           placeholder="Фамилия"
                           value={form.last_name}
                           onChange={e => set('last_name', e.target.value)}
-                          required
                         />
                         <label>Фамилия <span className="req">*</span></label>
+                        <FieldError name="last_name" />
                       </div>
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.middle_name ? ' is-invalid' : ''}`}
                           placeholder="Отчество"
                           value={form.middle_name}
                           onChange={e => set('middle_name', e.target.value)}
-                          required
                         />
                         <label>Отчество <span className="req">*</span></label>
+                        <FieldError name="middle_name" />
                       </div>
                     </div>
 
@@ -192,26 +295,26 @@ const handleVerify = async (code) => {
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.series ? ' is-invalid' : ''}`}
                           placeholder="Серия паспорта"
                           maxLength={2}
                           value={form.series}
-                          onChange={e => set('series', e.target.value)}
-                          required
+                          onChange={e => set('series', e.target.value.toUpperCase())}
                         />
                         <label>Серия паспорта <span className="req">*</span></label>
+                        <FieldError name="series" />
                       </div>
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.number ? ' is-invalid' : ''}`}
                           placeholder="Номер паспорта"
                           maxLength={7}
                           value={form.number}
-                          onChange={e => set('number', e.target.value)}
-                          required
+                          onChange={e => set('number', e.target.value.replace(/\D/g, ''))}
                         />
                         <label>Номер паспорта <span className="req">*</span></label>
+                        <FieldError name="number" />
                       </div>
                       <DatePicker
                         value={form.issue_date}
@@ -238,21 +341,24 @@ const handleVerify = async (code) => {
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.identification_number ? ' is-invalid' : ''}`}
                           placeholder="Идентификационный номер"
                           maxLength={14}
                           value={form.identification_number}
-                          onChange={e => set('identification_number', e.target.value)}
-                          required
+                          onChange={e => set('identification_number', e.target.value.toUpperCase())}
                         />
                         <label>Идентификационный номер <span className="req">*</span></label>
+                        <FieldError name="identification_number" />
                       </div>
-                      <DatePicker
-                        value={form.dob}
-                        onChange={val => set('dob', val)}
-                        label="Дата рождения"
-                        required
-                      />
+                      <div className="datepicker-wrap">
+                        <DatePicker
+                          value={form.dob}
+                          onChange={val => set('dob', val)}
+                          label="Дата рождения"
+                          required
+                        />
+                        <FieldError name="dob" />
+                      </div>
                     </div>
 
                     {/* Адрес прописки */}
@@ -277,25 +383,25 @@ const handleVerify = async (code) => {
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.city ? ' is-invalid' : ''}`}
                           placeholder="Город"
                           value={form.city}
                           onChange={e => set('city', e.target.value)}
-                          required
                         />
                         <label>Город <span className="req">*</span></label>
+                        <FieldError name="city" />
                       </div>
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.postcode ? ' is-invalid' : ''}`}
                           placeholder="Индекс"
                           maxLength={6}
                           value={form.postcode}
-                          onChange={e => set('postcode', e.target.value)}
-                          required
+                          onChange={e => set('postcode', e.target.value.replace(/\D/g, ''))}
                         />
                         <label>Индекс <span className="req">*</span></label>
+                        <FieldError name="postcode" />
                       </div>
                     </div>
 
@@ -315,13 +421,13 @@ const handleVerify = async (code) => {
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.house ? ' is-invalid' : ''}`}
                           placeholder="Дом"
                           value={form.house}
                           onChange={e => set('house', e.target.value)}
-                          required
                         />
                         <label>Дом <span className="req">*</span></label>
+                        <FieldError name="house" />
                       </div>
                       <div className="form-group form-floating">
                         <input
@@ -330,9 +436,8 @@ const handleVerify = async (code) => {
                           placeholder="Корпус"
                           value={form.building}
                           onChange={e => set('building', e.target.value)}
-                          required
                         />
-                        <label>Корпус <span className="req">*</span></label>
+                        <label>Корпус</label>
                       </div>
                       <div className="form-group form-floating">
                         <input
@@ -341,9 +446,8 @@ const handleVerify = async (code) => {
                           placeholder="Квартира"
                           value={form.apartment}
                           onChange={e => set('apartment', e.target.value)}
-                          required
                         />
-                        <label>Квартира <span className="req">*</span></label>
+                        <label>Квартира</label>
                       </div>
                     </div>
 

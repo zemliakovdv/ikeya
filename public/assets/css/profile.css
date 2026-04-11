@@ -73,6 +73,10 @@
         color: #0058A3;
     }
 
+    .user-link:hover svg path {
+        fill: #0058A3;
+    }
+
     .user-link.active {
         color: #0058A3;
     }
@@ -1083,7 +1087,7 @@
         border-bottom: 1px solid #e0e0e0;
     }
 
-    .accordion-item:last-child{
+    .accordion-item:last-child {
         border: none;
     }
 
@@ -2405,11 +2409,6 @@
         color: #181818;
     }
 
-    /* Элемент данных */
-    .passport-data .data-item {
-        margin-bottom: 16px;
-    }
-
     .passport-data .data-section__body .data-item:last-child {
         margin-bottom: 0;
     }
@@ -2417,6 +2416,13 @@
     .passport-data .data-item:last-child {
         margin-bottom: 0;
     }
+
+    /* Элемент данных */
+    .passport-data .data-item {
+        margin-bottom: 16px;
+    }
+
+
 
     .passport-data .data-item__label {
         display: block;

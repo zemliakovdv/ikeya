@@ -371,49 +371,47 @@ export default function PersonalData() {
                   </div>
                 ) : profile?.passport_verified ? (
                   <>
-                    {/* Маскированные данные */}
-                    <div className="data-item">
-                      <label className="data-item__label">ФИО</label>
-                      <p className="data-item__value">
-                        {mask(profile.passport_data?.last_name, 5)}
-                        {' '}{mask(profile.passport_data?.first_name, 3)}
-                        {profile.passport_data?.middle_name ? ' ' + mask(profile.passport_data.middle_name, 3) : ''}
-                      </p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Серия паспорта</label>
-                      <p className="data-item__value">{profile.passport_data?.series || '—'}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Номер паспорта</label>
-                      <p className="data-item__value">{mask(profile.passport_data?.number, 3)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Дата выдачи</label>
-                      <p className="data-item__value">{maskDate(profile.passport_data?.issue_date)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Кем выдан</label>
-                      <p className="data-item__value">{mask(profile.passport_data?.issued_by, 4)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Идентификационный номер</label>
-                      <p className="data-item__value">{mask(profile.passport_data?.identification_number, 5)}</p>
-                    </div>
-                    <div className="data-item">
-                      <label className="data-item__label">Дата рождения</label>
-                      <p className="data-item__value">{maskDate(profile.passport_data?.dob)}</p>
-                    </div>
+                    {/* Маскированные данные — скрываются когда showPassportData = true */}
+                    {!showPassportData && (
+                      <>
+                        <div className="data-item">
+                          <label className="data-item__label">ФИО</label>
+                          <p className="data-item__value">
+                            {mask(profile.passport_data?.last_name, 5)}
+                            {' '}{mask(profile.passport_data?.first_name, 3)}
+                            {profile.passport_data?.middle_name ? ' ' + mask(profile.passport_data.middle_name, 3) : ''}
+                          </p>
+                        </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Серия паспорта</label>
+                          <p className="data-item__value">{profile.passport_data?.series || '—'}</p>
+                        </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Номер паспорта</label>
+                          <p className="data-item__value">{mask(profile.passport_data?.number, 3)}</p>
+                        </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Дата выдачи</label>
+                          <p className="data-item__value">{maskDate(profile.passport_data?.issue_date)}</p>
+                        </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Кем выдан</label>
+                          <p className="data-item__value">{mask(profile.passport_data?.issued_by, 4)}</p>
+                        </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Идентификационный номер</label>
+                          <p className="data-item__value">{mask(profile.passport_data?.identification_number, 5)}</p>
+                        </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Дата рождения</label>
+                          <p className="data-item__value">{maskDate(profile.passport_data?.dob)}</p>
+                        </div>
+                      </>
+                    )}
 
-                    <button
-                      className="data-toggle"
-                      onClick={() => setShowPassportData(p => !p)}
-                    >
-                      {showPassportData ? 'Скрыть данные' : 'Показать данные'}
-                    </button>
-
+                    {/* Реальные данные — показываются когда showPassportData = true */}
                     {showPassportData && (
-                      <div className="passport-details" style={{ marginTop: '12px' }}>
+                      <div className="passport-details">
                         <div className="data-item">
                           <label className="data-item__label">ФИО</label>
                           <p className="data-item__value">
@@ -421,10 +419,12 @@ export default function PersonalData() {
                           </p>
                         </div>
                         <div className="data-item">
-                          <label className="data-item__label">Серия / Номер</label>
-                          <p className="data-item__value">
-                            {profile.passport_data?.series} {profile.passport_data?.number}
-                          </p>
+                          <label className="data-item__label">Серия паспорта</label>
+                          <p className="data-item__value">{profile.passport_data?.series || '—'}</p>
+                        </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Номер паспорта</label>
+                          <p className="data-item__value">{profile.passport_data?.number || '—'}</p>
                         </div>
                         <div className="data-item">
                           <label className="data-item__label">Дата выдачи</label>
@@ -438,8 +438,20 @@ export default function PersonalData() {
                           <label className="data-item__label">Идентификационный номер</label>
                           <p className="data-item__value">{profile.passport_data?.identification_number || '—'}</p>
                         </div>
+                        <div className="data-item">
+                          <label className="data-item__label">Дата рождения</label>
+                          <p className="data-item__value">{formatDate(profile.passport_data?.dob)}</p>
+                        </div>
                       </div>
                     )}
+
+                    <button
+                      className="data-toggle"
+                      style={showPassportData ? { marginTop: '16px' } : undefined}
+                      onClick={() => setShowPassportData(p => !p)}
+                    >
+                      {showPassportData ? 'Скрыть данные' : 'Показать данные'}
+                    </button>
 
                     {/* Адрес прописки — отдельный блок */}
                     <div className="passport-address" style={{ marginTop: '24px' }}>

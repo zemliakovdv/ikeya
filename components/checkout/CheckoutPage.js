@@ -28,7 +28,7 @@ function mask(str, visible = 2) {
 function maskDate(dateStr) {
   if (!dateStr) return '—'
   const [y, m, d] = dateStr.split('-')
-  return `${d}.**,****`
+  return `${d}.**.**** `
 }
 
 function formatDate(dateStr) {
@@ -527,42 +527,69 @@ export default function CheckoutPage() {
                               ) : (
                                 <>
                                   <div className="passport-data">
+                                    {/* ФИО */}
+                                    {(profile.passport_data.last_name || profile.passport_data.first_name) && (
+                                      <div className="data-row">
+                                        <span className="data-label">ФИО</span>
+                                        <span className="data-value">
+                                          {showPassportData
+                                            ? [profile.passport_data.last_name, profile.passport_data.first_name, profile.passport_data.middle_name].filter(Boolean).join(' ')
+                                            : [mask(profile.passport_data.last_name, 5), mask(profile.passport_data.first_name, 3), profile.passport_data.middle_name ? mask(profile.passport_data.middle_name, 3) : ''].filter(Boolean).join(' ')
+                                          }
+                                        </span>
+                                      </div>
+                                    )}
+                                    {/* Серия / Номер */}
                                     {profile.passport_data.series && profile.passport_data.number && (
                                       <div className="data-row data-row-split">
                                         <div className="data-column">
-                                          <span className="data-label">Серия</span>
+                                          <span className="data-label">Серия паспорта</span>
                                           <span className="data-value">{profile.passport_data.series}</span>
                                         </div>
                                         <div className="data-column">
-                                          <span className="data-label">Номер</span>
+                                          <span className="data-label">Номер паспорта</span>
                                           <span className="data-value">
                                             {showPassportData ? profile.passport_data.number : mask(profile.passport_data.number, 3)}
                                           </span>
                                         </div>
                                       </div>
                                     )}
+                                    {/* Дата выдачи / Кем выдан */}
                                     {profile.passport_data.issue_date && (
-                                      <div className="data-row">
-                                        <span className="data-label">Дата выдачи</span>
-                                        <span className="data-value">
-                                          {showPassportData ? formatDate(profile.passport_data.issue_date) : maskDate(profile.passport_data.issue_date)}
-                                        </span>
+                                      <div className="data-row data-row-split">
+                                        <div className="data-column">
+                                          <span className="data-label">Дата выдачи</span>
+                                          <span className="data-value">
+                                            {showPassportData ? formatDate(profile.passport_data.issue_date) : maskDate(profile.passport_data.issue_date)}
+                                          </span>
+                                        </div>
+                                        {profile.passport_data.issued_by && (
+                                          <div className="data-column">
+                                            <span className="data-label">Кем выдан</span>
+                                            <span className="data-value">
+                                              {showPassportData ? profile.passport_data.issued_by : mask(profile.passport_data.issued_by, 4)}
+                                            </span>
+                                          </div>
+                                        )}
                                       </div>
                                     )}
-                                    {profile.passport_data.issued_by && (
-                                      <div className="data-row">
-                                        <span className="data-label">Кем выдан</span>
-                                        <span className="data-value">
-                                          {showPassportData ? profile.passport_data.issued_by : mask(profile.passport_data.issued_by, 4)}
-                                        </span>
-                                      </div>
-                                    )}
+                                    {/* Идентификационный номер / Дата рождения */}
                                     {profile.passport_data.identification_number && (
-                                      <div className="data-row">
-                                        <span className="data-label">Идентификационный номер</span>
-                                        <span className="data-value">
-                                          {showPassportData ? profile.passport_data.identification_number : mask(profile.passport_data.identification_number, 5)}
-                                        </span>
+                                      <div className="data-row data-row-split">
+                                        <div className="data-column">
+                                          <span className="data-label">Идентификационный номер</span>
+                                          <span className="data-value">
+                                            {showPassportData ? profile.passport_data.identification_number : mask(profile.passport_data.identification_number, 5)}
+                                          </span>
+                                        </div>
+                                        {profile.passport_data.dob && (
+                                          <div className="data-column">
+                                            <span className="data-label">Дата рождения</span>
+                                            <span className="data-value">
+                                              {showPassportData ? formatDate(profile.passport_data.dob) : maskDate(profile.passport_data.dob)}
+                                            </span>
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                   </div>
