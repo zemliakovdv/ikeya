@@ -86,6 +86,7 @@ export default function ClientScripts() {
         if (!sliderEl) return;
 
         const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+        const isHomePage = window.location.pathname === '/';
 
         const prevBtn = document.querySelector('.popular-categories__nav-prev');
         const nextBtn = document.querySelector('.popular-categories__nav-next');
@@ -97,6 +98,8 @@ export default function ClientScripts() {
           return;
         }
 
+        const paginationEl = document.querySelector('.popular-categories__pagination');
+
         new Swiper('.popular-categories-inner', {
           loop: slideCount > 8,
           slidesPerView: 8,
@@ -106,6 +109,13 @@ export default function ClientScripts() {
             nextEl: '.popular-categories__nav-next',
             prevEl: '.popular-categories__nav-prev',
           },
+          // Пагинация только на главной странице
+          ...(isHomePage && paginationEl ? {
+            pagination: {
+              el: '.popular-categories__pagination',
+              clickable: true,
+            },
+          } : {}),
           breakpoints: {
             320:  { slidesPerView: 2, spaceBetween: 10 },
             480:  { slidesPerView: 3, spaceBetween: 12 },
