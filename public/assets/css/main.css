@@ -6321,7 +6321,7 @@ main {
 .alert {
     display: flex;
     align-items: flex-start;
-    gap: 18px;
+    gap: 16px;
     border-radius: 8px;
     margin-bottom: 16px;
 }
@@ -6331,6 +6331,23 @@ main {
     border-radius: 8px;
     padding: 16px;
     border: none;
+}
+
+.alert-warning span {
+    color: #b71c1c;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    align-content: center;
+    display: inline-block;
+    margin-bottom: 0;
+}
+
+.alert-warning span strong {
+    color: #b71c1c;
+    font-weight: 600;
+    letter-spacing: 0.01em;
 }
 
 .alert svg {
@@ -6343,6 +6360,7 @@ main {
     line-height: 143%;
     letter-spacing: 0.02em;
     color: #b71c1c;
+    margin-bottom: 0;
 }
 
 .alert strong {
@@ -6355,6 +6373,20 @@ main {
     font-weight: 600;
     letter-spacing: 0.01em;
     color: #b71c1c;
+}
+
+.btn-pay-order {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    text-align: center;
+    color: #fff;
+    padding: 14px 16px;
+    background: #b71c1c;
+    border: none;
+    border-radius: 8px;
+    margin-left: auto;
 }
 
 /* ========== ИНФОРМАЦИЯ О ПОЛУЧАТЕЛЕ ========== */
@@ -6938,7 +6970,7 @@ main {
 }
 
 .total-amount {
-    padding-top: 16px;
+    padding-top: 0;
     margin-bottom: 16px;
     border-bottom: 1px solid #eee;
 }
@@ -7129,8 +7161,19 @@ main {
 .order-number-wrap {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     margin: 0 0 16px;
+    gap: 8px;
+}
+
+.btn-copy-order {
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+}
+
+.btn-copy-order:hover svg path {
+    fill: #004a8c;
 }
 
 #deliveryModal .modal-header .modal-title {
