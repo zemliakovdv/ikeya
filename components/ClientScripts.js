@@ -114,6 +114,8 @@ export default function ClientScripts() {
             pagination: {
               el: '.popular-categories__pagination',
               clickable: true,
+              dynamicBullets: true,
+              dynamicMainBullets: 2,
             },
           } : {}),
           breakpoints: {
@@ -1087,8 +1089,42 @@ export default function ClientScripts() {
         });
       }
 
+      // ========== СЛАЙДЕР КАТЕГОРИЙ ГЛАВНОЙ ==========
+      function initHomeCategoriesSlider() {
+        const sliderEl = document.querySelector('.home-categories-inner');
+        if (!sliderEl) return;
+
+        const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+        const prevBtn = document.querySelector('.popular-categories__nav-prev');
+        const nextBtn = document.querySelector('.popular-categories__nav-next');
+
+        if (slideCount <= 1) {
+          if (prevBtn) prevBtn.style.display = 'none';
+          if (nextBtn) nextBtn.style.display = 'none';
+          return;
+        }
+
+        new Swiper('.home-categories-inner', {
+          loop: slideCount > 1,
+          slidesPerView: 1,
+          spaceBetween: 0,
+          speed: 600,
+          navigation: {
+            nextEl: '.popular-categories__nav-next',
+            prevEl: '.popular-categories__nav-prev',
+          },
+          pagination: {
+            el: '.popular-categories__pagination',
+            clickable: true,
+            dynamicBullets: true,
+            dynamicMainBullets: 3,
+          },
+        });
+      }
+
       // ========== ВЫЗОВ ВСЕХ ФУНКЦИЙ ==========
       initStartSlider();
+      initHomeCategoriesSlider();
       initCategoriesSlider();
       initProductGalleries();
       initProductsSliders();
