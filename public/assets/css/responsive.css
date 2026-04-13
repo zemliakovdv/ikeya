@@ -166,6 +166,22 @@
         text-align: right;
     }
 
+    .uslugi-item_point{
+        max-width: 429px;
+    }
+
+    .uslugi-tarifs_point{
+        max-width: 434px;
+    }
+
+    .why-cards_item{
+        max-width: 434px;
+    }
+
+    .uslugi-zakaz_item{
+        max-width: 660px;
+    }
+
 }
 
 /* Large Tablet / Small Desktop (992px - 1199px) */
