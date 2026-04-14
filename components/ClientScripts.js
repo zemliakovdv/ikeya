@@ -119,10 +119,10 @@ export default function ClientScripts() {
             },
           } : {}),
           breakpoints: {
-            320:  { slidesPerView: 2, spaceBetween: 10 },
-            480:  { slidesPerView: 3, spaceBetween: 12 },
-            768:  { slidesPerView: 4, spaceBetween: 14 },
-            992:  { slidesPerView: 6, spaceBetween: 16 },
+            320: { slidesPerView: 2, spaceBetween: 10 },
+            480: { slidesPerView: 3, spaceBetween: 12 },
+            768: { slidesPerView: 4, spaceBetween: 14 },
+            992: { slidesPerView: 6, spaceBetween: 16 },
             1200: { slidesPerView: 8, spaceBetween: 16 },
           },
         });
@@ -374,18 +374,18 @@ export default function ClientScripts() {
           }
         }
 
-        catalogButton.addEventListener('click', function(e) {
+        catalogButton.addEventListener('click', function (e) {
           e.stopPropagation();
           toggleCatalog();
         });
 
-        catalogModal.addEventListener('click', function(e) {
+        catalogModal.addEventListener('click', function (e) {
           if (e.target === catalogModal || e.target.classList.contains('catalog-modals__dialog')) {
             closeCatalog();
           }
         });
 
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
           if (e.key === 'Escape' && isOpen) {
             closeCatalog();
           }
@@ -393,14 +393,14 @@ export default function ClientScripts() {
 
         const catalogContent = catalogModal.querySelector('.catalog-modals__content');
         if (catalogContent) {
-          catalogContent.addEventListener('click', function(e) {
+          catalogContent.addEventListener('click', function (e) {
             e.stopPropagation();
           });
         }
 
         const catalogLinks = catalogModal.querySelectorAll('a');
         catalogLinks.forEach(link => {
-          link.addEventListener('click', function() {
+          link.addEventListener('click', function () {
             setTimeout(() => {
               closeCatalog();
             }, 200);
@@ -411,7 +411,7 @@ export default function ClientScripts() {
           open: openCatalog,
           close: closeCatalog,
           toggle: toggleCatalog,
-          isOpen: function() {
+          isOpen: function () {
             return isOpen;
           }
         };
@@ -739,17 +739,17 @@ export default function ClientScripts() {
 
         let isHovered = false;
 
-        filterAside.addEventListener('mouseenter', function() {
+        filterAside.addEventListener('mouseenter', function () {
           isHovered = true;
           this.classList.add('hovered');
         });
 
-        filterAside.addEventListener('mouseleave', function() {
+        filterAside.addEventListener('mouseleave', function () {
           isHovered = false;
           this.classList.remove('hovered');
         });
 
-        filterAside.addEventListener('wheel', function(e) {
+        filterAside.addEventListener('wheel', function (e) {
           if (!isHovered) return;
 
           const scrollTop = this.scrollTop;
@@ -1081,7 +1081,7 @@ export default function ClientScripts() {
 
         window.addEventListener('scroll', requestTick, { passive: true });
 
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', function () {
           headerHeight = header.offsetHeight;
           if (isSticky) {
             verhSection.style.top = `${headerHeight}px`;
@@ -1122,9 +1122,37 @@ export default function ClientScripts() {
         });
       }
 
+      // ========== СЛАЙДЕР КАТЕГОРИЙ СТРАНИЦЫ О НАС ==========
+      function initAboutCategoriesSlider() {
+        const sliderEl = document.querySelector('.about-categories-inner');
+        if (!sliderEl) return;
+
+        const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+
+        if (slideCount <= 1) return;
+
+        new Swiper('.about-categories-inner', {
+          loop: slideCount > 1,
+          slidesPerView: 1,
+          spaceBetween: 0,
+          speed: 600,
+          navigation: {
+            nextEl: '.popular-categories__nav-next',
+            prevEl: '.popular-categories__nav-prev',
+          },
+          pagination: {
+            el: '.popular-categories__pagination',
+            clickable: true,
+            dynamicBullets: true,
+            dynamicMainBullets: 3,
+          },
+        });
+      }
+
       // ========== ВЫЗОВ ВСЕХ ФУНКЦИЙ ==========
       initStartSlider();
       initHomeCategoriesSlider();
+      initAboutCategoriesSlider();
       initCategoriesSlider();
       initProductGalleries();
       initProductsSliders();

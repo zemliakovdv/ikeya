@@ -166,21 +166,44 @@
         text-align: right;
     }
 
-    .uslugi-item_point{
+    .uslugi-item_point {
         max-width: 429px;
     }
 
-    .uslugi-tarifs_point{
+    .uslugi-tarifs_point {
         max-width: 434px;
     }
 
-    .why-cards_item{
+    .why-cards_item {
         max-width: 434px;
     }
 
-    .uslugi-zakaz_item{
+    .uslugi-zakaz_item {
         max-width: 660px;
     }
+
+    .allinone .popular-category {
+        max-width: 1336px;
+        margin: 0 auto;
+    }
+
+    .allinone .popular-categories{
+        margin-bottom: 30px;
+    }
+
+    .allinone .popular-categories-item{
+        justify-content: center;
+        gap: 24px;
+    }
+
+    .popular-categories__nav-prev{
+        left: 11%;
+    }
+
+    .popular-categories__nav-next{
+        right: 11%;
+    }
+
 
 }
 
