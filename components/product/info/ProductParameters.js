@@ -7,7 +7,7 @@ export default function ProductParameters({ product }) {
   const sizeData = fa.size || {}
 
   // Исключаем служебные ключи, берём только размеры
-  const excludedKeys = ['packaging', 'desc']
+  const excludedKeys = ['packaging', 'packages', 'desc']
   const sizeEntries = Object.entries(sizeData)
     .filter(([key]) => !excludedKeys.includes(key))
     .slice(0, 3) // Показываем первые 3 параметра
