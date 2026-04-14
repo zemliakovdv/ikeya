@@ -147,11 +147,11 @@ export default function Header() {
               <div className="header-top-inner">
                 <div className="header-top-menu">
                   <ul>
-                    <li><Link href="#">О компании</Link></li>
+                    <li><Link href="/about">О компании</Link></li>
                     <li><Link href="#">Доставка</Link></li>
                     <li><Link href="#">Оплата</Link></li>
                     <li><Link href="/pvz">Пункты выдачи</Link></li>
-                    <li><Link href="#">Сотрудничество</Link></li>
+                    <li><Link href="/partner">Сотрудничество</Link></li>
                   </ul>
                 </div>
                 <div className="header-top-phone header-top-phone--desktop">

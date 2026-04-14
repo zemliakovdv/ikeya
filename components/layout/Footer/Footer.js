@@ -42,7 +42,7 @@ export default function Footer() {
                   <div className="footer-navigation-list">
                     <h5>Всё о IKEYA</h5>
                     <ul>
-                      <li><Link href="#">О компании</Link></li>
+                      <li><Link href="/about">О компании</Link></li>
                       <li><Link href="/blog">Советы и идеи</Link></li>
                       <li><Link href="/pvz">Пункты выдачи</Link></li>
                       <li><Link href="#">Контакты</Link></li>
