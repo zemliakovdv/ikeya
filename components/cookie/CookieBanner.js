@@ -6,22 +6,28 @@ import { useState, useEffect } from 'react';
 import CookieSettingsModal from './CookieSettingsModal';
 
 const STORAGE_KEY = 'ikeya_cookie_consent';
+const DEFAULT_PREFS = { technical: true, analytics: false, advertising: false };
 
 export default function CookieBanner() {
-  const [visible, setVisible]       = useState(false);
-  const [modalOpen, setModalOpen]   = useState(false);
+  const [visible,    setVisible]    = useState(false);
+  const [modalOpen,  setModalOpen]  = useState(false);
+  const [savedPrefs, setSavedPrefs] = useState(DEFAULT_PREFS);
 
-  // Показываем баннер только если согласие ещё не дано
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (!saved) setVisible(true);
+      if (!saved) {
+        setVisible(true);
+      } else {
+        setSavedPrefs(JSON.parse(saved));
+      }
     } catch {}
   }, []);
 
   const saveConsent = (prefs) => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+      setSavedPrefs(prefs);
     } catch {}
     setVisible(false);
     setModalOpen(false);
@@ -65,6 +71,7 @@ export default function CookieBanner() {
 
       {modalOpen && (
         <CookieSettingsModal
+          initialPrefs={savedPrefs}
           onSave={saveConsent}
           onReject={handleRejectAll}
           onClose={() => setModalOpen(false)}

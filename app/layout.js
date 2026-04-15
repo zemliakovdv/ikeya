@@ -39,6 +39,7 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/pvz.css" />
         <link rel="stylesheet" href="/assets/css/article.css" />
         <link rel="stylesheet" href="/assets/css/content-pages.css" />
+        <link rel="stylesheet" href="/assets/css/help.css" />
         <link rel="stylesheet" href="/assets/css/main.css" />
         <link rel="stylesheet" href="/assets/css/responsive.css" />
       </head>

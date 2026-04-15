@@ -1,0 +1,509 @@
+/* ============================================= */
+/* help.css */
+/* Стили для страниц раздела Помощь */
+/* ============================================= */
+
+/* ========== ЛЕЙАУТ ========== */
+.help-page {
+  padding: 16px 0 48px;
+  background: #FAFAFA;
+}
+
+.help-page .breadcumps {
+  margin-bottom: 24px;
+}
+
+.help-inner {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.help-content {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.help-content__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ========== САЙДБАР ========== */
+.help-sidebar {
+  width: 332px;
+  min-width: 332px;
+  background: #FFF;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: sticky;
+  top: 100px;
+  padding: 16px;
+}
+
+.help-sidebar__section {
+  border-bottom: 1px solid #eee;
+}
+
+.help-sidebar__section:last-child {
+  border-bottom: none;
+}
+
+.help-sidebar__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  width: 100%;
+  background: #FFF;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 8px;
+  transition: background 0.2s;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 143%;
+  letter-spacing: 0.01em;
+  color: #181818;
+}
+
+.help-sidebar__title svg {
+  flex-shrink: 0;
+  transition: transform 0.2s;
+}
+
+.help-sidebar__title.open svg {
+  transform: rotate(180deg);
+}
+
+.help-sidebar__list {
+  list-style: none;
+  margin: 0;
+}
+
+.help-sidebar__list li {
+  margin: 0;
+}
+
+.help-sidebar__link {
+  display: block;
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s;
+  padding: 12px 16px;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 143%;
+  letter-spacing: 0.02em;
+  color: #181818;
+  border-radius: 4px;
+}
+
+.help-sidebar__link:hover {
+  color: #0058A3;
+  background: #fafafa;
+}
+
+.help-sidebar__link.active {
+  color: #0058A3;
+  border-left-color: #0058A3;
+  background: #fafafa;
+}
+
+/* ========== КНОПКА ЗАЯВКИ ========== */
+.help-return-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 24px;
+  margin-bottom: 24px;
+  background: #0058A3;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  max-width: 162px;
+}
+
+.help-return-btn:hover {
+  background: #004A8C;
+}
+
+/* ========== АККОРДЕОН ========== */
+.help-accordion__item {
+  border-bottom: 1px solid #E0E0E0;
+}
+
+.help-accordion__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  color: #181818;
+  text-align: left;
+  gap: 12px;
+}
+
+.help-accordion__header:hover {
+  color: #0058A3;
+}
+
+.help-accordion__body {
+  padding: 0 0 20px;
+  font-size: 14px;
+  color: #424242;
+  line-height: 1.6;
+}
+
+.help-accordion__body p {
+  margin-bottom: 12px;
+}
+
+.help-accordion__body ul {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+.help-accordion__body ul li {
+  margin-bottom: 6px;
+}
+
+.help-accordion__body a {
+  color: #0058A3;
+  text-decoration: underline;
+}
+
+.help-accordion__body a:hover {
+  text-decoration: none;
+}
+
+/* ========== ТАБЛИЦА ========== */
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.help-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: #757575;
+  border-bottom: 1px solid #E0E0E0;
+}
+
+.help-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #F0F0F0;
+  vertical-align: top;
+  color: #424242;
+  line-height: 1.5;
+}
+
+.help-table td strong {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.01em;
+  color: #616161;
+}
+
+.help-table td:first-child {
+  width: 220px;
+}
+
+.help-table td:last-child {
+  width: 160px;
+  white-space: nowrap;
+}
+
+.help-table ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+.help-table ul li {
+  margin-bottom: 4px;
+}
+
+/* ========== СТАТЬЯ (шаги) ========== */
+.help-article h1 {
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 127%;
+  color: #181818;
+}
+
+.help-article p {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.03em;
+  color: #181818;
+  margin-bottom: 16px;
+}
+
+.help-article ul {
+  list-style: disc;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.01em;
+  color: #181818;
+  margin-left: 25px;
+}
+
+.help-article__lead {
+  font-size: 15px;
+  color: #424242;
+  margin-bottom: 32px;
+}
+
+.help-article__lead a {
+  color: #0058A3;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.01em;
+}
+
+.help-step {
+  margin-bottom: 16px;
+}
+
+.help-step__num {
+  font-size: 15px;
+  color: #181818;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.help-step__num a {
+  color: #0058A3;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.01em;
+}
+
+.help-step__num a:hover {
+  text-decoration: underline;
+}
+
+.help-step__img {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.help-step__img img {
+  width: 100%;
+  max-width: fit-content;
+  text-align: left;
+  height: auto;
+  display: block;
+}
+
+.help-step__note {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.03em;
+  color: #181818;
+  margin-bottom: 16px;
+}
+
+
+/* ========== КАРТОЧКИ (этапы, сроки) ========== */
+.help-section__title {
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 133%;
+  color: #181818;
+  margin: 24px 0 16px;
+}
+
+.help-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.help-card {
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+
+
+.help-card__img img {
+  width: 140px;
+  max-width: 140px;
+  height: 140px;
+  max-height: 140px;
+  object-fit: contain;
+}
+
+.help-card--horizontal .help-card__img img {
+  width: 72px;
+  max-width: 72px;
+  height: 72px;
+  max-height: 72px;
+}
+
+.help-article .help-card__title {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 143%;
+  letter-spacing: 0.01em;
+  text-align: center;
+  color: #181818;
+  margin-bottom: 8px;
+}
+
+.help-article .help-card__desc {
+  margin: 0;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 143%;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: #181818;
+}
+
+.help-card--simple .help-card__title {
+  font-weight: 400;
+}
+
+/* ========== ПОДДЕРЖКА ========== */
+.help-support {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #F5F5F5;
+  border-radius: 8px;
+  margin-top: 28px;
+}
+
+.help-support__icon img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.help-support__text p {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #424242;
+}
+
+.help-support__link {
+  font-size: 14px;
+  color: #0058A3;
+  text-decoration: none;
+}
+
+.help-support__link:hover {
+  text-decoration: underline;
+}
+
+/* ========== ЛОГОТИПЫ ОПЛАТЫ ========== */
+.help-payment__logos {
+  margin: 16px 0;
+}
+
+.help-payment__logos img {
+  height: 40px;
+  width: auto;
+}
+
+/* ========== ЕРИП дерево ========== */
+.help-erip-tree {
+  margin-bottom: 8px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.03em;
+  color: #181818;
+}
+
+.help-erip-tree p {
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+.indent-1 {
+  padding-left: 16px;
+}
+
+.indent-2 {
+  padding-left: 32px;
+}
+
+.indent-3 {
+  padding-left: 48px;
+}
+
+.indent-4 {
+  padding-left: 64px;
+}
+
+.payment-instr li {
+  margin-bottom: 16px;
+}
+
+.payment-instr li:last-child {
+  margin-bottom: 0;
+}
+
+/* ========== 2 колонки карточки ========== */
+.help-cards--2col {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.help-card--horizontal {
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.help-lists__requisits li {
+  margin-bottom: 8px;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.03em;
+  color: #181818;
+}
+
+.help-lists__requisits li strong {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.help-lists__requisits li:last-child {
+  margin-bottom: 0;
+}
+
+.help-article .help-section__rules {
+  margin-bottom: 0;
+}

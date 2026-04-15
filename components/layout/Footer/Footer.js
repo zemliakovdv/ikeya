@@ -8,6 +8,7 @@ const STORAGE_KEY = 'ikeya_cookie_consent';
 
 export default function Footer() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [savedPrefs, setSavedPrefs] = useState(null);
 
   const saveConsent = (prefs) => {
     try {
@@ -70,7 +71,15 @@ export default function Footer() {
                         <button
                           type="button"
                           className="footer-cookie-btn"
-                          onClick={() => setModalOpen(true)}
+                          onClick={() => {
+                            try {
+                              const saved = localStorage.getItem(STORAGE_KEY);
+                              setSavedPrefs(saved ? JSON.parse(saved) : { technical: true, analytics: false, advertising: false });
+                            } catch {
+                              setSavedPrefs({ technical: true, analytics: false, advertising: false });
+                            }
+                            setModalOpen(true);
+                          }}
                         >
                           Настройка cookie
                         </button>
@@ -102,6 +111,7 @@ export default function Footer() {
 
       {modalOpen && (
         <CookieSettingsModal
+          initialPrefs={savedPrefs}
           onSave={saveConsent}
           onReject={handleReject}
           onClose={() => setModalOpen(false)}

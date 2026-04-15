@@ -28,18 +28,15 @@ const ITEMS = [
   },
 ];
 
-export default function CookieSettingsModal({ onSave, onReject, onClose }) {
-  const [prefs, setPrefs] = useState({
-    technical:   true,
-    analytics:   false,
-    advertising: false,
-  });
+export default function CookieSettingsModal({ initialPrefs, onSave, onReject, onClose }) {
+  const [prefs, setPrefs] = useState(
+    initialPrefs || { technical: true, analytics: false, advertising: false }
+  );
 
   const toggle = (key) => {
     setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Закрытие по клику на оверлей
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -74,9 +71,7 @@ export default function CookieSettingsModal({ onSave, onReject, onClose }) {
         </div>
 
         <div className="cookie-modal__footer">
-          
-            <p>Подробнее <a href="#" className="cookie-modal__policy-link">о Политике обработки файлов cookie</a></p>
-          
+          <p>Подробнее <a href="/help/cookies" className="cookie-modal__policy-link">о Политике обработки файлов cookie</a></p>
           <div className="cookie-modal__actions">
             <button
               className="cookie-banner__btn cookie-banner__btn--outline"
