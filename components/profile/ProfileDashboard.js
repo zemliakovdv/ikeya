@@ -8,8 +8,8 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { getOrders, isActiveOrder } from '@/lib/api/account';
 import { openJivoChat } from '@/components/FloatingChatButton';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
-const IMAGES_BASE = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+const IMAGES_BASE = 'https://test.ikeya.by';
 
 async function fetchWithAuth(endpoint) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

@@ -41,7 +41,7 @@ export default function InstructionsTab({ product }) {
             {files.map((file, index) => (
               <a
                 key={index}
-                href={`http://45.135.234.22${file.link}`}
+                href={`https://test.ikeya.by${file.link}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="content-files__item"

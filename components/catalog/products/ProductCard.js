@@ -7,7 +7,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import CartCounter from '@/components/cart/CartCounter';
 import ProductBadge from './ProductBadge';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 const MAX_VISIBLE_VARIANTS = 3;
 

@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
 
 function resolveImage(attr) {

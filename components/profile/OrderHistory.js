@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import RangeDatePicker from '@/components/ui/RangeDatePicker';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 
 function resolveImage(path) {
   if (!path) return null;

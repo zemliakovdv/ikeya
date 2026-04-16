@@ -8,7 +8,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
 export default function ProductGallery({ images = [] }) {

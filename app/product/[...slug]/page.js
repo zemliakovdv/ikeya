@@ -8,7 +8,7 @@ import RelatedProducts from '@/components/product/RelatedProducts';
 import SimilarProducts from '@/components/product/SimilarProducts';
 import { getCachedCategoriesTree } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
 // Очистка артикулов — обрабатывает два формата:
 // 1. Нормальный: ["60489549", "00417621", ...] → возвращаем как есть

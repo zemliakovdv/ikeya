@@ -151,7 +151,7 @@ export default function ProductTabsSection({
                                           name_ru: product.description,
                                           price_byn: product.price,
                                           local_images: (product.images || []).map(img =>
-                                            img.replace('http://45.135.234.22/', '')
+                                            img.replace('https://test.ikeya.by/', '')
                                           ),
                                           variants: product.variants || null,
                                           is_bestseller: product.badges?.includes('hit'),

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 
 function resolveImage(path) {
   if (!path) return '/assets/img/no-image.jpg';

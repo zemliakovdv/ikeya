@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import BlogTabs from '@/components/blog/BlogTabs';
 import BlogCard from '@/components/blog/BlogCard';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 const PER_PAGE = 20;
 
 async function fetchArticles({ page = 1, rubric = null } = {}) {

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
 function resolveImage(path) {

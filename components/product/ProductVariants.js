@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 
 export default function ProductVariants({ variants, currentSku, localImages }) {
   const [selectedSku, setSelectedSku] = useState(currentSku);

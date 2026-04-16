@@ -6,7 +6,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { useCart } from '@/contexts/CartContext';
 import CartCounter from '@/components/cart/CartCounter';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
 
 function formatPrice(price) {

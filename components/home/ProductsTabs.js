@@ -2,7 +2,7 @@
 import { getAllCategories, getCategory, IMAGES_BASE_URL } from '@/lib/api/ikea';
 import ProductTabsSection from '@/components/home/ProductTabsSection';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
 async function getAllRecommended() {
   let allProducts = [];

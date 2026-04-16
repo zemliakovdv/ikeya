@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
-const IMAGES_BASE_URL = 'http://45.135.234.22';
+const IMAGES_BASE_URL = 'https://test.ikeya.by';
 
 function extractImage(article) {
   const blocks = article.attributes.body_blocks || [];

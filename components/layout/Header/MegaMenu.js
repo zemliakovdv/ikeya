@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
-const API_BASE = 'http://45.135.234.22'
+const API_BASE = 'https://test.ikeya.by'
 
 // Модульный кеш — живёт пока открыта вкладка браузера
 let _cachedTree = null

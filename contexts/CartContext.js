@@ -73,7 +73,7 @@ export function CartProvider({ children }) {
           const attr = item.attributes || {};
           const images = (attr.local_images || []).map((img) => {
             const clean = img.startsWith('/') ? img.slice(1) : img;
-            return `http://45.135.234.22/${clean}`;
+            return `https://test.ikeya.by/${clean}`;
           });
           const fallback = '/assets/img/no-image.jpg';
           return {

@@ -24,7 +24,7 @@ images: {
     return [
       {
         source: '/api/v1/:path*',
-        destination: 'http://45.135.234.22/api/v1/:path*',
+        destination: 'https://test.ikeya.by/api/v1/:path*',
       },
     ];
   },

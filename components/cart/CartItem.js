@@ -42,7 +42,7 @@ export default function CartItem({
     if (list.length > 0 && list[0]) {
       const img = list[0];
       if (img.startsWith('http')) return img;
-      return `http://45.135.234.22/${img.startsWith('/') ? img.slice(1) : img}`;
+      return `https://test.ikeya.by/${img.startsWith('/') ? img.slice(1) : img}`;
     }
     return '/assets/img/no-image.jpg';
   };

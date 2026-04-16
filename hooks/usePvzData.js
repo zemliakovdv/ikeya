@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
 // ─── Пины для карты ───────────────────────────────────────────────────────────
 

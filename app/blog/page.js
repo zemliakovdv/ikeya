@@ -3,7 +3,7 @@
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import TipsIdeasClient from '@/components/blog/TipsIdeasClient';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 const PER_PAGE = 20;
 
 const BREADCRUMBS = [

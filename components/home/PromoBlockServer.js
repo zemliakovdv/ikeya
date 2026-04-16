@@ -2,7 +2,7 @@
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 import PromoBlock from './PromoBlock';
 
-const API_BASE_URL = 'http://45.135.234.22/api/v1';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
 async function getCustomCategories() {
     try {
@@ -73,13 +73,13 @@ export default async function PromoBlockServer() {
         const path = attr.local_image_path;
         bannerImage = path.startsWith('http')
             ? path
-            : `http://45.135.234.22${path.startsWith('/') ? '' : '/'}${path}`;
+            : `https://test.ikeya.by${path.startsWith('/') ? '' : '/'}${path}`;
     } else if (attr.background_image_url) {
         const path = attr.background_image_url;
         // ✅ то же самое для background_image_url
         bannerImage = path.startsWith('http')
             ? path
-            : `http://45.135.234.22${path.startsWith('/') ? '' : '/'}${path}`;
+            : `https://test.ikeya.by${path.startsWith('/') ? '' : '/'}${path}`;
     }
 
 

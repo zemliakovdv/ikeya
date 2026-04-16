@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 
-const API_BASE_URL = 'http://45.135.234.22';
+const API_BASE_URL = 'https://test.ikeya.by';
 
 // Нормализует любой путь к картинке — убирает двойные слеши
 function resolveImage(path) {
