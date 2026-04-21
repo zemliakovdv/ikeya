@@ -61,6 +61,9 @@ export default function OrderHistory({ orders, purchasesByOrderId = {}, onReorde
             </div>
           ) : filteredOrders.map((order) => {
             const isCanceled = order.status === 'canceled';
+            const isDelivered = ['delivered', 'completed'].includes(order.rawStatus);
+            const badgeClass = isCanceled ? 'badge-canceled' : 'badge-havit';
+            const badgeText = isCanceled ? 'Отменён' : isDelivered ? 'Получен' : 'Завершён';
             // Ключ группировки — число (p.order_id), order.id может быть строкой
             const items = purchasesByOrderId[order.id] || purchasesByOrderId[Number(order.id)] || [];
 
@@ -70,8 +73,8 @@ export default function OrderHistory({ orders, purchasesByOrderId = {}, onReorde
                   <div className="odrer-header_inner">
                     <div className="order-header_top">
                       <div className="order-title">Заказ № {order.id} от {order.date}</div>
-                      <div className={`order-badge ${isCanceled ? 'badge-canceled' : 'badge-havit'}`}>
-                        {isCanceled ? 'Отменён' : 'Получен'}
+                      <div className={`order-badge ${badgeClass}`}>
+                        {badgeText}
                       </div>
                     </div>
                   </div>

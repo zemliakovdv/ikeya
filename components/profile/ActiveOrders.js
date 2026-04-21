@@ -20,7 +20,18 @@ const OrderCard = ({ order }) => {
               </div>
             </div>
             <div className="order-actions">
-              <button className="btn btn-danger">Оплатить заказ</button>
+              {order.paymentUrl ? (
+                <a
+                  href={order.paymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-danger"
+                >
+                  Оплатить заказ
+                </a>
+              ) : (
+                <button className="btn btn-danger" disabled>Оплатить заказ</button>
+              )}
             </div>
           </div>
         </div>
@@ -70,6 +81,7 @@ const OrderCard = ({ order }) => {
     const map = {
       'assembly':           'badge-assembly',
       'awaiting':           'badge-awaiting',
+      'transit':            'badge-available',
       'available-warehouse':'badge-available',
       'assembly-process':   'badge-available',
       'customs-poland':     'badge-available',
@@ -84,7 +96,7 @@ const OrderCard = ({ order }) => {
     const map = {
       'assembly':           'В обработке',
       'awaiting':           'Ждёт оплаты',
-      'transit':            'Оформлен',
+      'transit':            'В пути',
       'available-warehouse':'Получен на склад',
       'assembly-process':   'Подготовка и сборка',
       'customs-poland':     'Таможня Польша',

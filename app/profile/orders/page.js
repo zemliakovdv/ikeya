@@ -19,13 +19,19 @@ const breadcrumbs = [
 function mapApiOrder(apiOrder) {
   const a = apiOrder.attributes;
 
+  // created + payment_expired → фактически отменён
+  const effectiveStatus = (a.status === 'created' && a.payment_expired) ? 'canceled' : a.status;
+
   const statusMap = {
+    created:             'awaiting',
     awaiting_payment:    'awaiting',
     pending:             'assembly',
     processing:          'assembly',
+    paid:                'assembly',
     assembly:            'assembly',
     assembly_process:    'assembly-process',
     transit:             'transit',
+    handed_to_courier:   'transit',
     customs_poland:      'customs-poland',
     customs_belarus:     'customs-belarus',
     available_warehouse: 'available-warehouse',
@@ -39,14 +45,16 @@ function mapApiOrder(apiOrder) {
   };
 
   return {
-    id:          a.id,
-    status:      statusMap[a.status] || 'assembly',
-    rawStatus:   a.status,
-    rawDate:     a.created_at,
-    date:        new Date(a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
-    dateRange:   '—',
-    price:       a.total_amount  || 0,
-    trackNumber: a.track_number  || '',
+    id:             a.id,
+    status:         statusMap[effectiveStatus] || 'assembly',
+    rawStatus:      effectiveStatus,
+    rawDate:        a.created_at,
+    date:           new Date(a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
+    dateRange:      '—',
+    price:          a.total_amount  || 0,
+    trackNumber:    a.track_number  || '',
+    paymentUrl:     a.payment_url   || null,
+    paymentExpired: a.payment_expired === true,
   };
 }
 
