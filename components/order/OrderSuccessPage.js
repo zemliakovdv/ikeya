@@ -2,12 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getOrderById } from '@/lib/api/account';
 import { resolveImageUrl } from '@/lib/api/ikea';
 
 const PAYMENT_LABELS = {
   card: 'Оплата картой онлайн',
   erip: 'Оплата через ЕРИП',
+};
+
+const SERVICE_LABELS = {
+  furniture_delivery: 'Подъем и занос мебели',
+  furniture_assembly: 'Сборка мебели',
 };
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -45,25 +49,25 @@ export default function OrderSuccessPage() {
         setServices(JSON.parse(storedServices));
         sessionStorage.removeItem('selectedServices');
       }
-    } catch { }
-  }, []);
-
-  useEffect(() => {
-    if (!orderId) { setLoading(false); return; }
-    getOrderById(orderId)
-      .then(data => {
-        const orderAttrs = data.data?.attributes || null;
-        setOrder(orderAttrs);
-        setItems(data.included || []);
-        if (orderAttrs?.payment_expires_at && !orderAttrs?.payment_expired) {
-          const expiresAt = new Date(orderAttrs.payment_expires_at).getTime();
+      const storedOrder = sessionStorage.getItem('checkoutOrder');
+      if (storedOrder) {
+        const orderData = JSON.parse(storedOrder);
+        setOrder(orderData);
+        if (orderData?.payment_expires_at && !orderData?.payment_expired) {
+          const expiresAt = new Date(orderData.payment_expires_at).getTime();
           const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
           setTimeLeft(secondsLeft);
         }
-      })
-      .catch(() => setOrder(null))
-      .finally(() => setLoading(false));
-  }, [orderId]);
+        sessionStorage.removeItem('checkoutOrder');
+      }
+      const storedItems = sessionStorage.getItem('checkoutItems');
+      if (storedItems) {
+        setItems(JSON.parse(storedItems));
+        sessionStorage.removeItem('checkoutItems');
+      }
+    } catch { }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0) return;
@@ -239,7 +243,7 @@ export default function OrderSuccessPage() {
                         <h3 className="services-title">Услуги:</h3>
                       </div>
                       <ul className="services-list-simple">
-                        {services.map((s, i) => <li key={i}>{s}</li>)}
+                        {services.map((s, i) => <li key={i}>{SERVICE_LABELS[s] || s}</li>)}
                       </ul>
                     </>
                   )}

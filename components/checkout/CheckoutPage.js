@@ -215,6 +215,19 @@ export default function CheckoutPage() {
       setSubmitting(true)
       const response = await checkout(buildOrderData(a1VerificationId), token)
       sessionStorage.setItem('selectedServices', JSON.stringify(selectedServices))
+      sessionStorage.setItem('checkoutOrder', JSON.stringify(response.order || null))
+      sessionStorage.setItem('checkoutItems', JSON.stringify(
+        items.map(it => ({
+          id: it.sku,
+          attributes: {
+            product_sku: it.sku,
+            name: it.product?.small_desc_name || it.product?.name_ru || it.product?.name || '',
+            quantity: it.quantity,
+            price_byn: it.product?.price_byn || 0,
+            image_url: it.product?.local_images?.[0] || it.product?.images?.[0] || '',
+          }
+        }))
+      ))
       router.push(`/order-success?order_id=${response.order_id}`)
     } catch (err) {
       setA1Error(err.message || 'Неверный код, попробуйте ещё раз')
