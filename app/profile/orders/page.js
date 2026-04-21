@@ -44,17 +44,34 @@ function mapApiOrder(apiOrder) {
     returned:            'canceled',
   };
 
+  // Планируемая дата получения: +20 дней от даты создания
+  const createdAt = new Date(a.created_at);
+  const deliveryDate = new Date(createdAt);
+  deliveryDate.setDate(deliveryDate.getDate() + 20);
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const dateRange = `${deliveryDate.getDate()} ${months[deliveryDate.getMonth()]}`;
+
+  // Секунды до истечения оплаты
+  let paymentSecondsLeft = null;
+  if (a.payment_expires_at && !a.payment_expired) {
+    const expiresAt = new Date(a.payment_expires_at).getTime();
+    const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+    paymentSecondsLeft = secondsLeft;
+  }
+
   return {
-    id:             a.id,
-    status:         statusMap[effectiveStatus] || 'assembly',
-    rawStatus:      effectiveStatus,
-    rawDate:        a.created_at,
-    date:           new Date(a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
-    dateRange:      '—',
-    price:          a.total_amount  || 0,
-    trackNumber:    a.track_number  || '',
-    paymentUrl:     a.payment_url   || null,
-    paymentExpired: a.payment_expired === true,
+    id:                 a.id,
+    status:             statusMap[effectiveStatus] || 'assembly',
+    rawStatus:          effectiveStatus,
+    rawDate:            a.created_at,
+    date:               createdAt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
+    dateRange,
+    price:              a.total_amount  || 0,
+    trackNumber:        a.track_number  || '',
+    paymentUrl:         a.payment_url   || null,
+    paymentExpired:     a.payment_expired === true,
+    paymentExpiresAt:   a.payment_expires_at || null,
+    paymentSecondsLeft,
   };
 }
 

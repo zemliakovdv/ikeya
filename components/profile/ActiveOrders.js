@@ -1,10 +1,40 @@
 // components/profile/ActiveOrders.js
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function useCountdown(initialSeconds) {
+  const [timeLeft, setTimeLeft] = useState(initialSeconds ?? null);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (initialSeconds === null || initialSeconds <= 0) return;
+    setTimeLeft(initialSeconds);
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [initialSeconds]);
+
+  if (timeLeft === null) return null;
+  return `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}`;
+}
 
 const OrderCard = ({ order }) => {
-  const router = useRouter();
+  const [copied, setCopied] = useState(false);
+  const countdown = useCountdown(order.paymentSecondsLeft);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(String(order.id)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
 
   const renderStatusSection = () => {
     if (order.status === 'awaiting') {
@@ -16,7 +46,8 @@ const OrderCard = ({ order }) => {
                 <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
               </svg>
               <div className="status-text">
-                Заказ ожидает оплаты <span>{order.countdown || ''}</span>
+                Заказ ожидает оплаты
+                {countdown && <> <strong className="timer-value">{countdown}</strong></>}
               </div>
             </div>
             <div className="order-actions">
@@ -109,10 +140,29 @@ const OrderCard = ({ order }) => {
 
   return (
     <div className="order-card">
-      <div className="order-header" style={{ cursor: 'pointer' }}>
+      <div className="order-header">
         <div className="odrer-header_inner">
           <div className="order-header_top">
-            <div className="order-title">Заказ № {order.id} от {order.date}</div>
+            <div className="order-title">
+              Заказ № {order.id}
+              <button
+                className="btn-copy-order"
+                onClick={handleCopy}
+                title="Скопировать номер заказа"
+                style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', verticalAlign: 'middle' }}
+              >
+                {copied ? (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M16.0001 2.66667C8.65341 2.66667 2.66675 8.65334 2.66675 16C2.66675 23.3467 8.65341 29.3333 16.0001 29.3333C23.3467 29.3333 29.3334 23.3467 29.3334 16C29.3334 8.65334 23.3467 2.66667 16.0001 2.66667ZM21.6534 12.9067L14.8267 20.3467C14.6534 20.5333 14.4134 20.64 14.1601 20.6533H14.1467C13.9067 20.6533 13.6667 20.56 13.4934 20.3867L10.3867 17.28C10.0267 16.92 10.0267 16.3333 10.3867 15.96C10.7467 15.6 11.3334 15.6 11.7067 15.96L14.1201 18.3733L20.2801 11.6533C20.6267 11.28 21.2134 11.2533 21.6001 11.6C21.9734 11.9467 22.0001 12.5333 21.6534 12.92V12.9067Z" fill="#00910A" />
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M20.9798 9.53C20.1798 8.73 19.0798 8.56 17.3498 8.52C17.3398 6.08 17.2198 4.68 16.3498 3.61C16.1698 3.39 15.9598 3.18 15.7398 3C14.5198 2 12.8998 2 9.67977 2C6.45977 2 4.83977 2 3.61977 3C3.39977 3.18 3.18977 3.39 3.00977 3.61C2.00977 4.83 2.00977 6.45 2.00977 9.67C2.00977 12.89 2.00977 14.51 3.00977 15.73C3.18977 15.95 3.39977 16.16 3.61977 16.34C4.68977 17.22 6.08977 17.33 8.52977 17.34C8.56977 19.08 8.73977 20.18 9.53977 20.97C10.5598 21.99 12.0698 21.99 14.7998 21.99H15.7298C18.4598 21.99 19.9698 21.99 20.9898 20.97C22.0098 19.95 22.0098 18.44 22.0098 15.71V14.78C22.0098 12.05 22.0098 10.54 20.9898 9.52L20.9798 9.53Z" fill="#757575" />
+                  </svg>
+                )}
+              </button>
+              {' '}от {order.date}
+            </div>
             <div className={`order-badge ${getBadgeClass()}`}>{getStatusText()}</div>
           </div>
           {order.dateRange && order.dateRange !== '—' && (
