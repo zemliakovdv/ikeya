@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { resolveImageUrl } from '@/lib/api/ikea';
+import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 
 const PAYMENT_LABELS = {
   card: 'Оплата картой онлайн',
@@ -94,7 +95,7 @@ export default function OrderSuccessPage() {
   const attrs = order || {};
   const paymentLabel = PAYMENT_LABELS[attrs.payment_method] || attrs.payment_method || 'Оплата картой онлайн';
   const deliveryFree = !attrs.delivery_price || Number(attrs.delivery_price) === 0;
-  const paymentUrl = attrs.payment_url || null;
+  const paymentUrl = resolvePaymentUrl(attrs.payment_url) || null;
   const paymentExpired = attrs.payment_expired === true;
   const showPaymentAlert = !loading && !paymentExpired && (timerStr !== null || paymentUrl);
 

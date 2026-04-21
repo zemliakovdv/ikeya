@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 
 function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -51,9 +52,9 @@ const OrderCard = ({ order }) => {
               </div>
             </div>
             <div className="order-actions">
-              {order.paymentUrl ? (
+              {resolvePaymentUrl(order.paymentUrl) ? (
                 <a
-                  href={order.paymentUrl}
+                  href={resolvePaymentUrl(order.paymentUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-danger"
