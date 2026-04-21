@@ -160,7 +160,7 @@ export default function CheckoutPage() {
   const hasAddress = Boolean(passportAddress?.city || passportAddress?.street)
 
   // Можно оформить?
-  const canCheckout = !!(fullName && profile?.phone && selectedPvz && items.length > 0 && !submitting)
+  const canCheckout = !!(fullName && profile?.phone && selectedPvz && itemCount > 0 && !submitting)
 
   function handlePvzSelect(pvz) {
     setSelectedPvz(pvz)
@@ -177,6 +177,7 @@ export default function CheckoutPage() {
       payment_method: paymentMethod,
       pickup_point_id: selectedPvz.pickup_point_id || selectedPvz.id,
       a1_verification_id: a1Id,
+      services: selectedServices,
     }
     return data
   }
@@ -213,7 +214,7 @@ export default function CheckoutPage() {
       // Повторяем чекаут с подтверждённым a1_verification_id
       setSubmitting(true)
       const response = await checkout(buildOrderData(a1VerificationId), token)
-      sessionStorage.removeItem('selectedPvz')
+      sessionStorage.setItem('selectedServices', JSON.stringify(selectedServices))
       router.push(`/order-success?order_id=${response.order_id}`)
     } catch (err) {
       setA1Error(err.message || 'Неверный код, попробуйте ещё раз')
@@ -669,6 +670,7 @@ export default function CheckoutPage() {
                         customsDuty={customsDuty}
                         canCheckout={canCheckout}
                         onCheckout={handleCheckout}
+                        checkoutLoading={submitting}
                         checkoutButtonText={submitting ? 'Оформляем...' : 'Оформить заказ'}
                       />
                     </div>

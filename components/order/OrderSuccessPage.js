@@ -5,8 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { getOrderById } from '@/lib/api/account';
 import { resolveImageUrl } from '@/lib/api/ikea';
 
-const TIMER_SECONDS = 20 * 60;
-
 const PAYMENT_LABELS = {
   card: 'Оплата картой онлайн',
   erip: 'Оплата через ЕРИП',
@@ -29,7 +27,7 @@ export default function OrderSuccessPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(TIMER_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(null);
   const timerRef = useRef(null);
 
   const [pvz, setPvz] = useState(null);
@@ -38,9 +36,15 @@ export default function OrderSuccessPage() {
   useEffect(() => {
     try {
       const storedPvz = sessionStorage.getItem('selectedPvz');
-      if (storedPvz) setPvz(JSON.parse(storedPvz));
+      if (storedPvz) {
+        setPvz(JSON.parse(storedPvz));
+        sessionStorage.removeItem('selectedPvz');
+      }
       const storedServices = sessionStorage.getItem('selectedServices');
-      if (storedServices) setServices(JSON.parse(storedServices));
+      if (storedServices) {
+        setServices(JSON.parse(storedServices));
+        sessionStorage.removeItem('selectedServices');
+      }
     } catch { }
   }, []);
 
@@ -48,14 +52,21 @@ export default function OrderSuccessPage() {
     if (!orderId) { setLoading(false); return; }
     getOrderById(orderId)
       .then(data => {
-        setOrder(data.data?.attributes || null);
+        const orderAttrs = data.data?.attributes || null;
+        setOrder(orderAttrs);
         setItems(data.included || []);
+        if (orderAttrs?.payment_expires_at && !orderAttrs?.payment_expired) {
+          const expiresAt = new Date(orderAttrs.payment_expires_at).getTime();
+          const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+          setTimeLeft(secondsLeft);
+        }
       })
       .catch(() => setOrder(null))
       .finally(() => setLoading(false));
   }, [orderId]);
 
   useEffect(() => {
+    if (timeLeft === null || timeLeft <= 0) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) { clearInterval(timerRef.current); return 0; }
@@ -63,7 +74,7 @@ export default function OrderSuccessPage() {
       });
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, []);
+  }, [timeLeft === null ? null : 'started']);
 
   function handleCopy() {
     if (!orderId) return;
@@ -73,10 +84,15 @@ export default function OrderSuccessPage() {
     });
   }
 
-  const timerStr = `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}`;
+  const timerStr = timeLeft !== null
+    ? `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}`
+    : null;
   const attrs = order || {};
   const paymentLabel = PAYMENT_LABELS[attrs.payment_method] || attrs.payment_method || 'Оплата картой онлайн';
   const deliveryFree = !attrs.delivery_price || Number(attrs.delivery_price) === 0;
+  const paymentUrl = attrs.payment_url || null;
+  const paymentExpired = attrs.payment_expired === true;
+  const showPaymentAlert = !loading && !paymentExpired && (timerStr !== null || paymentUrl);
 
   return (
     <main className="orders-statused">
@@ -95,15 +111,31 @@ export default function OrderSuccessPage() {
               </div>
 
               {/* ========== АЛЕРТ С ТАЙМЕРОМ ========== */}
-              <div className="alert alert-danger alert-payment">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#B71C1C" />
-                </svg>
-                <p>
-                  Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. <strong>Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.</strong>
-                </p>
-                <button className="btn-pay-order">Оплатить заказ</button>
-              </div>
+              {showPaymentAlert && (
+                <div className="alert alert-danger alert-payment">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#B71C1C" />
+                  </svg>
+                  <p>
+                    {timerStr ? (
+                      <>Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. </>
+                    ) : (
+                      <>Заказ ожидает оплаты. </>
+                    )}
+                    <strong>Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.</strong>
+                  </p>
+                  {paymentUrl && (
+                    <a
+                      href={paymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-pay-order"
+                    >
+                      Оплатить заказ
+                    </a>
+                  )}
+                </div>
+              )}
 
               {/* ========== ИНФОРМАЦИЯ О ЗАКАЗЕ ========== */}
               <section className="order-info-section">

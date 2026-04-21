@@ -17,6 +17,7 @@ export default function CartSummary({
   cart,
   deliveryLoading = false,
   customsDuty = 0,
+  checkoutLoading,
 }) {
   const { applyPromo, removePromo, loading } = useCart();
   const [promoCode, setPromoCode] = useState('');
@@ -167,7 +168,7 @@ export default function CartSummary({
 
         <button
           className="cart-summary__checkout-btn"
-          disabled={!canCheckout || loading}
+          disabled={!canCheckout || (checkoutLoading !== undefined ? checkoutLoading : loading)}
           onClick={onCheckout}
         >
           {checkoutButtonText}
