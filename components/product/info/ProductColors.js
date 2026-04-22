@@ -7,7 +7,7 @@ const API_BASE_URL = 'https://test.ikeya.by';
 
 // Нормализует любой путь к картинке — убирает двойные слеши
 function resolveImage(path) {
-  if (!path) return '/assets/img/placeholder.png';
+  if (!path) return '/assets/img/no-image.jpg';
   if (path.startsWith('http')) return path;
   const clean = path.replace(/^\/+/, '');
   return `${API_BASE_URL}/${clean}`;
@@ -24,7 +24,7 @@ function resolveVariantImage(images, localImages) {
   if (Array.isArray(localImages) && localImages.length > 0) {
     return resolveImage(localImages[0]);
   }
-  return '/assets/img/placeholder.png';
+  return '/assets/img/no-image.jpg';
 }
 
 export default function ProductColors({ variants, currentSku, localImages }) {
@@ -61,7 +61,11 @@ export default function ProductColors({ variants, currentSku, localImages }) {
             window.location.href = `/product/${currentSku}`;
           }}
         >
-          <img src={baseImage} alt={baseColorName} />
+          <img
+            src={baseImage}
+            alt={baseColorName}
+            onError={(e) => { e.target.src = '/assets/img/no-image.jpg'; }}
+          />
         </button>
 
         {otherVariants.map((variant) => {
@@ -79,7 +83,11 @@ export default function ProductColors({ variants, currentSku, localImages }) {
                 window.location.href = `/product/${item.sku}`;
               }}
             >
-              <img src={imgSrc} alt={variant.color || ''} />
+              <img
+                src={imgSrc}
+                alt={variant.color || ''}
+                onError={(e) => { e.target.src = '/assets/img/no-image.jpg'; }}
+              />
             </button>
           );
         })}
