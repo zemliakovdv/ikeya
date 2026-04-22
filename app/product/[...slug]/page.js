@@ -31,7 +31,7 @@ function extractSKU(slug) {
 }
 
 // Строим хлебные крошки из дерева категорий по category_id
-function buildBreadcrumbs(tree, attr, categoryId, productName) {
+function buildBreadcrumbs(tree, attr, product, productName) {
   // Приоритет: готовые крошки от бэка
   const backCrumbs = Array.isArray(attr.breadcrumbs) && attr.breadcrumbs.length > 0
     ? attr.breadcrumbs : null;
@@ -44,7 +44,7 @@ function buildBreadcrumbs(tree, attr, categoryId, productName) {
     ];
   }
 
-  // Фолбэк: строим из дерева категорий
+  // Рекурсивный поиск пути в дереве
   function findPath(nodes, targetId, path = []) {
     for (const node of nodes) {
       const a = node.attributes || {};
@@ -58,10 +58,23 @@ function buildBreadcrumbs(tree, attr, categoryId, productName) {
     return null;
   }
 
-  const categoryPath = findPath(tree, categoryId) || [];
+  // Собираем все возможные id категорий: основной + из relationships.categories
+  const candidateIds = [
+    product.relationships?.category?.data?.id,
+    attr.category_id,
+    ...((product.relationships?.categories?.data || []).map(c => c.id)),
+  ].filter(Boolean);
+
+  // Берём первый id для которого нашёлся путь в дереве
+  let categoryPath = null;
+  for (const id of candidateIds) {
+    categoryPath = findPath(tree, id);
+    if (categoryPath) break;
+  }
+
   return [
     { name: 'Главная', href: '/' },
-    ...categoryPath,
+    ...(categoryPath || []),
     { name: productName },
   ];
 }
@@ -188,7 +201,7 @@ export default async function ProductPage({ params }) {
   const breadcrumbs = buildBreadcrumbs(
     tree,
     attr,
-    categoryId,
+    product,
     attr.small_desc_name || attr.name_ru || 'Товар'
   );
 
