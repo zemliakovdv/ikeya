@@ -31,13 +31,25 @@ function extractSKU(slug) {
 }
 
 // Строим хлебные крошки из дерева категорий по category_id
-function buildBreadcrumbs(tree, categoryId, productName) {
-  // Рекурсивно ищем путь до нужной категории
+function buildBreadcrumbs(tree, attr, categoryId, productName) {
+  // Приоритет: готовые крошки от бэка
+  const backCrumbs = Array.isArray(attr.breadcrumbs) && attr.breadcrumbs.length > 0
+    ? attr.breadcrumbs : null;
+
+  if (backCrumbs) {
+    return [
+      { name: 'Главная', href: '/' },
+      ...backCrumbs.map(b => ({ name: b.title || b.name || '', href: b.url || null })).filter(b => b.name),
+      { name: productName },
+    ];
+  }
+
+  // Фолбэк: строим из дерева категорий
   function findPath(nodes, targetId, path = []) {
     for (const node of nodes) {
       const a = node.attributes || {};
       const current = { name: a.translated_name || a.name || 'Категория', href: `/catalog/${a.slug}` };
-      if (node.id === targetId) return [...path, current];
+      if (String(node.id) === String(targetId)) return [...path, current];
       if (node.children?.length) {
         const found = findPath(node.children, targetId, [...path, current]);
         if (found) return found;
@@ -47,11 +59,10 @@ function buildBreadcrumbs(tree, categoryId, productName) {
   }
 
   const categoryPath = findPath(tree, categoryId) || [];
-
   return [
     { name: 'Главная', href: '/' },
     ...categoryPath,
-    { name: productName }, // последний элемент без ссылки
+    { name: productName },
   ];
 }
 
@@ -77,7 +88,14 @@ async function getFullProducts(skus = []) {
   );
   return results
     .filter(r => r.status === 'fulfilled' && r.value?.data)
-    .map(r => r.value.data);
+    .map(r => {
+      const product = r.value.data;
+      // Бэк иногда отдаёт sku как массив — нормализуем до строки
+      if (Array.isArray(product.attributes?.sku)) {
+        product.attributes.sku = product.attributes.sku[0];
+      }
+      return product;
+    });
 }
 
 // Группируем included_products по category_id, название группы — из дерева категорий
@@ -125,6 +143,12 @@ async function getSimilarProducts(categoryId, excludeSku) {
   }
 }
 
+// Фильтруем local_images — убираем абсолютные пути файловой системы сервера
+function sanitizeLocalImages(images) {
+  if (!Array.isArray(images)) return [];
+  return images.filter(img => img && (img.startsWith('/images/') || img.startsWith('http')));
+}
+
 export default async function ProductPage({ params }) {
   const sku = extractSKU(params.slug[params.slug.length - 1]);
 
@@ -138,26 +162,33 @@ export default async function ProductPage({ params }) {
   const product = productData.data;
   const attr = product.attributes;
 
-  // SKU для «С этим товаром покупают» — attr.related_products[]
-  const relatedSkus = Array.isArray(attr.related_products)
-    ? attr.related_products.slice(0, 10)
-    : [];
+  // Фильтруем текущий SKU из related — бэк иногда включает сам товар в список
+  const relatedSkus = (Array.isArray(attr.related_products) ? attr.related_products : [])
+    .filter(s => s !== sku && s !== String(sku))
+    .slice(0, 10);
 
-  // SKU для «Товары в комплекте» — attr.included_products[] (иногда приходит в кривом формате)
+  // SKU для «Товары в комплекте» — иногда приходит в кривом формате
   const includedSkus = cleanSkuArray(attr.included_products).slice(0, 10);
+
+  // Похожие товары грузим только если есть category_id
+  const categoryId = product.relationships?.category?.data?.id || attr.category_id || null;
 
   // Параллельно грузим все три блока
   const [relatedProducts, includedProducts, similarProducts] = await Promise.all([
-    getFullProducts(relatedSkus),                       // С этим товаром покупают
-    getFullProducts(includedSkus),                      // Товары в комплекте (для ItemsTab)
-    getSimilarProducts(attr.category_id, sku),          // Похожие товары
+    getFullProducts(relatedSkus),
+    getFullProducts(includedSkus),
+    categoryId ? getSimilarProducts(categoryId, sku) : Promise.resolve([]),
   ]);
 
   const includedGroups = groupIncludedProducts(includedProducts, tree);
 
+  // Фильтруем local_images — убираем пути файловой системы сервера
+  const localImages = sanitizeLocalImages(attr.local_images);
+
   const breadcrumbs = buildBreadcrumbs(
     tree,
-    product.relationships?.category?.data?.id || attr.category_id,
+    attr,
+    categoryId,
     attr.small_desc_name || attr.name_ru || 'Товар'
   );
 
@@ -169,19 +200,14 @@ export default async function ProductPage({ params }) {
       <section className="goods">
         <div className="container">
           <div className="goods-wrapper">
-            <ProductGallery images={attr.local_images || []} />
+            <ProductGallery images={localImages} />
             <ProductInfo product={product} includedGroups={includedGroups} />
           </div>
         </div>
       </section>
 
-      {/* С этим товаром покупают — attr.related_products[] */}
       <RelatedProducts products={relatedProducts} />
-
-      {/* Табы товара, внутри таба «Предметы» — attr.included_products[] */}
       <ProductTabs product={product} includedProducts={includedProducts} />
-
-      {/* Похожие товары — 10 товаров из той же категории */}
       <SimilarProducts products={similarProducts} />
     </main>
   );

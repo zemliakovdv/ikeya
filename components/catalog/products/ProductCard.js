@@ -43,7 +43,9 @@ export default function ProductCard({ product, priority = false }) {
   if (!product || !product.attributes) return null;
 
   const attr = product.attributes;
-  const sku = attr.sku || product.id;
+  const sku = Array.isArray(attr.sku)
+    ? attr.sku[0]
+    : (attr.sku || product.id);
 
   // Заголовок и описание — из варианта или из основного товара
   const title = activeVariant?.small_desc_name || attr.small_desc_name || 'Товар IKEA';
