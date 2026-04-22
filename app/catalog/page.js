@@ -11,6 +11,11 @@ import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGr
 import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
 import Pagination from '@/components/catalog/Pagination';
 
+export const metadata = {
+  title: 'Каталог товаров — мебель и товары для дома | IKEYA',
+  description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
+};
+
 export default async function CatalogPage({ searchParams }) {
   const sp = await searchParams;
 

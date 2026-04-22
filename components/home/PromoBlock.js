@@ -108,9 +108,9 @@ export default function PromoBlock({ bannerImage, bannerUrl, categoryName, produ
               <div className="promo-block-info">
                 <Link href={bannerUrl || '#'}>
                   {bannerImage ? (
-                    <img src={bannerImage} alt={categoryName || 'Промо-баннер'} />
+                    <img src={bannerImage} alt={categoryName || 'Промо-баннер'} loading="eager" />
                   ) : (
-                    <img src="/assets/img/main-page/promo-block/left-banner.png" alt="Промо-баннер" />
+                    <img src="/assets/img/main-page/promo-block/left-banner.png" alt="Промо-баннер" loading="eager" />
                   )}
                 </Link>
               </div>
@@ -136,12 +136,13 @@ export default function PromoBlock({ bannerImage, bannerUrl, categoryName, produ
                                     <img
                                       src={product.images[0]}
                                       alt={product.title}
+                                      loading="lazy"
                                       onError={(e) => {
                                         e.target.src = '/assets/img/main-page/promo-block/promo-card-1.png';
                                       }}
                                     />
                                   ) : (
-                                    <img src="/assets/img/main-page/promo-block/promo-card-1.png" alt={product.title} />
+                                    <img src="/assets/img/main-page/promo-block/promo-card-1.png" alt={product.title} loading="lazy" />
                                   )}
                                 </Link>
 

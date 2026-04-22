@@ -17,6 +17,28 @@ import {
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+export async function generateMetadata({ params }) {
+  const { slug } = await params;
+  const currentSlug = slug[slug.length - 1];
+
+  try {
+    const tree = await getCachedCategoriesTree();
+    const allCategories = flattenCategoriesTree(tree);
+    const category = findCategoryBySlug(allCategories, currentSlug);
+
+    if (!category) return {};
+
+    const name = category.attributes.translated_name || category.attributes.name || 'Каталог';
+
+    return {
+      title: `${name} — купить в Беларуси | IKEYA`,
+      description: `Купить ${name.toLowerCase()} в интернет-магазине IKEYA. Большой выбор, доступные цены, доставка по Беларуси. Заказывайте онлайн!`,
+    };
+  } catch {
+    return {};
+  }
+}
+
 function getPriceRangeFromFilters(filters) {
   const priceBucket = (filters || []).find(f => f.parameter === 'f-price-buckets');
   if (!priceBucket?.values?.length) return { min: 0, max: 10000 };

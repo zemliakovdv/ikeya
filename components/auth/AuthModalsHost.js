@@ -212,60 +212,68 @@ export function AuthModalsProvider({ children }) {
 
       {active && <div className="modal-backdrop fade show" onClick={closeAll} />}
 
-      <LoginModal
-        isOpen={active === 'login'}
-        onClose={closeAll}
-        onOpenCode={requestCall}
-        onOpenRegister={openRegister}
-        phoneDigits={phoneDigits}
-        setPhoneDigits={setPhoneDigits}
-        showNotRegistered={showNotRegistered}
-        loading={loading}
-        errorText={errorText}
-      />
+      {active === 'login' && (
+        <LoginModal
+          isOpen={true}
+          onClose={closeAll}
+          onOpenCode={requestCall}
+          onOpenRegister={openRegister}
+          phoneDigits={phoneDigits}
+          setPhoneDigits={setPhoneDigits}
+          showNotRegistered={showNotRegistered}
+          loading={loading}
+          errorText={errorText}
+        />
+      )}
 
-      <RegisterModal
-        isOpen={active === 'register'}
-        onClose={closeAll}
-        onOpenCode={requestCall}
-        onOpenLogin={openLogin}
-        username={username}
-        setUsername={setUsername}
-        phoneDigits={phoneDigits}
-        setPhoneDigits={setPhoneDigits}
-        email={email}
-        setEmail={setEmail}
-        consentPersonal={consentPersonal}
-        setConsentPersonal={setConsentPersonal}
-        consentMarketing={consentMarketing}
-        setConsentMarketing={setConsentMarketing}
-        showPhoneUsed={showPhoneUsed}
-        loading={loading}
-        errorText={errorText}
-      />
+      {active === 'register' && (
+        <RegisterModal
+          isOpen={true}
+          onClose={closeAll}
+          onOpenCode={requestCall}
+          onOpenLogin={openLogin}
+          username={username}
+          setUsername={setUsername}
+          phoneDigits={phoneDigits}
+          setPhoneDigits={setPhoneDigits}
+          email={email}
+          setEmail={setEmail}
+          consentPersonal={consentPersonal}
+          setConsentPersonal={setConsentPersonal}
+          consentMarketing={consentMarketing}
+          setConsentMarketing={setConsentMarketing}
+          showPhoneUsed={showPhoneUsed}
+          loading={loading}
+          errorText={errorText}
+        />
+      )}
 
-      <CodeModal
-        isOpen={active === 'code'}
-        onClose={closeAll}
-        displayMessage={
-          sendMessage ||
-          'Введите последние 4 цифры номера, с которого мы позвонили вам'
-        }
-        codeDigits={codeDigits}
-        setCodeDigits={handleCodeDigitsChange}
-        onSubmit={() => submitCode(codeDigits.join(''))}
-        onResend={resendCall}
-        loading={loading}
-        errorText={errorText}
-        countdownText="00:30"
-      />
+      {active === 'code' && (
+        <CodeModal
+          isOpen={true}
+          onClose={closeAll}
+          displayMessage={
+            sendMessage ||
+            'Введите последние 4 цифры номера, с которого мы позвонили вам'
+          }
+          codeDigits={codeDigits}
+          setCodeDigits={handleCodeDigitsChange}
+          onSubmit={() => submitCode(codeDigits.join(''))}
+          onResend={resendCall}
+          loading={loading}
+          errorText={errorText}
+          countdownText="00:30"
+        />
+      )}
 
-      <SuccessModal
-        isOpen={active === 'success'}
-        onClose={() => { closeAll(); if (redirectAfterAuth.current) { router.push(redirectAfterAuth.current); redirectAfterAuth.current = null; } }}
-        username={username?.trim() || 'Имя'}
-        email={email?.trim() || ''}
-      />
+      {active === 'success' && (
+        <SuccessModal
+          isOpen={true}
+          onClose={() => { closeAll(); if (redirectAfterAuth.current) { router.push(redirectAfterAuth.current); redirectAfterAuth.current = null; } }}
+          username={username?.trim() || 'Имя'}
+          email={email?.trim() || ''}
+        />
+      )}
     </AuthModalsContext.Provider>
   );
 }

@@ -26,6 +26,8 @@ export default function BlogSlider({ slides }) {
                                 alt={article.title}
                                 width={400}
                                 height={300}
+                                priority={index === 0}
+                                loading={index === 0 ? undefined : 'lazy'}
                               />
                             ) : (
                               <div className="blog-card__no-image" />

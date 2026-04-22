@@ -32,7 +32,7 @@ function formatPrice(priceNum) {
   return { floor, decimal };
 }
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, priority = false }) {
   const router = useRouter();
   const { addToCart, items } = useCart();
   const { isFavorite, add, remove } = useFavorites();
@@ -141,6 +141,7 @@ export default function ProductCard({ product }) {
             src={mainImage}
             alt={title}
             className="product-card__img product-card__img--main"
+            loading={priority ? 'eager' : 'lazy'}
             style={{
               width: '100%',
               height: 'auto',
@@ -154,8 +155,10 @@ export default function ProductCard({ product }) {
           {hoverImage !== mainImage && (
             <img
               src={hoverImage}
-              alt={title}
+              alt=""
+              aria-hidden="true"
               className="product-card__img product-card__img--hover"
+              loading="lazy"
               style={{
                 width: '100%',
                 height: 'auto',
@@ -226,7 +229,7 @@ export default function ProductCard({ product }) {
               onClick={handleAddToCart}
               type="button"
             >
-              <img src="/assets/img/icons/shopping-cart.svg" alt="Добавить в корзину" />
+              <img src="/assets/img/icons/shopping-cart.svg" alt="" aria-hidden="true" />
               <p>В корзину</p>
             </button>
           )}

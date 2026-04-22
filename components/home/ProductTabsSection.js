@@ -140,9 +140,10 @@ export default function ProductTabsSection({
                             {slides.map((slideProducts, slideIndex) => (
                               <div key={slideIndex} className="swiper-slide">
                                 <div className="row g-4 swiper-slide-inner">
-                                  {slideProducts.map((product) => (
+                                  {slideProducts.map((product, productIndex) => (
                                     <ProductCard
                                       key={product.id}
+                                      priority={index === 0 && slideIndex === 0 && productIndex < 5}
                                       product={{
                                         id: product.id,
                                         attributes: {

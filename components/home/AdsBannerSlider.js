@@ -17,7 +17,7 @@ export default function AdsBannerSlider({ slides }) {
                       <div className="ads-banner-item">
                         {slideBanners.map(banner => (
                           <Link key={banner.id} href={banner.link}>
-                            <img src={banner.image} alt="Рекламный баннер" />
+                            <img src={banner.image} alt="Рекламный баннер" loading={index === 0 ? 'eager' : 'lazy'} />
                           </Link>
                         ))}
                       </div>

@@ -33,23 +33,27 @@ export default function PopularCategory({ categories = [] }) {
                 <div className="swiper-wrapper">
                   {slides.map((slideCategories, slideIndex) => (
                     <div key={slideIndex} className="swiper-slide popular-categories-item">
-                      {slideCategories.map((category) => (
-                        <div key={category.id} className="categories-item-card">
-                          <div className="categories-card-img">
-                            <Image
-                              src={category.image}
-                              alt={category.name}
-                              width={120}
-                              height={120}
-                              priority={slideIndex === 0}
-                              onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
-                              style={{ width: '100%', height: 'auto' }}
-                            />
+                      {slideCategories.map((category, itemIndex) => {
+                        const isPriority = slideIndex === 0 && itemIndex < 2;
+                        return (
+                          <div key={category.id} className="categories-item-card">
+                            <div className="categories-card-img">
+                              <Image
+                                src={category.image}
+                                alt={category.name}
+                                width={120}
+                                height={120}
+                                priority={isPriority}
+                                loading={isPriority ? undefined : 'lazy'}
+                                onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                                style={{ width: '100%', height: 'auto' }}
+                              />
+                            </div>
+                            <p>{category.name}</p>
+                            <Link href={category.url} />
                           </div>
-                          <p>{category.name}</p>
-                          <Link href={category.url} />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
