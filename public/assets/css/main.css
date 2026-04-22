@@ -2447,7 +2447,6 @@ main {
     max-width: 256px;
     background-color: white;
     border-radius: 0;
-    height: fit-content;
 }
 
 .filter-header {
@@ -8395,15 +8394,10 @@ main {
     color: #0058a3;
 }
 
-.filter-aside::-webkit-scrollbar {
-    display: none;
-}
 
 .filter-aside {
     scrollbar-width: none;
-    /* Firefox */
-    -ms-overflow-style: none;
-    /* IE */
+    -ms-overflow-style: none; 
 }
 
 /* components/catalog/SearchNotFound.css */

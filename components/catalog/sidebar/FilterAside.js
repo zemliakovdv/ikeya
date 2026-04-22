@@ -46,9 +46,7 @@ export default function FilterAside({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const priceRange = useMemo(() => extractPriceRange(availableFilters), [availableFilters]);
-
-  const normalizedAvailableFilters = useMemo(() => {
+  const priceRange = useMemo(() => extractPriceRange(availableFilters), [availableFilters]);  const normalizedAvailableFilters = useMemo(() => {
     if (!Array.isArray(availableFilters)) return [];
     return availableFilters
       .filter((f) => f && f.parameter && Array.isArray(f.values) && f.values.length > 0)
@@ -196,9 +194,9 @@ export default function FilterAside({
       className="filter-aside"
       style={{
         position: 'sticky',
-        top: '68px',
+        top: '300px',
         alignSelf: 'flex-start',
-        maxHeight: 'calc(100vh - 68px)',
+        maxHeight: 'calc(100vh - 300px)',
         overflowY: 'auto',
         overflowX: 'hidden',
       }}
