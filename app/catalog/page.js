@@ -7,9 +7,8 @@ import CategoriesGrid from '@/components/catalog/CategoriesGrid';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
-import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
+import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
 import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
-import Pagination from '@/components/catalog/Pagination';
 
 export const metadata = {
   title: 'Каталог товаров — мебель и товары для дома | IKEYA',
@@ -72,23 +71,17 @@ export default async function CatalogPage({ searchParams }) {
               </Suspense>
               <FilterChips filterLabels={{}} filterTitles={{}} />
               <Suspense fallback={<div>Загрузка товаров...</div>}>
-                <InfiniteProductGrid
-                  key={`catalog-${currentPage}-${productsQueryString}`}
+                <ProductGridWithPagination
                   initialProducts={products}
                   categoryId={null}
                   totalPages={totalPages}
                   queryString={productsQueryString}
                   initialPage={currentPage}
                   basePath="/catalog"
+                  currentPage={currentPage}
+                  totalItems={meta.total || 0}
                 />
               </Suspense>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={meta.total || 0}
-                basePath="/catalog"
-                queryString={productsQueryString}
-              />
             </div>
           </div>
         </div>

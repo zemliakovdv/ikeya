@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ProductCard from './ProductCard';
 
-// Относительный путь — работает и на локалке и на сервере без Mixed Content
 const API_BASE_URL = '/api/v1';
 
 const sanitize = (arr) => (arr || []).filter(p => p && p.attributes);
@@ -13,8 +12,9 @@ export default function InfiniteProductGrid({
   categoryId,
   totalPages,
   queryString = '',
-  initialPage = 1,   // какую страницу сервер уже отдал
-  basePath = '',     // нужен для replaceState
+  initialPage = 1,
+  basePath = '',
+  onLoadedPagesChange, // колбэк → сообщаем родителю сколько страниц подгружено
 }) {
 
   const [products, setProducts] = useState(sanitize(initialProducts));
@@ -26,8 +26,8 @@ export default function InfiniteProductGrid({
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
   const pageRef = useRef(initialPage + 1);
-
-  const observerRef = useRef(null);
+  const observerRef = useRef(null);   // IntersectionObserver instance
+  const triggerRef = useRef(null);    // DOM-элемент триггера
 
   // Сбрасываем состояние при смене фильтров/категории
   useEffect(() => {
@@ -36,9 +36,9 @@ export default function InfiniteProductGrid({
     const more = totalPages ? (initialPage + 1) <= totalPages : (initialProducts?.length || 0) >= 20;
     setHasMore(more);
     hasMoreRef.current = more;
+    if (onLoadedPagesChange) onLoadedPagesChange(0);
   }, [initialProducts, totalPages, initialPage]);
 
-  // Обновляем URL при скролле — без перезагрузки страницы
   const updateUrl = useCallback((page) => {
     if (typeof window === 'undefined') return;
     const params = new URLSearchParams(queryString);
@@ -52,10 +52,6 @@ export default function InfiniteProductGrid({
     window.history.replaceState(null, '', newUrl);
   }, [queryString, basePath]);
 
-  // Клиентская фильтрация по цене.
-  // Нужна потому что бэк игнорирует min_price/max_price — это known_issue.
-  // При сортировке "expensive" бэк отдаёт дорогие товары первыми,
-  // и страницы могут быть полностью пустыми после фильтрации.
   const filterByPrice = useCallback((items) => {
     const params = new URLSearchParams(queryString);
     const hasMin = params.has('min_price');
@@ -82,10 +78,6 @@ export default function InfiniteProductGrid({
     loadingRef.current = true;
     setLoading(true);
 
-    // Максимум попыток пропустить пустые страницы при активном фильтре цены.
-    // Например при сортировке "expensive" + фильтр до 100 BYN —
-    // бэк отдаёт дорогие товары, фронт их режет, страница пустая.
-    // Пробуем следующие страницы пока не найдём товары или не закончатся попытки.
     const MAX_SKIP_ATTEMPTS = 5;
     let attempts = 0;
     let foundProducts = [];
@@ -114,10 +106,8 @@ export default function InfiniteProductGrid({
         const serverTotalPages = Number(lastMeta.total_pages) || Math.ceil((Number(lastMeta.total) || 0) / 20);
         const currentPageNum = Number(lastMeta.page ?? lastMeta.current_page ?? currentPage);
 
-        // Двигаем указатель вперёд до применения фильтра
         pageRef.current = currentPage + 1;
 
-        // Применяем клиентскую фильтрацию по цене
         const filtered = filterByPrice(rawProducts);
 
         if (filtered.length > 0) {
@@ -125,7 +115,6 @@ export default function InfiniteProductGrid({
           break;
         }
 
-        // Страница пустая после фильтрации — проверяем есть ли ещё страницы
         if (currentPageNum >= serverTotalPages) {
           hasMoreRef.current = false;
           setHasMore(false);
@@ -146,8 +135,11 @@ export default function InfiniteProductGrid({
         hasMoreRef.current = more;
         setHasMore(more);
         updateUrl(lastPage);
+
+        if (onLoadedPagesChange) {
+          onLoadedPagesChange(lastPage - initialPage);
+        }
       } else {
-        // Исчерпали MAX_SKIP_ATTEMPTS — товары в диапазоне закончились
         hasMoreRef.current = false;
         setHasMore(false);
       }
@@ -159,22 +151,46 @@ export default function InfiniteProductGrid({
       loadingRef.current = false;
       setLoading(false);
     }
-  }, [categoryId, queryString, updateUrl, filterByPrice]);
+  }, [categoryId, queryString, updateUrl, filterByPrice, onLoadedPagesChange, initialPage]);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
+  // Callback ref — вызывается при каждом монтировании/размонтировании триггера.
+  // Это решает проблему когда hasMore меняется и триггер пересоздаётся —
+  // observer автоматически переподключается к новому DOM-элементу.
+  const setTriggerRef = useCallback((node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    triggerRef.current = node;
+    if (!node) return;
+
+    observerRef.current = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           loadMore();
         }
       },
-      { threshold: 0.1 }
+      {
+        threshold: 0,
+        rootMargin: '200px', // грузим за 200px до появления триггера
+      }
     );
 
-    if (observerRef.current) observer.observe(observerRef.current);
+    observerRef.current.observe(node);
 
-    return () => observer.disconnect();
+    // Немедленная проверка — вдруг элемент уже виден при первом рендере
+    const rect = node.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 200) {
+      loadMore();
+    }
   }, [loadMore]);
+
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, []);
 
   return (
     <>
@@ -186,7 +202,7 @@ export default function InfiniteProductGrid({
 
       {hasMore && (
         <div
-          ref={observerRef}
+          ref={setTriggerRef}
           className="loading-trigger"
           style={{
             height: '100px',

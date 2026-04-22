@@ -4,8 +4,7 @@ import ChildCategoriesSlider from '@/components/catalog/ChildCategoriesSlider';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductSort from '@/components/catalog/ProductSort';
-import InfiniteProductGrid from '@/components/catalog/products/InfiniteProductGrid';
-import Pagination from '@/components/catalog/Pagination';
+import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
 import { getCachedCategoriesTree, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
 import {
   flattenCategoriesTree,
@@ -158,21 +157,15 @@ export default async function CategoryPage({ params, searchParams }) {
                 <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
                 {initialProducts.length > 0 ? (
                   <>
-                    <InfiniteProductGrid
-                      key={`${currentCategory.id}-${currentPage}-${productsQueryString}`}
+                  <ProductGridWithPagination
                       initialProducts={initialProducts}
                       categoryId={currentCategory.id}
                       totalPages={totalPages}
                       queryString={productsQueryString}
                       initialPage={currentPage}
                       basePath={basePath}
-                    />
-                    <Pagination
                       currentPage={currentPage}
-                      totalPages={totalPages}
                       totalItems={meta.total || 0}
-                      basePath={basePath}
-                      queryString={productsQueryString}
                     />
                   </>
                 ) : (
