@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getProfile, updateProfile } from '@/lib/api/account';
 
 import EditPersonalDataModal from './modals/EditPersonalDataModal';
-import DeliveryPickupModal from './modals/DeliveryPickupModal';
+import DeliveryModal from '@/components/delivery/modal/DeliveryModal';
 import EditPhoneModal from './modals/EditPhoneModal';
 import EditEmailModal from './modals/EditEmailModal';
 import EditPassportModal from './modals/EditPassportModal';
@@ -506,9 +506,11 @@ export default function PersonalData() {
         />
       )}
       {modal === 'address' && (
-        <DeliveryPickupModal
+        <DeliveryModal
+          initialTab="pickup"
           onClose={closeModal}
-          onSelect={(point) => { handleAddAddress(point); closeModal(); }}
+          onSelectPvz={(point) => { handleAddAddress(point); closeModal(); }}
+          onSelectAddr={(addr) => { handleAddAddress(addr); closeModal(); }}
         />
       )}
       {modal === 'passport' && (

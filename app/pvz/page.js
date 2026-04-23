@@ -1,7 +1,7 @@
 // app/pvz/page.js
 
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
-import PvzClient from '@/components/pvz/PvzClient';
+import PvzPageClient from '@/components/delivery/PvzPageClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +25,7 @@ export default function PvzPage() {
             <div className="col-12">
               <div className="pvz-map">
                 <h1>Пункты выдачи заказов IKEYA</h1>
-                <PvzClient />
+                <PvzPageClient />
               </div>
             </div>
           </div>
