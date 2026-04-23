@@ -6195,6 +6195,13 @@ main {
     padding-bottom: 0;
 }
 
+.pickup-section .section-title {
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 133%;
+    color: #181818;
+}
+
 .zakaz-inner .checkout-section .section-header h2 {
     font-weight: 600;
     font-size: 18px;
@@ -6433,7 +6440,20 @@ main {
     margin-top: 16px;
 }
 
+.delivery-info-block .alert-info {
+    background: #fff;
+    align-items: center;
+}
+
 .pickup-section .alert-info span {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #181818;
+}
+
+.delivery-info-block .alert-info span {
     font-weight: 400;
     font-size: 14px;
     line-height: 143%;
@@ -8397,7 +8417,7 @@ main {
 
 .filter-aside {
     scrollbar-width: none;
-    -ms-overflow-style: none; 
+    -ms-overflow-style: none;
 }
 
 /* components/catalog/SearchNotFound.css */
