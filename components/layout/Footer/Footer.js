@@ -13,7 +13,7 @@ const LEGAL_TEXT = [
   'Номера городских телефонов уполномоченных по защите прав потребителей: +375 (17) 270-35-26 – Минский районный исполнительный комитет, +375 (17) 328-53-54 – главное управление торговли и услуг Миноблисполкома',
 ];
 
-export default function Footer() {
+export default function Footer({ categoryLinks = [] }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [savedPrefs, setSavedPrefs] = useState(null);
 
@@ -38,6 +38,15 @@ export default function Footer() {
     setModalOpen(true);
   };
 
+  const catalogList = (
+    <ul>
+      {categoryLinks.map((cat) => (
+        <li key={cat.href}><Link href={cat.href}>{cat.name}</Link></li>
+      ))}
+      <li><a href="/catalog">Все категории</a></li>
+    </ul>
+  );
+
   return (
     <footer>
 
@@ -49,9 +58,9 @@ export default function Footer() {
               <div className="footer-inner">
                 <div className="footer-top">
                   <div className="footer-links">
-                    <Link href="#" className="footer-logo">
+                    <a href="/" className="footer-logo">
                       <img src="/assets/img/logo.svg" alt="Логотип" />
-                    </Link>
+                    </a>
                     <p>Мы в социальных сетях:</p>
                     <div className="footer-links__social">
                       <a href="#"><img src="/assets/img/icons/tg.svg" alt="Telegram" /></a>
@@ -63,36 +72,29 @@ export default function Footer() {
                     <div className="footer-navigation-list">
                       <h5>Всё о IKEYA</h5>
                       <ul>
-                        <li><Link href="/about">О компании</Link></li>
-                        <li><Link href="/blog">Советы и идеи</Link></li>
-                        <li><Link href="/pvz">Пункты выдачи</Link></li>
-                        <li><Link href="#">Контакты</Link></li>
+                        <li><a href="/about">О компании</a></li>
+                        <li><a href="/blog">Советы и идеи</a></li>
+                        <li><a href="/pvz">Пункты выдачи</a></li>
+                        <li><a href="#">Контакты</a></li>
                       </ul>
                     </div>
                     <div className="footer-navigation-list">
                       <h5>Каталог</h5>
-                      <ul>
-                        <li><Link href="#">Коллекции</Link></li>
-                        <li><Link href="#">Диваны и кресла</Link></li>
-                        <li><Link href="#">Текстиль</Link></li>
-                        <li><Link href="#">Украшения</Link></li>
-                        <li><Link href="#">Освещение</Link></li>
-                        <li><Link href="/catalog">Все категории</Link></li>
-                      </ul>
+                      {catalogList}
                     </div>
                     <div className="footer-navigation-list">
                       <h5>Покупателям</h5>
                       <ul>
-                        <li><Link href="#">Как сделать заказ</Link></li>
-                        <li><Link href="#">Доставка</Link></li>
-                        <li><Link href="#">Оплата</Link></li>
-                        <li><Link href="#">Правовая информация</Link></li>
+                        <li><a href="/help/how-to-order">Как сделать заказ</a></li>
+                        <li><a href="/help/delivery">Доставка</a></li>
+                        <li><a href="/help/payment">Оплата</a></li>
+                        <li><a href="#">Правовая информация</a></li>
                         <li>
                           <button type="button" className="footer-cookie-btn" onClick={openCookieModal}>
                             Настройка cookie
                           </button>
                         </li>
-                        <li><Link href="#">Политика конфиденциальности</Link></li>
+                        <li><a href="#">Политика конфиденциальности</a></li>
                       </ul>
                     </div>
                   </div>
@@ -129,10 +131,10 @@ export default function Footer() {
                           <div id="footerCollapseOne" className="accordion-collapse collapse" data-bs-parent="#footerAccordion">
                             <div className="accordion-body">
                               <ul>
-                                <li><Link href="/about">О компании</Link></li>
-                                <li><Link href="/blog">Советы и идеи</Link></li>
-                                <li><Link href="/pvz">Пункты выдачи</Link></li>
-                                <li><Link href="#">Контакты</Link></li>
+                                <li><a href="/about">О компании</a></li>
+                                <li><a href="/blog">Советы и идеи</a></li>
+                                <li><a href="/pvz">Пункты выдачи</a></li>
+                                <li><a href="#">Контакты</a></li>
                               </ul>
                             </div>
                           </div>
@@ -145,14 +147,7 @@ export default function Footer() {
                           </h2>
                           <div id="footerCollapseTwo" className="accordion-collapse collapse" data-bs-parent="#footerAccordion">
                             <div className="accordion-body">
-                              <ul>
-                                <li><Link href="#">Коллекции</Link></li>
-                                <li><Link href="#">Диваны и кресла</Link></li>
-                                <li><Link href="#">Текстиль</Link></li>
-                                <li><Link href="#">Украшения</Link></li>
-                                <li><Link href="#">Освещение</Link></li>
-                                <li><Link href="/catalog">Все категории</Link></li>
-                              </ul>
+                              {catalogList}
                             </div>
                           </div>
                         </div>
@@ -165,16 +160,16 @@ export default function Footer() {
                           <div id="footerCollapseThree" className="accordion-collapse collapse" data-bs-parent="#footerAccordion">
                             <div className="accordion-body">
                               <ul>
-                                <li><Link href="#">Как сделать заказ</Link></li>
-                                <li><Link href="#">Доставка</Link></li>
-                                <li><Link href="#">Оплата</Link></li>
-                                <li><Link href="#">Правовая информация</Link></li>
+                                <li><a href="/help/how-to-order">Как сделать заказ</a></li>
+                                <li><a href="/help/delivery">Доставка</a></li>
+                                <li><a href="/help/payment">Оплата</a></li>
+                                <li><a href="#">Правовая информация</a></li>
                                 <li>
                                   <button type="button" className="footer-cookie-btn" onClick={openCookieModal}>
                                     Настройка cookie
                                   </button>
                                 </li>
-                                <li><Link href="#">Политика конфиденциальности</Link></li>
+                                <li><a href="#">Политика конфиденциальности</a></li>
                               </ul>
                             </div>
                           </div>

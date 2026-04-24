@@ -140,11 +140,11 @@ export default function Header() {
               <div className="header-top-inner">
                 <div className="header-top-menu">
                   <ul>
-                    <li><Link href="/about">О компании</Link></li>
-                    <li><Link href="#">Доставка</Link></li>
-                    <li><Link href="#">Оплата</Link></li>
-                    <li><Link href="/pvz">Пункты выдачи</Link></li>
-                    <li><Link href="/partner">Сотрудничество</Link></li>
+                    <li><a href="/about">О компании</a></li>
+                    <li><a href="/help/delivery">Доставка</a></li>
+                    <li><a href="/help/payment">Оплата</a></li>
+                    <li><a href="/pvz">Пункты выдачи</a></li>
+                    <li><a href="/partner">Сотрудничество</a></li>
                   </ul>
                 </div>
                 <div className="header-top-phone header-top-phone--desktop">
@@ -265,7 +265,7 @@ export default function Header() {
                   </svg>
                 </div>
                 <div className="profile-header__info">
-                  <h6 className="profile-name">{user?.first_name || 'Профиль'}</h6>
+                  <h6 className="profile-name">{user?.first_name || user?.username || 'Профиль'}</h6>
                   <Link href="/profile/personal-data/" className="profile-details-link" onClick={() => setIsProfileOpen(false)}>
                     Личные данные
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">

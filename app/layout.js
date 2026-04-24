@@ -1,6 +1,6 @@
 // app/layout.js
 import Header from '@/components/layout/Header/Header'
-import Footer from '@/components/layout/Footer/Footer'
+import Footer from '@/components/layout/Footer/FooterServer'
 import ClientScripts from '@/components/ClientScripts'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'

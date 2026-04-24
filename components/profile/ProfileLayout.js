@@ -7,9 +7,10 @@ import Breadcrumbs from './Breadcrumbs';
 import ProfileSidebar from './ProfileSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
+import { getProfile } from '@/lib/api/account';
 
 export default function ProfileLayout({ children, breadcrumbs, mainClassName = 'zakazi' }) {
-  const { isAuth, isHydrated } = useAuth();
+  const { isAuth, isHydrated, user, setUser } = useAuth();
   const { openLogin } = useAuthModals();
   const router = useRouter();
 
@@ -21,7 +22,18 @@ export default function ProfileLayout({ children, breadcrumbs, mainClassName = '
     }
   }, [isHydrated, isAuth]);
 
-  // Пока не прошла гидрация — ничего не рендерим (избегаем flash контента)
+  // Загружаем first_name из профиля один раз — если его ещё нет в контексте
+  useEffect(() => {
+    if (!isHydrated || !isAuth || user?.first_name) return;
+    getProfile()
+      .then(data => {
+        if (data?.first_name) {
+          setUser({ ...user, first_name: data.first_name });
+        }
+      })
+      .catch(() => {});
+  }, [isHydrated, isAuth]);
+
   if (!isHydrated || !isAuth) return null;
 
   return (

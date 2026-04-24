@@ -5532,6 +5532,18 @@ main {
     letter-spacing: 0.01em;
     text-align: center;
     color: #fff;
+    margin-bottom: 16px;
+}
+
+.cart-summary__notice {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    color: #181818;
+}
+
+.cart-summary__notice a{
+    color: #0058A3;;
 }
 
 
@@ -5568,7 +5580,7 @@ main {
     color: #181818;
 }
 
-.cart-summary__note button {
+.cart-summary__note a {
     font-weight: 400;
     font-size: 14px;
     line-height: 143%;
@@ -6916,7 +6928,8 @@ main {
     flex: 1;
 }
 
-.detail-title, .detai-delivery {
+.detail-title,
+.detai-delivery {
     font-weight: 600;
     font-size: 16px;
     line-height: 150%;
@@ -6967,7 +6980,8 @@ main {
     border-bottom: 1px solid #eee;
 }
 
-.total-amount .detail-price, .detail-delivery .detail-price {
+.total-amount .detail-price,
+.detail-delivery .detail-price {
     font-weight: 600;
     font-size: 16px;
     line-height: 150%;
@@ -6977,7 +6991,8 @@ main {
     padding-left: 40px;
 }
 
-.total-amount .detail-subtitle, .detail-delivery .detail-subtitle {
+.total-amount .detail-subtitle,
+.detail-delivery .detail-subtitle {
     padding-left: 40px;
 }
 

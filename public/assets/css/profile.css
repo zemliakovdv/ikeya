@@ -256,15 +256,6 @@
         margin-bottom: 0;
     }
 
-    .profile-content .order-card {
-        background: #fafafa;
-        border-radius: 8px;
-        padding: 12px;
-        display: flex;
-        gap: 12px;
-        align-items: center;
-        cursor: pointer;
-    }
 
     .profile-warning-banner {
         display: flex;
@@ -432,6 +423,18 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
+    .zakazi .order-card--dashboard {
+        background: #fafafa;
+        border-radius: 8px;
+        padding: 12px;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: none;
+        margin-bottom: 0;
+    }
+
     .zakazi .order-header {
         display: flex;
         justify-content: space-between;
@@ -457,6 +460,13 @@
         font-size: 18px;
         line-height: 133%;
         color: #181818;
+    }
+
+    .order-card--dashboard .order-title {
+        font-size: 14px;
+        line-height: 143%;
+        letter-spacing: 0.01em;
+        margin-bottom: 8px;
     }
 
     .zakazi .order-subtitle {

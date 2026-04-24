@@ -1,70 +1,221 @@
 // components/partner/DesignerClubForm.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+
+const API_BASE = 'https://test.ikeya.by';
 
 const CITIES = ['Минск', 'Брест', 'Витебск', 'Гомель', 'Гродно', 'Могилёв'];
-const DESIGNER_TYPES = ['Частный дизайнер', 'Дизайнерское агентство'];
+const DESIGNER_TYPES = ['Частный дизайнер', 'Юридическое лицо', 'Индивидуальный предприниматель'];
+
+function CustomSelect({ options, value, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    function onDocClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, []);
+
+  return (
+    <div className={`custom-select${isOpen ? ' custom-select--open' : ''}`} ref={ref}>
+      <button
+        type="button"
+        className="custom-select__trigger"
+        onClick={() => setIsOpen(v => !v)}
+      >
+        <span>{value}</span>
+        <svg width="24" height="24" viewBox="0 0 16 16" fill="none">
+          <path d="M8 10.22C7.25 10.22 5.47 8.19 4.1 6.5C3.95 6.31 3.97 6.03 4.17 5.87C4.36 5.72 4.64 5.75 4.79 5.94C5.99 7.43 7.53 9.1 8 9.32C8.47 9.1 10.01 7.43 11.21 5.94C11.36 5.75 11.64 5.72 11.83 5.87C12.03 6.03 12.05 6.31 11.9 6.5C10.53 8.2 8.74 10.22 8 10.22Z" fill="#757575" />
+        </svg>
+      </button>
+      {isOpen && (
+        <ul className="custom-select__dropdown">
+          {options.map(option => (
+            <li
+              key={option}
+              className={`custom-select__option${option === value ? ' custom-select__option--active' : ''}`}
+              onClick={() => { onChange(option); setIsOpen(false); }}
+            >
+              {option}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function validate(form) {
+  const errors = {};
+  if (!form.firstName.trim()) errors.firstName = 'Введите имя';
+  if (!form.lastName.trim()) errors.lastName = 'Введите фамилию';
+  if (!form.comment.trim()) errors.comment = 'Введите комментарий';
+  if (!form.consentPersonal) errors.consentPersonal = 'Необходимо согласие';
+
+  const cyrillicPattern = /[а-яёА-ЯЁ]/;
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!form.email.trim()) {
+    errors.email = 'Введите email';
+  } else if (cyrillicPattern.test(form.email)) {
+    errors.email = 'Email не должен содержать кириллицу';
+  } else if (!emailPattern.test(form.email)) {
+    errors.email = 'Введите корректный email';
+  }
+
+  if (!form.phone.trim()) {
+    errors.phone = 'Введите телефон';
+  } else if (form.phone.length !== 9) {
+    errors.phone = 'Введите 9 цифр';
+  }
+
+  return errors;
+}
 
 export default function DesignerClubForm() {
   const [form, setForm] = useState({
-    city: '',
-    designerType: '',
+    city: CITIES[0],
+    designerType: DESIGNER_TYPES[0],
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
     comment: '',
-    consentPersonal: false,
-    consentEmail: false,
+    consentPersonal: true,
+    consentEmail: true,
   });
 
-  const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success');
 
-  const handleSubmit = (e) => {
+  const set = (key, val) => {
+    setForm(p => ({ ...p, [key]: val }));
+    setErrors(p => ({ ...p, [key]: undefined }));
+  };
+
+  const show = (type, msg) => {
+    setToastType(type);
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: подключить эндпоинт
+    const validationErrors = validate(form);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/cooperation_requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: form.firstName.trim(),
+          last_name: form.lastName.trim(),
+          email: form.email.trim(),
+          phone: '+375' + form.phone,
+          city: form.city,
+          cooperation_type: form.designerType,
+          comment: form.comment.trim(),
+          personal_data_consent: form.consentPersonal,
+          marketing_email_consent: form.consentEmail,
+        }),
+      });
+
+      if (res.status === 201) {
+        show('success', 'Заявка успешно отправлена');
+        setForm({
+          city: CITIES[0],
+          designerType: DESIGNER_TYPES[0],
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: '',
+          comment: '',
+          consentPersonal: true,
+          consentEmail: true,
+        });
+        setErrors({});
+      } else {
+        show('error', 'Ошибка при отправке заявки. Попробуйте позже');
+      }
+    } catch {
+      show('error', 'Ошибка соединения. Попробуйте позже');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form className="designer-club-form" onSubmit={handleSubmit} noValidate>
 
+      {/* Toast */}
+      <div
+        className={`toast promokod-toast ${showToast ? 'show' : ''}`}
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div className="d-flex">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d={toastType === 'success'
+                ? 'M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM10.5 16.5L6.5 12.5L7.91 11.09L10.5 13.67L16.09 8.08L17.5 9.5L10.5 16.5Z'
+                : 'M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z'
+              }
+              fill={toastType === 'success' ? '#0058A3' : '#B71C1C'}
+            />
+          </svg>
+          <div className="toast-body">{toastMessage}</div>
+          <button type="button" className="btn-close" onClick={() => setShowToast(false)} aria-label="Закрыть" />
+        </div>
+      </div>
+
       {/* Город / Тип дизайнера */}
       <div className="designer-form__row">
         <div className="designer-form__group">
-          <select className="form-select" value={form.city} onChange={e => set('city', e.target.value)}>
-            <option value="" disabled>Минск</option>
-            {CITIES.map(city => <option key={city} value={city}>{city}</option>)}
-          </select>
+          <CustomSelect options={CITIES} value={form.city} onChange={val => set('city', val)} />
         </div>
         <div className="designer-form__group">
-          <select className="form-select" value={form.designerType} onChange={e => set('designerType', e.target.value)}>
-            <option value="" disabled>Частный дизайнер</option>
-            {DESIGNER_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-          </select>
+          <CustomSelect options={DESIGNER_TYPES} value={form.designerType} onChange={val => set('designerType', val)} />
         </div>
       </div>
 
       {/* Имя / Фамилия */}
       <div className="designer-form__row">
         <div className="designer-form__group">
-          <input type="text" className="form-control" placeholder="Имя"
+          <input type="text" className={`form-control${errors.firstName ? ' is-invalid' : ''}`} placeholder="Имя"
             value={form.firstName} onChange={e => set('firstName', e.target.value)} />
+          {errors.firstName && <div className="designer-form__error">{errors.firstName}</div>}
         </div>
         <div className="designer-form__group">
-          <input type="text" className="form-control" placeholder="Фамилия"
+          <input type="text" className={`form-control${errors.lastName ? ' is-invalid' : ''}`} placeholder="Фамилия"
             value={form.lastName} onChange={e => set('lastName', e.target.value)} />
+          {errors.lastName && <div className="designer-form__error">{errors.lastName}</div>}
         </div>
       </div>
 
       {/* Email / Телефон */}
       <div className="designer-form__row">
         <div className="designer-form__group">
-          <input type="email" className="form-control" placeholder="Email"
+          <input type="email" className={`form-control${errors.email ? ' is-invalid' : ''}`} placeholder="Email"
             value={form.email} onChange={e => set('email', e.target.value)} />
+          {errors.email && <div className="designer-form__error">{errors.email}</div>}
         </div>
         <div className="designer-form__group designer-form__phone">
-          <div className="phone-prefix">
+          <div className={`phone-prefix${errors.phone ? ' is-invalid' : ''}`}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20Z" fill="#EAEAEA" />
               <path d="M4.13004 9.28012L3.04004 7.31012L4.13004 5.37012L5.22004 7.31012L4.13004 9.28012Z" fill="#A2001D" />
@@ -74,20 +225,19 @@ export default function DesignerClubForm() {
               <path d="M19.38 13.48C19.79 12.37 20 11.19 20 10C20 4.48 15.52 0 9.99997 0C8.60997 0 7.28997 0.28 6.08997 0.79V13.48H19.38Z" fill="#A2001D" />
             </svg>
             <span>+375</span>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-              <path d="M8 10.22C7.25 10.22 5.47 8.19 4.1 6.5C3.95 6.31 3.97 6.03 4.17 5.87C4.36 5.72 4.64 5.75 4.79 5.94C5.99 7.43 7.53 9.1 8 9.32C8.47 9.1 10.01 7.43 11.21 5.94C11.36 5.75 11.64 5.72 11.83 5.87C12.03 6.03 12.05 6.31 11.9 6.5C10.53 8.2 8.74 10.22 8 10.22Z" fill="#757575" />
-            </svg>
           </div>
-          <input type="tel" className="form-control" placeholder="00 000 00 00" maxLength={9}
+          <input type="tel" className={`form-control${errors.phone ? ' is-invalid' : ''}`} placeholder="00 000 00 00" maxLength={9}
             value={form.phone} onChange={e => set('phone', e.target.value.replace(/\D/g, ''))} />
+          {errors.phone && <div className="designer-form__error">{errors.phone}</div>}
         </div>
       </div>
 
       {/* Комментарий */}
       <div className="designer-form__row designer-form__comment" style={{ gridTemplateColumns: '1fr' }}>
         <div className="designer-form__group">
-          <textarea className="form-control" placeholder="Комментарий"
+          <textarea className={`form-control${errors.comment ? ' is-invalid' : ''}`} placeholder="Комментарий"
             value={form.comment} onChange={e => set('comment', e.target.value)} />
+          {errors.comment && <div className="designer-form__error">{errors.comment}</div>}
         </div>
       </div>
 
@@ -98,6 +248,7 @@ export default function DesignerClubForm() {
             onChange={e => set('consentPersonal', e.target.checked)} />
           <span>Я ознакомлен(а) и соглашаюсь с <a href="#">условиями политики обработки персональных данных</a></span>
         </label>
+        {errors.consentPersonal && <div className="designer-form__error">{errors.consentPersonal}</div>}
         <label className="consent-item">
           <input type="checkbox" checked={form.consentEmail}
             onChange={e => set('consentEmail', e.target.checked)} />
@@ -106,7 +257,9 @@ export default function DesignerClubForm() {
       </div>
 
       {/* Кнопка */}
-      <button type="submit" className="designer-form__submit">Вступить в клуб</button>
+      <button type="submit" className="designer-form__submit" disabled={loading}>
+        {loading ? 'Отправка...' : 'Вступить в клуб'}
+      </button>
 
     </form>
   );

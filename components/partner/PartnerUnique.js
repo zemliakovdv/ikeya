@@ -12,7 +12,7 @@ export default function PartnerUnique() {
                   Создавайте уникальные интерьеры <span>вместе с нами!</span>
                 </h2>
                 <p>
-                  С ikeya.by вы получаете доступ к полному ассортименту IKEA в Европе и
+                  С <strong>ikeya.by</strong> вы получаете доступ к полному ассортименту IKEA в Европе и
                   дополнительные преимущества, которые сделают вашу работу ещё более выгодной.
                 </p>
                 <a href="#vstupit_v_klub" className="the_blue_button">Начать создавать!</a>

@@ -204,6 +204,7 @@
   font-weight: 500;
   color: #757575;
   border-bottom: 1px solid #E0E0E0;
+  min-width: 360px;
 }
 
 .help-table td {
@@ -212,6 +213,11 @@
   vertical-align: top;
   color: #424242;
   line-height: 1.5;
+  min-width: 360px;
+}
+
+.help-table tr:last-child td{
+  border-bottom: none;
 }
 
 .help-table td strong {
@@ -220,15 +226,6 @@
   line-height: 150%;
   letter-spacing: 0.01em;
   color: #616161;
-}
-
-.help-table td:first-child {
-  width: 220px;
-}
-
-.help-table td:last-child {
-  width: 160px;
-  white-space: nowrap;
 }
 
 .help-table ul {
@@ -275,6 +272,15 @@
 }
 
 .help-article__lead a {
+  color: #0058A3;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.01em;
+}
+
+.help-article_blue {
   color: #0058A3;
   text-decoration: none;
   font-weight: 600;
@@ -360,6 +366,7 @@
   height: 140px;
   max-height: 140px;
   object-fit: contain;
+  margin-bottom: 8px;
 }
 
 .help-card--horizontal .help-card__img img {
@@ -391,6 +398,10 @@
 
 .help-card--simple .help-card__title {
   font-weight: 400;
+}
+
+.help-article .help-card--horizontal .help-card__desc{
+    text-align: left;
 }
 
 /* ========== ПОДДЕРЖКА ========== */
@@ -482,8 +493,7 @@
 
 .help-card--horizontal {
   display: flex;
-  align-items: flex-start;
-  text-align: left;
+  align-items: center;
 }
 
 .help-lists__requisits li {
@@ -505,5 +515,19 @@
 }
 
 .help-article .help-section__rules {
+  margin-bottom: 0;
+}
+
+.help-content__grey {
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: #757575;
+}
+
+.help-lists__poriad li{
+  margin-bottom: 16px;
+}
+
+.help-lists__poriad li:last-child{
   margin-bottom: 0;
 }

@@ -32,7 +32,7 @@ export default function ProfileSidebar() {
           />
         </div>
         <div>
-          <div className="user-name">{user?.first_name || 'Профиль'}</div>
+          <div className="user-name">{user?.first_name || user?.username || 'Профиль'}</div>
           <div className="user-link">
             Личные данные
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -96,7 +96,11 @@ export default function ProfileSidebar() {
         >
           Возвраты
         </div>
-        <div className="nav-item" style={{ cursor: 'default' }}>
+        <div
+          className={`nav-item ${isActive('/help/how-to-order') ? 'active' : ''}`}
+          onClick={() => router.push('/help/how-to-order')}
+          style={{ cursor: 'pointer' }}
+        >
           Помощь
         </div>
         <div

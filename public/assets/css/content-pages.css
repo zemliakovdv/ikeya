@@ -455,6 +455,8 @@
     border-top-left-radius: 32px;
     border-bottom-right-radius: 32px;
     padding: 24px;
+    width: 33%;
+    max-width: 478px;
 }
 
 .tror-list-item svg {
@@ -468,7 +470,7 @@
     letter-spacing: 0.03em;
     color: #181818;
     margin-bottom: 0;
-    max-width: 376px;
+    min-height: 48px;
 }
 
 .tror-bottom {
@@ -498,7 +500,7 @@
 
 .vygoda-list-card {
     width: 33%;
-    max-width: 434px;
+    max-width: 489px;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
     text-align: center;
@@ -590,7 +592,7 @@
 
 .shag-list-card {
     width: 33%;
-    max-width: 429px;
+    max-width: 484px;
     background: #f5f5f5;
     border-top-left-radius: 56px;
     border-bottom-right-radius: 56px;
@@ -613,7 +615,6 @@
     line-height: 150%;
     letter-spacing: 0.03em;
     color: #181818;
-    min-height: 72px;
 }
 
 .shag-list-card a {
@@ -668,6 +669,8 @@
     transition: border-color 0.2s;
     background-color: #fff;
     width: 100%;
+    padding: 16px !important;
+    cursor: pointer;
 }
 
 .designer-form__group .form-control:focus,
@@ -675,10 +678,15 @@
     border-color: #0058A3;
     box-shadow: none;
     outline: none;
+    padding: 16px !important;
 }
 
 .designer-form__group .form-control::placeholder {
-    color: #9E9E9E;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    letter-spacing: 0.03em;
+    color: #9e9e9e;
 }
 
 /* Телефон */
@@ -701,6 +709,7 @@
     white-space: nowrap;
     cursor: pointer;
     user-select: none;
+    max-height: 52px;
 }
 
 .phone-prefix img {
@@ -765,12 +774,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 48px;
-    padding: 0 32px;
+    padding: 14px 16px;
     background: #0058A3;
     color: #fff;
-    font-size: 15px;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    text-align: center;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -989,6 +1000,12 @@
     margin-bottom: 0;
 }
 
+.unic-text p strong {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    color: #0058a3;
+}
+
 .from-idea .unic-text p strong {
     font-weight: 600;
     letter-spacing: 0.01em;
@@ -1001,10 +1018,81 @@
     color: #0058a3;
 }
 
-.about-start .partner-start_inner{
+.about-start .partner-start_inner {
     max-width: 620px;
 }
 
 #vstupit_v_klub {
-  scroll-margin-top: 75px;
+    scroll-margin-top: 75px;
+}
+
+.custom-select {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 52px;
+    border: 1.5px solid #E0E0E0;
+    border-radius: 8px;
+    font-size: 15px;
+    color: #181818;
+    padding: 16px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    text-align: left;
+}
+
+.custom-select--open .custom-select__trigger {
+    border-color: #0058A3;
+}
+
+.custom-select__trigger svg {
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.custom-select--open .custom-select__trigger svg {
+    transform: rotate(180deg);
+}
+
+.custom-select__dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    list-style: none;
+    margin: 0;
+    padding: 8px 0;
+    z-index: 100;
+}
+
+.custom-select__option {
+    padding: 12px 16px;
+    font-size: 15px;
+    color: #181818;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.custom-select__option:hover {
+    background-color: #F5F5F5;
+}
+
+.custom-select__option--active {
+    color: #0058A3;
+}
+
+.designer-form__error {
+    font-size: 12px;
+    color: #B71C1C;
+    margin-top: 4px;
 }

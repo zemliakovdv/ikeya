@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import CustomsModal from '@/components/modals/CustomsModal';
 
 export default function CartSummary({
   subtotal = 0,
@@ -173,6 +172,8 @@ export default function CartSummary({
         >
           {checkoutButtonText}
         </button>
+
+        <p className="cart-summary__notice">Оформляя заказ, я принимаю условия <a href="#" target='_blank' rel='nofollow'>договора-оферты</a> таможенного представителя</p>
       </div>
 
       <div className="cart-summary__note">
@@ -190,19 +191,10 @@ export default function CartSummary({
           </p>
         </div>
         {/* Заменили a[data-bs-toggle] на button + React state */}
-        <button
-          type="button"
-          className="cart-summary__details-link"
-          onClick={() => setCustomsModalOpen(true)}
-        >
+        <a href="/help/customs/" target="_blank" rel="noopener noreferrer" className="cart-summary__details-link">
           Подробнее
-        </button>
+        </a>
       </div>
-
-      <CustomsModal
-        isOpen={customsModalOpen}
-        onClose={() => setCustomsModalOpen(false)}
-      />
 
     </aside>
   );
