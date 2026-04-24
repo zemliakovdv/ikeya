@@ -18,8 +18,10 @@ const API_BASE_URL = 'https://test.ikeya.by/api/v1';
  *  - cartToken   {string}
  *  - cartItems   {Array}  [{sku, quantity}]
  *  - onSelect    {fn(pvz, calcResult)}
+ *  - activeTab   {'pickup'|'delivery'}
+ *  - setActiveTab {fn}
  */
-export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect }) {
+export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect, activeTab, setActiveTab }) {
   const [allPoints, setAllPoints]         = useState([]);
   const [filtered, setFiltered]           = useState([]);
   const [loading, setLoading]             = useState(true);
@@ -27,7 +29,7 @@ export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect }
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [calcLoading, setCalcLoading]     = useState(false);
   const [calcResult, setCalcResult]       = useState(null);
-  const [mapCenter, setMapCenter]         = useState(null); // {coords, zoom}
+  const [mapCenter, setMapCenter]         = useState(null);
 
   const searchTimer = useRef(null);
 
@@ -115,6 +117,25 @@ export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect }
 
       {/* Сайдбар */}
       <aside className="pvz-sidebar">
+
+        {/* Табы */}
+        <div className="pvz-modal__tabs">
+          <button
+            type="button"
+            className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
+            onClick={() => setActiveTab('pickup')}
+          >
+            Самовывоз
+          </button>
+          <button
+            type="button"
+            className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
+            onClick={() => setActiveTab('delivery')}
+          >
+            Доставка
+          </button>
+        </div>
+
         {!selectedPoint ? (
           <>
             <div className="pvz-search">

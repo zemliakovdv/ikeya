@@ -69,23 +69,6 @@ export default function DeliveryModal({
               />
             </div>
 
-            <div className="pvz-modal__tabs">
-              <button
-                type="button"
-                className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
-                onClick={() => setActiveTab('pickup')}
-              >
-                Самовывоз
-              </button>
-              <button
-                type="button"
-                className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
-                onClick={() => setActiveTab('delivery')}
-              >
-                Доставка
-              </button>
-            </div>
-
             <div className="pvz-modal__body">
               {activeTab === 'pickup' && (
                 <PickupTab
@@ -93,6 +76,8 @@ export default function DeliveryModal({
                   cartToken={cartToken}
                   cartItems={cartItems}
                   onSelect={handlePvzSelect}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
                 />
               )}
               {activeTab === 'delivery' && (
@@ -101,6 +86,8 @@ export default function DeliveryModal({
                   cartToken={cartToken}
                   cartItems={cartItems}
                   onSelect={handleAddrSelect}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
                 />
               )}
             </div>
