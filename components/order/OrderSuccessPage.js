@@ -15,6 +15,19 @@ const SERVICE_LABELS = {
   furniture_assembly: 'Сборка мебели',
 };
 
+// Названия провайдеров ПВЗ
+const PROVIDER_NAMES = {
+  europost: 'Европочта',
+  autolight: 'Автолайт',
+  ikeya: 'Склад IKEYA',
+};
+
+// Подпись под стоимостью доставки
+const DELIVERY_TYPE_LABELS = {
+  pickup: 'Доставка до ПВЗ',
+  courier: 'Курьерская доставка',
+};
+
 function pad(n) { return String(n).padStart(2, '0'); }
 
 function formatAmount(amount) {
@@ -22,7 +35,54 @@ function formatAmount(amount) {
   return Number(amount).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' р.';
 }
 
-const PROVIDER_NAMES = { europost: 'Европочта', autolight: 'Автолайт' };
+// ─── Иконки провайдеров ────────────────────────────────────────────────────────
+
+function EuropostIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="12" fill="white" />
+      <circle cx="12" cy="12" r="10.8" fill="#FF0000" />
+      <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white" />
+      <path d="M12.7333 11.96V16.2533L14.1867 15.4133V12.52L16.3933 11.26V14.14L17.8533 13.3V9.04667H17.84L12.7333 11.96Z" fill="white" />
+      <path d="M12.7333 17.2267V18.6733H12.74L17.8533 15.7467V14.2867L12.7333 17.2267Z" fill="white" />
+      <path d="M11.54 18.6333V17.24L7.87333 15.16V13.8533L11.54 15.96V14.6333L7.87333 12.5333V11.1933L11.54 13.2867V11.96L7.87333 9.87333L6.42667 9.04667H6.41333V15.68L11.54 18.6333Z" fill="white" />
+    </svg>
+  );
+}
+
+function IkeyaIcon() {
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 24,
+      height: 24,
+      borderRadius: '50%',
+      background: '#FFDB00',
+      fontFamily: 'Arial',
+      fontWeight: 900,
+      fontSize: 8,
+      color: '#0058A3',
+      letterSpacing: 0.5,
+    }}>
+      IK
+    </span>
+  );
+}
+
+function ProviderIcon({ provider }) {
+  if (provider === 'autolight') {
+    return <img src="/assets/img/icon/autolight.png" alt="Автолайт" width="24" height="24" />;
+  }
+  if (provider === 'europost') {
+    return <EuropostIcon />;
+  }
+  // ikeya или любой другой
+  return <IkeyaIcon />;
+}
+
+// ─── Компонент ────────────────────────────────────────────────────────────────
 
 export default function OrderSuccessPage() {
   const searchParams = useSearchParams();
@@ -35,21 +95,35 @@ export default function OrderSuccessPage() {
   const [timeLeft, setTimeLeft] = useState(null);
   const timerRef = useRef(null);
 
-  const [pvz, setPvz] = useState(null);
+  // Данные доставки
+  const [pvz, setPvz] = useState(null); // самовывоз
+  const [deliveryAddr, setDeliveryAddr] = useState(null); // курьер
   const [services, setServices] = useState([]);
 
   useEffect(() => {
     try {
+      // ── Самовывоз ──
       const storedPvz = sessionStorage.getItem('selectedPvz');
       if (storedPvz) {
         setPvz(JSON.parse(storedPvz));
         sessionStorage.removeItem('selectedPvz');
       }
+
+      // ── Курьерная доставка ──
+      const storedAddr = sessionStorage.getItem('selectedDeliveryAddr');
+      if (storedAddr) {
+        setDeliveryAddr(JSON.parse(storedAddr));
+        sessionStorage.removeItem('selectedDeliveryAddr');
+      }
+
+      // ── Услуги ──
       const storedServices = sessionStorage.getItem('selectedServices');
       if (storedServices) {
         setServices(JSON.parse(storedServices));
         sessionStorage.removeItem('selectedServices');
       }
+
+      // ── Заказ ──
       const storedOrder = sessionStorage.getItem('checkoutOrder');
       if (storedOrder) {
         const orderData = JSON.parse(storedOrder);
@@ -61,6 +135,8 @@ export default function OrderSuccessPage() {
         }
         sessionStorage.removeItem('checkoutOrder');
       }
+
+      // ── Товары ──
       const storedItems = sessionStorage.getItem('checkoutItems');
       if (storedItems) {
         setItems(JSON.parse(storedItems));
@@ -92,12 +168,47 @@ export default function OrderSuccessPage() {
   const timerStr = timeLeft !== null
     ? `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}`
     : null;
+
   const attrs = order || {};
   const paymentLabel = PAYMENT_LABELS[attrs.payment_method] || attrs.payment_method || 'Оплата картой онлайн';
-  const deliveryFree = !attrs.delivery_price || Number(attrs.delivery_price) === 0;
   const paymentUrl = resolvePaymentUrl(attrs.payment_url) || null;
   const paymentExpired = attrs.payment_expired === true;
   const showPaymentAlert = !loading && !paymentExpired && (timerStr !== null || paymentUrl);
+
+  // Стоимость доставки — из calcResult если есть, иначе из order
+  const isPickup = !!pvz;
+  const isCourier = !!deliveryAddr;
+
+  const calcResult = isPickup
+    ? null // ПВЗ: стоимость берём из order.delivery_price
+    : deliveryAddr?.calcResult;
+
+  const deliveryFree = calcResult?.delivery?.free_delivery_eligible
+    ?? (!attrs.delivery_price || Number(attrs.delivery_price) === 0);
+
+  const deliveryCostByn = calcResult?.delivery?.base_cost_byn
+    ?? attrs.delivery_price
+    ?? null;
+
+  const deliveryTypeLabel = isPickup
+    ? DELIVERY_TYPE_LABELS.pickup
+    : DELIVERY_TYPE_LABELS.courier;
+
+  // Адрес для отображения
+  const pvzAddress = pvz
+    ? (pvz.city ? `${pvz.city}, ${pvz.address}` : pvz.address)
+    : null;
+
+  const courierAddress = deliveryAddr
+    ? (deliveryAddr.apartment
+      ? `${deliveryAddr.address}, кв.${deliveryAddr.apartment}`
+      : deliveryAddr.address)
+    : null;
+
+  // Провайдер курьерки
+  const isEuropostCourier = deliveryAddr?.calcResult?.delivery?.type === 'europost_courier';
+  const courierProvider = isEuropostCourier ? 'europost' : 'ikeya';
+  const courierProviderLabel = isEuropostCourier ? 'Доставка Европочта' : 'Доставка IKEYA';
 
   return (
     <main className="orders-statused">
@@ -105,6 +216,7 @@ export default function OrderSuccessPage() {
         <div className="row">
           <div className="col-12">
             <div className="order-success-page">
+
               {/* ========== ЗАГОЛОВОК УСПЕХА ========== */}
               <div className="success-header">
                 <div className="success-icon-large">
@@ -130,12 +242,7 @@ export default function OrderSuccessPage() {
                     <strong>Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.</strong>
                   </p>
                   {paymentUrl && (
-                    <a
-                      href={paymentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-pay-order"
-                    >
+                    <a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="btn-pay-order">
                       Оплатить заказ
                     </a>
                   )}
@@ -168,8 +275,8 @@ export default function OrderSuccessPage() {
                 <div className="order-detail-item">
                   <div className="detail-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M20.84 5.49999C20.66 5.28999 20.45 5.09999 20.24 4.92999C18.88 3.85999 17.05 3.85999 13.4 3.85999H10.61C6.96001 3.85999 5.12001 3.85999 3.77001 4.92999C3.55001 5.09999 3.35001 5.28999 3.17001 5.49999C2.01001 6.79999 2.01001 8.53999 2.01001 12C2.01001 15.46 2.01001 17.2 3.17001 18.5C3.35001 18.7 3.56001 18.9 3.77001 19.07C5.13001 20.14 6.96001 20.14 10.61 20.14H13.4C17.05 20.14 18.89 20.14 20.25 19.07C20.47 18.9 20.67 18.71 20.85 18.5C22.01 17.2 22.01 15.46 22.01 12C22.01 8.53999 22.01 6.79999 20.85 5.49999H20.84ZM4.19001 6.42999C4.32001 6.27999 4.46001 6.14999 4.62001 6.02999C5.60001 5.25999 7.27001 5.25999 10.6 5.25999H13.39C16.72 5.25999 18.39 5.25999 19.37 6.02999C19.52 6.14999 19.67 6.28999 19.8 6.42999C20.22 6.89999 20.42 7.55999 20.51 8.50999H3.49001C3.59001 7.54999 3.78001 6.89999 4.20001 6.42999H4.19001ZM19.8 17.57C19.67 17.72 19.52 17.85 19.37 17.97C18.39 18.74 16.72 18.74 13.39 18.74H10.6C7.27001 18.74 5.60001 18.74 4.62001 17.97C4.46001 17.85 4.32001 17.71 4.19001 17.57C3.39001 16.67 3.39001 15.11 3.39001 12C3.39001 11.21 3.39001 10.51 3.40001 9.90999H20.59C20.6 10.52 20.6 11.21 20.6 12C20.6 15.11 20.6 16.67 19.8 17.57Z" fill="#757575" />
-                      <path d="M11.5299 15.02H10.1299C9.73993 15.02 9.42993 15.33 9.42993 15.72C9.42993 16.11 9.73993 16.42 10.1299 16.42H11.5299C11.9199 16.42 12.2299 16.11 12.2299 15.72C12.2299 15.33 11.9199 15.02 11.5299 15.02Z" fill="#757575" />
+                      <path d="M20.8398 5.49999C20.6598 5.28999 20.4498 5.09999 20.2398 4.92999C18.8798 3.85999 17.0498 3.85999 13.3998 3.85999H10.6098C6.95976 3.85999 5.11977 3.85999 3.76977 4.92999C3.54977 5.09999 3.34977 5.28999 3.16977 5.49999C2.00977 6.79999 2.00977 8.53999 2.00977 12C2.00977 15.46 2.00977 17.2 3.16977 18.5C3.34977 18.7 3.55977 18.9 3.76977 19.07C5.12977 20.14 6.95976 20.14 10.6098 20.14H13.3998C17.0498 20.14 18.8898 20.14 20.2498 19.07C20.4698 18.9 20.6698 18.71 20.8498 18.5C22.0098 17.2 22.0098 15.46 22.0098 12C22.0098 8.53999 22.0098 6.79999 20.8498 5.49999H20.8398ZM4.18977 6.42999C4.31977 6.27999 4.45977 6.14999 4.61977 6.02999C5.59977 5.25999 7.26977 5.25999 10.5998 5.25999H13.3898C16.7198 5.25999 18.3898 5.25999 19.3698 6.02999C19.5198 6.14999 19.6698 6.28999 19.7998 6.42999C20.2198 6.89999 20.4198 7.55999 20.5098 8.50999H3.48977C3.58977 7.54999 3.77977 6.89999 4.19977 6.42999H4.18977ZM19.7998 17.57C19.6698 17.72 19.5198 17.85 19.3698 17.97C18.3898 18.74 16.7198 18.74 13.3898 18.74H10.5998C7.26977 18.74 5.59977 18.74 4.61977 17.97C4.45977 17.85 4.31977 17.71 4.18977 17.57C3.38977 16.67 3.38977 15.11 3.38977 12C3.38977 11.21 3.38977 10.51 3.39977 9.90999H20.5898C20.5998 10.52 20.5998 11.21 20.5998 12C20.5998 15.11 20.5998 16.67 19.7998 17.57Z" fill="#757575" />
+                      <path d="M11.5302 15.02H10.1302C9.74018 15.02 9.43018 15.33 9.43018 15.72C9.43018 16.11 9.74018 16.42 10.1302 16.42H11.5302C11.9202 16.42 12.2302 16.11 12.2302 15.72C12.2302 15.33 11.9202 15.02 11.5302 15.02Z" fill="#757575" />
                       <path d="M17.5801 15.02H14.3201C13.9301 15.02 13.6201 15.33 13.6201 15.72C13.6201 16.11 13.9301 16.42 14.3201 16.42H17.5801C17.9701 16.42 18.2801 16.11 18.2801 15.72C18.2801 15.33 17.9701 15.02 17.5801 15.02Z" fill="#757575" />
                     </svg>
                   </div>
@@ -177,7 +284,24 @@ export default function OrderSuccessPage() {
                     <h3 className="detail-title">{paymentLabel}</h3>
                     <p className="detail-status">Ждет оплаты</p>
                   </div>
-                </div> 
+                </div>
+
+                {/* Стоимость доставки */}
+                {(isPickup || isCourier) && (
+                  <div className="order-detail-item">
+                    <div className="detail-content detail-delivery">
+                      <h3 className="detail-price ">
+                        {deliveryFree
+                          ? <span className="text-success">бесплатно</span>
+                          : deliveryCostByn
+                            ? formatAmount(deliveryCostByn)
+                            : <span className="text-muted">уточняется</span>
+                        }
+                      </h3>
+                      <p className="detail-subtitle">{deliveryTypeLabel}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Сумма заказа */}
                 <div className="order-detail-item total-amount">
@@ -201,29 +325,32 @@ export default function OrderSuccessPage() {
                   </div>
                 </div>
 
-                {/* Пункт выдачи */}
+                {/* ── Самовывоз: пункт выдачи ── */}
                 {pvz && (
                   <div className="order-detail-item">
                     <div className="detail-icon">
-                      {pvz.provider === 'autolight' ? (
-                        <img src="/assets/img/icon/autolight.png" alt="Автолайт" width="24" height="24" />
-                      ) : (
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="12" fill="white" />
-                          <circle cx="12" cy="12" r="10.8" fill="#FF0000" />
-                          <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white" />
-                          <path d="M12.7333 11.96V16.2533L14.1867 15.4133V12.52L16.3933 11.26V14.14L17.8533 13.3V9.04667H17.84L12.7333 11.96Z" fill="white" />
-                          <path d="M12.7333 17.2267V18.6733H12.74L17.8533 15.7467V14.2867L12.7333 17.2267Z" fill="white" />
-                          <path d="M11.54 18.6333V17.24L7.87333 15.16V13.8533L11.54 15.96V14.6333L7.87333 12.5333V11.1933L11.54 13.2867V11.96L7.87333 9.87333L6.42667 9.04667H6.41333V15.68L11.54 18.6333Z" fill="white" />
-                        </svg>
-                      )}
+                      <ProviderIcon provider={pvz.provider} />
                     </div>
                     <div className="detail-content">
-                      <h3 className="detail-title">{pvz.city}, {pvz.address}</h3>
+                      <h3 className="detail-title">{pvzAddress}</h3>
                       <p className="detail-subtitle">{PROVIDER_NAMES[pvz.provider] || pvz.provider}</p>
                     </div>
                   </div>
                 )}
+
+                {/* ── Курьер: адрес доставки ── */}
+                {deliveryAddr && (
+                  <div className="order-detail-item">
+                    <div className="detail-icon">
+                      <ProviderIcon provider={courierProvider} />
+                    </div>
+                    <div className="detail-content">
+                      <h3 className="detail-title detai-delivery">{courierAddress}</h3>
+                      <p className="detail-subtitle">{courierProviderLabel}</p>
+                    </div>
+                  </div>
+                )}
+
               </section>
 
               {/* ========== ВЫБРАННЫЕ УСЛУГИ ========== */}
@@ -239,7 +366,7 @@ export default function OrderSuccessPage() {
                       </div>
                       <div className="services-header">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M15.4199 11.64L16.5699 10.49C18.0399 10.88 19.6399 10.47 20.7399 9.36998C21.9499 8.15998 22.3299 6.34998 21.7099 4.75998C21.6299 4.53998 21.4299 4.37998 21.1999 4.32998C20.9699 4.27998 20.7299 4.34998 20.5599 4.51998L19.2899 5.78998H18.2099V4.70998L19.4699 3.43998C19.6399 3.26998 19.7099 3.02998 19.6599 2.79998C19.6099 2.56998 19.4499 2.37998 19.2299 2.28998C17.6399 1.66998 15.8299 2.05998 14.6199 3.25998C13.5199 4.35998 13.1099 5.94998 13.4999 7.42998L10.9499 9.97998L7.02989 6.05998L7.82989 5.25998C7.98989 5.09998 8.05989 4.87998 8.02989 4.64998C7.99989 4.41998 7.84989 4.23998 7.64989 4.13998L4.54989 2.58998C4.27989 2.45998 3.95989 2.50998 3.73989 2.71998L2.70989 3.74998C2.49989 3.95998 2.44989 4.28998 2.57989 4.55998L4.12989 7.65998C4.22989 7.85998 4.41989 7.99998 4.63989 8.03998C4.74989 8.03998 5.10989 7.96998 5.23989 7.83998L6.03989 7.03998L9.95989 10.96L7.40989 13.51C5.92989 13.11 4.33989 13.53 3.23989 14.63C2.02989 15.84 1.64989 17.65 2.26989 19.24C2.34989 19.46 2.54989 19.62 2.77989 19.67C3.00989 19.72 3.24989 19.65 3.41989 19.48L4.68989 18.22H5.76989V19.3L4.49989 20.57C4.32989 20.74 4.25989 20.98 4.30989 21.21C4.35989 21.44 4.51989 21.63 4.73989 21.72C5.24989 21.92 5.76989 22.01 6.29989 22.01C7.42989 22.01 8.52989 21.57 9.34989 20.75C10.4499 19.65 10.8599 18.06 10.4699 16.58L11.6199 15.43L17.0699 20.88C17.4799 21.29 18.0099 21.49 18.5499 21.49C19.0899 21.49 19.6199 21.29 20.0299 20.88L20.8499 20.06C21.6599 19.24 21.6599 17.91 20.8499 17.1L15.3999 11.65L15.4199 11.64Z" fill="#757575" />
+                          <path d="M15.4201 11.64L16.5701 10.49C18.0401 10.88 19.6401 10.47 20.7401 9.36998C21.9501 8.15998 22.3301 6.34998 21.7101 4.75998C21.6301 4.53998 21.4301 4.37998 21.2001 4.32998C20.9701 4.27998 20.7301 4.34998 20.5601 4.51998L19.2901 5.78998H18.2101V4.70998L19.4701 3.43998C19.6401 3.26998 19.7101 3.02998 19.6601 2.79998C19.6101 2.56998 19.4501 2.37998 19.2301 2.28998C17.6401 1.66998 15.8301 2.05998 14.6201 3.25998C13.5201 4.35998 13.1101 5.94998 13.5001 7.42998L10.9501 9.97998L7.03014 6.05998L7.83014 5.25998C7.99014 5.09998 8.06014 4.87998 8.03014 4.64998C8.00014 4.41998 7.85014 4.23998 7.65014 4.13998L4.55014 2.58998C4.28014 2.45998 3.96014 2.50998 3.74014 2.71998L2.71014 3.74998C2.50014 3.95998 2.45014 4.28998 2.58014 4.55998L4.13014 7.65998C4.23014 7.85998 4.42014 7.99998 4.64014 8.03998C4.68014 8.03998 4.71014 8.03998 4.75014 8.03998C4.93014 8.03998 5.11014 7.96998 5.24014 7.83998L6.04014 7.03998L9.96014 10.96L7.41014 13.51C5.93014 13.11 4.34014 13.53 3.24014 14.63C2.03014 15.84 1.65014 17.65 2.27014 19.24C2.35014 19.46 2.55014 19.62 2.78014 19.67C3.01014 19.72 3.25014 19.65 3.42014 19.48L4.69014 18.22H5.77014V19.3L4.50014 20.57C4.33014 20.74 4.26014 20.98 4.31014 21.21C4.36014 21.44 4.52014 21.63 4.74014 21.72C5.25014 21.92 5.77014 22.01 6.30014 22.01C7.43014 22.01 8.53014 21.57 9.35014 20.75C10.4501 19.65 10.8601 18.06 10.4701 16.58L11.6201 15.43L17.0701 20.88C17.4801 21.29 18.0101 21.49 18.5501 21.49C19.0901 21.49 19.6201 21.29 20.0301 20.88L20.8501 20.06C21.6601 19.24 21.6601 17.91 20.8501 17.1L15.4001 11.65L15.4201 11.64ZM4.96014 6.16998L4.07014 4.37998L4.39014 4.05998L6.18014 4.94998L4.96014 6.16998ZM9.20014 15.89C9.00014 16.09 8.94014 16.38 9.04014 16.63C9.46014 17.71 9.20014 18.93 8.38014 19.75C7.86014 20.27 7.17014 20.57 6.45014 20.6L6.97014 20.08C7.10014 19.95 7.17014 19.77 7.17014 19.59V17.52C7.17014 17.13 6.86014 16.82 6.47014 16.82H4.40014C4.22014 16.82 4.04014 16.89 3.91014 17.02L3.39014 17.54C3.42014 16.83 3.72014 16.14 4.24014 15.61C5.06014 14.79 6.28014 14.53 7.36014 14.95C7.62014 15.05 7.91014 14.99 8.10014 14.79L14.7901 8.09998C14.9901 7.89998 15.0501 7.60998 14.9501 7.35998C14.5301 6.27998 14.7901 5.05998 15.6101 4.23998C16.1301 3.71998 16.8301 3.41998 17.5401 3.38998L17.0201 3.90998C16.8901 4.03998 16.8201 4.21998 16.8201 4.39998V6.46998C16.8201 6.85998 17.1301 7.16998 17.5201 7.16998H19.5901C19.7801 7.16998 19.9501 7.09998 20.0801 6.96998L20.6001 6.44998C20.5701 7.15998 20.2701 7.84998 19.7501 8.37998C18.9301 9.19998 17.7101 9.45998 16.6301 9.03998C16.3701 8.93998 16.0801 8.99998 15.8901 9.19998L9.20014 15.89ZM19.8901 19.07L19.0701 19.89C18.8001 20.16 18.3501 20.16 18.0801 19.89L12.6301 14.44L14.4401 12.63L19.8901 18.08C20.1601 18.35 20.1601 18.8 19.8901 19.07Z" fill="#757575" />
                         </svg>
                         <h3 className="services-title">Услуги:</h3>
                       </div>
@@ -254,12 +381,13 @@ export default function OrderSuccessPage() {
                     <div className="recipient-section">
                       <div className="recipient-header">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M15.0499 13.53C16.9099 12.47 18.1699 10.47 18.1699 8.17C18.1699 4.77 15.3999 2 11.9999 2C8.59989 2 5.82989 4.77 5.82989 8.17C5.82989 10.46 7.08989 12.46 8.94989 13.53C5.84989 14.75 3.63989 17.77 3.63989 21.31C3.63989 21.7 3.94989 22.01 4.33989 22.01C4.72989 22.01 5.03989 21.7 5.03989 21.31C5.03989 17.47 8.15989 14.35 11.9999 14.35C15.8399 14.35 18.9599 17.47 18.9599 21.31C18.9599 21.7 19.2699 22.01 19.6599 22.01C20.0499 22.01 20.3599 21.7 20.3599 21.31C20.3599 17.78 18.1499 14.76 15.0499 13.54V13.53Z" fill="#757575" />
+                          <path d="M15.0501 13.53C16.9101 12.47 18.1701 10.47 18.1701 8.17C18.1701 4.77 15.4001 2 12.0001 2C8.60014 2 5.83014 4.77 5.83014 8.17C5.83014 10.46 7.09014 12.46 8.95014 13.53C5.85014 14.75 3.64014 17.77 3.64014 21.31C3.64014 21.7 3.95014 22.01 4.34014 22.01C4.73014 22.01 5.04014 21.7 5.04014 21.31C5.04014 17.47 8.16014 14.35 12.0001 14.35C15.8401 14.35 18.9601 17.47 18.9601 21.31C18.9601 21.7 19.2701 22.01 19.6601 22.01C20.0501 22.01 20.3601 21.7 20.3601 21.31C20.3601 17.78 18.1501 14.76 15.0501 13.54V13.53ZM7.23014 8.17C7.23014 5.54 9.37014 3.4 12.0001 3.4C14.6301 3.4 16.7701 5.54 16.7701 8.17C16.7701 10.8 14.6301 12.94 12.0001 12.94C9.37014 12.94 7.23014 10.8 7.23014 8.17Z" fill="#757575" />
                         </svg>
                         <h3 className="recipient-name">{attrs.full_name}</h3>
                       </div>
                       <div className="contact-info-list">
                         {attrs.phone && <div className="contact-info-item"><span>+{attrs.phone}</span></div>}
+                        {attrs.email && <div className="contact-info-item"><span>{attrs.email}</span></div>}
                       </div>
                     </div>
                   )}
@@ -279,6 +407,9 @@ export default function OrderSuccessPage() {
                             <div className="flex-grow-1">
                               <div className="item-infos">
                                 <div className="item-name">{a.name}</div>
+                                {a.description && (
+                                  <div className="item-desc">{a.description}</div>
+                                )}
                               </div>
                               <div className="item-meta">
                                 <span className="item-quantity">{a.quantity} шт</span>
@@ -294,6 +425,7 @@ export default function OrderSuccessPage() {
               )}
 
               {loading && <p style={{ textAlign: 'center', color: '#9e9e9e' }}>Загрузка...</p>}
+
             </div>
           </div>
         </div>

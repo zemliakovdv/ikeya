@@ -6880,6 +6880,7 @@ main {
     background: #FFFFFF;
     border-radius: 8px;
     padding: 16px;
+    padding-top: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -6943,7 +6944,7 @@ main {
     flex: 1;
 }
 
-.detail-title {
+.detail-title, .detai-delivery {
     font-weight: 600;
     font-size: 16px;
     line-height: 150%;
@@ -6994,7 +6995,7 @@ main {
     border-bottom: 1px solid #eee;
 }
 
-.total-amount .detail-price {
+.total-amount .detail-price, .detail-delivery .detail-price {
     font-weight: 600;
     font-size: 16px;
     line-height: 150%;
@@ -7004,9 +7005,11 @@ main {
     padding-left: 40px;
 }
 
-.total-amount .detail-subtitle {
+.total-amount .detail-subtitle, .detail-delivery .detail-subtitle {
     padding-left: 40px;
 }
+
+
 
 /* ========== СЕКЦИЯ УСЛУГ ========== */
 .selected-services-section {
@@ -7014,9 +7017,9 @@ main {
     border-radius: 8px;
     border-top-right-radius: 0;
     border-top-left-radius: 0;
-    padding: 0 16px 16px 16px;
+    padding: 0 16px;
     margin-bottom: 24px;
-    padding-top: 16px;
+
 }
 
 .selected-services-section .alert {
@@ -7071,8 +7074,7 @@ main {
 .recipient-section {
     border-radius: 0;
     box-shadow: none;
-    padding-top: 16px;
-    border-top: 1px solid #eee;
+    padding-top: 0;
 }
 
 .recipient-header {

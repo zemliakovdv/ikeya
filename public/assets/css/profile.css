@@ -645,8 +645,9 @@
     .zakazi .order-item {
         display: flex;
         gap: 16px;
-        align-items: center;
-        margin-bottom: 8px;
+        align-items: flex-start;
+        margin-bottom: 0;
+        padding: 8px 0;
     }
 
     .zakazi .order-item .flex-grow-1 {
@@ -660,11 +661,11 @@
     }
 
     .zakazi .item-image {
-        width: 60px;
-        height: 60px;
-        object-fit: contain;
-        background: #f9f9f9;
-        border-radius: 4px;
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        background: transparent;
+        border-radius: 0;
         flex-shrink: 0;
     }
 

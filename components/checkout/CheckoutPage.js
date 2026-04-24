@@ -92,7 +92,7 @@ function IkeyaLogo() {
 export default function CheckoutPage() {
   const router = useRouter();
   const { token } = useAuth();
-  const { cart, totals, items } = useCart();
+  const { cart, totals, items, clearCart } = useCart();
 
   // Профиль
   const [profile, setProfile] = useState(null);
@@ -378,6 +378,18 @@ export default function CheckoutPage() {
       setA1Modal(false);
       setSubmitting(true);
       const response = await checkout(buildOrderData(a1VerificationId), token);
+      await clearCart();
+      // Сохраняем данные о доставке для success page
+      if (receiveMethod === 'pickup' && selectedPvz) {
+        sessionStorage.setItem('selectedPvz', JSON.stringify(selectedPvz));
+      }
+      if (receiveMethod === 'delivery' && selectedAddr) {
+        sessionStorage.setItem('selectedDeliveryAddr', JSON.stringify({
+          ...selectedAddr,
+          calcResult: addrCalcResult,
+        }));
+      }
+
       sessionStorage.setItem('selectedServices', JSON.stringify(selectedServices));
       sessionStorage.setItem('checkoutOrder', JSON.stringify(response.order || null));
       sessionStorage.setItem('checkoutItems', JSON.stringify(
@@ -386,6 +398,7 @@ export default function CheckoutPage() {
           attributes: {
             product_sku: it.sku,
             name: it.product?.small_desc_name || it.product?.name_ru || '',
+            description: it.product?.name_ru || '',
             quantity: it.quantity,
             price_byn: it.product?.price_byn || 0,
             image_url: it.product?.local_images?.[0] || it.product?.images?.[0] || '',
