@@ -13,6 +13,12 @@
     --red-900: rgba(183, 28, 28, 1);
     --black-100: rgba(24, 24, 24, 1);
     --grey-100: rgba(245, 245, 245, 1);
+    --color-text-primary: #181818;
+    --color-brand-primary: #0058A3;
+    --color-surface-muted: #F5F5F5;
+    --radius-md: 8px;
+    --shadow-dropdown: 0 4px 24px rgba(0, 0, 0, 0.12);
+    --transition-button-colors: background 0.2s, border-color 0.2s, color 0.2s;
     --desktop-body-2-font-family: "Inter", Helvetica;
     --desktop-body-2-font-weight: 400;
     --desktop-body-2-font-size: 14px;
@@ -42,8 +48,8 @@ body {
     font-family: "Inter", sans-serif;
     font-size: 14px;
     line-height: 1.4;
-    color: #181818;
-    background: #ffffff;
+    color: var(--color-text-primary);
+    background: var(--white-100);
 }
 
 /* ========== КОМПЕНСАЦИЯ ВЫСОТЫ ДЛЯ КОНТЕНТА ========== */
@@ -67,7 +73,7 @@ ol {
 
 a {
     text-decoration: none;
-    color: #181818;
+    color: var(--color-text-primary);
 }
 
 h2 {
@@ -139,7 +145,7 @@ h2 {
 }
 
 .header-top {
-    background-color: #181818;
+    background-color: var(--color-text-primary);
 }
 
 .header-top-inner {
@@ -212,11 +218,11 @@ h2 {
     display: inline-flex;
     align-items: center;
     border: none;
-    background-color: #0058A3;
-    color: #fff;
+    background-color: var(--color-brand-primary);
+    color: var(--white-100);
     cursor: pointer;
     padding: 14px 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin-right: 16px;
 }
 
@@ -261,7 +267,7 @@ h2 {
     justify-content: space-between;
     border: 1px solid #BDBDBD;
     padding-left: 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .middle-searh-inner input {
@@ -280,9 +286,9 @@ h2 {
 
 .middle-searh-inner button {
     border: none;
-    background: #0058A3;
+    background: var(--color-brand-primary);
     padding: 10px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin-bottom: 4px;
     margin-top: 4px;
     margin-right: 4px;
@@ -304,9 +310,9 @@ h2 {
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    background: var(--white-100);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-dropdown);
     z-index: 1000;
     overflow: hidden;
     max-height: 520px;
@@ -566,33 +572,6 @@ h2 {
     right: 5%;
 }
 
-.header-bottom {
-    padding-top: 8px;
-    padding-bottom: 16px;
-}
-
-.header-bottom-inner {
-    display: flex;
-    gap: 24.5px;
-}
-
-.header-bottom-inner a {
-    padding: 4px 16px;
-    background-color: #F5F5F5;
-    border-radius: 8px;
-    font-size: 14px;
-    line-height: 20px;
-    font-weight: 400;
-    letter-spacing: 0.25px;
-}
-
-.header-bottom-links {
-    display: flex;
-    gap: 16px;
-    flex-wrap: nowrap;
-    width: 100%;
-    justify-content: space-between;
-}
 
 /* Замени существующие стили .header-bottom-* в main.css на эти */
 
@@ -602,6 +581,8 @@ h2 {
 }
 
 .header-bottom-inner {
+    display: flex;
+    gap: 24.5px;
     overflow: hidden;
     /* чтобы свайпер не вылезал за края */
 }
@@ -609,6 +590,10 @@ h2 {
 /* Убираем старый .header-bottom-links — он больше не нужен */
 .header-bottom-links {
     display: none;
+    gap: 16px;
+    flex-wrap: nowrap;
+    width: 100%;
+    justify-content: space-between;
 }
 
 /* Свайпер — работает на всех размерах */
@@ -629,15 +614,19 @@ h2 {
     flex-shrink: 0;
 }
 
+.header-bottom-inner a,
 .header-bottom-slide a {
     display: inline-block;
     padding: 4px 16px;
-    background-color: #F5F5F5;
-    border-radius: 8px;
+    background-color: var(--color-surface-muted);
+    border-radius: var(--radius-md);
     font-size: 14px;
     line-height: 20px;
     font-weight: 400;
     letter-spacing: 0.25px;
+}
+
+.header-bottom-slide a {
     white-space: nowrap;
     /* текст не переносится */
     color: inherit;
@@ -758,16 +747,16 @@ main {
 
 .categories-card-img {
     padding: 16px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     margin-bottom: 8px;
-    background: #F5F5F5;
-}
-
-.categories-card-img img {
-    max-width: 134.5px;
+    background: var(--color-surface-muted);
 }
 
 .categories-item-card {
+    position: relative;
+    cursor: pointer;
+    max-width: 166.5px;
+    min-width: 166.5px;
     transition: transform 0.3s ease;
 }
 
@@ -781,7 +770,8 @@ main {
 }
 
 .categories-card-img img {
-    transition: transform 0.3s ease;
+    max-width: 134.5px;
+    transition: transform 0.4s ease;
 }
 
 .categories-item-card p {
@@ -792,14 +782,6 @@ main {
     letter-spacing: 0.1px;
 }
 
-.categories-item-card a {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-}
 
 /* Контейнер слайдера */
 .popular-categories {
@@ -809,16 +791,6 @@ main {
 }
 
 /* Карточка категории */
-.categories-item-card {
-    position: relative;
-    cursor: pointer;
-    max-width: 166.5px;
-    min-width: 166.5px;
-}
-
-.categories-card-img img {
-    transition: transform 0.4s ease;
-}
 
 /* Растянутая ссылка на всю карточку */
 .categories-item-card a {
@@ -8019,43 +7991,47 @@ main {
 
 /* ─── Shared buttons ────────────────────────────────────────────────────────── */
 
+.cookie-banner__btn,
+.not-found__btn {
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    transition: var(--transition-button-colors);
+}
+
 .cookie-banner__btn {
     padding: 10px 40px;
-    border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
     white-space: nowrap;
-    font-size: 14px;
     line-height: 143%;
     letter-spacing: 0.01em;
     text-align: center;
-    color: #0058a3;
+    color: var(--color-brand-primary);
     max-width: 157px;
-    font-weight: 600;
 }
 
 .cookie-banner__btn--outline {
     background: transparent;
-    border: 1px solid #0058a3;
-    color: #0058a3;
+    border: 1px solid var(--color-brand-primary);
+    color: var(--color-brand-primary);
 }
 
 .cookie-banner__btn--outline:hover {
-    border-color: #0058a3;
-    color: #fff;
-    background: #0058a3;
+    border-color: var(--color-brand-primary);
+    color: var(--white-100);
+    background: var(--color-brand-primary);
 }
 
 .cookie-banner__btn--primary {
-    background: #0058a3;
-    border: 1px solid #0058a3;
-    color: #fff;
+    background: var(--color-brand-primary);
+    border: 1px solid var(--color-brand-primary);
+    color: var(--white-100);
 }
 
 .cookie-banner__btn--primary:hover {
     background: transparent;
-    border-color: #0058a3;
-    color: #0058a3;
+    border-color: var(--color-brand-primary);
+    color: var(--color-brand-primary);
 }
 
 /* ─── Cookie Modal Overlay ──────────────────────────────────────────────────── */
@@ -8294,11 +8270,7 @@ main {
     display: inline-flex;
     align-items: center;
     padding: 10px 24px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
     text-decoration: none;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .not-found__btn--outline {
