@@ -210,9 +210,9 @@ export default function ProductCard({ product, priority = false }) {
           </div>
 
           <div className="product-card__header">
-            <h3 className="product-card__title">{title}</h3>
+            <h3 className="product-card__title"> {description}</h3>
             {description && (
-              <p className="product-card__description">{description}</p>
+              <p className="product-card__description">{title}</p>
             )}
           </div>
 

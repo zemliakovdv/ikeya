@@ -1,0 +1,382 @@
+app
+|   favicon.ico
+|   globals.css
+|   layout.js
+|   loading.js
+|   not-found.js
+|   page.js
+|   page.module.css
+|   
++---about
+|       page.js
+|       
++---api
+|   +---categories
+|   |   |   route.js
+|   |   |   
+|   |   \---[categoryId]
+|   |       \---products
+|   |               route.js
+|   |               
+|   \---products
+|           route.js
+|           
++---blog
+|   |   page.js
+|   |   
+|   \---[slug]
+|           page.js
+|           
++---cart
+|       page.js
+|       
++---catalog
+|   |   page.js
+|   |   
+|   \---[...slug]
+|           page.js
+|           
++---checkout
+|       page.js
+|       
++---checkout-error
+|       page.js
+|       
++---checkout-evropochta-error
+|       page.js
+|       
++---checkout-filled
+|       page.js
+|       
++---checkout-filled-error
+|       page.js
+|       
++---help
+|   +---customs
+|   |       page.js
+|   |       
+|   +---delivery
+|   |       page.js
+|   |       
+|   +---how-to-order
+|   |       page.js
+|   |       
+|   +---payment
+|   |       page.js
+|   |       
+|   \---returns
+|           page.js
+|           
++---order-accepted
+|       page.js
+|       
++---order-success
+|       page.js
+|       
++---partner
+|       page.js
+|       
++---product
+|   \---[...slug]
+|           page.js
+|           
++---profile
+|   |   page.js
+|   |   
+|   +---electronic-receipts
+|   |       page.js
+|   |       
+|   +---favorite
+|   |       page.js
+|   |       
+|   +---orders
+|   |       page.js
+|   |       
+|   +---personal-data
+|   |       page.js
+|   |       
+|   +---returns
+|   |       page.js
+|   |       
+|   \---settings
+|           page.js
+|           
++---pvz
+|       page.js
+|       
++---search
+|       page.js
+|       SearchPageContent.js
+|       
+\---services
+        page.js
+        
+
+components
+|   ClientScripts.js
+|   FloatingChatButton.js
+|   
++---about
+|       AboutAllInOne.js
+|       AboutBridge.js
+|       AboutCategoriesSlider.js
+|       AboutHero.js
+|       AboutIdea.js
+|       AboutMission.js
+|       AboutPartner.js
+|       AboutSecurity.js
+|       AboutSupport.js
+|       
++---auth
+|       AuthModalsHost.js
+|       AuthModalsProvider.js
+|       CodeModal.js
+|       LoginModal.js
+|       RegisterModal.js
+|       SuccessModal.js
+|       
++---blog
+|   |   ArticleMoreSlider.js
+|   |   BlockRenderer.js
+|   |   BlogCard.js
+|   |   BlogTabs.js
+|   |   TipsIdeasClient.js
+|   |   
+|   \---blocks
+|           CategoriesGridBlock.js
+|           ImageLeftTextRightBlock.js
+|           ImageRightTextLeftBlock.js
+|           ProductsGridBlock.js
+|           ProductsGridSlider.js
+|           TextImagesRowBlock.js
+|           TextWithImageBlock.js
+|           
++---cart
+|       CartCounter.js
+|       CartItem.js
+|       CartItemsSection.js
+|       CartPage.js
+|       CartPageClient.js
+|       CartRecommendations.js
+|       CartSummary.js
+|       
++---catalog
+|   |   Breadcrumbs.js
+|   |   CatalogClient.js
+|   |   CategoriesGrid.js
+|   |   ChildCategoriesSlider.js
+|   |   FilterChips.js
+|   |   Pagination.js
+|   |   ProductSort.js
+|   |   SearchNotFound.js
+|   |   
+|   +---products
+|   |       InfiniteProductGrid.js
+|   |       ProductBadge.js
+|   |       ProductCard.js
+|   |       ProductGallery.js
+|   |       ProductGrid.js
+|   |       ProductGridWithPagination.js
+|   |       
+|   \---sidebar
+|           CategoryTree.js
+|           CheckboxFilter.js
+|           CollectionFilter.js
+|           ColorFilter.js
+|           FilterAside.js
+|           FilterNotification.js
+|           PriceFilter.js
+|           
++---checkout
+|       CheckoutErrorPage.js
+|       CheckoutEuropochtaErrorPage.js
+|       CheckoutFilledErrorPage.js
+|       CheckoutFilledPage.js
+|       CheckoutPage.js
+|       
++---cookie
+|       CookieBanner.js
+|       CookieSettingsModal.js
+|       
++---delivery
+|   |   PvzPageClient.js
+|   |   
+|   +---cards
+|   |       DeliveryResult.js
+|   |       PvzCard.js
+|   |       PvzDetail.js
+|   |       
+|   +---map
+|   |       DeliveryMap.js
+|   |       
+|   \---modal
+|           DeliveryModal.js
+|           DeliveryTab.js
+|           PickupTab.js
+|           SavedAddressesModal.js
+|           
++---help
+|   |   HelpLayout.js
+|   |   HelpSidebar.js
+|   |   
+|   +---customs
+|   |       CustomsContent.js
+|   |       
+|   +---delivery
+|   |       DeliveryContent.js
+|   |       
+|   +---how-to-order
+|   |       HowToOrderContent.js
+|   |       
+|   +---payment
+|   |       PaymentContent.js
+|   |       
+|   \---returns
+|           ReturnsContent.js
+|           
++---home
+|       AdsBanner.js
+|       AdsBannerSlider.js
+|       BestsellersSection.js
+|       BlogSection.js
+|       BlogSlider.js
+|       NewArrivalsSection.js
+|       NewProductsTabs.js
+|       PopularCategoriesSection.js
+|       PopularCategory.js
+|       ProductsTabs.js
+|       ProductTabsSection.js
+|       PromoBlock.js
+|       PromoBlockServer.js
+|       RecommendedSection.js
+|       SeoSection.js
+|       StartSlider.js
+|       StartSliderServer.js
+|       
++---layout
+|   +---Footer
+|   |       Footer.js
+|   |       FooterMob.js
+|   |       
+|   \---Header
+|           Header.js
+|           MegaMenu.js
+|           MobilePhoneDropdown.js
+|           PhoneDropdown.js
+|           SearchBox.js
+|           
++---modals
+|       CustomsModal.js
+|       
++---order
+|       OrderAcceptedPage.js
+|       OrderSuccessPage.js
+|       
++---partner
+|       DesignerClubForm.js
+|       PartnerBenefits.js
+|       PartnerCreativity.js
+|       PartnerForm.js
+|       PartnerHero.js
+|       PartnerJoinClub.js
+|       PartnerSteps.js
+|       PartnerUnique.js
+|       
++---product
+|   |   GoodsAdded.js
+|   |   IncludedProductsBlock.js
+|   |   ProductGallery.js
+|   |   ProductInfo.js
+|   |   ProductStickyBar.js
+|   |   ProductTabs.js
+|   |   ProductVariants.js
+|   |   RelatedProducts.js
+|   |   SimilarProducts.js
+|   |   
+|   +---info
+|   |       ProductColors.js
+|   |       ProductConsultation.js
+|   |       ProductDeliveryLink.js
+|   |       ProductParameters.js
+|   |       ProductSizes.js
+|   |       
+|   \---tabs
+|           AdvicesTab.js
+|           DeliveryTab.js
+|           DescriptionTab.js
+|           InstructionsTab.js
+|           ItemsTab.js
+|           MaterialsTab.js
+|           ReviewsTab.js
+|           SizesTab.js
+|           
++---profile
+|   |   ActiveOrders.js
+|   |   Breadcrumbs.js
+|   |   EmptyState.js
+|   |   FavoriteProductCard.js
+|   |   Favorites.js
+|   |   GuestFavoriteSidebar.js
+|   |   OrderHistory.js
+|   |   Orders.js
+|   |   PersonalData.js
+|   |   PersonalSettings.js
+|   |   ProfileDashboard.js
+|   |   ProfileLayout.js
+|   |   ProfileSidebar.js
+|   |   Purchases.js
+|   |   Receipts.js
+|   |   ReturnOffcanvas.js
+|   |   
+|   \---modals
+|           EditEmailModal.js
+|           EditPassportModal.js
+|           EditPersonalDataModal.js
+|           EditPhoneModal.js
+|           SmsVerifyModal.js
+|           
++---recommendations
+|       NotFoundRecommendations.js
+|       ProductCard.js
+|       RecommendationsSection.js
+|       
++---services
+|       ServicesBanner.js
+|       ServicesCosts.js
+|       ServicesHow.js
+|       ServicesInfo.js
+|       ServicesList.js
+|       ServicesOrder.js
+|       ServicesWhy.js
+|       
+\---ui
+        Breadcrumbs.js
+        DatePicker.css
+        DatePicker.js
+        PageLoader.js
+        Pagination.js
+        ProductCard.js
+        RangeDatePicker.css
+        RangeDatePicker.js
+        
+
+hooks
+
+usePvzData.js
+    
+
+lib
+
++---api
+|       account.js
+|       auth.js
+|       cart.js
+|       delivery.js
+|       ikea.js
+|       
+\---utils
+        categoryHelpers.js
+        parseSkus.js
+        paymentUrl.js
+        productHelpers.js
+        

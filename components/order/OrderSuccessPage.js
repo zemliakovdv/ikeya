@@ -406,9 +406,9 @@ export default function OrderSuccessPage() {
                             <img src={resolveImageUrl(a.image_url)} alt={a.name} className="item-image" />
                             <div className="flex-grow-1">
                               <div className="item-infos">
-                                <div className="item-name">{a.name}</div>
+                                <div className="item-name">{a.description}</div>
                                 {a.description && (
-                                  <div className="item-desc">{a.description}</div>
+                                  <div className="item-desc">{a.name}</div>
                                 )}
                               </div>
                               <div className="item-meta">

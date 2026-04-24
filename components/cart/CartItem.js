@@ -100,10 +100,12 @@ export default function CartItem({
       <div className="cart-item__info">
         <div className="cart-item__title-row">
           <Link href={productUrl} className="cart-item__name">
-            {product.small_desc_name || product.name_ru || product.name || 'Без названия'}
+            {product.name_ru}
           </Link>
+          {product.name_ru && (
+            <p className="cart-item__desc">{product.small_desc_name || product.name || 'Без названия'}</p>
+          )}
         </div>
-        <p className="cart-item__desc">Артикул: {item.sku}</p>
 
         {isUnavailable && item.issue_reason && (
           <p className="cart-item__issue" style={{ color: '#B71C1C', fontSize: '14px' }}>

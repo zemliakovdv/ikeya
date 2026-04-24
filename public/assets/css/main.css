@@ -1087,7 +1087,7 @@ main {
     color: #181818;
     letter-spacing: 0.1px;
     text-transform: uppercase;
-    min-height: 40px;
+    min-height: 20px;
     max-height: 40px;
     overflow: hidden;
 }
@@ -1099,7 +1099,7 @@ main {
     line-height: 20px;
     color: #757575;
     letter-spacing: 0.25px;
-    min-height: 20px;
+    min-height: 40px;
     max-height: 40px;
     overflow: hidden;
 }
