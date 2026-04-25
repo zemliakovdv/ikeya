@@ -2691,6 +2691,11 @@
         max-width: 428px;
     }
 
+    .passport-row--series .datepicker-dropdown {
+        top: calc(25% + 6px);
+        left: 63%;
+    }
+
     .who-group textarea {
 
         max-height: 104px;
@@ -2712,6 +2717,11 @@
     .passport-row--id .datepicker-wrap {
         width: 50%;
         max-width: 428px;
+    }
+
+    .passport-row--id .datepicker-dropdown{
+        top: calc(70% + 6px);
+        left: 33%;
     }
 
     .passport-row--address1 .form-group {

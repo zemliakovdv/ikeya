@@ -808,9 +808,18 @@
     padding: 110px 0;
 }
 
-.allinone .popular-category {
+.allinone .popular-categories {
     max-width: 1500px;
     margin: 0 auto;
+}
+
+.allinone .categories-item-card {
+    max-width: 230px;
+    min-width: 230px;
+}
+
+.allinone .categories-card-img img{
+    max-width: 198px;
 }
 
 .allinone-description {
@@ -859,9 +868,10 @@
 
 .belka-characters {
     display: flex;
-    align-content: center;
+    align-items: center;
     gap: 32px;
     margin-bottom: 48px;
+    justify-content: center;
 }
 
 .belka-item {
@@ -894,6 +904,8 @@
     line-height: 150%;
     letter-spacing: 0.03em;
     color: #181818;
+    min-height: 48px;
+    margin-bottom: 0;
 }
 
 .belka-banner {

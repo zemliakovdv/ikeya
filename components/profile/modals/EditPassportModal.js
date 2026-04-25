@@ -19,17 +19,16 @@ const STEPS = { FORM: 'form', CODE: 'code', SUCCESS: 'success' };
 
 // ─── Регулярки ───────────────────────────────────────────────────────────────
 const RE_CYRILLIC     = /^[а-яёА-ЯЁ]+$/;
-const RE_CYRILLIC_CITY = /^[а-яёА-ЯЁ][а-яёА-ЯЁ\- ]*$/;  // кириллица + дефис + пробел
+const RE_CYRILLIC_CITY = /^[а-яёА-ЯЁ][а-яёА-ЯЁ\- ]*$/;
 const RE_LATIN_ONLY   = /^[A-Za-z]+$/;
 const RE_DIGITS_ONLY  = /^\d+$/;
 const RE_ALPHANUMERIC_LATIN = /^[A-Za-z0-9]+$/;
-const RE_HOUSE        = /^[0-9]+([/А-ЯЁа-яёA-Za-z])?$/; // 12, 12А, 3/5
+const RE_HOUSE        = /^[0-9]+([/А-ЯЁа-яёA-Za-z])?$/;
 
 // ─── Валидаторы ──────────────────────────────────────────────────────────────
 function validateForm(form) {
   const errors = {};
 
-  // ФИО — только кириллица
   if (!form.first_name.trim())
     errors.first_name = 'Введите имя';
   else if (!RE_CYRILLIC.test(form.first_name.trim()))
@@ -45,19 +44,16 @@ function validateForm(form) {
   else if (!RE_CYRILLIC.test(form.middle_name.trim()))
     errors.middle_name = 'Только кириллица, без цифр и символов';
 
-  // Серия — ровно 2 латинские буквы
   if (!form.series.trim())
     errors.series = 'Введите серию паспорта';
   else if (!RE_LATIN_ONLY.test(form.series.trim()) || form.series.trim().length !== 2)
     errors.series = 'Ровно 2 латинские буквы (например MC)';
 
-  // Номер — ровно 7 цифр
   if (!form.number.trim())
     errors.number = 'Введите номер паспорта';
   else if (!RE_DIGITS_ONLY.test(form.number.trim()) || form.number.trim().length !== 7)
     errors.number = 'Ровно 7 цифр';
 
-  // Идентификационный номер — ровно 14 символов, латиница + цифры
   if (!form.identification_number.trim())
     errors.identification_number = 'Введите идентификационный номер';
   else if (
@@ -66,7 +62,6 @@ function validateForm(form) {
   )
     errors.identification_number = 'Ровно 14 символов: цифры и латинские буквы';
 
-  // Дата рождения — от 14 до 100 лет
   if (!form.dob)
     errors.dob = 'Введите дату рождения';
   else {
@@ -80,19 +75,16 @@ function validateForm(form) {
       errors.dob = 'Возраст не может превышать 100 лет';
   }
 
-  // Город — кириллица + дефис
   if (!form.city.trim())
     errors.city = 'Введите город';
   else if (!RE_CYRILLIC_CITY.test(form.city.trim()))
     errors.city = 'Только кириллица и дефис';
 
-  // Индекс — только цифры
   if (!form.postcode.trim())
     errors.postcode = 'Введите индекс';
   else if (!RE_DIGITS_ONLY.test(form.postcode.trim()))
     errors.postcode = 'Только цифры';
 
-  // Дом — цифры + буква или слэш
   if (!form.house.trim())
     errors.house = 'Введите номер дома';
   else if (!RE_HOUSE.test(form.house.trim()))
@@ -133,11 +125,9 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
 
   const set = (key, val) => {
     setForm(p => ({ ...p, [key]: val }));
-    // Сбрасываем ошибку поля при изменении
     if (fieldErrors[key]) setFieldErrors(p => ({ ...p, [key]: '' }));
   };
 
-  // Шаг 1 — валидация + сохранить паспорт + запросить звонок
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -167,7 +157,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     }
   };
 
-  // Повторный запрос звонка
   const handleResend = async () => {
     setError('');
     try {
@@ -180,7 +169,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     }
   };
 
-  // Шаг 2 — подтвердить код
   const handleVerify = async (code) => {
     setLoading(true);
     setError('');
@@ -196,7 +184,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     }
   };
 
-  // Шаг CODE — рендерим SmsVerifyModal
   if (step === STEPS.CODE) {
     return (
       <>
@@ -211,14 +198,12 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
         />
         <div
           className="modal-backdrop fade show"
-          onClick={onClose}
           style={{ zIndex: 1054, background: 'rgba(24, 24, 24, 0.36)' }}
         />
       </>
     );
   }
 
-  // Хелпер для отображения ошибки поля
   const FieldError = ({ name }) =>
     fieldErrors[name]
       ? <p style={{ color: '#b71c1c', fontSize: '12px', marginTop: '4px' }}>{fieldErrors[name]}</p>
@@ -226,14 +211,13 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
 
   return (
     <>
-      <div id="editPassportModal" className="modal fade show d-block" onClick={onClose} style={{ zIndex: 1055 }}>
+      <div id="editPassportModal" className="modal fade show d-block" style={{ zIndex: 1055 }}>
         <div
           className="modal-dialog modal-dialog-centered modal-lg"
           onClick={e => e.stopPropagation()}
         >
           <div className="modal-content">
 
-            {/* ШАГ 1 — форма */}
             {step === STEPS.FORM && (
               <>
                 <div className="modal-header">
@@ -244,7 +228,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                 <div className="modal-body">
                   <form onSubmit={handleSubmit} noValidate>
 
-                    {/* Выбор страны */}
                     <div className="passport-country">
                       <label className="radio-item">
                         <input type="radio" name="country" defaultChecked readOnly />
@@ -259,7 +242,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.first_name ? ' is-invalid' : ''}`}
-                          placeholder="Имя"
+                          placeholder=" "
                           value={form.first_name}
                           onChange={e => set('first_name', e.target.value)}
                         />
@@ -270,7 +253,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.last_name ? ' is-invalid' : ''}`}
-                          placeholder="Фамилия"
+                          placeholder=" "
                           value={form.last_name}
                           onChange={e => set('last_name', e.target.value)}
                         />
@@ -281,7 +264,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.middle_name ? ' is-invalid' : ''}`}
-                          placeholder="Отчество"
+                          placeholder=" "
                           value={form.middle_name}
                           onChange={e => set('middle_name', e.target.value)}
                         />
@@ -296,7 +279,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.series ? ' is-invalid' : ''}`}
-                          placeholder="Серия паспорта"
+                          placeholder=" "
                           maxLength={2}
                           value={form.series}
                           onChange={e => set('series', e.target.value.toUpperCase())}
@@ -308,7 +291,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.number ? ' is-invalid' : ''}`}
-                          placeholder="Номер паспорта"
+                          placeholder=" "
                           maxLength={7}
                           value={form.number}
                           onChange={e => set('number', e.target.value.replace(/\D/g, ''))}
@@ -342,7 +325,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.identification_number ? ' is-invalid' : ''}`}
-                          placeholder="Идентификационный номер"
+                          placeholder=" "
                           maxLength={14}
                           value={form.identification_number}
                           onChange={e => set('identification_number', e.target.value.toUpperCase())}
@@ -384,7 +367,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.city ? ' is-invalid' : ''}`}
-                          placeholder="Город"
+                          placeholder=" "
                           value={form.city}
                           onChange={e => set('city', e.target.value)}
                         />
@@ -395,7 +378,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.postcode ? ' is-invalid' : ''}`}
-                          placeholder="Индекс"
+                          placeholder=" "
                           maxLength={6}
                           value={form.postcode}
                           onChange={e => set('postcode', e.target.value.replace(/\D/g, ''))}
@@ -411,7 +394,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Улица"
+                          placeholder=" "
                           value={form.street}
                           onChange={e => set('street', e.target.value)}
                           required
@@ -422,7 +405,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className={`form-control${fieldErrors.house ? ' is-invalid' : ''}`}
-                          placeholder="Дом"
+                          placeholder=" "
                           value={form.house}
                           onChange={e => set('house', e.target.value)}
                         />
@@ -433,7 +416,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Корпус"
+                          placeholder=" "
                           value={form.building}
                           onChange={e => set('building', e.target.value)}
                         />
@@ -443,7 +426,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         <input
                           type="text"
                           className="form-control"
-                          placeholder="Квартира"
+                          placeholder=" "
                           value={form.apartment}
                           onChange={e => set('apartment', e.target.value)}
                         />
@@ -469,7 +452,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
               </>
             )}
 
-            {/* ШАГ 3 — успех */}
             {step === STEPS.SUCCESS && (
               <>
                 <div className="modal-header">
@@ -495,7 +477,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
 
       <div
         className="modal-backdrop fade show"
-        onClick={onClose}
         style={{ zIndex: 1054, background: 'rgba(24, 24, 24, 0.36)' }}
       />
     </>
