@@ -10,6 +10,7 @@ import SavedAddressesModal from '@/components/delivery/modal/SavedAddressesModal
 import EditPersonalDataModal from '@/components/profile/modals/EditPersonalDataModal';
 import EditPassportModal from '@/components/profile/modals/EditPassportModal';
 import { getProfile, checkout } from '@/lib/api/cart';
+import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import { requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 
@@ -370,7 +371,7 @@ export default function CheckoutPage() {
     }
   }
 
-  async function handleA1Verify(code) {
+async function handleA1Verify(code) {
     setA1Loading(true);
     setA1Error(null);
     try {
@@ -405,7 +406,13 @@ export default function CheckoutPage() {
           }
         }))
       ));
-      router.push(`/order-success?order_id=${response.order_id}`);
+
+      const paymentUrl = resolvePaymentUrl(response.order?.attributes?.payment_url);
+      if (paymentMethod === 'card' && paymentUrl) {
+        window.location.href = paymentUrl;
+      } else {
+        router.push(`/order-success?order_id=${response.order_id}`);
+      }
     } catch (err) {
       setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
     } finally {
