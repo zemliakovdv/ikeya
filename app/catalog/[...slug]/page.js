@@ -154,10 +154,12 @@ export default async function CategoryPage({ params, searchParams }) {
 
               <div className="all-catalog-center" style={initialProducts.length === 0 ? { width: '100%' } : {}}>
                 <ProductSort currentSort={sort} />
-                <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
+                <Suspense fallback={null}>
+                  <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
+                </Suspense>
                 {initialProducts.length > 0 ? (
                   <>
-                  <ProductGridWithPagination
+                    <ProductGridWithPagination
                       initialProducts={initialProducts}
                       categoryId={currentCategory.id}
                       totalPages={totalPages}

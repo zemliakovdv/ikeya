@@ -42,32 +42,6 @@ export default function ProductTabsSection({
           },
         });
       });
-
-      document.querySelectorAll('.product-gallery-main').forEach((gallery) => {
-        const galleryId = gallery.getAttribute('data-gallery');
-        const thumbs = document.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
-
-        let thumbsSwiper = null;
-        if (thumbs) {
-          thumbsSwiper = new window.Swiper(thumbs, {
-            spaceBetween: 8,
-            slidesPerView: 3,
-            freeMode: true,
-            watchSlidesProgress: true,
-          });
-        }
-
-        new window.Swiper(gallery, {
-          spaceBetween: 10,
-          navigation: {
-            nextEl: gallery.querySelector('.swiper-button-next'),
-            prevEl: gallery.querySelector('.swiper-button-prev'),
-          },
-          thumbs: thumbsSwiper ? {
-            swiper: thumbsSwiper,
-          } : undefined,
-        });
-      });
     }, 100);
 
     return () => {
