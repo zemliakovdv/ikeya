@@ -29,6 +29,17 @@ export default function InfiniteProductGrid({
   const observerRef = useRef(null);   // IntersectionObserver instance
   const triggerRef = useRef(null);    // DOM-элемент триггера
 
+  // Сброс page из URL при обновлении страницы
+useEffect(() => {
+  if (typeof window === 'undefined') return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('page')) {
+    params.delete('page');
+    const qs = params.toString();
+    window.location.replace(qs ? `${basePath}?${qs}` : basePath);
+  }
+}, []);
+
   // Сбрасываем состояние при смене фильтров/категории
   useEffect(() => {
     setProducts(sanitize(initialProducts));
