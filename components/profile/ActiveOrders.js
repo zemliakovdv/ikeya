@@ -71,7 +71,7 @@ const OrderCard = ({ order }) => {
     }
 
     if (['transit', 'customs-belarus', 'in-transit-pvz'].includes(order.status)) {
-
+      return (
         <div className="order-address order-track">
           <div className="order-address__inner">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -88,7 +88,7 @@ const OrderCard = ({ order }) => {
       );
     }
 
-    if (['in-transit-pvz', 'arrived-pvz'].includes(order.status)) {
+    if (['arrived-pvz'].includes(order.status)) {
       return (
         <div className="orders-statuses">
           <div className="order-address">
@@ -113,28 +113,28 @@ const OrderCard = ({ order }) => {
 
   const getBadgeClass = () => {
     const map = {
-      'awaiting': 'badge-awaiting',
-      'assembly': 'badge-assembly',
-      'transit': 'badge-available',
-      'customs-belarus': 'badge-available',
+      'awaiting':       'badge-awaiting',
+      'assembly':       'badge-assembly',
+      'transit':        'badge-available',
+      'customs-belarus':'badge-available',
       'in-transit-pvz': 'badge-available',
-      'arrived-pvz': 'badge-ready',
-      'delivered': 'badge-havit',
-      'canceled': 'badge-canceled',
+      'arrived-pvz':    'badge-ready',
+      'delivered':      'badge-havit',
+      'canceled':       'badge-canceled',
     };
     return map[order.status] || '';
   };
 
   const getStatusText = () => {
     const map = {
-      'awaiting': 'Ждёт оплаты',
-      'assembly': 'В обработке',
-      'transit': 'В пути',
-      'customs-belarus': 'Прибыл на таможню',
+      'awaiting':       'Ждёт оплаты',
+      'assembly':       'В обработке',
+      'transit':        'В пути',
+      'customs-belarus':'Прибыл на таможню',
       'in-transit-pvz': 'Передано в доставку',
-      'arrived-pvz': 'Прибыло в отделение',
-      'delivered': 'Доставлено',
-      'canceled': 'Отменён',
+      'arrived-pvz':    'Прибыло в отделение',
+      'delivered':      'Доставлено',
+      'canceled':       'Отменён',
     };
     return map[order.status] || 'В обработке';
   };
