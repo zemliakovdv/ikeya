@@ -70,8 +70,8 @@ const OrderCard = ({ order }) => {
       );
     }
 
-    if (['transit', 'available-warehouse', 'assembly-process', 'customs-poland', 'customs-belarus'].includes(order.status)) {
-      return (
+    if (['transit', 'customs-belarus', 'in-transit-pvz'].includes(order.status)) {
+
         <div className="order-address order-track">
           <div className="order-address__inner">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -113,30 +113,28 @@ const OrderCard = ({ order }) => {
 
   const getBadgeClass = () => {
     const map = {
-      'assembly': 'badge-assembly',
       'awaiting': 'badge-awaiting',
+      'assembly': 'badge-assembly',
       'transit': 'badge-available',
-      'available-warehouse': 'badge-available',
-      'assembly-process': 'badge-available',
-      'customs-poland': 'badge-available',
       'customs-belarus': 'badge-available',
       'in-transit-pvz': 'badge-available',
       'arrived-pvz': 'badge-ready',
+      'delivered': 'badge-havit',
+      'canceled': 'badge-canceled',
     };
     return map[order.status] || '';
   };
 
   const getStatusText = () => {
     const map = {
-      'assembly': 'В обработке',
       'awaiting': 'Ждёт оплаты',
+      'assembly': 'В обработке',
       'transit': 'В пути',
-      'available-warehouse': 'Получен на склад',
-      'assembly-process': 'Подготовка и сборка',
-      'customs-poland': 'Таможня Польша',
-      'customs-belarus': 'Таможня Беларусь',
-      'in-transit-pvz': 'В доставке ПВЗ',
-      'arrived-pvz': 'Прибыл в ПВЗ',
+      'customs-belarus': 'Прибыл на таможню',
+      'in-transit-pvz': 'Передано в доставку',
+      'arrived-pvz': 'Прибыло в отделение',
+      'delivered': 'Доставлено',
+      'canceled': 'Отменён',
     };
     return map[order.status] || 'В обработке';
   };

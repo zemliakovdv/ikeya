@@ -23,32 +23,29 @@ function mapApiOrder(apiOrder) {
   const effectiveStatus = (a.status === 'created' && a.payment_expired) ? 'canceled' : a.status;
 
   const statusMap = {
-    created:             'awaiting',
-    awaiting_payment:    'awaiting',
-    pending:             'assembly',
-    processing:          'assembly',
-    paid:                'assembly',
-    assembly:            'assembly',
-    assembly_process:    'assembly-process',
-    transit:             'transit',
-    handed_to_courier:   'transit',
-    customs_poland:      'customs-poland',
-    customs_belarus:     'customs-belarus',
-    available_warehouse: 'available-warehouse',
-    delivering:          'in-transit-pvz',
-    delivered_to_pvz:    'arrived-pvz',
-    delivered:           'delivered',
-    completed:           'delivered',
-    canceled:            'canceled',
-    cancelled:           'canceled',
-    returned:            'canceled',
+    created: 'awaiting',
+    processing: 'assembly',
+    confirmed: 'assembly',
+    paid: 'assembly',
+    purchased: 'assembly',
+    received_poland: 'transit',
+    preparing_for_shipment: 'transit',
+    export_eu: 'transit',
+    customs_poland: 'transit',
+    on_border: 'customs-belarus',
+    customs_belarus: 'customs-belarus',
+    shipped: 'in-transit-pvz',
+    handed_to_courier: 'in-transit-pvz',
+    arrived_pvz: 'arrived-pvz',
+    completed: 'delivered',
+    cancelled: 'canceled',
   };
 
   // Планируемая дата получения: +20 дней от даты создания
   const createdAt = new Date(a.created_at);
   const deliveryDate = new Date(createdAt);
   deliveryDate.setDate(deliveryDate.getDate() + 20);
-  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
   const dateRange = `${deliveryDate.getDate()} ${months[deliveryDate.getMonth()]}`;
 
   // Секунды до истечения оплаты
@@ -60,17 +57,17 @@ function mapApiOrder(apiOrder) {
   }
 
   return {
-    id:                 a.id,
-    status:             statusMap[effectiveStatus] || 'assembly',
-    rawStatus:          effectiveStatus,
-    rawDate:            a.created_at,
-    date:               createdAt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
+    id: a.id,
+    status: statusMap[effectiveStatus] || 'assembly',
+    rawStatus: effectiveStatus,
+    rawDate: a.created_at,
+    date: createdAt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
     dateRange,
-    price:              a.total_amount  || 0,
-    trackNumber:        a.track_number  || '',
-    paymentUrl:         a.payment_url   || null,
-    paymentExpired:     a.payment_expired === true,
-    paymentExpiresAt:   a.payment_expires_at || null,
+    price: a.total_amount || 0,
+    trackNumber: a.track_number || '',
+    paymentUrl: a.payment_url || null,
+    paymentExpired: a.payment_expired === true,
+    paymentExpiresAt: a.payment_expires_at || null,
     paymentSecondsLeft,
   };
 }
@@ -91,12 +88,12 @@ export default function OrdersPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('active');
 
-  const [activeOrders,        setActiveOrders]        = useState([]);
-  const [historyOrders,       setHistoryOrders]       = useState([]);
-  const [purchasesByOrderId,  setPurchasesByOrderId]  = useState({});
-  const [allPurchases,        setAllPurchases]        = useState([]);
+  const [activeOrders, setActiveOrders] = useState([]);
+  const [historyOrders, setHistoryOrders] = useState([]);
+  const [purchasesByOrderId, setPurchasesByOrderId] = useState({});
+  const [allPurchases, setAllPurchases] = useState([]);
 
-  const [loadingOrders,    setLoadingOrders]    = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   const [loadingPurchases, setLoadingPurchases] = useState(true);
   const [error, setError] = useState('');
 
