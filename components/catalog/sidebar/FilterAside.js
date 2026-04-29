@@ -194,9 +194,9 @@ export default function FilterAside({
       className="filter-aside"
       style={{
         position: 'sticky',
-        top: '300px',
+        top: '80px',
         alignSelf: 'flex-start',
-        maxHeight: 'calc(100vh - 300px)',
+        maxHeight: 'calc(100vh - 80px)',
         overflowY: 'auto',
         overflowX: 'hidden',
       }}

@@ -8429,7 +8429,7 @@ main {
 
 
 .filter-aside {
-    scrollbar-width: none;
+    scrollbar-width: auto;
     -ms-overflow-style: none;
 }
 
