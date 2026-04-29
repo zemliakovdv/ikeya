@@ -5429,6 +5429,9 @@ main {
 .cart-summary {
     width: 25%;
     max-width: 360px;
+    position: sticky;
+    top: 80px;
+    align-self: flex-start;
 }
 
 .cart-summary__inner {
@@ -5542,8 +5545,9 @@ main {
     color: #181818;
 }
 
-.cart-summary__notice a{
-    color: #0058A3;;
+.cart-summary__notice a {
+    color: #0058A3;
+    ;
 }
 
 
@@ -6415,6 +6419,26 @@ main {
 
 .pickup-section .alert {
     gap: 16px;
+    align-items: center;
+    background: #fafafa;
+    border: none;
+    margin-top: 16px;
+}
+
+.pickup-section .alert-danger span {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #b71c1c;
+}
+
+.vgh-details-link {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    color: #757575;
 }
 
 .pickup-section .alert-info {

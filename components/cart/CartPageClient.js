@@ -38,7 +38,7 @@ export default function CartPageClient() {
     fetch('https://api.nbrb.by/exrates/rates/EUR?parammode=2')
       .then(r => r.json())
       .then(data => { if (data?.Cur_OfficialRate) setEurRate(data.Cur_OfficialRate); })
-      .catch(() => {}); // оставляем fallback 3.5
+      .catch(() => { }); // оставляем fallback 3.5
   }, []);
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function CartPageClient() {
       const added = skus.filter(sku => !prev.includes(sku));
       return [...filtered, ...added];
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableSkusKey]);
 
   // Пересчёт доставки при изменении выбранных товаров
@@ -90,9 +90,9 @@ export default function CartPageClient() {
     });
 
     setDeliveryLoading(true);
-    calculateDelivery({ delivery_type: 'pickup', items })
+    calculateDelivery({ delivery_type: 'ikeya_delivery', items })
       .then(data => {
-        const cost = parseFloat(data?.delivery?.base_cost_byn || 0);
+        const cost = parseFloat(data?.delivery?.delivery_to_belarus_price_byn || 0);
         setDelivery(cost);
       })
       .catch(() => setDelivery(0))

@@ -8,6 +8,7 @@ export default function CartSummary({
   promoDiscount = 0,
   delivery = 0,
   pvzDelivery = 0,
+  courierDelivery = 0,
   itemCount = 0,
   totalWeight = 0,
   canCheckout = true,
@@ -23,7 +24,6 @@ export default function CartSummary({
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('error');
-  const [customsModalOpen, setCustomsModalOpen] = useState(false);
 
   const appliedPromo = useMemo(() => {
     const items = cart?.items || [];
@@ -32,7 +32,7 @@ export default function CartSummary({
   }, [cart]);
 
   const hasPromo = appliedPromo !== null;
-  const finalTotal = subtotal - promoDiscount + delivery + pvzDelivery;
+  const finalTotal = subtotal - promoDiscount + delivery + pvzDelivery + courierDelivery;
 
   const show = (type, msg) => {
     setToastType(type);
@@ -74,7 +74,7 @@ export default function CartSummary({
         aria-atomic="true"
       >
         <div className="d-flex">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <path
               d={
                 toastType === 'success'
@@ -129,17 +129,17 @@ export default function CartSummary({
           <p className="summery-row__cost">{subtotal.toFixed(2)} р.</p>
         </div>
 
-        <div
-          className="cart-summary__row is_promocod"
-          style={{ display: hasPromo && promoDiscount > 0 ? 'flex' : 'none' }}
-        >
-          <p>Скидка по промокоду</p>
-          <div></div>
-          <p className="summery-row__cost-promo" style={{ color: '#B71C1C' }}>
-            -{promoDiscount.toFixed(2)} р.
-          </p>
-        </div>
+        {hasPromo && promoDiscount > 0 && (
+          <div className="cart-summary__row is_promocod">
+            <p>Скидка по промокоду</p>
+            <div></div>
+            <p className="summery-row__cost-promo" style={{ color: '#B71C1C' }}>
+              -{promoDiscount.toFixed(2)} р.
+            </p>
+          </div>
+        )}
 
+        {/* Доставка в Беларусь — всегда */}
         <div className="cart-summary__row">
           <p>Доставка в Беларусь</p>
           <div></div>
@@ -148,11 +148,21 @@ export default function CartSummary({
           </p>
         </div>
 
+        {/* Доставка до ПВЗ — только если выбран самовывоз */}
         {pvzDelivery > 0 && (
           <div className="cart-summary__row">
             <p>Доставка до ПВЗ</p>
             <div></div>
             <p className="summery-row__cost pvz-delivery">{pvzDelivery.toFixed(2)} р.</p>
+          </div>
+        )}
+
+        {/* Доставка — только если курьер Европочты */}
+        {courierDelivery > 0 && (
+          <div className="cart-summary__row">
+            <p>Доставка</p>
+            <div></div>
+            <p className="summery-row__cost">{courierDelivery.toFixed(2)} р.</p>
           </div>
         )}
 
@@ -173,13 +183,17 @@ export default function CartSummary({
           {checkoutButtonText}
         </button>
 
-        <p className="cart-summary__notice">Оформляя заказ, я принимаю условия <a href="#" target='_blank' rel='nofollow'>договора-оферты</a> таможенного представителя</p>
+        <p className="cart-summary__notice">
+          Оформляя заказ, я принимаю условия{' '}
+          <a href="#" target="_blank" rel="nofollow">договора-оферты</a>{' '}
+          таможенного представителя
+        </p>
       </div>
 
       <div className="cart-summary__note">
         <div className="summary-note__wrap">
           <p className="cart-summary__note-icon">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M9.99996 1.66669C5.40829 1.66669 1.66663 5.40835 1.66663 10C1.66663 14.5917 5.40829 18.3334 9.99996 18.3334C14.5916 18.3334 18.3333 14.5917 18.3333 10C18.3333 5.40835 14.5916 1.66669 9.99996 1.66669ZM13.1 10.5834H10.5833V13.1C10.5833 13.425 10.325 13.6834 9.99996 13.6834C9.67496 13.6834 9.41663 13.425 9.41663 13.1V10.5834H6.89996C6.57496 10.5834 6.31663 10.325 6.31663 10C6.31663 9.67502 6.57496 9.41669 6.89996 9.41669H9.41663V6.90002C9.41663 6.57502 9.67496 6.31669 9.99996 6.31669C10.325 6.31669 10.5833 6.57502 10.5833 6.90002V9.41669H13.1C13.425 9.41669 13.6833 9.67502 13.6833 10C13.6833 10.325 13.425 10.5834 13.1 10.5834Z" fill="#CE0061" />
             </svg>
           </p>
@@ -190,7 +204,6 @@ export default function CartSummary({
             }
           </p>
         </div>
-        {/* Заменили a[data-bs-toggle] на button + React state */}
         <a href="/help/customs/" target="_blank" rel="noopener noreferrer" className="cart-summary__details-link">
           Подробнее
         </a>

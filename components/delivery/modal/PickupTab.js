@@ -7,18 +7,17 @@ import { normalizePoint, getCardTitle, PIN_EUROPOST } from '@/hooks/usePvzData';
 import PvzCard from '@/components/delivery/cards/PvzCard';
 import PvzDetail from '@/components/delivery/cards/PvzDetail';
 import DeliveryMap from '@/components/delivery/map/DeliveryMap';
-
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { getEuropostOffices, calculateDelivery } from '@/lib/api/delivery';
 
 /**
  * PickupTab
  *
  * Props:
- *  - ymapsReady  {boolean}
- *  - cartToken   {string}
- *  - cartItems   {Array}  [{sku, quantity}]
- *  - onSelect    {fn(pvz, calcResult)}
- *  - activeTab   {'pickup'|'delivery'}
+ *  - ymapsReady   {boolean}
+ *  - cartToken    {string}
+ *  - cartItems    {Array}  [{sku, quantity}]
+ *  - onSelect     {fn(pvz, calcResult)}
+ *  - activeTab    {'pickup'|'delivery'}
  *  - setActiveTab {fn}
  */
 export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect, activeTab, setActiveTab }) {
@@ -34,13 +33,12 @@ export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect, 
   const searchTimer = useRef(null);
 
   // Загружаем ПВЗ Европочты
+  // Если есть cartToken — передаём cart_id для ВГХ-фильтрации и получения ETA/цен
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/delivery/europost_offices`);
-        if (!res.ok) throw new Error('Failed');
-        const data = await res.json();
+        const data = await getEuropostOffices(cartToken || null);
         const points = (data.offices || []).map(o => normalizePoint(o, 'europost'));
         setAllPoints(points);
         setFiltered(points);
@@ -51,7 +49,7 @@ export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect, 
       }
     }
     load();
-  }, []);
+  }, [cartToken]);
 
   // Фильтрация по поиску
   useEffect(() => {
@@ -69,7 +67,7 @@ export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect, 
     searchTimer.current = setTimeout(() => setSearch(e.target.value), 300);
   };
 
-  // Клик на карточку — только центрируем карту
+  // Клик на карточку — центрируем карту
   const handleCardClick = (point) => {
     if (point.lat && point.lon) {
       setMapCenter({ coords: [point.lat, point.lon], zoom: 15 });
@@ -85,19 +83,15 @@ export default function PickupTab({ ymapsReady, cartToken, cartItems, onSelect, 
 
     setCalcLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/delivery/calculate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cart_token: cartToken,
-          delivery_type: 'pickup',
-          pickup_point_id: point.id,
-          items: cartItems,
-        }),
+      const result = await calculateDelivery({
+        cart_token:      cartToken,
+        delivery_type:   'europost_pickup',
+        pickup_point_id: point.id,
+        items:           cartItems,
       });
-      if (res.ok) setCalcResult(await res.json());
+      setCalcResult(result);
     } catch (e) {
-      console.error('Ошибка calculate:', e);
+      console.error('Ошибка calculate europost_pickup:', e);
     } finally {
       setCalcLoading(false);
     }

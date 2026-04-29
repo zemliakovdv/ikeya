@@ -13,7 +13,7 @@ export default function PvzPageClient() {
   const [ymapsReady, setYmapsReady] = useState(
     typeof window !== 'undefined' && !!window.ymaps
   );
-  const needScript = typeof window !== 'undefined' && !window.ymaps;
+  const needScript = !ymapsReady;
 
   return (
     <>

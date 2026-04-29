@@ -11,7 +11,7 @@ const PassportIcon = () => (
 );
 
 const EuropostLogo = () => (
-  <svg width="100" height="28" viewBox="0 0 24 24" fill="none">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
     <circle cx="12" cy="12" r="12" fill="white" />
     <circle cx="12" cy="12" r="10.8" fill="#FF0000" />
     <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white" />
@@ -27,10 +27,16 @@ const IkeyaLogo = () => (
   </span>
 );
 
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return `${day} ${months[date.getMonth()]}`;
+}
+
 /**
  * DeliveryResult — результат расчёта доставки по адресу
- *
- * Используется в DeliveryTab (модалка) и в личном кабинете.
  *
  * Props:
  *  - calcResult  {object|null} — ответ от /delivery/calculate
@@ -38,11 +44,13 @@ const IkeyaLogo = () => (
 export default function DeliveryResult({ calcResult }) {
   const [conditionsOpen, setConditionsOpen] = useState(false);
 
-  const deliveryType = calcResult?.delivery?.type;
-  const isEuropost   = deliveryType === 'europost_courier';
-  const isFree       = calcResult?.delivery?.free_delivery_eligible;
-  const cost         = calcResult?.delivery?.base_cost_byn;
-  const estimatedDate = calcResult?.delivery?.estimated_date;
+  const delivery      = calcResult?.delivery;
+  const deliveryType  = delivery?.normalized_delivery_type || delivery?.type;
+  const isEuropost    = deliveryType === 'courier';
+  const isFree        = delivery?.free_delivery_eligible;
+  const cost          = delivery?.total_delivery_price_byn || delivery?.delivery_price_byn;
+  const deliveryDate  = delivery?.delivery_date;
+  const storageUntil  = delivery?.storage_until;
 
   return (
     <div className="delivery-result">
@@ -57,7 +65,7 @@ export default function DeliveryResult({ calcResult }) {
         </span>
       </div>
 
-      {/* Стоимость и дата — только для Европочты */}
+      {/* Стоимость и даты — только для Европочты */}
       {isEuropost && (
         <>
           <div className="delivery-result__row">
@@ -70,10 +78,17 @@ export default function DeliveryResult({ calcResult }) {
             </span>
           </div>
 
-          {estimatedDate && (
+          {deliveryDate && (
             <div className="delivery-result__row">
               <span className="delivery-result__label">Дата доставки</span>
-              <span className="delivery-result__value">{estimatedDate}</span>
+              <span className="delivery-result__value">{formatDate(deliveryDate)}</span>
+            </div>
+          )}
+
+          {storageUntil && (
+            <div className="delivery-result__row">
+              <span className="delivery-result__label">Хранение до</span>
+              <span className="delivery-result__value">{formatDate(storageUntil)}</span>
             </div>
           )}
         </>
@@ -85,7 +100,7 @@ export default function DeliveryResult({ calcResult }) {
         <span>Для получения заказа необходим паспорт</span>
       </div>
 
-      {/* Европочта — условия + примечание */}
+      {/* Европочта — условия */}
       {isEuropost && (
         <>
           <button

@@ -17,6 +17,14 @@ const ClockIcon = () => (
   </svg>
 );
 
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  return `${day} ${months[date.getMonth()]}`;
+}
+
 /**
  * PvzDetail — детальная карточка ПВЗ (после «Подробнее»)
  *
@@ -24,13 +32,15 @@ const ClockIcon = () => (
  *  - point       {object}   — данные ПВЗ
  *  - calcResult  {object}   — результат calculate
  *  - calcLoading {boolean}
- *  - onBack      {fn}       — вернуться к списку
- *  - onSelect    {fn}       — выбрать этот ПВЗ
+ *  - onBack      {fn}
+ *  - onSelect    {fn}
  */
 export default function PvzDetail({ point, calcResult, calcLoading, onBack, onSelect }) {
-  const deliveryCost = calcResult?.delivery;
-  const isFree = deliveryCost?.free_delivery_eligible;
-  const cost = deliveryCost?.base_cost_byn;
+  const delivery     = calcResult?.delivery;
+  const isFree       = delivery?.free_delivery_eligible;
+  const cost         = delivery?.total_delivery_price_byn || delivery?.delivery_price_byn;
+  const deliveryDate = delivery?.delivery_date;
+  const storageUntil = delivery?.storage_until;
 
   return (
     <>
@@ -75,6 +85,20 @@ export default function PvzDetail({ point, calcResult, calcLoading, onBack, onSe
                 }
               </span>
             </div>
+
+            {deliveryDate && (
+              <div className="pvz-detail__calc-row">
+                <span className="pvz-detail__calc-label">Дата доставки</span>
+                <span className="pvz-detail__calc-value">{formatDate(deliveryDate)}</span>
+              </div>
+            )}
+
+            {storageUntil && (
+              <div className="pvz-detail__calc-row">
+                <span className="pvz-detail__calc-label">Хранение до</span>
+                <span className="pvz-detail__calc-value">{formatDate(storageUntil)}</span>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import DeliveryMap from '@/components/delivery/map/DeliveryMap';
 import DeliveryResult from '@/components/delivery/cards/DeliveryResult';
+import { calculateDelivery } from '@/lib/api/delivery';
 
 const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
@@ -19,50 +20,70 @@ const API_BASE_URL = 'https://test.ikeya.by/api/v1';
  */
 export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect }) {
   const [form, setForm] = useState({
-    address: '',
-    apartment: '',
-    entrance: '',
-    floor: '',
-    intercom: '',
+    fullAddress: '',   // строка для отображения и геокодирования
+    city:        '',
+    street:      '',
+    house:       '',
+    building:    '',
+    apartment:   '',
+    entrance:    '',
+    floor:       '',
+    intercom:    '',
+    has_elevator: false,
     isPrivateHouse: false,
-    lift: 'none', // 'none' | 'freight' | 'passenger'
   });
 
-  const [step, setStep]           = useState('form'); // 'form' | 'result'
+  const [step, setStep]             = useState('form'); // 'form' | 'result'
   const [calcResult, setCalcResult] = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
-  const [coords, setCoords]       = useState(null);   // [lat, lon]
-  const [geoError, setGeoError]   = useState(null);
-  const [pinCoords, setPinCoords] = useState(null);   // передаём в карту
+  const [calcError, setCalcError]   = useState(null);
+  const [coords, setCoords]         = useState(null);
+  const [geoError, setGeoError]     = useState(null);
+  const [pinCoords, setPinCoords]   = useState(null);
 
-  const ymapRef = useRef(null); // ссылка на инстанс карты из DeliveryMap
   const addressDebounce = useRef(null);
 
   // Геолокация при открытии вкладки
   useEffect(() => {
     if (!ymapsReady) return;
-
     window.ymaps.ready(() => {
       window.ymaps.geolocation
         .get({ provider: 'browser', autoReverseGeocode: true })
         .then((geo) => {
           const position = geo.geoObjects.get(0);
           if (!position) return;
-
           const pos = position.geometry.getCoordinates();
           setCoords(pos);
           setPinCoords(pos);
-
           const addressLine = position.properties.get('text');
           if (addressLine) {
-            setForm(prev => ({ ...prev, address: addressLine }));
+            setForm(prev => ({ ...prev, fullAddress: addressLine }));
+            parseGeoAddress(position);
           }
         })
         .catch(() => setGeoError('Не удалось определить местоположение'));
     });
   }, [ymapsReady]);
 
-  // Геокодирование при ручном вводе адреса
+  // Разбираем объект геообъекта на поля
+  function parseGeoAddress(geoObj) {
+    try {
+      const locality   = geoObj.properties.get('metaDataProperty.GeocoderMetaData.Address.Components')
+        ?.find(c => c.kind === 'locality')?.name || '';
+      const street     = geoObj.properties.get('metaDataProperty.GeocoderMetaData.Address.Components')
+        ?.find(c => c.kind === 'street')?.name || '';
+      const house      = geoObj.properties.get('metaDataProperty.GeocoderMetaData.Address.Components')
+        ?.find(c => c.kind === 'house')?.name || '';
+      setForm(prev => ({
+        ...prev,
+        city:   locality,
+        street: street,
+        house:  house,
+      }));
+    } catch {}
+  }
+
+  // Геокодирование при вводе адреса
   const geocodeAddress = useCallback((address) => {
     if (!ymapsReady || !address.trim()) return;
     window.ymaps.geocode(address, { results: 1 }).then((res) => {
@@ -71,18 +92,19 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
         const pos = obj.geometry.getCoordinates();
         setCoords(pos);
         setPinCoords(pos);
+        parseGeoAddress(obj);
       }
     });
   }, [ymapsReady]);
 
   const handleAddressChange = (e) => {
     const val = e.target.value;
-    setForm(prev => ({ ...prev, address: val }));
+    setForm(prev => ({ ...prev, fullAddress: val }));
     clearTimeout(addressDebounce.current);
     addressDebounce.current = setTimeout(() => geocodeAddress(val), 700);
   };
 
-  // Клик по карте — обновляем пин и адрес через reverse geocode
+  // Клик по карте
   const handleMapClick = useCallback((pos) => {
     setCoords(pos);
     setPinCoords(pos);
@@ -90,30 +112,47 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
     window.ymaps.geocode(pos, { results: 1 }).then((res) => {
       const obj = res.geoObjects.get(0);
       if (obj) {
-        setForm(prev => ({ ...prev, address: obj.getAddressLine() }));
+        setForm(prev => ({ ...prev, fullAddress: obj.getAddressLine() }));
+        parseGeoAddress(obj);
       }
     });
   }, [ymapsReady]);
 
+  // Расчёт доставки: сначала courier, при 422 — ikeya_delivery
   const handleSubmit = async () => {
-    if (!form.address.trim()) return;
-
+    if (!form.fullAddress.trim()) return;
     setCalcLoading(true);
     setCalcResult(null);
+    setCalcError(null);
+
+    const payload = {
+      cart_token:    cartToken,
+      delivery_type: 'courier',
+      items:         cartItems,
+    };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/delivery/calculate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cart_token: cartToken,
-          delivery_type: 'courier',
-          items: cartItems,
-        }),
-      });
-      if (res.ok) setCalcResult(await res.json());
-    } catch (e) {
-      console.error('Ошибка calculate courier:', e);
+      const result = await calculateDelivery(payload);
+      setCalcResult(result);
+    } catch (err) {
+      if (err.status === 422) {
+        const available = err.payload?.available_methods || [];
+        if (available.some(m => m.code === 'ikeya_delivery' && m.available)) {
+          try {
+            const fallback = await calculateDelivery({
+              ...payload,
+              delivery_type: 'ikeya_delivery',
+            });
+            setCalcResult(fallback);
+          } catch (e2) {
+            setCalcError('Не удалось рассчитать доставку');
+          }
+        } else {
+          setCalcError(err.payload?.error || 'Доставка по этому адресу недоступна');
+        }
+      } else {
+        setCalcError('Ошибка расчёта доставки');
+      }
     } finally {
       setCalcLoading(false);
       setStep('result');
@@ -123,27 +162,35 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
   const handleBack = () => {
     setStep('form');
     setCalcResult(null);
+    setCalcError(null);
   };
 
   const handleSelect = () => {
     const addr = {
-      address: form.address,
-      apartment: form.apartment,
-      entrance: form.entrance,
-      floor: form.floor,
-      intercom: form.intercom,
-      isPrivateHouse: form.isPrivateHouse,
-      lift: form.lift,
+      // Поля для API /account/delivery_addresses и /checkout
+      city:            form.city,
+      street:          form.street,
+      house:           form.house,
+      building:        form.building,
+      apartment:       form.apartment,
+      entrance:        form.entrance,
+      floor:           form.floor,
+      has_elevator:    form.has_elevator,
+      intercom:        form.intercom,
+      is_private_house: form.isPrivateHouse,
+      // Для отображения
+      address:         form.fullAddress,
+      label:           form.apartment
+        ? `${form.fullAddress}, кв.${form.apartment}`
+        : form.fullAddress,
       coords,
-      deliveryType: calcResult?.delivery?.type || 'ikeya',
     };
     onSelect?.(addr, calcResult);
   };
 
-  const displayAddress = [
-    form.address,
-    form.apartment ? `кв.${form.apartment}` : '',
-  ].filter(Boolean).join(', ');
+  const displayAddress = form.apartment
+    ? `${form.fullAddress}, кв.${form.apartment}`
+    : form.fullAddress;
 
   return (
     <div className="pvz-layout">
@@ -167,7 +214,7 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
                 type="text"
                 className="delivery-address-field"
                 placeholder="Город, улица и дом"
-                value={form.address}
+                value={form.fullAddress}
                 onChange={handleAddressChange}
               />
             </div>
@@ -216,27 +263,14 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
                   />
                 </div>
 
-                <div className="delivery-lift">
-                  <span className="delivery-lift-label">Лифт</span>
-                  <div className="delivery-lift-options">
-                    {[
-                      { value: 'none',      label: 'Нет' },
-                      { value: 'freight',   label: 'грузовой' },
-                      { value: 'passenger', label: 'пассажирский' },
-                    ].map(opt => (
-                      <label key={opt.value} className="delivery-lift-option">
-                        <input
-                          type="radio"
-                          name="lift"
-                          value={opt.value}
-                          checked={form.lift === opt.value}
-                          onChange={() => setForm(prev => ({ ...prev, lift: opt.value }))}
-                        />
-                        <span>{opt.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                <label className="delivery-checkbox" style={{ marginTop: 8 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.has_elevator}
+                    onChange={e => setForm(prev => ({ ...prev, has_elevator: e.target.checked }))}
+                  />
+                  <span>Есть лифт</span>
+                </label>
               </>
             )}
 
@@ -245,7 +279,7 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
                 type="button"
                 className="pvz-select-btn"
                 onClick={handleSubmit}
-                disabled={!form.address.trim() || calcLoading}
+                disabled={!form.fullAddress.trim() || calcLoading}
               >
                 {calcLoading ? 'Расчёт...' : 'Добавить'}
               </button>
@@ -266,21 +300,41 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
                 />
               </div>
 
-              <DeliveryResult
-                calcResult={calcResult}
-                onSelect={handleSelect}
-              />
+              {calcError && (
+                <div className="delivery-geo-error">{calcError}</div>
+              )}
+
+              {!calcError && (
+                <DeliveryResult
+                  calcResult={calcResult}
+                  onSelect={handleSelect}
+                />
+              )}
             </div>
 
-            <div className="pvz-detail__footer">
-              <button
-                type="button"
-                className="pvz-select-btn"
-                onClick={handleSelect}
-              >
-                Выбрать
-              </button>
-            </div>
+            {!calcError && (
+              <div className="pvz-detail__footer">
+                <button
+                  type="button"
+                  className="pvz-select-btn"
+                  onClick={handleSelect}
+                >
+                  Выбрать
+                </button>
+              </div>
+            )}
+
+            {calcError && (
+              <div className="pvz-detail__footer">
+                <button
+                  type="button"
+                  className="pvz-select-btn"
+                  onClick={handleBack}
+                >
+                  Изменить адрес
+                </button>
+              </div>
+            )}
           </>
         )}
 
