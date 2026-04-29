@@ -5543,11 +5543,11 @@ main {
     font-size: 14px;
     line-height: 143%;
     color: #181818;
+    margin-bottom: 0;
 }
 
 .cart-summary__notice a {
     color: #0058A3;
-    ;
 }
 
 
