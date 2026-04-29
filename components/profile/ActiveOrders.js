@@ -113,30 +113,20 @@ const OrderCard = ({ order }) => {
 
   const getBadgeClass = () => {
     const map = {
-      'awaiting':       'badge-awaiting',
-      'assembly':       'badge-assembly',
-      'transit':        'badge-available',
-      'customs-belarus':'badge-available',
+      'awaiting': 'badge-awaiting',
+      'assembly': 'badge-assembly',
+      'transit': 'badge-available',
+      'customs-belarus': 'badge-available',
       'in-transit-pvz': 'badge-available',
-      'arrived-pvz':    'badge-ready',
-      'delivered':      'badge-havit',
-      'canceled':       'badge-canceled',
+      'arrived-pvz': 'badge-ready',
+      'delivered': 'badge-havit',
+      'canceled': 'badge-canceled',
     };
     return map[order.status] || '';
   };
 
   const getStatusText = () => {
-    const map = {
-      'awaiting':       'Ждёт оплаты',
-      'assembly':       'В обработке',
-      'transit':        'В пути',
-      'customs-belarus':'Прибыл на таможню',
-      'in-transit-pvz': 'Передано в доставку',
-      'arrived-pvz':    'Прибыло в отделение',
-      'delivered':      'Доставлено',
-      'canceled':       'Отменён',
-    };
-    return map[order.status] || 'В обработке';
+    return order.statusDescription || order.status || 'В обработке';
   };
 
   return (

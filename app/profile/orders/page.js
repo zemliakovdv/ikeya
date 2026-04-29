@@ -16,7 +16,21 @@ const breadcrumbs = [
   { label: 'Заказы', href: null },
 ];
 
-function mapApiOrder(apiOrder) {
+function resolveImage(imageUrl) {
+  if (!imageUrl) return null;
+  let urls = imageUrl;
+  if (typeof urls === 'string') {
+    try { urls = JSON.parse(urls); } catch { return null; }
+  }
+  if (!Array.isArray(urls) || urls.length === 0) return null;
+  const first = urls[0];
+  if (!first) return null;
+  if (first.startsWith('http')) return first;
+  if (first.startsWith('/')) return `https://test.ikeya.by${first}`;
+  return null;
+}
+
+function mapApiOrder(apiOrder, itemsMap = {}) {
   const a = apiOrder.attributes;
 
   // created + payment_expired → фактически отменён
@@ -56,9 +70,23 @@ function mapApiOrder(apiOrder) {
     paymentSecondsLeft = secondsLeft;
   }
 
+  // Товары из included
+  const orderItemIds = apiOrder.relationships?.order_items?.data?.map(d => d.id) || [];
+  const items = orderItemIds
+    .map(id => itemsMap[id])
+    .filter(Boolean)
+    .map(item => ({
+      name: item.name || '—',
+      desc: item.product_sku || '',
+      quantity: item.quantity || 1,
+      price: parseFloat(item.price_byn || 0).toFixed(2),
+      image: resolveImage(item.image_url),
+    }));
+
   return {
     id: a.id,
     status: statusMap[effectiveStatus] || 'assembly',
+    statusDescription: a.status_description || '',
     rawStatus: effectiveStatus,
     rawDate: a.created_at,
     date: createdAt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
@@ -69,6 +97,7 @@ function mapApiOrder(apiOrder) {
     paymentExpired: a.payment_expired === true,
     paymentExpiresAt: a.payment_expires_at || null,
     paymentSecondsLeft,
+    items,
   };
 }
 
@@ -105,7 +134,17 @@ export default function OrdersPage() {
       try {
         const resp = await getOrders({ per_page: 50 });
         const all = resp.data || [];
-        const mapped = all.map(o => mapApiOrder(o));
+
+        // Строим map из included: id -> attributes
+        const included = resp.included || [];
+        const itemsMap = {};
+        included.forEach(inc => {
+          if (inc.type === 'order_item') {
+            itemsMap[inc.id] = inc.attributes;
+          }
+        });
+
+        const mapped = all.map(o => mapApiOrder(o, itemsMap));
         setActiveOrders(mapped.filter(o => isActiveOrder(o.rawStatus)));
         setHistoryOrders(mapped.filter(o => !isActiveOrder(o.rawStatus)));
       } catch (e) {
@@ -130,7 +169,6 @@ export default function OrdersPage() {
         setAllPurchases(allPages);
         setPurchasesByOrderId(groupPurchasesByOrderId(allPages));
       } catch (e) {
-        // не блокируем UI — purchases опциональны
         console.error('Не удалось загрузить покупки:', e.message);
       } finally {
         setLoadingPurchases(false);
@@ -159,7 +197,6 @@ export default function OrdersPage() {
       <div className="orders-lists">
         <div className="orders-tabs orders-container">
 
-          {/* Табы */}
           <ul className="nav nav-tabs" id="ordersTabs" role="tablist">
             <li className="nav-item" role="presentation">
               <button
@@ -241,7 +278,6 @@ export default function OrdersPage() {
                     ) : (
                       <OrderHistory
                         orders={historyOrders}
-                        purchasesByOrderId={purchasesByOrderId}
                         onReorder={handleReorder}
                       />
                     )}
