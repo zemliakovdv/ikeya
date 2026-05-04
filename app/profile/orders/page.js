@@ -85,6 +85,7 @@ function mapApiOrder(apiOrder, itemsMap = {}) {
 
   return {
     id: apiOrder.id,
+    isDraft: a.checkout_draft === true,
     status: statusMap[effectiveStatus] || 'assembly',
     statusDescription: a.status_description || '',
     rawStatus: effectiveStatus,

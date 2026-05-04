@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { calculateDelivery } from '@/lib/api/cart';
+import { calculateDelivery, createDraft } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -23,14 +23,14 @@ export default function CartPageClient() {
     totals, loading, items,
   } = useCart();
 
-  // Показываем лоадер только при первой загрузке
   const isInitialLoading = loading && (items || []).length === 0;
 
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [delivery, setDelivery] = useState(0);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
-  const [eurRate, setEurRate] = useState(3.5); // fallback
+  const [eurRate, setEurRate] = useState(3.5);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   const pendingCheckout = useRef(false);
 
@@ -38,26 +38,25 @@ export default function CartPageClient() {
     fetch('https://api.nbrb.by/exrates/rates/EUR?parammode=2')
       .then(r => r.json())
       .then(data => { if (data?.Cur_OfficialRate) setEurRate(data.Cur_OfficialRate); })
-      .catch(() => { }); // оставляем fallback 3.5
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     function onAuthDone() {
       if (pendingCheckout.current) {
         pendingCheckout.current = false;
-        router.push('/checkout');
+        handleCheckoutAuthorized();
       }
     }
     window.addEventListener('auth-change-done', onAuthDone);
     return () => window.removeEventListener('auth-change-done', onAuthDone);
-  }, [router]);
+  }, []);
 
   const availableSkus = useMemo(
     () => (availableItems || []).map(it => it?.sku).filter(Boolean),
     [availableItems]
   );
 
-  // Стабильный ключ из SKU — меняется только если состав товаров изменился, не количество
   const availableSkusKey = availableSkus.join(',');
 
   const unavailableSkus = useMemo(
@@ -65,13 +64,10 @@ export default function CartPageClient() {
     [unavailableItems]
   );
 
-  // Подчищаем выбор если товары исчезли — но не сбрасываем если просто изменилось количество
   useEffect(() => {
     setSelectedItems(prev => {
       const skus = availableSkusKey ? availableSkusKey.split(',') : [];
-      // Первая загрузка (prev пустой) — выбираем всё
       if (prev.length === 0) return skus;
-      // Убираем SKU которые исчезли из корзины, добавляем новые
       const skuSet = new Set(skus);
       const filtered = prev.filter(sku => skuSet.has(sku));
       const added = skus.filter(sku => !prev.includes(sku));
@@ -80,7 +76,6 @@ export default function CartPageClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableSkusKey]);
 
-  // Пересчёт доставки при изменении выбранных товаров
   useEffect(() => {
     if (!selectedItems.length || !availableItems?.length) { setDelivery(0); return; }
 
@@ -99,66 +94,44 @@ export default function CartPageClient() {
       .finally(() => setDeliveryLoading(false));
   }, [selectedItems, availableItems]);
 
-  // Считаем таможенную пошлину по формуле НБРБ
   function calculateCustomsDuty(totalEur, totalKg, rate) {
     const COST_LIMIT = 200;
     const WEIGHT_LIMIT = 31;
     const COST_RATE = 0.15;
     const WEIGHT_RATE = 2;
     const FEE = 10;
-
     const dutyByCost = Math.max(0, totalEur - COST_LIMIT) * COST_RATE;
     const dutyByWeight = Math.max(0, totalKg - WEIGHT_LIMIT) * WEIGHT_RATE;
     const dutyEur = Math.max(dutyByCost, dutyByWeight);
-
     if (dutyEur === 0) return 0;
     return parseFloat((dutyEur * rate + FEE).toFixed(2));
   }
 
-  // Считаем данные только для выбранных товаров
   const selectedData = useMemo(() => {
-    if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0, totalWeight: 0 };
+    if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0, totalWeight: 0, customsDuty: 0 };
 
     const allItems = availableItems || [];
     const selected = allItems.filter(it => selectedItems.includes(it.sku));
-
-    // Для пропорционального расчёта веса
     const totalQtyAll = allItems.reduce((acc, it) => acc + (it.quantity || 1), 0);
     const totalWeightAll = parseFloat(totals?.total_weight_kg || 0);
 
-    let subtotal = 0;
-    let promoDiscount = 0;
-    let totalWeight = 0;
-    let itemCount = 0;
+    let subtotal = 0, promoDiscount = 0, totalWeight = 0, itemCount = 0;
+    let totalEur = 0, totalKg = 0;
 
     selected.forEach(it => {
       const qty = it.quantity || 1;
-      // Если pricing нули — берём product.price_byn
       const pricingNew = parseFloat(String(it.pricing?.unit_price_new_byn || 0).replace(/\s/g, ''));
       const productPrice = parseFloat(String(it.product?.price_byn || 0).replace(/\s/g, ''));
       const price = pricingNew > 0 ? pricingNew : productPrice;
       const discount = parseFloat(String(it.pricing?.unit_discount_byn || 0).replace(/\s/g, ''));
-
       subtotal += price * qty;
       promoDiscount += discount * qty;
       itemCount += qty;
-
-      // Вес пропорционально количеству
-      if (totalQtyAll > 0) {
-        totalWeight += (totalWeightAll / totalQtyAll) * qty;
-      }
+      if (totalQtyAll > 0) totalWeight += (totalWeightAll / totalQtyAll) * qty;
+      totalEur += parseFloat(String(it.product?.price || 0).replace(/\s/g, '')) * qty;
+      totalKg += parseFloat(String(it.weight || 0).replace(/\s/g, '')) * qty;
     });
 
-    // Таможенная пошлина — считаем по всем выбранным товарам как единый заказ
-    let totalEur = 0;
-    let totalKg = 0;
-    selected.forEach(it => {
-      const qty = it.quantity || 1;
-      const priceEur = parseFloat(String(it.product?.price || 0).replace(/\s/g, ''));
-      const weightKg = parseFloat(String(it.weight || 0).replace(/\s/g, ''));
-      totalEur += priceEur * qty;
-      totalKg += weightKg * qty;
-    });
     const customsDuty = calculateCustomsDuty(totalEur, totalKg, eurRate);
 
     return {
@@ -171,6 +144,47 @@ export default function CartPageClient() {
   }, [selectedItems, availableItems, totals, eurRate]);
 
   const canCheckout = selectedItems.length > 0 && selectedData.subtotal >= MIN_ORDER_AMOUNT;
+
+  const saveSummaryToSession = useCallback(() => {
+    sessionStorage.setItem('checkoutSummary', JSON.stringify({
+      subtotal:      selectedData.subtotal,
+      promoDiscount: selectedData.promoDiscount,
+      itemCount:     selectedData.itemCount,
+      totalWeight:   selectedData.totalWeight,
+      customsDuty:   selectedData.customsDuty,
+      delivery,
+    }));
+  }, [selectedData, delivery]);
+
+  // Создаём черновик и редиректим на /checkout
+  const handleCheckoutAuthorized = useCallback(async () => {
+    if (!canCheckout) return;
+    setCheckoutLoading(true);
+    try {
+      saveSummaryToSession();
+      const response = await createDraft();
+      // Бэк возвращает 200 (перезаписал старый) или 201 (новый)
+      // В обоих случаях берём order_id
+      const draftId = response.order?.data?.id || response.order_id;
+      router.push(`/checkout?draft_id=${draftId}`);
+    } catch (err) {
+      console.error('Ошибка создания черновика:', err.message);
+      // Fallback — просто переходим на чекаут без draft_id
+      router.push('/checkout');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }, [canCheckout, saveSummaryToSession, router]);
+
+  const handleCheckout = useCallback(() => {
+    if (!isAuth) {
+      saveSummaryToSession();
+      pendingCheckout.current = true;
+      openLogin();
+      return;
+    }
+    handleCheckoutAuthorized();
+  }, [isAuth, openLogin, saveSummaryToSession, handleCheckoutAuthorized]);
 
   const handleQuantityChange = useCallback(async (sku, newQuantity) => {
     try { await updateQuantity(sku, newQuantity); }
@@ -226,32 +240,7 @@ export default function CartPageClient() {
     } catch { alert('Не удалось удалить некоторые товары'); }
   }, [removeFromCart, selectedItems]);
 
-  const handleCheckout = useCallback(() => {
-    if (!isAuth) {
-      sessionStorage.setItem('checkoutSummary', JSON.stringify({
-        subtotal: selectedData.subtotal,
-        promoDiscount: selectedData.promoDiscount,
-        itemCount: selectedData.itemCount,
-        totalWeight: selectedData.totalWeight,
-        customsDuty: selectedData.customsDuty,
-        delivery,
-      }));
-      pendingCheckout.current = true;
-      openLogin();
-      return;
-    }
-    sessionStorage.setItem('checkoutSummary', JSON.stringify({
-      subtotal: selectedData.subtotal,
-      promoDiscount: selectedData.promoDiscount,
-      itemCount: selectedData.itemCount,
-      totalWeight: selectedData.totalWeight,
-      customsDuty: selectedData.customsDuty,
-      delivery,
-    }));
-    router.push('/checkout');
-  }, [router, isAuth, openLogin, selectedData, delivery]);
-
-  const hasAvailableItems = (availableItems?.length || 0) > 0;
+  const hasAvailableItems   = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
 
   if (isInitialLoading) return <PageLoader />;
@@ -265,7 +254,6 @@ export default function CartPageClient() {
               <div className="zakaz-inner">
                 <h2>Корзина</h2>
 
-                {/* Минимальная сумма заказа */}
                 {selectedItems.length > 0 && selectedData.subtotal < MIN_ORDER_AMOUNT && (
                   <div className="order-toast_choose">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -275,7 +263,6 @@ export default function CartPageClient() {
                   </div>
                 )}
 
-                {/* Не выбран ни один товар */}
                 {hasAvailableItems && selectedItems.length === 0 && (
                   <div className="order-toast_choose">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -296,7 +283,7 @@ export default function CartPageClient() {
                             selectedItems={selectedItems}
                             onQuantityChange={handleQuantityChange}
                             onDelete={handleDelete}
-                            onFavorite={() => { }}
+                            onFavorite={() => {}}
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
@@ -310,7 +297,7 @@ export default function CartPageClient() {
                             isUnavailable={true}
                             selectedItems={selectedUnavailable}
                             onDelete={handleDelete}
-                            onFavorite={() => { }}
+                            onFavorite={() => {}}
                             onSelectAll={handleSelectAllUnavailable}
                             onDeleteSelected={handleDeleteSelectedUnavailable}
                             onCheckChange={handleCheckChangeUnavailable}
@@ -341,6 +328,7 @@ export default function CartPageClient() {
                           onCheckout={handleCheckout}
                           cart={cart}
                           deliveryLoading={deliveryLoading}
+                          checkoutLoading={checkoutLoading}
                         />
                       )}
                     </div>
@@ -351,8 +339,6 @@ export default function CartPageClient() {
           </div>
         </div>
       </section>
-
-      {/* CartRecommendations рендерится в CartPageWrapper, вне client-компонента */}
     </main>
   );
 }

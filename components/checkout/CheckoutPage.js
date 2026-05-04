@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import CartSummary from '@/components/cart/CartSummary';
@@ -9,7 +9,7 @@ import DeliveryModal from '@/components/delivery/modal/DeliveryModal';
 import SavedAddressesModal from '@/components/delivery/modal/SavedAddressesModal';
 import EditPersonalDataModal from '@/components/profile/modals/EditPersonalDataModal';
 import EditPassportModal from '@/components/profile/modals/EditPassportModal';
-import { getProfile, checkout } from '@/lib/api/cart';
+import { getProfile, finalizeDraft, getDraft } from '@/lib/api/cart';
 import { requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 import {
@@ -121,15 +121,19 @@ function IkeyaLogo() {
   );
 }
 
-// ─── Компонент ────────────────────────────────────────────────────────────────
+// ─── Внутренний компонент (использует useSearchParams) ────────────────────────
 
-export default function CheckoutPage() {
+function CheckoutPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const draftId = searchParams.get('draft_id');
+
   const { token } = useAuth();
-  const { cart, totals, items, clearCart } = useCart();
+  const { cart, totals, items, refreshCart } = useCart();
 
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [draftLoading, setDraftLoading] = useState(true);
 
   const [receiveMethod, setReceiveMethod] = useState(() => readLS(LS_RECEIVE_METHOD));
 
@@ -181,6 +185,23 @@ export default function CheckoutPage() {
       .catch(() => setProfile(null))
       .finally(() => setLoadingProfile(false));
   }, [token]);
+
+  // ─── Загрузка черновика ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!draftId) { setDraftLoading(false); return; }
+    getDraft()
+      .then(data => {
+        const attr = data?.data?.attributes || {};
+        // Восстанавливаем метод оплаты из черновика если есть
+        if (attr.payment_method) setPaymentMethod(attr.payment_method);
+        if (attr.services?.length) setSelectedServices(attr.services);
+      })
+      .catch(() => {
+        // Черновик не найден — просто продолжаем без него
+      })
+      .finally(() => setDraftLoading(false));
+  }, [draftId]);
 
   // ─── Загрузка сохранённых адресов ───────────────────────────────────────────
 
@@ -517,10 +538,14 @@ export default function CheckoutPage() {
       await verifyA1Code(a1VerificationId, code);
       setA1Modal(false);
       setSubmitting(true);
-      const response = await checkout(buildOrderData(a1VerificationId), token);
-      await clearCart();
 
-      // Очищаем персистед данные доставки
+      // Финализируем черновик
+      const response = await finalizeDraft(draftId, buildOrderData(a1VerificationId));
+
+      // Обновляем корзину (она была очищена бэком при создании черновика)
+      await refreshCart();
+
+      // Очищаем персист данные
       removeLS(LS_SELECTED_PVZ);
       removeLS(LS_SELECTED_ADDR);
       removeLS(LS_PVZ_CALC);
@@ -552,22 +577,26 @@ export default function CheckoutPage() {
         }))
       ));
 
-      // public_uid из data.id, fallback на order_id
-      const orderId = response.order?.data?.id || response.order_id;
+      const orderId = response.order?.data?.id || response.order_id || draftId;
       router.push(`/order-success?order_id=${orderId}`);
     } catch (err) {
-      if (err.status === 409 && err.payload?.code === 'checkout_draft_exists') {
-        setA1Error(
-          `У вас уже есть незавершённый заказ № ${err.payload.draft_order_id}. ` +
-          `Завершите или отмените его перед оформлением нового.`
-        );
-      } else {
-        setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
-      }
+      setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
     } finally {
       setA1Loading(false);
       setSubmitting(false);
     }
+  }
+
+  if (draftLoading) {
+    return (
+      <main className="korzina">
+        <section className="zakaz">
+          <div className="container">
+            <div style={{ padding: '40px 0', textAlign: 'center', color: '#9e9e9e' }}>Загрузка заказа...</div>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   // ─── Рендер ─────────────────────────────────────────────────────────────────
@@ -721,7 +750,7 @@ export default function CheckoutPage() {
                                   <div className="selected-delivery-left">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                       <path d="M12.0002 22C11.2602 22 10.5502 21.72 10.0202 21.22C9.7202 20.94 9.4102 20.65 9.1002 20.37C5.5802 17.12 1.2102 13.07 3.6202 7.43C5.0102 4.18 8.3802 2 12.0002 2C15.6202 2 18.9902 4.18 20.3802 7.43C22.8002 13.09 18.3902 17.16 14.8502 20.43L13.9902 21.23C13.4502 21.73 12.7502 22.01 12.0102 22.01L12.0002 22ZM12.0002 3.4C8.9302 3.4 6.0802 5.24 4.9102 7.98C2.8902 12.71 6.5302 16.09 10.0502 19.35C10.3602 19.64 10.6702 19.93 10.9702 20.21C11.5202 20.72 12.4702 20.72 13.0202 20.21L13.8902 19.4C17.4502 16.12 21.1202 12.73 19.0902 7.98C17.9202 5.24 15.0702 3.4 12.0002 3.4Z" fill="#9E9E9E" />
-                                      <path d="M11.9998 15.0211C9.8198 15.0211 8.0498 13.2511 8.0498 11.0711C8.0498 8.89109 9.8198 7.12109 11.9998 7.12109C14.1798 7.12109 15.9498 8.89109 15.9498 11.0711C15.9498 13.2511 14.1798 15.0211 11.9998 15.0211ZM11.9998 8.51109C10.5898 8.51109 9.4398 9.66109 9.4398 11.0711C9.4398 12.4811 10.5898 13.6311 11.9998 13.6311C13.4098 13.6311 14.5598 12.4811 14.5598 11.0711C14.5598 9.66109 13.4098 8.51109 11.9998 8.51109Z" fill="#9E9E9E" />
+                                      <path d="M11.9998 15.0191C9.8198 15.0191 8.0498 13.2491 8.0498 11.0691C8.0498 8.88914 9.8198 7.11914 11.9998 7.11914C14.1798 7.11914 15.9498 8.88914 15.9498 11.0691C15.9498 13.2491 14.1798 15.0191 11.9998 15.0191ZM11.9998 8.50914C10.5898 8.50914 9.4398 9.65914 9.4398 11.0691C9.4398 12.4791 10.5898 13.6291 11.9998 13.6291C13.4098 13.6291 14.5598 12.4791 14.5598 11.0691C14.5598 9.65914 13.4098 8.50914 11.9998 8.50914Z" fill="#9E9E9E" />
                                     </svg>
                                     <div className="selected-delivery-address">
                                       {selectedAddr.label || selectedAddr.address}
@@ -732,7 +761,7 @@ export default function CheckoutPage() {
 
                                 <div className="alert alert-info">
                                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M10 1.66666C5.40002 1.66666 1.66669 5.39999 1.66669 9.99999C1.66669 14.6 5.40002 18.3333 10 18.3333C14.6 18.3333 18.3334 14.6 18.3334 9.99999C18.3334 5.39999 14.6 1.66666 10 1.66666ZM10.625 13.5417C10.625 13.8833 10.3417 14.1667 10 14.1667C9.65835 14.1667 9.37502 13.8833 9.37502 13.5417V9.37499C9.37502 9.03332 9.65835 8.74999 10 8.74999C10.3417 8.74999 10.625 9.03332 10.625 9.37499V13.5417ZM10 7.70832C9.65002 7.70832 9.37502 7.43332 9.37502 7.08332C9.37502 6.73332 9.65002 6.45832 10 6.45832C10.35 6.45832 10.625 6.73332 10.625 7.08332C10.625 7.43332 10.35 7.70832 10 7.70832Z" fill="#0058A3" />
+                                    <path d="M10 1.66666C5.40002 1.66666 1.66669 5.39999 1.66669 9.99999C1.66669 14.6 5.40002 18.3333 10 18.3333C14.6 18.3333 18.3334 14.6 18.3334 9.99999C18.3334 5.39999 14.6 1.66666 10 1.66666ZM10.625 13.5417C10.625 13.8833 10.3417 14.1667 10 14.1667C9.65835 14.1667 9.37502 13.8833 9.37502 13.5417V9.37499C9.37502 9.03332 9.65835 8.74999 10 8.74999C10.3417 8.74999 10.625 9.03332 10.625 9.37499V13.5417ZM10 7.70832C9.65002 7.70832 9.37502 7.43332 9.37502 7.08332C9.37502 6.73332 9.65002 6.45832 10 6.45832C10.35 6.45832 10.625 6.73732 10.625 7.08332C10.625 7.43332 10.35 7.70832 10 7.70832Z" fill="#0058A3" />
                                   </svg>
                                   <span>Для получения заказа необходим паспорт</span>
                                 </div>
@@ -773,9 +802,6 @@ export default function CheckoutPage() {
                                       <IkeyaLogo />
                                     </div>
                                     <div className="alert alert-info" style={{ marginTop: 8 }}>
-                                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
-                                      </svg>
                                       <span>С вами свяжется сотрудник IKEYA для согласования сроков и стоимости доставки заказа. Данная услуга оплачивается отдельно от заказа.</span>
                                     </div>
                                   </div>
@@ -788,9 +814,6 @@ export default function CheckoutPage() {
                           <section className="checkout-section services-section">
                             <h2 className="section-title services-title">Услуги в г. Минск (+20 км от Минска)</h2>
                             <div className="alert alert-info">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
-                              </svg>
                               <span>Услуги оплачиваются отдельно. С Вами свяжется сотрудник колл-центра для уточнения всех деталей.</span>
                             </div>
                             <div className="services-list">
@@ -835,8 +858,8 @@ export default function CheckoutPage() {
                                 <div className="payment-card">
                                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M27.7868 7.33315C27.5468 7.05315 27.2668 6.79982 26.9868 6.57315C25.1735 5.14648 22.7335 5.14648 17.8668 5.14648H14.1468C9.28017 5.14648 6.82684 5.14648 5.02684 6.57315C4.73351 6.79982 4.46684 7.05315 4.22684 7.33315C2.68018 9.06648 2.68018 11.3865 2.68018 15.9998C2.68018 20.6132 2.68018 22.9332 4.22684 24.6665C4.46684 24.9332 4.74684 25.1998 5.02684 25.4265C6.84018 26.8532 9.28017 26.8531 14.1468 26.8531H17.8668C22.7335 26.8531 25.1868 26.8532 27.0002 25.4265C27.2935 25.1998 27.5602 24.9465 27.8002 24.6665C29.3468 22.9332 29.3468 20.6132 29.3468 15.9998C29.3468 11.3865 29.3468 9.06648 27.8002 7.33315H27.7868ZM5.58684 8.57315C5.76018 8.37315 5.94684 8.19982 6.16018 8.03982C7.46684 7.01315 9.69351 7.01315 14.1335 7.01315H17.8535C22.2935 7.01315 24.5202 7.01315 25.8268 8.03982C26.0268 8.19982 26.2268 8.38648 26.4002 8.57315C26.9602 9.19982 27.2268 10.0798 27.3468 11.3465H4.65351C4.78684 10.0665 5.04018 9.19982 5.60018 8.57315H5.58684ZM26.4002 23.4265C26.2268 23.6265 26.0268 23.7998 25.8268 23.9598C24.5202 24.9865 22.2935 24.9865 17.8535 24.9865H14.1335C9.69351 24.9865 7.46684 24.9865 6.16018 23.9598C5.94684 23.7998 5.76018 23.6132 5.58684 23.4265C4.52018 22.2265 4.52018 20.1465 4.52018 15.9998C4.52018 14.9465 4.52018 14.0132 4.53351 13.2132H27.4535C27.4668 14.0265 27.4668 14.9465 27.4668 15.9998C27.4668 20.1465 27.4668 22.2265 26.4002 23.4265Z" fill="#757575" />
-                                    <path d="M15.3732 20.0264H13.5066C12.9866 20.0264 12.5732 20.4397 12.5732 20.9597C12.5732 21.4797 12.9866 21.893 13.5066 21.893H15.3732C15.8932 21.893 16.3066 21.4797 16.3066 20.9597C16.3066 20.4397 15.8932 20.0264 15.3732 20.0264Z" fill="#757575" />
-                                    <path d="M23.4402 20.0264H19.0935C18.5735 20.0264 18.1602 20.4397 18.1602 20.9597C18.1602 21.4797 18.5735 21.893 19.0935 21.893H23.4402C23.9602 21.893 24.3735 21.4797 24.3735 20.9597C24.3735 20.4397 23.9602 20.0264 23.4402 20.0264Z" fill="#757575" />
+                                    <path d="M15.3732 20.0273H13.5066C12.9866 20.0273 12.5732 20.4407 12.5732 20.9607C12.5732 21.4807 12.9866 21.894 13.5066 21.894H15.3732C15.8932 21.894 16.3066 21.4807 16.3066 20.9607C16.3066 20.4407 15.8932 20.0273 15.3732 20.0273Z" fill="#757575" />
+                                    <path d="M23.4402 20.0273H19.0935C18.5735 20.0273 18.1602 20.4407 18.1602 20.9607C18.1602 21.4807 18.5735 21.894 19.0935 21.894H23.4402C23.9602 21.894 24.3735 21.4807 24.3735 20.9607C24.3735 20.4407 23.9602 20.0273 23.4402 20.0273Z" fill="#757575" />
                                   </svg>
                                   <span>Картой онлайн</span>
                                 </div>
@@ -1095,5 +1118,23 @@ export default function CheckoutPage() {
         </>
       )}
     </main>
+  );
+}
+
+// ─── Экспорт с Suspense (нужен для useSearchParams) ───────────────────────────
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <main className="korzina">
+        <section className="zakaz">
+          <div className="container">
+            <div style={{ padding: '40px 0', textAlign: 'center', color: '#9e9e9e' }}>Загрузка...</div>
+          </div>
+        </section>
+      </main>
+    }>
+      <CheckoutPageInner />
+    </Suspense>
   );
 }
