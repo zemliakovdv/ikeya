@@ -84,7 +84,7 @@ function mapApiOrder(apiOrder, itemsMap = {}) {
     }));
 
   return {
-    id: a.id,
+    id: apiOrder.id,
     status: statusMap[effectiveStatus] || 'assembly',
     statusDescription: a.status_description || '',
     rawStatus: effectiveStatus,

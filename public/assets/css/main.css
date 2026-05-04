@@ -5560,7 +5560,7 @@ main {
 .cart-summary__note {
     background-color: #fff;
     border-radius: 8px;
-    padding: 16px;
+    padding-top: 16px;
 }
 
 .summary-note__wrap {
@@ -6863,7 +6863,7 @@ main {
 }
 
 .order-success-page .alert {
-    padding: 16px;
+    padding: 13px;
     border-radius: 8px;
     background: #fff;
     border: none;
@@ -7086,6 +7086,7 @@ main {
     border-radius: 0;
     box-shadow: none;
     padding-top: 0;
+    padding-bottom: 16px;
 }
 
 .recipient-header {
@@ -7195,6 +7196,7 @@ main {
     align-items: center;
     margin: 0 0 16px;
     gap: 8px;
+    padding-top: 16px;
 }
 
 .btn-copy-order {

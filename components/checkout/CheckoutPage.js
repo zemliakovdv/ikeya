@@ -25,6 +25,10 @@ import {
 const LS_SAVED_PVZ = 'saved_pvz_addresses';
 const LS_SAVED_ADDR = 'saved_delivery_addresses';
 const LS_RECEIVE_METHOD = 'checkout_receive_method';
+const LS_SELECTED_PVZ = 'checkout_selected_pvz';
+const LS_SELECTED_ADDR = 'checkout_selected_addr';
+const LS_PVZ_CALC = 'checkout_pvz_calc';
+const LS_ADDR_CALC = 'checkout_addr_calc';
 
 // ─── Хелперы ──────────────────────────────────────────────────────────────────
 
@@ -55,9 +59,12 @@ function formatDeliveryDate(dateStr) {
   return `${day} ${months[date.getMonth()]}`;
 }
 
-function readLS(key) {
-  if (typeof window === 'undefined') return [];
-  try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+function readLS(key, fallback = null) {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : fallback;
+  } catch { return fallback; }
 }
 
 function writeLS(key, value) {
@@ -65,11 +72,15 @@ function writeLS(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch { }
 }
 
+function removeLS(key) {
+  if (typeof window === 'undefined') return;
+  try { localStorage.removeItem(key); } catch { }
+}
+
 function genId() {
   return Math.random().toString(36).slice(2);
 }
 
-// Разбиваем строку адреса на поля для API
 function parseAddressToFields(addr) {
   return {
     city: addr.city || '',
@@ -81,7 +92,7 @@ function parseAddressToFields(addr) {
     floor: addr.floor || '',
     has_elevator: addr.has_elevator || false,
     intercom: addr.intercom || '',
-    is_private_house: addr.isPrivateHouse || false,
+    is_private_house: addr.isPrivateHouse || addr.is_private_house || false,
     lat: addr.coords?.[0] || null,
     lng: addr.coords?.[1] || null,
   };
@@ -117,58 +128,44 @@ export default function CheckoutPage() {
   const { token } = useAuth();
   const { cart, totals, items, clearCart } = useCart();
 
-  // Профиль
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // Способ получения: null | 'pickup' | 'delivery'
-  const [receiveMethod, setReceiveMethod] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(LS_RECEIVE_METHOD) || null;
-  });
+  const [receiveMethod, setReceiveMethod] = useState(() => readLS(LS_RECEIVE_METHOD));
 
   const saveReceiveMethod = (method) => {
     setReceiveMethod(method);
-    if (typeof window !== 'undefined') localStorage.setItem(LS_RECEIVE_METHOD, method);
+    writeLS(LS_RECEIVE_METHOD, method);
   };
 
-  // ВГХ
   const [pickupEligible, setPickupEligible] = useState(true);
   const [vghLoading, setVghLoading] = useState(false);
   const [showVghModal, setShowVghModal] = useState(false);
 
-  // Выбранный ПВЗ
-  const [selectedPvz, setSelectedPvz] = useState(null);
-  const [pvzCalcResult, setPvzCalcResult] = useState(null);
+  const [selectedPvz, setSelectedPvz] = useState(() => readLS(LS_SELECTED_PVZ));
+  const [pvzCalcResult, setPvzCalcResult] = useState(() => readLS(LS_PVZ_CALC));
 
-  // Выбранный адрес доставки
-  const [selectedAddr, setSelectedAddr] = useState(null);
-  const [addrCalcResult, setAddrCalcResult] = useState(null);
+  const [selectedAddr, setSelectedAddr] = useState(() => readLS(LS_SELECTED_ADDR));
+  const [addrCalcResult, setAddrCalcResult] = useState(() => readLS(LS_ADDR_CALC));
 
-  // Сохранённые адреса
   const [savedPvzList, setSavedPvzList] = useState([]);
   const [savedAddrList, setSavedAddrList] = useState([]);
 
-  // Модалки
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [deliveryModalTab, setDeliveryModalTab] = useState('pickup');
   const [showSavedPvz, setShowSavedPvz] = useState(false);
   const [showSavedAddr, setShowSavedAddr] = useState(false);
 
-  // Оплата и услуги
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [selectedServices, setSelectedServices] = useState([]);
 
-  // Паспорт
   const [showPassportData, setShowPassportData] = useState(false);
   const [showPersonalModal, setShowPersonalModal] = useState(false);
   const [showPassportModal, setShowPassportModal] = useState(false);
 
-  // Чекаут
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // A1-верификация
   const [a1Modal, setA1Modal] = useState(false);
   const [a1VerificationId, setA1VerificationId] = useState(null);
   const [a1CallerNumber, setA1CallerNumber] = useState(null);
@@ -189,12 +186,10 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!token) {
-      // Гость — читаем из localStorage
-      setSavedPvzList(readLS(LS_SAVED_PVZ));
-      setSavedAddrList(readLS(LS_SAVED_ADDR));
+      setSavedPvzList(readLS(LS_SAVED_PVZ, []));
+      setSavedAddrList(readLS(LS_SAVED_ADDR, []));
       return;
     }
-    // Авторизован — читаем из API
     getSavedPickupPoints()
       .then(res => {
         const points = (res.data || []).map(d => ({
@@ -214,7 +209,7 @@ export default function CheckoutPage() {
         }));
         setSavedPvzList(points);
       })
-      .catch(() => setSavedPvzList(readLS(LS_SAVED_PVZ)));
+      .catch(() => setSavedPvzList(readLS(LS_SAVED_PVZ, [])));
 
     getDeliveryAddresses()
       .then(res => {
@@ -238,16 +233,14 @@ export default function CheckoutPage() {
         }));
         setSavedAddrList(addrs);
       })
-      .catch(() => setSavedAddrList(readLS(LS_SAVED_ADDR)));
+      .catch(() => setSavedAddrList(readLS(LS_SAVED_ADDR, [])));
   }, [token]);
 
   // ─── Проверка ВГХ ───────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!items?.length) return;
-    const cartToken = typeof window !== 'undefined'
-      ? localStorage.getItem('cart_token') || ''
-      : '';
+    const cartToken = typeof window !== 'undefined' ? localStorage.getItem('cart_token') || '' : '';
     if (!cartToken) return;
 
     setVghLoading(true);
@@ -256,14 +249,11 @@ export default function CheckoutPage() {
       delivery_type: 'europost_pickup',
       items: items.map(it => ({ sku: it.sku, quantity: it.quantity })),
     })
-      .then(() => {
-        // 200 — europost_pickup доступен
-        setPickupEligible(true);
-      })
+      .then(() => setPickupEligible(true))
       .catch(err => {
         if (err.status === 422) {
           const available = err.payload?.available_methods || [];
-          const eligible = available.includes('europost_pickup');
+          const eligible = available.some(m => m.code === 'europost_pickup' && m.available);
           setPickupEligible(eligible);
           if (!eligible) saveReceiveMethod('delivery');
         }
@@ -298,11 +288,10 @@ export default function CheckoutPage() {
     ? 0
     : parseFloat(addrCalcResult?.delivery?.total_delivery_price_byn || addrCalcResult?.delivery?.delivery_price_byn || 0);
 
-  // Тип доставки по адресу: 'courier' или 'ikeya_delivery'
   const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'ikeya_delivery';
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
 
-  // ─── Хелперы профиля ────────────────────────────────────────────────────────
+  // ─── Профиль ────────────────────────────────────────────────────────────────
 
   const fullName = profile ? [profile.last_name, profile.first_name, profile.middle_name].filter(Boolean).join(' ') : '';
   const hasPassport = Boolean(profile?.passport_data?.number && profile?.passport_data?.series);
@@ -322,10 +311,11 @@ export default function CheckoutPage() {
   const handleSelectPvz = useCallback(async (pvz, calcResult) => {
     setSelectedPvz(pvz);
     setPvzCalcResult(calcResult);
+    writeLS(LS_SELECTED_PVZ, pvz);
+    writeLS(LS_PVZ_CALC, calcResult);
     saveReceiveMethod('pickup');
 
     if (token) {
-      // Сохраняем в API
       try {
         await savePickupPoint({
           pickup_point_id: pvz.id,
@@ -337,7 +327,6 @@ export default function CheckoutPage() {
           lat: pvz.lat || null,
           lng: pvz.lng || pvz.lon || null,
         });
-        // Перезагружаем список из API
         const res = await getSavedPickupPoints();
         const points = (res.data || []).map(d => ({
           id: String(d.attributes.id),
@@ -357,7 +346,6 @@ export default function CheckoutPage() {
         setSavedPvzList(points);
       } catch { }
     } else {
-      // Гость — localStorage
       const label = pvz.city ? `${pvz.city}, ${pvz.address}` : pvz.address;
       const entry = { id: genId(), label, ...pvz };
       const updated = [entry, ...savedPvzList.filter(a => a.address !== pvz.address)].slice(0, 5);
@@ -369,10 +357,11 @@ export default function CheckoutPage() {
   const handleSelectAddr = useCallback(async (addr, calcResult) => {
     setSelectedAddr(addr);
     setAddrCalcResult(calcResult);
+    writeLS(LS_SELECTED_ADDR, addr);
+    writeLS(LS_ADDR_CALC, calcResult);
     saveReceiveMethod('delivery');
 
     if (token) {
-      // Сохраняем в API
       try {
         await createDeliveryAddress(parseAddressToFields(addr));
         const res = await getDeliveryAddresses();
@@ -397,7 +386,6 @@ export default function CheckoutPage() {
         setSavedAddrList(addrs);
       } catch { }
     } else {
-      // Гость — localStorage
       const label = addr.apartment ? `${addr.address}, кв.${addr.apartment}` : addr.address;
       const entry = { id: genId(), label, ...addr };
       const updated = [entry, ...savedAddrList.filter(a => a.address !== addr.address)].slice(0, 5);
@@ -406,7 +394,6 @@ export default function CheckoutPage() {
     }
   }, [token, savedAddrList]);
 
-  // «Изменить»
   const handleChangePvz = () => {
     if (savedPvzList.length > 0) setShowSavedPvz(true);
     else { setDeliveryModalTab('pickup'); setShowDeliveryModal(true); }
@@ -417,26 +404,22 @@ export default function CheckoutPage() {
     else { setDeliveryModalTab('delivery'); setShowDeliveryModal(true); }
   };
 
-  // Выбор из сохранённых
   const handleSelectSavedPvz = (id) => {
     const found = savedPvzList.find(a => a.id === id);
-    if (found) { setSelectedPvz(found); saveReceiveMethod('pickup'); }
+    if (found) { setSelectedPvz(found); writeLS(LS_SELECTED_PVZ, found); saveReceiveMethod('pickup'); }
     setShowSavedPvz(false);
   };
 
   const handleSelectSavedAddr = (id) => {
     const found = savedAddrList.find(a => a.id === id);
-    if (found) { setSelectedAddr(found); saveReceiveMethod('delivery'); }
+    if (found) { setSelectedAddr(found); writeLS(LS_SELECTED_ADDR, found); saveReceiveMethod('delivery'); }
     setShowSavedAddr(false);
   };
 
-  // Удаление
   const handleDeletePvz = async (id) => {
     if (token) {
       const item = savedPvzList.find(a => a.id === id);
-      if (item?.apiId) {
-        try { await deleteSavedPickupPoint(item.apiId); } catch { }
-      }
+      if (item?.apiId) { try { await deleteSavedPickupPoint(item.apiId); } catch { } }
     }
     const updated = savedPvzList.filter(a => a.id !== id);
     setSavedPvzList(updated);
@@ -446,16 +429,13 @@ export default function CheckoutPage() {
   const handleDeleteAddr = async (id) => {
     if (token) {
       const item = savedAddrList.find(a => a.id === id);
-      if (item?.apiId) {
-        try { await deleteDeliveryAddress(item.apiId); } catch { }
-      }
+      if (item?.apiId) { try { await deleteDeliveryAddress(item.apiId); } catch { } }
     }
     const updated = savedAddrList.filter(a => a.id !== id);
     setSavedAddrList(updated);
     if (!token) writeLS(LS_SAVED_ADDR, updated);
   };
 
-  // Клик на карточки
   const handlePickupCardClick = () => {
     if (!pickupEligible) return;
     if (selectedPvz) { saveReceiveMethod('pickup'); return; }
@@ -482,16 +462,8 @@ export default function CheckoutPage() {
 
   function buildOrderData(a1Id = null) {
     const isPickup = receiveMethod === 'pickup';
+    const deliveryType = isPickup ? 'europost_pickup' : addrDeliveryType;
 
-    // Определяем delivery_type
-    let deliveryType;
-    if (isPickup) {
-      deliveryType = 'europost_pickup';
-    } else {
-      deliveryType = addrDeliveryType; // 'courier' или 'ikeya_delivery'
-    }
-
-    // Формируем объект адреса для курьерской доставки
     const addressPayload = !isPickup && selectedAddr
       ? {
         city: selectedAddr.city || '',
@@ -548,6 +520,13 @@ export default function CheckoutPage() {
       const response = await checkout(buildOrderData(a1VerificationId), token);
       await clearCart();
 
+      // Очищаем персистед данные доставки
+      removeLS(LS_SELECTED_PVZ);
+      removeLS(LS_SELECTED_ADDR);
+      removeLS(LS_PVZ_CALC);
+      removeLS(LS_ADDR_CALC);
+      removeLS(LS_RECEIVE_METHOD);
+
       if (receiveMethod === 'pickup' && selectedPvz) {
         sessionStorage.setItem('selectedPvz', JSON.stringify(selectedPvz));
       }
@@ -572,9 +551,19 @@ export default function CheckoutPage() {
           }
         }))
       ));
-      router.push(`/order-success?order_id=${response.order_id}`);
+
+      // public_uid из data.id, fallback на order_id
+      const orderId = response.order?.data?.id || response.order_id;
+      router.push(`/order-success?order_id=${orderId}`);
     } catch (err) {
-      setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
+      if (err.status === 409 && err.payload?.code === 'checkout_draft_exists') {
+        setA1Error(
+          `У вас уже есть незавершённый заказ № ${err.payload.draft_order_id}. ` +
+          `Завершите или отмените его перед оформлением нового.`
+        );
+      } else {
+        setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
+      }
     } finally {
       setA1Loading(false);
       setSubmitting(false);
@@ -616,11 +605,7 @@ export default function CheckoutPage() {
                                 </svg>
                                 <div>
                                   <span>Самовывоз недоступен из-за превышения весогабаритных характеристик заказа</span>
-                                  <button
-                                    type="button"
-                                    className="vgh-details-link"
-                                    onClick={() => setShowVghModal(true)}
-                                  >
+                                  <button type="button" className="vgh-details-link" onClick={() => setShowVghModal(true)}>
                                     Подробнее
                                   </button>
                                 </div>
@@ -633,14 +618,8 @@ export default function CheckoutPage() {
                                   className={`receive-method${receiveMethod === 'pickup' ? ' receive-method--active' : ''}`}
                                   onClick={handlePickupCardClick}
                                 >
-                                  <input
-                                    type="radio"
-                                    name="receive_method"
-                                    value="pickup"
-                                    checked={receiveMethod === 'pickup'}
-                                    onChange={() => { }}
-                                    readOnly
-                                  />
+                                  <input type="radio" name="receive_method" value="pickup"
+                                    checked={receiveMethod === 'pickup'} onChange={() => { }} readOnly />
                                   <div className="receive-method__content">
                                     <div>
                                       <div className="receive-method__title">Самовывоз</div>
@@ -657,14 +636,8 @@ export default function CheckoutPage() {
                                 className={`receive-method${receiveMethod === 'delivery' ? ' receive-method--active' : ''}`}
                                 onClick={handleDeliveryCardClick}
                               >
-                                <input
-                                  type="radio"
-                                  name="receive_method"
-                                  value="delivery"
-                                  checked={receiveMethod === 'delivery'}
-                                  onChange={() => { }}
-                                  readOnly
-                                />
+                                <input type="radio" name="receive_method" value="delivery"
+                                  checked={receiveMethod === 'delivery'} onChange={() => { }} readOnly />
                                 <div className="receive-method__content">
                                   <div>
                                     <div className="receive-method__title">Доставка</div>
@@ -672,14 +645,14 @@ export default function CheckoutPage() {
                                   </div>
                                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M19.37 4.6L16.65 3.28C14.88 2.42 13.99 2 12.93 2C11.87 2 10.98 2.43 9.21 3.29L6.49 4.61C4.8 5.43 3.86 5.88 3.86 6.89V9.68C3.86 10.07 4.17 10.38 4.56 10.38C4.95 10.38 5.26 10.07 5.26 9.68V8.55C5.61 8.74 6.02 8.94 6.5 9.17L9.22 10.48C10.6 11.15 11.44 11.55 12.24 11.7V20.49C11.76 20.35 11.16 20.09 10.27 19.71C8.62 18.99 7.32 18.42 6.45 17.91C6.34 17.85 6.22 17.81 6.1 17.81H2.7C2.31 17.81 2 18.12 2 18.51C2 18.9 2.31 19.21 2.7 19.21H5.91C6.84 19.74 8.12 20.3 9.72 20.99C11.26 21.66 12.03 22 12.94 22C13.85 22 14.62 21.66 16.16 20.99C20.05 19.29 22.01 18.44 22.01 16.65V6.88C22.01 5.87 21.08 5.42 19.38 4.6H19.37ZM5.26 6.92C5.38 6.69 6.26 6.27 7.1 5.86L9.82 4.54C12.97 3.02 12.88 3.01 16.04 4.54L16.1 4.57L8.15 8.42L7.09 7.91C6.24 7.5 5.37 7.08 5.25 6.92H5.26ZM9.76 9.19L17.71 5.34L18.77 5.85C19.62 6.26 20.51 6.69 20.62 6.84C20.51 7.05 19.63 7.48 18.77 7.9L16.05 9.21C12.89 10.74 12.98 10.74 9.82 9.21L9.76 9.18V9.19ZM15.6 19.71C14.71 20.1 14.11 20.36 13.63 20.49V11.7C14.44 11.55 15.28 11.15 16.65 10.48L19.37 9.17C19.85 8.94 20.25 8.74 20.61 8.55V16.66C20.61 17.53 18.72 18.36 15.6 19.72V19.71Z" fill="#9E9E9E" />
-                                    <path d="M2.7 13.63H5.49C5.88 13.63 6.19 13.32 6.19 12.93C6.19 12.54 5.88 12.23 5.49 12.23H2.7C2.31 12.23 2 12.54 2 12.93C2 13.32 2.31 13.63 2.7 13.63Z" fill="#9E9E9E" />
-                                    <path d="M2.7 16.42H5.49C5.88 16.42 6.19 16.11 6.19 15.72C6.19 15.33 5.88 15.02 5.49 15.02H2.7C2.31 15.02 2 15.33 2 15.72C2 16.11 2.31 16.42 2.7 16.42Z" fill="#9E9E9E" />
+                                    <path d="M2.7 13.6305H5.49C5.88 13.6305 6.19 13.3205 6.19 12.9305C6.19 12.5405 5.88 12.2305 5.49 12.2305H2.7C2.31 12.2305 2 12.5405 2 12.9305C2 13.3205 2.31 13.6305 2.7 13.6305Z" fill="#9E9E9E" />
+                                    <path d="M2.7 16.4195H5.49C5.88 16.4195 6.19 16.1095 6.19 15.7195C6.19 15.3295 5.88 15.0195 5.49 15.0195H2.7C2.31 15.0195 2 15.3295 2 15.7195C2 16.1095 2.31 16.4195 2.7 16.4195Z" fill="#9E9E9E" />
                                   </svg>
                                 </div>
                               </label>
                             </div>
 
-                            {/* ─── Блок после выбора: САМОВЫВОЗ ─── */}
+                            {/* ─── САМОВЫВОЗ ─── */}
                             {receiveMethod === 'pickup' && selectedPvz && (
                               <div className="selected-delivery-block">
                                 <div className="selected-delivery-header">
@@ -692,9 +665,7 @@ export default function CheckoutPage() {
                                       </div>
                                     </div>
                                   </div>
-                                  <button type="button" className="change-link" onClick={handleChangePvz}>
-                                    Изменить
-                                  </button>
+                                  <button type="button" className="change-link" onClick={handleChangePvz}>Изменить</button>
                                 </div>
 
                                 <div className="alert alert-info">
@@ -729,25 +700,21 @@ export default function CheckoutPage() {
                                     <span className="timeline-label">Дата получения</span>
                                     <span className="timeline-value">
                                       {pvzCalcResult?.delivery?.delivery_date
-                                        ? formatDeliveryDate(pvzCalcResult.delivery.delivery_date)
-                                        : '—'
-                                      }
+                                        ? formatDeliveryDate(pvzCalcResult.delivery.delivery_date) : '—'}
                                     </span>
                                   </div>
                                   <div className="timeline-item">
                                     <span className="timeline-label">Срок хранения до</span>
                                     <span className="timeline-value">
                                       {pvzCalcResult?.delivery?.storage_until
-                                        ? formatDeliveryDate(pvzCalcResult.delivery.storage_until)
-                                        : '14 дней'
-                                      }
+                                        ? formatDeliveryDate(pvzCalcResult.delivery.storage_until) : '14 дней'}
                                     </span>
                                   </div>
                                 </div>
                               </div>
                             )}
 
-                            {/* ─── Блок после выбора: ДОСТАВКА ─── */}
+                            {/* ─── ДОСТАВКА ─── */}
                             {receiveMethod === 'delivery' && selectedAddr && (
                               <div className="selected-delivery-block">
                                 <div className="selected-delivery-header">
@@ -760,9 +727,7 @@ export default function CheckoutPage() {
                                       {selectedAddr.label || selectedAddr.address}
                                     </div>
                                   </div>
-                                  <button type="button" className="change-link" onClick={handleChangeAddr}>
-                                    Изменить
-                                  </button>
+                                  <button type="button" className="change-link" onClick={handleChangeAddr}>Изменить</button>
                                 </div>
 
                                 <div className="alert alert-info">
@@ -772,7 +737,6 @@ export default function CheckoutPage() {
                                   <span>Для получения заказа необходим паспорт</span>
                                 </div>
 
-                                {/* Курьер Европочта */}
                                 {!isIkeyaDelivery && (
                                   <div className="delivery-info-block">
                                     <div className="delivery-info-header">
@@ -802,7 +766,6 @@ export default function CheckoutPage() {
                                   </div>
                                 )}
 
-                                {/* Доставка IKEYA */}
                                 {isIkeyaDelivery && (
                                   <div className="delivery-info-block">
                                     <div className="delivery-info-header">
@@ -810,8 +773,8 @@ export default function CheckoutPage() {
                                       <IkeyaLogo />
                                     </div>
                                     <div className="alert alert-info" style={{ marginTop: 8 }}>
-                                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                                        <path d="M8 1.33334C4.32667 1.33334 1.33334 4.32667 1.33334 8.00001C1.33334 11.6733 4.32667 14.6667 8 14.6667C11.6733 14.6667 14.6667 11.6733 14.6667 8.00001C14.6667 4.32667 11.6733 1.33334 8 1.33334ZM8.46667 10.48C8.46667 10.74 8.26 10.9467 8 10.9467C7.74 10.9467 7.53334 10.74 7.53334 10.48V7.68667C7.53334 7.42667 7.74 7.22 8 7.22C8.26 7.22 8.46667 7.42667 8.46667 7.68667V10.48ZM8 6.08C7.69334 6.08 7.44667 5.83334 7.44667 5.52667C7.44667 5.22 7.69334 4.97334 8 4.97334C8.30667 4.97334 8.55334 5.22 8.55334 5.52667C8.55334 5.83334 8.30667 6.08 8 6.08Z" fill="#0058A3" />
+                                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
                                       </svg>
                                       <span>С вами свяжется сотрудник IKEYA для согласования сроков и стоимости доставки заказа. Данная услуга оплачивается отдельно от заказа.</span>
                                     </div>
@@ -825,7 +788,7 @@ export default function CheckoutPage() {
                           <section className="checkout-section services-section">
                             <h2 className="section-title services-title">Услуги в г. Минск (+20 км от Минска)</h2>
                             <div className="alert alert-info">
-                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
                               </svg>
                               <span>Услуги оплачиваются отдельно. С Вами свяжется сотрудник колл-центра для уточнения всех деталей.</span>
@@ -835,16 +798,10 @@ export default function CheckoutPage() {
                                 { value: 'furniture_delivery', title: 'Подъем и занос мебели', desc: 'Стоимость подъема мебели определяется исходя из количества единиц изделия, веса изделия и габаритных размеров.', price: 'от 75.00 р.' },
                                 { value: 'furniture_assembly', title: 'Сборка мебели', desc: 'Качественная и надежная сборка мебели специалистами IKEA', price: 'от 50.00 р.' },
                               ].map(service => (
-                                <label
-                                  key={service.value}
-                                  className={`service-card${selectedServices.includes(service.value) ? ' selected' : ''}`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    value={service.value}
+                                <label key={service.value} className={`service-card${selectedServices.includes(service.value) ? ' selected' : ''}`}>
+                                  <input type="checkbox" value={service.value}
                                     checked={selectedServices.includes(service.value)}
-                                    onChange={() => handleServiceToggle(service.value)}
-                                  />
+                                    onChange={() => handleServiceToggle(service.value)} />
                                   <div className="service-content">
                                     <div className="service-content_wrap">
                                       <div className="service-header">
@@ -874,21 +831,19 @@ export default function CheckoutPage() {
                             <div className="payment-methods">
                               <label className="payment-method">
                                 <input type="radio" name="payment_method" value="card"
-                                  checked={paymentMethod === 'card'}
-                                  onChange={e => setPaymentMethod(e.target.value)} />
+                                  checked={paymentMethod === 'card'} onChange={e => setPaymentMethod(e.target.value)} />
                                 <div className="payment-card">
                                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M27.7868 7.33333C27.5468 7.05333 27.2668 6.8 26.9868 6.57333C25.1735 5.14667 22.7335 5.14667 17.8668 5.14667H14.1468C9.28017 5.14667 6.82684 5.14667 5.02684 6.57333C4.73351 6.8 4.46684 7.05333 4.22684 7.33333C2.68018 9.06667 2.68018 11.3867 2.68018 16C2.68018 20.6133 2.68018 22.9333 4.22684 24.6667C4.46684 24.9333 4.74684 25.2 5.02684 25.4267C6.84018 26.8533 9.28017 26.8533 14.1468 26.8533H17.8668C22.7335 26.8533 25.1868 26.8533 27.0002 25.4267C27.2935 25.2 27.5602 24.9467 27.8002 24.6667C29.3468 22.9333 29.3468 20.6133 29.3468 16C29.3468 11.3867 29.3468 9.06667 27.8002 7.33333H27.7868ZM5.58684 8.57333C5.76018 8.37333 5.94684 8.2 6.16018 8.04C7.46684 7.01333 9.69351 7.01333 14.1335 7.01333H17.8535C22.2935 7.01333 24.5202 7.01333 25.8268 8.04C26.0268 8.2 26.2268 8.38667 26.4002 8.57333C26.9602 9.2 27.2268 10.08 27.3468 11.3467H4.65351C4.78684 10.0667 5.04018 9.2 5.60018 8.57333H5.58684ZM26.4002 23.4267C26.2268 23.6267 26.0268 23.8 25.8268 23.96C24.5202 24.9867 22.2935 24.9867 17.8535 24.9867H14.1335C9.69351 24.9867 7.46684 24.9867 6.16018 23.96C5.94684 23.8 5.76018 23.6133 5.58684 23.4267C4.52018 22.2267 4.52018 20.1467 4.52018 16C4.52018 14.9467 4.52018 14.0133 4.53351 13.2133H27.4535C27.4668 14.0267 27.4668 14.9467 27.4668 16C27.4668 20.1467 27.4668 22.2267 26.4002 23.4267Z" fill="#181818" />
-                                    <path d="M15.3732 20.0267H13.5066C12.9866 20.0267 12.5732 20.44 12.5732 20.96C12.5732 21.48 12.9866 21.8933 13.5066 21.8933H15.3732C15.8932 21.8933 16.3066 21.48 16.3066 20.96C16.3066 20.44 15.8932 20.0267 15.3732 20.0267Z" fill="#757575" />
-                                    <path d="M23.4402 20.0267H19.0935C18.5735 20.0267 18.1602 20.44 18.1602 20.96C18.1602 21.48 18.5735 21.8933 19.0935 21.8933H23.4402C23.9602 21.8933 24.3735 21.48 24.3735 20.96C24.3735 20.44 23.9602 20.0267 23.4402 20.0267Z" fill="#757575" />
+                                    <path d="M27.7868 7.33315C27.5468 7.05315 27.2668 6.79982 26.9868 6.57315C25.1735 5.14648 22.7335 5.14648 17.8668 5.14648H14.1468C9.28017 5.14648 6.82684 5.14648 5.02684 6.57315C4.73351 6.79982 4.46684 7.05315 4.22684 7.33315C2.68018 9.06648 2.68018 11.3865 2.68018 15.9998C2.68018 20.6132 2.68018 22.9332 4.22684 24.6665C4.46684 24.9332 4.74684 25.1998 5.02684 25.4265C6.84018 26.8532 9.28017 26.8531 14.1468 26.8531H17.8668C22.7335 26.8531 25.1868 26.8532 27.0002 25.4265C27.2935 25.1998 27.5602 24.9465 27.8002 24.6665C29.3468 22.9332 29.3468 20.6132 29.3468 15.9998C29.3468 11.3865 29.3468 9.06648 27.8002 7.33315H27.7868ZM5.58684 8.57315C5.76018 8.37315 5.94684 8.19982 6.16018 8.03982C7.46684 7.01315 9.69351 7.01315 14.1335 7.01315H17.8535C22.2935 7.01315 24.5202 7.01315 25.8268 8.03982C26.0268 8.19982 26.2268 8.38648 26.4002 8.57315C26.9602 9.19982 27.2268 10.0798 27.3468 11.3465H4.65351C4.78684 10.0665 5.04018 9.19982 5.60018 8.57315H5.58684ZM26.4002 23.4265C26.2268 23.6265 26.0268 23.7998 25.8268 23.9598C24.5202 24.9865 22.2935 24.9865 17.8535 24.9865H14.1335C9.69351 24.9865 7.46684 24.9865 6.16018 23.9598C5.94684 23.7998 5.76018 23.6132 5.58684 23.4265C4.52018 22.2265 4.52018 20.1465 4.52018 15.9998C4.52018 14.9465 4.52018 14.0132 4.53351 13.2132H27.4535C27.4668 14.0265 27.4668 14.9465 27.4668 15.9998C27.4668 20.1465 27.4668 22.2265 26.4002 23.4265Z" fill="#757575" />
+                                    <path d="M15.3732 20.0264H13.5066C12.9866 20.0264 12.5732 20.4397 12.5732 20.9597C12.5732 21.4797 12.9866 21.893 13.5066 21.893H15.3732C15.8932 21.893 16.3066 21.4797 16.3066 20.9597C16.3066 20.4397 15.8932 20.0264 15.3732 20.0264Z" fill="#757575" />
+                                    <path d="M23.4402 20.0264H19.0935C18.5735 20.0264 18.1602 20.4397 18.1602 20.9597C18.1602 21.4797 18.5735 21.893 19.0935 21.893H23.4402C23.9602 21.893 24.3735 21.4797 24.3735 20.9597C24.3735 20.4397 23.9602 20.0264 23.4402 20.0264Z" fill="#757575" />
                                   </svg>
                                   <span>Картой онлайн</span>
                                 </div>
                               </label>
                               <label className="payment-method">
                                 <input type="radio" name="payment_method" value="erip"
-                                  checked={paymentMethod === 'erip'}
-                                  onChange={e => setPaymentMethod(e.target.value)} />
+                                  checked={paymentMethod === 'erip'} onChange={e => setPaymentMethod(e.target.value)} />
                                 <div className="payment-card">
                                   <img src="/assets/img/cart/erip.png" alt="ЕРИП" width="89" height="49" />
                                 </div>
@@ -901,9 +856,7 @@ export default function CheckoutPage() {
                             <div className="section-header">
                               <h2 className="section-title">Получатель</h2>
                               {profile && (
-                                <button className="change-link" type="button" onClick={() => setShowPersonalModal(true)}>
-                                  Изменить
-                                </button>
+                                <button className="change-link" type="button" onClick={() => setShowPersonalModal(true)}>Изменить</button>
                               )}
                             </div>
                             {loadingProfile ? <p>Загрузка...</p> : (
@@ -911,8 +864,7 @@ export default function CheckoutPage() {
                                 {(!profile?.first_name || !profile?.phone) && (
                                   <div className="alert alert-warning">
                                     <span>Для таможенного оформления необходимо дополнить{' '}
-                                      <strong style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                        onClick={() => setShowPersonalModal(true)}>
+                                      <strong style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowPersonalModal(true)}>
                                         личные данные
                                       </strong>.
                                     </span>
@@ -933,15 +885,12 @@ export default function CheckoutPage() {
                               <section className="checkout-section">
                                 <div className="section-header">
                                   <h2 className="section-title">Паспортные данные</h2>
-                                  <button className="change-link" type="button" onClick={() => setShowPassportModal(true)}>
-                                    Изменить
-                                  </button>
+                                  <button className="change-link" type="button" onClick={() => setShowPassportModal(true)}>Изменить</button>
                                 </div>
                                 {!hasPassport ? (
                                   <div className="alert alert-warning">
                                     <span>Для таможенного оформления посылок необходимо добавить{' '}
-                                      <strong style={{ cursor: 'pointer', textDecoration: 'underline' }}
-                                        onClick={() => setShowPassportModal(true)}>
+                                      <strong style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowPassportModal(true)}>
                                         паспортные данные
                                       </strong>.
                                     </span>
@@ -1048,7 +997,6 @@ export default function CheckoutPage() {
                         </div>
                       </div>
 
-                      {/* Правая колонка */}
                       <CartSummary
                         cart={cart}
                         subtotal={subtotal}
@@ -1073,7 +1021,6 @@ export default function CheckoutPage() {
         </div>
       </section>
 
-      {/* ─── Модалка выбора доставки ─── */}
       {showDeliveryModal && (
         <DeliveryModal
           initialTab={deliveryModalTab}
@@ -1102,7 +1049,6 @@ export default function CheckoutPage() {
         />
       )}
 
-      {/* ─── Модалка ВГХ ─── */}
       {showVghModal && (
         <>
           <div className="modal fade show d-block" style={{ zIndex: 1055 }}>
@@ -1112,12 +1058,10 @@ export default function CheckoutPage() {
                 <p style={{ marginBottom: 12 }}>К пересылке принимаются почтовые отправления:</p>
                 <ul style={{ paddingLeft: 20, marginBottom: 24 }}>
                   <li>весом до 30 кг (в отдельных пунктах — до 50 кг).</li>
-                  <li>максимальные габариты любой из сторон (длина\высота\ширина) — до 250 см.</li>
-                  <li>общие габариты отправления — сумма 3-х сторон (длина + высота + ширина) — не более 350 см.</li>
+                  <li>максимальные габариты любой из сторон — до 250 см.</li>
+                  <li>сумма трёх сторон — не более 350 см.</li>
                 </ul>
-                <button type="button" className="pvz-select-btn" onClick={() => setShowVghModal(false)}>
-                  Закрыть
-                </button>
+                <button type="button" className="pvz-select-btn" onClick={() => setShowVghModal(false)}>Закрыть</button>
               </div>
             </div>
           </div>
@@ -1125,25 +1069,16 @@ export default function CheckoutPage() {
         </>
       )}
 
-      {/* ─── Личные данные ─── */}
       {showPersonalModal && (
-        <EditPersonalDataModal
-          profile={profile}
-          onClose={() => setShowPersonalModal(false)}
-          onSave={(updated) => { setProfile(updated); setShowPersonalModal(false); }}
-        />
+        <EditPersonalDataModal profile={profile} onClose={() => setShowPersonalModal(false)}
+          onSave={(updated) => { setProfile(updated); setShowPersonalModal(false); }} />
       )}
 
-      {/* ─── Паспортные данные ─── */}
       {showPassportModal && (
-        <EditPassportModal
-          profile={profile}
-          onClose={() => setShowPassportModal(false)}
-          onSave={(updated) => { setProfile(updated); setShowPassportModal(false); }}
-        />
+        <EditPassportModal profile={profile} onClose={() => setShowPassportModal(false)}
+          onSave={(updated) => { setProfile(updated); setShowPassportModal(false); }} />
       )}
 
-      {/* ─── A1 верификация ─── */}
       {a1Modal && (
         <>
           <SmsVerifyModal

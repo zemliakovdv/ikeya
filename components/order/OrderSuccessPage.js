@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import { resolveImageUrl } from '@/lib/api/ikea';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
+
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
 const PAYMENT_LABELS = {
   card: 'Оплата картой онлайн',
@@ -15,17 +18,11 @@ const SERVICE_LABELS = {
   furniture_assembly: 'Сборка мебели',
 };
 
-// Названия провайдеров ПВЗ
-const PROVIDER_NAMES = {
-  europost: 'Европочта',
-  autolight: 'Автолайт',
-  ikeya: 'Склад IKEYA',
-};
-
-// Подпись под стоимостью доставки
 const DELIVERY_TYPE_LABELS = {
-  pickup: 'Доставка до ПВЗ',
+  europost_pickup: 'Самовывоз Европочта',
   courier: 'Курьерская доставка',
+  ikeya_delivery: 'Доставка IKEYA',
+  pickup: 'Самовывоз Европочта',
 };
 
 function pad(n) { return String(n).padStart(2, '0'); }
@@ -35,7 +32,29 @@ function formatAmount(amount) {
   return Number(amount).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' р.';
 }
 
-// ─── Иконки провайдеров ────────────────────────────────────────────────────────
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  const day = date.getDate();
+  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  return `${day} ${months[date.getMonth()]}`;
+}
+
+function resolveImage(imageUrl) {
+  if (!imageUrl) return null;
+  let urls = imageUrl;
+  if (typeof urls === 'string') {
+    try { urls = JSON.parse(urls); } catch { return null; }
+  }
+  if (!Array.isArray(urls) || urls.length === 0) return null;
+  const first = urls[0];
+  if (!first || first.startsWith('as:')) return null;
+  if (first.startsWith('http')) return first;
+  if (first.startsWith('/')) return `https://test.ikeya.by${first}`;
+  return null;
+}
+
+// ─── Иконки ───────────────────────────────────────────────────────────────────
 
 function EuropostIcon() {
   return (
@@ -52,33 +71,18 @@ function EuropostIcon() {
 
 function IkeyaIcon() {
   return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: 24,
-      height: 24,
-      borderRadius: '50%',
-      background: '#FFDB00',
-      fontFamily: 'Arial',
-      fontWeight: 900,
-      fontSize: 8,
-      color: '#0058A3',
-      letterSpacing: 0.5,
-    }}>
-      IK
-    </span>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0C18.6274 0 24 5.37258 24 12Z" fill="white" />
+      <path d="M22.8 12C22.8 17.9647 17.9647 22.8 12 22.8C6.03533 22.8 1.2 17.9647 1.2 12C1.2 6.03533 6.03533 1.2 12 1.2C17.9647 1.2 22.8 6.03533 22.8 12Z" fill="#FFDB00" />
+      <path d="M5.52999 14.251V9.95803C5.52999 9.47881 5.52999 9.1194 5.51997 8.75999H7.92568C7.91566 9.12938 7.91566 9.45884 7.91566 9.95803V14.251C7.91566 14.9099 7.91566 15.3991 7.92568 15.8484H5.51997C5.52999 15.4091 5.52999 14.9199 5.52999 14.251Z" fill="#0058A3" />
+      <path d="M9.05399 14.251V9.95803C9.05399 9.47881 9.05399 9.1194 9.04396 8.75999H11.4497C11.4397 9.12938 11.4397 9.45884 11.4397 9.95803V11.2459H12.7828C13.1136 10.9165 13.3843 10.6269 13.6248 10.3773L15.1585 8.75999H18.0754L18.0854 8.77995C17.4038 9.43888 15.7499 11.0762 14.6974 12.1045C15.78 13.2327 17.6243 15.1096 18.3561 15.8284L18.346 15.8484H15.4091L14.0759 14.4707C13.7652 14.1412 13.3542 13.7219 12.843 13.1927H11.4397V14.251C11.4397 14.9099 11.4397 15.3991 11.4497 15.8484H9.04396C9.05399 15.4091 9.05399 14.9199 9.05399 14.251Z" fill="#0058A3" />
+    </svg>
   );
 }
 
-function ProviderIcon({ provider }) {
-  if (provider === 'autolight') {
-    return <img src="/assets/img/icon/autolight.png" alt="Автолайт" width="24" height="24" />;
-  }
-  if (provider === 'europost') {
-    return <EuropostIcon />;
-  }
-  // ikeya или любой другой
+function DeliveryIcon({ type }) {
+  if (type === 'europost_pickup' || type === 'pickup') return <EuropostIcon />;
+  if (type === 'courier') return <EuropostIcon />;
   return <IkeyaIcon />;
 }
 
@@ -87,8 +91,9 @@ function ProviderIcon({ provider }) {
 export default function OrderSuccessPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('order_id');
+  const { token } = useAuth();
 
-  const [order, setOrder] = useState(null);
+  const [order, setOrder] = useState(null);   // attributes объекта заказа
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -96,66 +101,147 @@ export default function OrderSuccessPage() {
   const timerRef = useRef(null);
 
   // Данные доставки
-  const [pvz, setPvz] = useState(null); // самовывоз
-  const [deliveryAddr, setDeliveryAddr] = useState(null); // курьер
+  const [pvz, setPvz] = useState(null);
+  const [deliveryAddr, setDeliveryAddr] = useState(null);
   const [services, setServices] = useState([]);
 
   useEffect(() => {
-    try {
-      // ── Самовывоз ──
-      const storedPvz = sessionStorage.getItem('selectedPvz');
-      if (storedPvz) {
-        setPvz(JSON.parse(storedPvz));
-        sessionStorage.removeItem('selectedPvz');
-      }
+    async function loadData() {
+      setLoading(true);
 
-      // ── Курьерная доставка ──
-      const storedAddr = sessionStorage.getItem('selectedDeliveryAddr');
-      if (storedAddr) {
-        setDeliveryAddr(JSON.parse(storedAddr));
-        sessionStorage.removeItem('selectedDeliveryAddr');
-      }
+      // 1. Пробуем sessionStorage (только что оформили)
+      let orderData = null;
+      let itemsData = [];
+      let fromSession = false;
 
-      // ── Услуги ──
-      const storedServices = sessionStorage.getItem('selectedServices');
-      if (storedServices) {
-        setServices(JSON.parse(storedServices));
-        sessionStorage.removeItem('selectedServices');
-      }
+      try {
+        const storedPvz = sessionStorage.getItem('selectedPvz');
+        if (storedPvz) { setPvz(JSON.parse(storedPvz)); sessionStorage.removeItem('selectedPvz'); }
 
-      // ── Заказ ──
-      const storedOrder = sessionStorage.getItem('checkoutOrder');
-      if (storedOrder) {
-        const orderData = JSON.parse(storedOrder);
-        setOrder(orderData);
-        if (orderData?.payment_expires_at && !orderData?.payment_expired) {
-          const expiresAt = new Date(orderData.payment_expires_at).getTime();
-          const secondsLeft = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
-          setTimeLeft(secondsLeft);
+        const storedAddr = sessionStorage.getItem('selectedDeliveryAddr');
+        if (storedAddr) { setDeliveryAddr(JSON.parse(storedAddr)); sessionStorage.removeItem('selectedDeliveryAddr'); }
+
+        const storedServices = sessionStorage.getItem('selectedServices');
+        if (storedServices) { setServices(JSON.parse(storedServices)); sessionStorage.removeItem('selectedServices'); }
+
+        const storedOrder = sessionStorage.getItem('checkoutOrder');
+        if (storedOrder) {
+          orderData = JSON.parse(storedOrder);
+          sessionStorage.removeItem('checkoutOrder');
+          fromSession = true;
         }
-        sessionStorage.removeItem('checkoutOrder');
+
+        const storedItems = sessionStorage.getItem('checkoutItems');
+        if (storedItems) {
+          itemsData = JSON.parse(storedItems);
+          sessionStorage.removeItem('checkoutItems');
+        }
+      } catch { }
+
+      // 2. Если нет в sessionStorage или нет токена — загружаем с API
+      if (!fromSession && orderId && token) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/account/orders/${orderId}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            cache: 'no-store',
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const attr = data.data?.attributes || {};
+            orderData = attr;
+
+            // Товары из included
+            const included = data.included || [];
+            const orderItemIds = data.data?.relationships?.order_items?.data?.map(d => d.id) || [];
+            const itemsMap = {};
+            included.forEach(inc => { if (inc.type === 'order_item') itemsMap[inc.id] = inc.attributes; });
+
+            itemsData = orderItemIds
+              .map(id => itemsMap[id])
+              .filter(Boolean)
+              .map(item => ({
+                id: item.product_sku,
+                attributes: {
+                  product_sku: item.product_sku,
+                  name: item.name || '—',
+                  description: item.name || '—',
+                  quantity: item.quantity || 1,
+                  price_byn: item.price_byn || 0,
+                  image_url: item.image_url || '',
+                },
+              }));
+
+            // Доставка из address
+            const addr = attr.address || {};
+            const deliveryType = attr.delivery_type;
+
+            if (deliveryType === 'europost_pickup' || deliveryType === 'pickup') {
+              // Самовывоз — данные ПВЗ из delivery snapshot
+              const deliverySnap = addr.delivery || {};
+              const pickupPoint = deliverySnap.pickup_point || {};
+              if (pickupPoint.address || addr.pickup_point_id) {
+                setPvz({
+                  provider: 'europost',
+                  address: pickupPoint.address || String(addr.pickup_point_id || ''),
+                  city: pickupPoint.city || '',
+                  working_hours: pickupPoint.working_hours || '',
+                  phone: pickupPoint.phone || '',
+                });
+              }
+            } else if (deliveryType === 'courier' || deliveryType === 'ikeya_delivery') {
+              // Курьерная доставка
+              const deliverySnap = addr.delivery || {};
+              const addrSnap = deliverySnap.address || addr;
+              if (addrSnap.city || addrSnap.street) {
+                const parts = [addrSnap.street, addrSnap.house, addrSnap.building].filter(Boolean).join(', ');
+                setDeliveryAddr({
+                  address: `${addrSnap.city || ''}, ${parts}`.replace(/^, /, ''),
+                  apartment: addrSnap.apartment || '',
+                  label: `${addrSnap.city || ''}, ${parts}`.replace(/^, /, ''),
+                  calcResult: { delivery: { normalized_delivery_type: deliveryType } },
+                });
+              }
+            }
+
+            // Услуги
+            if (addr.services?.length) setServices(addr.services);
+          }
+        } catch { }
       }
 
-      // ── Товары ──
-      const storedItems = sessionStorage.getItem('checkoutItems');
-      if (storedItems) {
-        setItems(JSON.parse(storedItems));
-        sessionStorage.removeItem('checkoutItems');
+      if (orderData) {
+        setOrder(orderData);
+        // Таймер оплаты
+        const expiresAt = orderData.payment_expires_at || orderData.attributes?.payment_expires_at;
+        const expired = orderData.payment_expired ?? orderData.attributes?.payment_expired;
+        if (expiresAt && !expired) {
+          const secondsLeft = Math.max(0, Math.floor((new Date(expiresAt).getTime() - Date.now()) / 1000));
+          setTimeLeft(secondsLeft > 0 ? secondsLeft : null);
+        }
       }
-    } catch { }
-    setLoading(false);
-  }, []);
 
+      setItems(itemsData);
+      setLoading(false);
+    }
+
+    loadData();
+  }, [orderId, token]);
+
+  // Таймер
   useEffect(() => {
-    if (timeLeft === null || timeLeft <= 0) return;
+    if (!timeLeft) return;
     timerRef.current = setInterval(() => {
       setTimeLeft(prev => {
-        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
+        if (prev <= 1) { clearInterval(timerRef.current); return null; }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(timerRef.current);
-  }, [timeLeft === null ? null : 'started']);
+  }, [!!timeLeft]);
 
   function handleCopy() {
     if (!orderId) return;
@@ -165,36 +251,22 @@ export default function OrderSuccessPage() {
     });
   }
 
-  const timerStr = timeLeft !== null
-    ? `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}`
-    : null;
+  const timerStr = timeLeft ? `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}` : null;
 
-  const attrs = order || {};
+  // Нормализуем attrs — поддерживаем и sessionStorage формат и API формат
+  const attrs = order?.attributes || order || {};
+  const deliveryType = attrs.delivery_type || '';
   const paymentLabel = PAYMENT_LABELS[attrs.payment_method] || attrs.payment_method || 'Оплата картой онлайн';
   const paymentUrl = resolvePaymentUrl(attrs.payment_url) || null;
   const paymentExpired = attrs.payment_expired === true;
-  const showPaymentAlert = !loading && !paymentExpired && (timerStr !== null || paymentUrl);
+  const showPaymentAlert = !loading && !paymentExpired && (timerStr || paymentUrl);
 
-  // Стоимость доставки — из calcResult если есть, иначе из order
   const isPickup = !!pvz;
   const isCourier = !!deliveryAddr;
+  const isIkeya = deliveryType === 'ikeya_delivery';
 
-  const calcResult = isPickup
-    ? null // ПВЗ: стоимость берём из order.delivery_price
-    : deliveryAddr?.calcResult;
+  const deliveryTypeLabel = DELIVERY_TYPE_LABELS[deliveryType] || deliveryType || '';
 
-  const deliveryFree = calcResult?.delivery?.free_delivery_eligible
-    ?? (!attrs.delivery_price || Number(attrs.delivery_price) === 0);
-
-  const deliveryCostByn = calcResult?.delivery?.base_cost_byn
-    ?? attrs.delivery_price
-    ?? null;
-
-  const deliveryTypeLabel = isPickup
-    ? DELIVERY_TYPE_LABELS.pickup
-    : DELIVERY_TYPE_LABELS.courier;
-
-  // Адрес для отображения
   const pvzAddress = pvz
     ? (pvz.city ? `${pvz.city}, ${pvz.address}` : pvz.address)
     : null;
@@ -205,10 +277,9 @@ export default function OrderSuccessPage() {
       : deliveryAddr.address)
     : null;
 
-  // Провайдер курьерки
-  const isEuropostCourier = deliveryAddr?.calcResult?.delivery?.type === 'europost_courier';
-  const courierProvider = isEuropostCourier ? 'europost' : 'ikeya';
-  const courierProviderLabel = isEuropostCourier ? 'Доставка Европочта' : 'Доставка IKEYA';
+  // Стоимость доставки
+  const deliveryCost = attrs.delivery_price ?? null;
+  const deliveryFree = deliveryCost !== null && Number(deliveryCost) === 0;
 
   return (
     <main className="orders-statused">
@@ -217,11 +288,11 @@ export default function OrderSuccessPage() {
           <div className="col-12">
             <div className="order-success-page">
 
-              {/* ========== ЗАГОЛОВОК УСПЕХА ========== */}
+              {/* ========== ЗАГОЛОВОК ========== */}
               <div className="success-header">
                 <div className="success-icon-large">
                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.0001 2.66667C8.65341 2.66667 2.66675 8.65334 2.66675 16C2.66675 23.3467 8.65341 29.3333 16.0001 29.3333C23.3467 29.3333 29.3334 23.3467 29.3334 16C29.3334 8.65334 23.3467 2.66667 16.0001 2.66667ZM21.6534 12.9067L14.8267 20.3467C14.6534 20.5333 14.4134 20.64 14.1601 20.6533H14.1467C13.9067 20.6533 13.6667 20.56 13.4934 20.3867L10.3867 17.28C10.0267 16.92 10.0267 16.3333 10.3867 15.96C10.7467 15.6 11.3334 15.6 11.7067 15.96L14.1201 18.3733L20.2801 11.6533C20.6267 11.28 21.2134 11.2533 21.6001 11.6C21.9734 11.9467 22.0001 12.5333 21.6534 12.92V12.9067Z" fill="#00910A" />
+                    <path d="M15.9998 2.66667C8.65317 2.66667 2.6665 8.65334 2.6665 16C2.6665 23.3467 8.65317 29.3333 15.9998 29.3333C23.3465 29.3333 29.3332 23.3467 29.3332 16C29.3332 8.65334 23.3465 2.66667 15.9998 2.66667ZM21.6532 12.9067L14.8265 20.3467C14.6532 20.5333 14.4132 20.64 14.1598 20.6533H14.1465C13.9065 20.6533 13.6665 20.56 13.4932 20.3867L10.3865 17.28C10.0265 16.92 10.0265 16.3333 10.3865 15.96C10.7465 15.6 11.3332 15.6 11.7065 15.96L14.1198 18.3733L20.2798 11.6533C20.6265 11.28 21.2132 11.2533 21.5998 11.6C21.9732 11.9467 21.9998 12.5333 21.6532 12.92V12.9067Z" fill="#00910A" />
                   </svg>
                 </div>
                 <h1 className="success-title">Заказ успешно оформлен. Спасибо!</h1>
@@ -230,15 +301,11 @@ export default function OrderSuccessPage() {
               {/* ========== АЛЕРТ С ТАЙМЕРОМ ========== */}
               {showPaymentAlert && (
                 <div className="alert alert-danger alert-payment">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#B71C1C" />
                   </svg>
                   <p>
-                    {timerStr ? (
-                      <>Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. </>
-                    ) : (
-                      <>Заказ ожидает оплаты. </>
-                    )}
+                    {timerStr && <>Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. </>}
                     <strong>Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.</strong>
                   </p>
                   {paymentUrl && (
@@ -251,6 +318,7 @@ export default function OrderSuccessPage() {
 
               {/* ========== ИНФОРМАЦИЯ О ЗАКАЗЕ ========== */}
               <section className="order-info-section">
+
                 <div className="order-number-block">
                   <div className="order-number-wrap">
                     <h2 className="order-number">Заказ № {orderId}</h2>
@@ -282,23 +350,21 @@ export default function OrderSuccessPage() {
                   </div>
                   <div className="detail-content">
                     <h3 className="detail-title">{paymentLabel}</h3>
-                    <p className="detail-status">Ждет оплаты</p>
+                    <p className="detail-status">{paymentExpired ? 'Истёк срок оплаты' : 'Ждёт оплаты'}</p>
                   </div>
                 </div>
 
                 {/* Стоимость доставки */}
-                {(isPickup || isCourier) && (
+                {deliveryCost !== null && (
                   <div className="order-detail-item">
                     <div className="detail-content detail-delivery">
-                      <h3 className="detail-price ">
+                      <h3 className="detail-price">
                         {deliveryFree
                           ? <span className="text-success">бесплатно</span>
-                          : deliveryCostByn
-                            ? formatAmount(deliveryCostByn)
-                            : <span className="text-muted">уточняется</span>
+                          : formatAmount(deliveryCost)
                         }
                       </h3>
-                      <p className="detail-subtitle">{deliveryTypeLabel}</p>
+                      <p className="detail-subtitle">{deliveryTypeLabel || 'Доставка'}</p>
                     </div>
                   </div>
                 )}
@@ -311,7 +377,7 @@ export default function OrderSuccessPage() {
                   </div>
                 </div>
 
-                {/* Планируемая дата получения */}
+                {/* Дата получения */}
                 <div className="order-detail-item">
                   <div className="detail-icon">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -320,40 +386,39 @@ export default function OrderSuccessPage() {
                     </svg>
                   </div>
                   <div className="detail-content">
-                    <h3 className="detail-title">через 20 дней</h3>
+                    <h3 className="detail-title">
+                      {formatDate(attrs.address?.delivery?.delivery_date || deliveryAddr?.calcResult?.delivery?.delivery_date) || 'уточняется'}
+                    </h3>
                     <p className="detail-subtitle">Планируемая дата получения заказа</p>
                   </div>
                 </div>
 
-                {/* ── Самовывоз: пункт выдачи ── */}
+                {/* Самовывоз */}
                 {pvz && (
                   <div className="order-detail-item">
-                    <div className="detail-icon">
-                      <ProviderIcon provider={pvz.provider} />
-                    </div>
+                    <div className="detail-icon"><DeliveryIcon type="europost_pickup" /></div>
                     <div className="detail-content">
                       <h3 className="detail-title">{pvzAddress}</h3>
-                      <p className="detail-subtitle">{PROVIDER_NAMES[pvz.provider] || pvz.provider}</p>
+                      <p className="detail-subtitle">Самовывоз Европочта</p>
+                      {pvz.working_hours && <p className="detail-subtitle">{pvz.working_hours}</p>}
                     </div>
                   </div>
                 )}
 
-                {/* ── Курьер: адрес доставки ── */}
+                {/* Курьерная доставка */}
                 {deliveryAddr && (
                   <div className="order-detail-item">
-                    <div className="detail-icon">
-                      <ProviderIcon provider={courierProvider} />
-                    </div>
+                    <div className="detail-icon"><DeliveryIcon type={deliveryType} /></div>
                     <div className="detail-content">
-                      <h3 className="detail-title detai-delivery">{courierAddress}</h3>
-                      <p className="detail-subtitle">{courierProviderLabel}</p>
+                      <h3 className="detail-title">{courierAddress}</h3>
+                      <p className="detail-subtitle">{isIkeya ? 'Доставка IKEYA' : 'Доставка Европочта'}</p>
                     </div>
                   </div>
                 )}
 
               </section>
 
-              {/* ========== ВЫБРАННЫЕ УСЛУГИ ========== */}
+              {/* ========== УСЛУГИ И ПОЛУЧАТЕЛЬ ========== */}
               {(services.length > 0 || attrs.full_name) && (
                 <section className="selected-services-section">
                   {services.length > 0 && (
@@ -376,7 +441,6 @@ export default function OrderSuccessPage() {
                     </>
                   )}
 
-                  {/* Получатель */}
                   {attrs.full_name && (
                     <div className="recipient-section">
                       <div className="recipient-header">
@@ -387,27 +451,28 @@ export default function OrderSuccessPage() {
                       </div>
                       <div className="contact-info-list">
                         {attrs.phone && <div className="contact-info-item"><span>+{attrs.phone}</span></div>}
-                        {attrs.email && <div className="contact-info-item"><span>{attrs.email}</span></div>}
                       </div>
                     </div>
                   )}
                 </section>
               )}
 
-              {/* ========== ТОВАРЫ В ЗАКАЗЕ ========== */}
+              {/* ========== ТОВАРЫ ========== */}
               {items.length > 0 && (
                 <div className="products zakazi">
                   <div className="order-card">
                     <div className="order-items">
-                      {items.map((item) => {
-                        const a = item.attributes || {};
+                      {items.map((item, idx) => {
+                        const a = item.attributes || item;
+                        const imgSrc = resolveImage(a.image_url) || resolveImageUrl(a.image_url) || '/assets/img/no-image.jpg';
                         return (
-                          <div key={item.id} className="order-item">
-                            <img src={resolveImageUrl(a.image_url)} alt={a.name} className="item-image" />
+                          <div key={item.id || idx} className="order-item">
+                            <img src={imgSrc} alt={a.name || ''} className="item-image"
+                              onError={(e) => { e.target.src = '/assets/img/no-image.jpg'; }} />
                             <div className="flex-grow-1">
                               <div className="item-infos">
-                                <div className="item-name">{a.description}</div>
-                                {a.description && (
+                                <div className="item-name">{a.description || a.name}</div>
+                                {a.description && a.description !== a.name && (
                                   <div className="item-desc">{a.name}</div>
                                 )}
                               </div>
