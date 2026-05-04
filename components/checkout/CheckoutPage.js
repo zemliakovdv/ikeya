@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -29,8 +29,6 @@ const LS_SELECTED_PVZ = 'checkout_selected_pvz';
 const LS_SELECTED_ADDR = 'checkout_selected_addr';
 const LS_PVZ_CALC = 'checkout_pvz_calc';
 const LS_ADDR_CALC = 'checkout_addr_calc';
-
-// ─── Хелперы ──────────────────────────────────────────────────────────────────
 
 function mask(str, visible = 2) {
   if (!str) return '—';
@@ -64,17 +62,23 @@ function readLS(key, fallback = null) {
   try {
     const val = localStorage.getItem(key);
     return val ? JSON.parse(val) : fallback;
-  } catch { return fallback; }
+  } catch {
+    return fallback;
+  }
 }
 
 function writeLS(key, value) {
   if (typeof window === 'undefined') return;
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch { }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch { }
 }
 
 function removeLS(key) {
   if (typeof window === 'undefined') return;
-  try { localStorage.removeItem(key); } catch { }
+  try {
+    localStorage.removeItem(key);
+  } catch { }
 }
 
 function genId() {
@@ -93,12 +97,29 @@ function parseAddressToFields(addr) {
     has_elevator: addr.has_elevator || false,
     intercom: addr.intercom || '',
     is_private_house: addr.isPrivateHouse || addr.is_private_house || false,
-    lat: addr.coords?.[0] || null,
-    lng: addr.coords?.[1] || null,
+    lat: addr.lat ?? addr.coords?.[0] ?? null,
+    lng: addr.lng ?? addr.coords?.[1] ?? null,
   };
 }
 
-// ─── Иконки ───────────────────────────────────────────────────────────────────
+function normalizeCheckoutItem(item) {
+  const product = item?.product || {};
+
+  return {
+    sku: item?.product_sku || item?.sku || '',
+    quantity: item?.quantity || 1,
+    name: item?.name || item?.small_desc_name || product?.small_desc_name || product?.name_ru || '',
+    description: item?.description || product?.name_ru || item?.name || '',
+    price_byn: item?.price_byn || product?.price_byn || 0,
+    image_url:
+      item?.image_url ||
+      item?.local_images?.[0] ||
+      item?.images?.[0] ||
+      product?.local_images?.[0] ||
+      product?.images?.[0] ||
+      '',
+  };
+}
 
 function EuropostIcon({ size = 32 }) {
   return (
@@ -121,8 +142,6 @@ function IkeyaLogo() {
   );
 }
 
-// ─── Внутренний компонент (использует useSearchParams) ────────────────────────
-
 function CheckoutPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -134,6 +153,7 @@ function CheckoutPageInner() {
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [draftLoading, setDraftLoading] = useState(true);
+  const [draftItems, setDraftItems] = useState([]);
 
   const [receiveMethod, setReceiveMethod] = useState(() => readLS(LS_RECEIVE_METHOD));
 
@@ -176,34 +196,99 @@ function CheckoutPageInner() {
   const [a1Loading, setA1Loading] = useState(false);
   const [a1Error, setA1Error] = useState(null);
 
-  // ─── Загрузка профиля ───────────────────────────────────────────────────────
+  const [checkoutSummary, setCheckoutSummary] = useState(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return JSON.parse(sessionStorage.getItem('checkoutSummary') || 'null');
+    } catch {
+      return null;
+    }
+  });
+
+  const cartToken = typeof window !== 'undefined' ? localStorage.getItem('cart_token') || '' : '';
+
+  const checkoutItemsSource = useMemo(() => {
+    return draftItems.length ? draftItems : (items || []);
+  }, [draftItems, items]);
+
+  const cartItems = useMemo(() => {
+    return checkoutItemsSource
+      .map((item) => ({
+        sku: item?.product_sku || item?.sku,
+        quantity: item?.quantity || 1,
+      }))
+      .filter((item) => item.sku);
+  }, [checkoutItemsSource]);
 
   useEffect(() => {
-    if (!token) { setLoadingProfile(false); return; }
+    try {
+      const stored = sessionStorage.getItem('checkoutSummary');
+      if (stored) setCheckoutSummary(JSON.parse(stored));
+    } catch { }
+  }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setLoadingProfile(false);
+      return;
+    }
+
     getProfile(token)
-      .then(data => setProfile(data))
+      .then((data) => setProfile(data))
       .catch(() => setProfile(null))
       .finally(() => setLoadingProfile(false));
   }, [token]);
 
-  // ─── Загрузка черновика ─────────────────────────────────────────────────────
-
   useEffect(() => {
-    if (!draftId) { setDraftLoading(false); return; }
-    getDraft()
-      .then(data => {
+    if (!draftId) {
+      setDraftLoading(false);
+      return;
+    }
+
+    getDraft(draftId)
+      .then((data) => {
         const attr = data?.data?.attributes || {};
-        // Восстанавливаем метод оплаты из черновика если есть
+        const included = data?.included || [];
+        const itemIds = data?.data?.relationships?.order_items?.data?.map((d) => d.id) || [];
+        const loadedDraftItems = itemIds
+          .map((id) => included.find((i) => i.id === id)?.attributes)
+          .filter(Boolean);
+
         if (attr.payment_method) setPaymentMethod(attr.payment_method);
-        if (attr.services?.length) setSelectedServices(attr.services);
+        if (attr.address?.services?.length) setSelectedServices(attr.address.services);
+
+        const subtotal = loadedDraftItems.reduce(
+          (acc, item) => acc + parseFloat(item.price_byn || 0) * (item.quantity || 1),
+          0
+        );
+        const itemCount = loadedDraftItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+        const totalWeight = parseFloat(attr.address?.weight_kg || 0);
+
+        let previousSummary = null;
+
+        try {
+          previousSummary = JSON.parse(sessionStorage.getItem('checkoutSummary') || 'null');
+        } catch {
+          previousSummary = null;
+        }
+
+        const summary = {
+          subtotal: parseFloat(subtotal.toFixed(2)),
+          promoDiscount: previousSummary?.promoDiscount ?? 0,
+          itemCount,
+          totalWeight,
+          customsDuty: previousSummary?.customsDuty ?? 0,
+          delivery: previousSummary?.delivery ?? 0,
+        };
+
+        sessionStorage.setItem('checkoutSummary', JSON.stringify(summary));
+
+        setDraftItems(loadedDraftItems);
+        setCheckoutSummary(summary);
       })
-      .catch(() => {
-        // Черновик не найден — просто продолжаем без него
-      })
+      .catch(() => { })
       .finally(() => setDraftLoading(false));
   }, [draftId]);
-
-  // ─── Загрузка сохранённых адресов ───────────────────────────────────────────
 
   useEffect(() => {
     if (!token) {
@@ -211,9 +296,10 @@ function CheckoutPageInner() {
       setSavedAddrList(readLS(LS_SAVED_ADDR, []));
       return;
     }
+
     getSavedPickupPoints()
-      .then(res => {
-        const points = (res.data || []).map(d => ({
+      .then((res) => {
+        const points = (res.data || []).map((d) => ({
           id: String(d.attributes.id),
           apiId: d.attributes.id,
           pickup_point_id: d.attributes.pickup_point_id,
@@ -233,8 +319,8 @@ function CheckoutPageInner() {
       .catch(() => setSavedPvzList(readLS(LS_SAVED_PVZ, [])));
 
     getDeliveryAddresses()
-      .then(res => {
-        const addrs = (res.data || []).map(d => ({
+      .then((res) => {
+        const addrs = (res.data || []).map((d) => ({
           id: String(d.attributes.id),
           apiId: d.attributes.id,
           city: d.attributes.city,
@@ -257,37 +343,38 @@ function CheckoutPageInner() {
       .catch(() => setSavedAddrList(readLS(LS_SAVED_ADDR, [])));
   }, [token]);
 
-  // ─── Проверка ВГХ ───────────────────────────────────────────────────────────
-
   useEffect(() => {
-    if (!items?.length) return;
-    const cartToken = typeof window !== 'undefined' ? localStorage.getItem('cart_token') || '' : '';
+    if (!cartItems.length) return;
     if (!cartToken) return;
 
     setVghLoading(true);
+
     calculateDelivery({
       cart_token: cartToken,
       delivery_type: 'europost_pickup',
-      items: items.map(it => ({ sku: it.sku, quantity: it.quantity })),
+      items: cartItems,
     })
-      .then(() => setPickupEligible(true))
-      .catch(err => {
+      .then(() => {
+        setPickupEligible(true);
+      })
+      .catch((err) => {
         if (err.status === 422) {
           const available = err.payload?.available_methods || [];
-          const eligible = available.some(m => m.code === 'europost_pickup' && m.available);
+          const eligible = available.some((method) => method.code === 'europost_pickup' && method.available);
+
           setPickupEligible(eligible);
-          if (!eligible) saveReceiveMethod('delivery');
+
+          if (!eligible) {
+            setSelectedPvz(null);
+            setPvzCalcResult(null);
+            removeLS(LS_SELECTED_PVZ);
+            removeLS(LS_PVZ_CALC);
+            saveReceiveMethod('delivery');
+          }
         }
       })
       .finally(() => setVghLoading(false));
-  }, [items]);
-
-  // ─── Суммы ──────────────────────────────────────────────────────────────────
-
-  const checkoutSummary = (() => {
-    if (typeof window === 'undefined') return null;
-    try { return JSON.parse(sessionStorage.getItem('checkoutSummary') || 'null'); } catch { return null; }
-  })();
+  }, [cartToken, cartItems]);
 
   const subtotal = checkoutSummary?.subtotal ?? parseFloat(totals?.subtotal_new_byn || totals?.subtotal || 0);
   const promoDiscount = checkoutSummary?.promoDiscount ?? parseFloat(totals?.discount_total_byn || totals?.discount || 0);
@@ -299,7 +386,7 @@ function CheckoutPageInner() {
     );
   const totalWeight = checkoutSummary?.totalWeight ?? (totals?.total_weight_kg || 0);
   const customsDuty = checkoutSummary?.customsDuty ?? 0;
-  const itemCount = checkoutSummary?.itemCount ?? items.length;
+  const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
 
   const pvzDeliveryCost = pvzCalcResult?.delivery?.free_delivery_eligible
     ? 0
@@ -311,8 +398,6 @@ function CheckoutPageInner() {
 
   const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'ikeya_delivery';
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
-
-  // ─── Профиль ────────────────────────────────────────────────────────────────
 
   const fullName = profile ? [profile.last_name, profile.first_name, profile.middle_name].filter(Boolean).join(' ') : '';
   const hasPassport = Boolean(profile?.passport_data?.number && profile?.passport_data?.series);
@@ -326,8 +411,6 @@ function CheckoutPageInner() {
     itemCount > 0 &&
     !submitting
   );
-
-  // ─── Выбор ПВЗ ──────────────────────────────────────────────────────────────
 
   const handleSelectPvz = useCallback(async (pvz, calcResult) => {
     setSelectedPvz(pvz);
@@ -348,8 +431,9 @@ function CheckoutPageInner() {
           lat: pvz.lat || null,
           lng: pvz.lng || pvz.lon || null,
         });
+
         const res = await getSavedPickupPoints();
-        const points = (res.data || []).map(d => ({
+        const points = (res.data || []).map((d) => ({
           id: String(d.attributes.id),
           apiId: d.attributes.id,
           pickup_point_id: d.attributes.pickup_point_id,
@@ -369,7 +453,7 @@ function CheckoutPageInner() {
     } else {
       const label = pvz.city ? `${pvz.city}, ${pvz.address}` : pvz.address;
       const entry = { id: genId(), label, ...pvz };
-      const updated = [entry, ...savedPvzList.filter(a => a.address !== pvz.address)].slice(0, 5);
+      const updated = [entry, ...savedPvzList.filter((addr) => addr.address !== pvz.address)].slice(0, 5);
       setSavedPvzList(updated);
       writeLS(LS_SAVED_PVZ, updated);
     }
@@ -385,8 +469,9 @@ function CheckoutPageInner() {
     if (token) {
       try {
         await createDeliveryAddress(parseAddressToFields(addr));
+
         const res = await getDeliveryAddresses();
-        const addrs = (res.data || []).map(d => ({
+        const addrs = (res.data || []).map((d) => ({
           id: String(d.attributes.id),
           apiId: d.attributes.id,
           city: d.attributes.city,
@@ -409,7 +494,7 @@ function CheckoutPageInner() {
     } else {
       const label = addr.apartment ? `${addr.address}, кв.${addr.apartment}` : addr.address;
       const entry = { id: genId(), label, ...addr };
-      const updated = [entry, ...savedAddrList.filter(a => a.address !== addr.address)].slice(0, 5);
+      const updated = [entry, ...savedAddrList.filter((savedAddr) => savedAddr.address !== addr.address)].slice(0, 5);
       setSavedAddrList(updated);
       writeLS(LS_SAVED_ADDR, updated);
     }
@@ -417,69 +502,142 @@ function CheckoutPageInner() {
 
   const handleChangePvz = () => {
     if (savedPvzList.length > 0) setShowSavedPvz(true);
-    else { setDeliveryModalTab('pickup'); setShowDeliveryModal(true); }
+    else {
+      setDeliveryModalTab('pickup');
+      setShowDeliveryModal(true);
+    }
   };
 
   const handleChangeAddr = () => {
     if (savedAddrList.length > 0) setShowSavedAddr(true);
-    else { setDeliveryModalTab('delivery'); setShowDeliveryModal(true); }
+    else {
+      setDeliveryModalTab('delivery');
+      setShowDeliveryModal(true);
+    }
   };
 
-  const handleSelectSavedPvz = (id) => {
-    const found = savedPvzList.find(a => a.id === id);
-    if (found) { setSelectedPvz(found); writeLS(LS_SELECTED_PVZ, found); saveReceiveMethod('pickup'); }
-    setShowSavedPvz(false);
+  const handleSelectSavedPvz = async (id) => {
+    const found = savedPvzList.find((addr) => addr.id === id);
+    if (!found) return;
+
+    setSelectedPvz(found);
+    writeLS(LS_SELECTED_PVZ, found);
+    saveReceiveMethod('pickup');
+
+    if (!cartToken || !cartItems.length) return;
+
+    try {
+      const result = await calculateDelivery({
+        cart_token: cartToken,
+        delivery_type: 'europost_pickup',
+        pickup_point_id: found.pickup_point_id || found.id,
+        items: cartItems,
+      });
+
+      setPvzCalcResult(result);
+      writeLS(LS_PVZ_CALC, result);
+    } catch { }
   };
 
-  const handleSelectSavedAddr = (id) => {
-    const found = savedAddrList.find(a => a.id === id);
-    if (found) { setSelectedAddr(found); writeLS(LS_SELECTED_ADDR, found); saveReceiveMethod('delivery'); }
-    setShowSavedAddr(false);
+  const handleSelectSavedAddr = async (id) => {
+    const found = savedAddrList.find((addr) => addr.id === id);
+    if (!found) return;
+
+    setSelectedAddr(found);
+    writeLS(LS_SELECTED_ADDR, found);
+    saveReceiveMethod('delivery');
+
+    if (!cartToken || !cartItems.length) return;
+
+    const payload = {
+      cart_token: cartToken,
+      delivery_type: 'courier',
+      items: cartItems,
+    };
+
+    try {
+      const result = await calculateDelivery(payload);
+      setAddrCalcResult(result);
+      writeLS(LS_ADDR_CALC, result);
+    } catch (err) {
+      if (err.status === 422) {
+        const available = err.payload?.available_methods || [];
+        const hasIkeyaDelivery = available.some((method) => method.code === 'ikeya_delivery' && method.available);
+
+        if (hasIkeyaDelivery) {
+          try {
+            const fallback = await calculateDelivery({
+              ...payload,
+              delivery_type: 'ikeya_delivery',
+            });
+
+            setAddrCalcResult(fallback);
+            writeLS(LS_ADDR_CALC, fallback);
+          } catch { }
+        }
+      }
+    }
   };
 
   const handleDeletePvz = async (id) => {
     if (token) {
-      const item = savedPvzList.find(a => a.id === id);
-      if (item?.apiId) { try { await deleteSavedPickupPoint(item.apiId); } catch { } }
+      const item = savedPvzList.find((addr) => addr.id === id);
+      if (item?.apiId) {
+        try {
+          await deleteSavedPickupPoint(item.apiId);
+        } catch { }
+      }
     }
-    const updated = savedPvzList.filter(a => a.id !== id);
+
+    const updated = savedPvzList.filter((addr) => addr.id !== id);
     setSavedPvzList(updated);
+
     if (!token) writeLS(LS_SAVED_PVZ, updated);
   };
 
   const handleDeleteAddr = async (id) => {
     if (token) {
-      const item = savedAddrList.find(a => a.id === id);
-      if (item?.apiId) { try { await deleteDeliveryAddress(item.apiId); } catch { } }
+      const item = savedAddrList.find((addr) => addr.id === id);
+      if (item?.apiId) {
+        try {
+          await deleteDeliveryAddress(item.apiId);
+        } catch { }
+      }
     }
-    const updated = savedAddrList.filter(a => a.id !== id);
+
+    const updated = savedAddrList.filter((addr) => addr.id !== id);
     setSavedAddrList(updated);
+
     if (!token) writeLS(LS_SAVED_ADDR, updated);
   };
 
   const handlePickupCardClick = () => {
     if (!pickupEligible) return;
-    if (selectedPvz) { saveReceiveMethod('pickup'); return; }
+
+    if (selectedPvz) {
+      saveReceiveMethod('pickup');
+      return;
+    }
+
     setDeliveryModalTab('pickup');
     setShowDeliveryModal(true);
   };
 
   const handleDeliveryCardClick = () => {
-    if (selectedAddr) { saveReceiveMethod('delivery'); return; }
+    if (selectedAddr) {
+      saveReceiveMethod('delivery');
+      return;
+    }
+
     setDeliveryModalTab('delivery');
     setShowDeliveryModal(true);
   };
 
   function handleServiceToggle(value) {
-    setSelectedServices(prev =>
-      prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]
+    setSelectedServices((prev) =>
+      prev.includes(value) ? prev.filter((service) => service !== value) : [...prev, value]
     );
   }
-
-  // ─── Формирование тела заказа ────────────────────────────────────────────────
-
-  const cartToken = typeof window !== 'undefined' ? localStorage.getItem('cart_token') || '' : '';
-  const cartItems = items.map(it => ({ sku: it.sku, quantity: it.quantity }));
 
   function buildOrderData(a1Id = null) {
     const isPickup = receiveMethod === 'pickup';
@@ -512,13 +670,13 @@ function CheckoutPageInner() {
     };
   }
 
-  // ─── Чекаут + A1 ────────────────────────────────────────────────────────────
-
   async function handleCheckout() {
     if (!canCheckout) return;
+
     setError(null);
     setA1Loading(true);
     setA1Error(null);
+
     try {
       const res = await requestA1Verification(profile.phone, 'checkout');
       setA1VerificationId(res.verification_id);
@@ -534,18 +692,17 @@ function CheckoutPageInner() {
   async function handleA1Verify(code) {
     setA1Loading(true);
     setA1Error(null);
+
     try {
       await verifyA1Code(a1VerificationId, code);
       setA1Modal(false);
       setSubmitting(true);
 
-      // Финализируем черновик
+      const successItems = checkoutItemsSource;
       const response = await finalizeDraft(draftId, buildOrderData(a1VerificationId));
 
-      // Обновляем корзину (она была очищена бэком при создании черновика)
       await refreshCart();
 
-      // Очищаем персист данные
       removeLS(LS_SELECTED_PVZ);
       removeLS(LS_SELECTED_ADDR);
       removeLS(LS_PVZ_CALC);
@@ -555,26 +712,32 @@ function CheckoutPageInner() {
       if (receiveMethod === 'pickup' && selectedPvz) {
         sessionStorage.setItem('selectedPvz', JSON.stringify(selectedPvz));
       }
+
       if (receiveMethod === 'delivery' && selectedAddr) {
         sessionStorage.setItem('selectedDeliveryAddr', JSON.stringify({
           ...selectedAddr,
           calcResult: addrCalcResult,
         }));
       }
+
       sessionStorage.setItem('selectedServices', JSON.stringify(selectedServices));
       sessionStorage.setItem('checkoutOrder', JSON.stringify(response.order || null));
       sessionStorage.setItem('checkoutItems', JSON.stringify(
-        items.map(it => ({
-          id: it.sku,
-          attributes: {
-            product_sku: it.sku,
-            name: it.product?.small_desc_name || it.product?.name_ru || '',
-            description: it.product?.name_ru || '',
-            quantity: it.quantity,
-            price_byn: it.product?.price_byn || 0,
-            image_url: it.product?.local_images?.[0] || it.product?.images?.[0] || '',
-          }
-        }))
+        successItems.map((item) => {
+          const normalized = normalizeCheckoutItem(item);
+
+          return {
+            id: normalized.sku,
+            attributes: {
+              product_sku: normalized.sku,
+              name: normalized.name,
+              description: normalized.description,
+              quantity: normalized.quantity,
+              price_byn: normalized.price_byn,
+              image_url: normalized.image_url,
+            },
+          };
+        })
       ));
 
       const orderId = response.order?.data?.id || response.order_id || draftId;
@@ -599,8 +762,6 @@ function CheckoutPageInner() {
     );
   }
 
-  // ─── Рендер ─────────────────────────────────────────────────────────────────
-
   return (
     <main className="korzina">
       <section className="zakaz">
@@ -623,7 +784,6 @@ function CheckoutPageInner() {
                       <div className="cart-main">
                         <div className="checkout-container">
 
-                          {/* ===== СПОСОБ ПОЛУЧЕНИЯ ===== */}
                           <section className="checkout-section pickup-section">
                             <h2 className="section-title">Способ получения</h2>
 
@@ -681,7 +841,6 @@ function CheckoutPageInner() {
                               </label>
                             </div>
 
-                            {/* ─── САМОВЫВОЗ ─── */}
                             {receiveMethod === 'pickup' && selectedPvz && (
                               <div className="selected-delivery-block">
                                 <div className="selected-delivery-header">
@@ -729,21 +888,22 @@ function CheckoutPageInner() {
                                     <span className="timeline-label">Дата получения</span>
                                     <span className="timeline-value">
                                       {pvzCalcResult?.delivery?.delivery_date
-                                        ? formatDeliveryDate(pvzCalcResult.delivery.delivery_date) : '—'}
+                                        ? formatDeliveryDate(pvzCalcResult.delivery.delivery_date)
+                                        : '—'}
                                     </span>
                                   </div>
                                   <div className="timeline-item">
                                     <span className="timeline-label">Срок хранения до</span>
                                     <span className="timeline-value">
                                       {pvzCalcResult?.delivery?.storage_until
-                                        ? formatDeliveryDate(pvzCalcResult.delivery.storage_until) : '14 дней'}
+                                        ? formatDeliveryDate(pvzCalcResult.delivery.storage_until)
+                                        : '14 дней'}
                                     </span>
                                   </div>
                                 </div>
                               </div>
                             )}
 
-                            {/* ─── ДОСТАВКА ─── */}
                             {receiveMethod === 'delivery' && selectedAddr && (
                               <div className="selected-delivery-block">
                                 <div className="selected-delivery-header">
@@ -779,8 +939,7 @@ function CheckoutPageInner() {
                                           ? <span className="text-success">бесплатно</span>
                                           : addrCalcResult?.delivery?.total_delivery_price_byn
                                             ? `${addrCalcResult.delivery.total_delivery_price_byn} р.`
-                                            : '—'
-                                        }
+                                            : '—'}
                                       </span>
                                     </div>
                                     {addrCalcResult?.delivery?.delivery_date && (
@@ -802,6 +961,9 @@ function CheckoutPageInner() {
                                       <IkeyaLogo />
                                     </div>
                                     <div className="alert alert-info" style={{ marginTop: 8 }}>
+                                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+                                      </svg>
                                       <span>С вами свяжется сотрудник IKEYA для согласования сроков и стоимости доставки заказа. Данная услуга оплачивается отдельно от заказа.</span>
                                     </div>
                                   </div>
@@ -810,21 +972,26 @@ function CheckoutPageInner() {
                             )}
                           </section>
 
-                          {/* ===== УСЛУГИ ===== */}
                           <section className="checkout-section services-section">
                             <h2 className="section-title services-title">Услуги в г. Минск (+20 км от Минска)</h2>
                             <div className="alert alert-info">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+                              </svg>
                               <span>Услуги оплачиваются отдельно. С Вами свяжется сотрудник колл-центра для уточнения всех деталей.</span>
                             </div>
                             <div className="services-list">
                               {[
                                 { value: 'furniture_delivery', title: 'Подъем и занос мебели', desc: 'Стоимость подъема мебели определяется исходя из количества единиц изделия, веса изделия и габаритных размеров.', price: 'от 75.00 р.' },
                                 { value: 'furniture_assembly', title: 'Сборка мебели', desc: 'Качественная и надежная сборка мебели специалистами IKEA', price: 'от 50.00 р.' },
-                              ].map(service => (
+                              ].map((service) => (
                                 <label key={service.value} className={`service-card${selectedServices.includes(service.value) ? ' selected' : ''}`}>
-                                  <input type="checkbox" value={service.value}
+                                  <input
+                                    type="checkbox"
+                                    value={service.value}
                                     checked={selectedServices.includes(service.value)}
-                                    onChange={() => handleServiceToggle(service.value)} />
+                                    onChange={() => handleServiceToggle(service.value)}
+                                  />
                                   <div className="service-content">
                                     <div className="service-content_wrap">
                                       <div className="service-header">
@@ -846,15 +1013,19 @@ function CheckoutPageInner() {
                             </div>
                           </section>
 
-                          {/* ===== СПОСОБ ОПЛАТЫ ===== */}
                           <section className="checkout-section">
                             <div className="section-header">
                               <h2 className="section-title">Способ оплаты</h2>
                             </div>
                             <div className="payment-methods">
                               <label className="payment-method">
-                                <input type="radio" name="payment_method" value="card"
-                                  checked={paymentMethod === 'card'} onChange={e => setPaymentMethod(e.target.value)} />
+                                <input
+                                  type="radio"
+                                  name="payment_method"
+                                  value="card"
+                                  checked={paymentMethod === 'card'}
+                                  onChange={(e) => setPaymentMethod(e.target.value)}
+                                />
                                 <div className="payment-card">
                                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M27.7868 7.33315C27.5468 7.05315 27.2668 6.79982 26.9868 6.57315C25.1735 5.14648 22.7335 5.14648 17.8668 5.14648H14.1468C9.28017 5.14648 6.82684 5.14648 5.02684 6.57315C4.73351 6.79982 4.46684 7.05315 4.22684 7.33315C2.68018 9.06648 2.68018 11.3865 2.68018 15.9998C2.68018 20.6132 2.68018 22.9332 4.22684 24.6665C4.46684 24.9332 4.74684 25.1998 5.02684 25.4265C6.84018 26.8532 9.28017 26.8531 14.1468 26.8531H17.8668C22.7335 26.8531 25.1868 26.8532 27.0002 25.4265C27.2935 25.1998 27.5602 24.9465 27.8002 24.6665C29.3468 22.9332 29.3468 20.6132 29.3468 15.9998C29.3468 11.3865 29.3468 9.06648 27.8002 7.33315H27.7868ZM5.58684 8.57315C5.76018 8.37315 5.94684 8.19982 6.16018 8.03982C7.46684 7.01315 9.69351 7.01315 14.1335 7.01315H17.8535C22.2935 7.01315 24.5202 7.01315 25.8268 8.03982C26.0268 8.19982 26.2268 8.38648 26.4002 8.57315C26.9602 9.19982 27.2268 10.0798 27.3468 11.3465H4.65351C4.78684 10.0665 5.04018 9.19982 5.60018 8.57315H5.58684ZM26.4002 23.4265C26.2268 23.6265 26.0268 23.7998 25.8268 23.9598C24.5202 24.9865 22.2935 24.9865 17.8535 24.9865H14.1335C9.69351 24.9865 7.46684 24.9865 6.16018 23.9598C5.94684 23.7998 5.76018 23.6132 5.58684 23.4265C4.52018 22.2265 4.52018 20.1465 4.52018 15.9998C4.52018 14.9465 4.52018 14.0132 4.53351 13.2132H27.4535C27.4668 14.0265 27.4668 14.9465 27.4668 15.9998C27.4668 20.1465 27.4668 22.2265 26.4002 23.4265Z" fill="#757575" />
@@ -864,9 +1035,15 @@ function CheckoutPageInner() {
                                   <span>Картой онлайн</span>
                                 </div>
                               </label>
+
                               <label className="payment-method">
-                                <input type="radio" name="payment_method" value="erip"
-                                  checked={paymentMethod === 'erip'} onChange={e => setPaymentMethod(e.target.value)} />
+                                <input
+                                  type="radio"
+                                  name="payment_method"
+                                  value="erip"
+                                  checked={paymentMethod === 'erip'}
+                                  onChange={(e) => setPaymentMethod(e.target.value)}
+                                />
                                 <div className="payment-card">
                                   <img src="/assets/img/cart/erip.png" alt="ЕРИП" width="89" height="49" />
                                 </div>
@@ -874,7 +1051,6 @@ function CheckoutPageInner() {
                             </div>
                           </section>
 
-                          {/* ===== ПОЛУЧАТЕЛЬ ===== */}
                           <section className="checkout-section">
                             <div className="section-header">
                               <h2 className="section-title">Получатель</h2>
@@ -882,6 +1058,7 @@ function CheckoutPageInner() {
                                 <button className="change-link" type="button" onClick={() => setShowPersonalModal(true)}>Изменить</button>
                               )}
                             </div>
+
                             {loadingProfile ? <p>Загрузка...</p> : (
                               <>
                                 {(!profile?.first_name || !profile?.phone) && (
@@ -893,6 +1070,7 @@ function CheckoutPageInner() {
                                     </span>
                                   </div>
                                 )}
+
                                 <div className="recipient-info">
                                   {fullName && <div className="info-row"><span className="info-label">ФИО</span><span className="info-value">{fullName}</span></div>}
                                   {profile?.phone && <div className="info-row"><span className="info-label">Телефон</span><span className="info-value">+{profile.phone}</span></div>}
@@ -902,7 +1080,6 @@ function CheckoutPageInner() {
                             )}
                           </section>
 
-                          {/* ===== ПАСПОРТНЫЕ ДАННЫЕ ===== */}
                           {profile && (
                             <div className="for-white_bg">
                               <section className="checkout-section">
@@ -910,6 +1087,7 @@ function CheckoutPageInner() {
                                   <h2 className="section-title">Паспортные данные</h2>
                                   <button className="change-link" type="button" onClick={() => setShowPassportModal(true)}>Изменить</button>
                                 </div>
+
                                 {!hasPassport ? (
                                   <div className="alert alert-warning">
                                     <span>Для таможенного оформления посылок необходимо добавить{' '}
@@ -927,11 +1105,11 @@ function CheckoutPageInner() {
                                           <span className="data-value">
                                             {showPassportData
                                               ? [profile.passport_data.last_name, profile.passport_data.first_name, profile.passport_data.middle_name].filter(Boolean).join(' ')
-                                              : [mask(profile.passport_data.last_name, 5), mask(profile.passport_data.first_name, 3)].filter(Boolean).join(' ')
-                                            }
+                                              : [mask(profile.passport_data.last_name, 5), mask(profile.passport_data.first_name, 3)].filter(Boolean).join(' ')}
                                           </span>
                                         </div>
                                       )}
+
                                       {profile.passport_data.series && profile.passport_data.number && (
                                         <div className="data-row data-row-split">
                                           <div className="data-column">
@@ -944,6 +1122,7 @@ function CheckoutPageInner() {
                                           </div>
                                         </div>
                                       )}
+
                                       {profile.passport_data.issue_date && (
                                         <div className="data-row data-row-split">
                                           <div className="data-column">
@@ -958,6 +1137,7 @@ function CheckoutPageInner() {
                                           )}
                                         </div>
                                       )}
+
                                       {profile.passport_data.identification_number && (
                                         <div className="data-row data-row-split">
                                           <div className="data-column">
@@ -973,7 +1153,8 @@ function CheckoutPageInner() {
                                         </div>
                                       )}
                                     </div>
-                                    <button className="show-data-btn" type="button" onClick={() => setShowPassportData(v => !v)}>
+
+                                    <button className="show-data-btn" type="button" onClick={() => setShowPassportData((value) => !value)}>
                                       {showPassportData ? 'Скрыть данные' : 'Показать данные'}
                                     </button>
                                   </>
@@ -990,18 +1171,21 @@ function CheckoutPageInner() {
                                         {passportAddress.city && <div className="data-column"><span className="data-label">Город</span><span className="data-value">{passportAddress.city}</span></div>}
                                       </div>
                                     )}
+
                                     {(passportAddress.postcode || passportAddress.street) && (
                                       <div className="data-row data-row-split">
                                         {passportAddress.postcode && <div className="data-column"><span className="data-label">Индекс</span><span className="data-value">{passportAddress.postcode}</span></div>}
                                         {passportAddress.street && <div className="data-column"><span className="data-label">Улица</span><span className="data-value">{passportAddress.street}</span></div>}
                                       </div>
                                     )}
+
                                     {(passportAddress.house || passportAddress.building) && (
                                       <div className="data-row data-row-split">
                                         {passportAddress.house && <div className="data-column"><span className="data-label">Дом</span><span className="data-value">{passportAddress.house}</span></div>}
                                         {passportAddress.building && <div className="data-column"><span className="data-label">Корпус</span><span className="data-value">{passportAddress.building}</span></div>}
                                       </div>
                                     )}
+
                                     {passportAddress.apartment && (
                                       <div className="data-row"><span className="data-label">Квартира</span><span className="data-value">{passportAddress.apartment}</span></div>
                                     )}
@@ -1038,6 +1222,7 @@ function CheckoutPageInner() {
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -1060,15 +1245,28 @@ function CheckoutPageInner() {
           initialMode={showSavedPvz ? 'pickup' : 'delivery'}
           pvzAddresses={savedPvzList}
           deliveryAddresses={savedAddrList}
-          activePvzId={savedPvzList[0]?.id}
-          activeDeliveryId={savedAddrList[0]?.id}
+          activePvzId={selectedPvz?.id || savedPvzList[0]?.id}
+          activeDeliveryId={selectedAddr?.id || savedAddrList[0]?.id}
           onSelectPvz={handleSelectSavedPvz}
           onSelectDelivery={handleSelectSavedAddr}
           onDeletePvz={handleDeletePvz}
           onDeleteDelivery={handleDeleteAddr}
-          onAddPvz={() => { setShowSavedPvz(false); setShowSavedAddr(false); setDeliveryModalTab('pickup'); setShowDeliveryModal(true); }}
-          onAddDelivery={() => { setShowSavedPvz(false); setShowSavedAddr(false); setDeliveryModalTab('delivery'); setShowDeliveryModal(true); }}
-          onClose={() => { setShowSavedPvz(false); setShowSavedAddr(false); }}
+          onAddPvz={() => {
+            setShowSavedPvz(false);
+            setShowSavedAddr(false);
+            setDeliveryModalTab('pickup');
+            setShowDeliveryModal(true);
+          }}
+          onAddDelivery={() => {
+            setShowSavedPvz(false);
+            setShowSavedAddr(false);
+            setDeliveryModalTab('delivery');
+            setShowDeliveryModal(true);
+          }}
+          onClose={() => {
+            setShowSavedPvz(false);
+            setShowSavedAddr(false);
+          }}
         />
       )}
 
@@ -1093,13 +1291,25 @@ function CheckoutPageInner() {
       )}
 
       {showPersonalModal && (
-        <EditPersonalDataModal profile={profile} onClose={() => setShowPersonalModal(false)}
-          onSave={(updated) => { setProfile(updated); setShowPersonalModal(false); }} />
+        <EditPersonalDataModal
+          profile={profile}
+          onClose={() => setShowPersonalModal(false)}
+          onSave={(updated) => {
+            setProfile(updated);
+            setShowPersonalModal(false);
+          }}
+        />
       )}
 
       {showPassportModal && (
-        <EditPassportModal profile={profile} onClose={() => setShowPassportModal(false)}
-          onSave={(updated) => { setProfile(updated); setShowPassportModal(false); }} />
+        <EditPassportModal
+          profile={profile}
+          onClose={() => setShowPassportModal(false)}
+          onSave={(updated) => {
+            setProfile(updated);
+            setShowPassportModal(false);
+          }}
+        />
       )}
 
       {a1Modal && (
@@ -1109,19 +1319,26 @@ function CheckoutPageInner() {
             callerNumber={a1CallerNumber || ''}
             onVerify={handleA1Verify}
             onResend={handleCheckout}
-            onClose={() => { setA1Modal(false); setA1Error(null); }}
+            onClose={() => {
+              setA1Modal(false);
+              setA1Error(null);
+            }}
             loading={a1Loading}
             error={a1Error || ''}
           />
-          <div className="modal-backdrop fade show" style={{ zIndex: 1054 }}
-            onClick={() => { setA1Modal(false); setA1Error(null); }} />
+          <div
+            className="modal-backdrop fade show"
+            style={{ zIndex: 1054 }}
+            onClick={() => {
+              setA1Modal(false);
+              setA1Error(null);
+            }}
+          />
         </>
       )}
     </main>
   );
 }
-
-// ─── Экспорт с Suspense (нужен для useSearchParams) ───────────────────────────
 
 export default function CheckoutPage() {
   return (

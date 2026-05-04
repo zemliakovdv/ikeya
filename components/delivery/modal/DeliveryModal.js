@@ -2,7 +2,7 @@
 
 // components/delivery/modal/DeliveryModal.js
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import PickupTab from './PickupTab';
 import DeliveryTab from './DeliveryTab';
@@ -33,7 +33,32 @@ export default function DeliveryModal({
   const [ymapsReady, setYmapsReady] = useState(
     typeof window !== 'undefined' && !!window.ymaps
   );
+
   const needScript = typeof window !== 'undefined' && !window.ymaps;
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose?.();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
 
   const handlePvzSelect = (pvz, calcResult) => {
     onSelectPvz?.(pvz, calcResult);
@@ -55,12 +80,20 @@ export default function DeliveryModal({
         />
       )}
 
-      <div className="modal fade show d-block" style={{ zIndex: 1055 }}>
+      <div
+        className="modal fade show d-block"
+        style={{ zIndex: 1055 }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delivery-modal-title"
+      >
         <div className="modal-dialog modal-fullscreen">
           <div className="modal-content pvz-modal">
-
             <div className="pvz-modal__header">
-              <h5 className="pvz-modal__title">Адреса доставки</h5>
+              <h5 id="delivery-modal-title" className="pvz-modal__title">
+                Адреса доставки
+              </h5>
+
               <button
                 type="button"
                 className="btn-close"
@@ -80,6 +113,7 @@ export default function DeliveryModal({
                   setActiveTab={setActiveTab}
                 />
               )}
+
               {activeTab === 'delivery' && (
                 <DeliveryTab
                   ymapsReady={ymapsReady}
@@ -91,7 +125,6 @@ export default function DeliveryModal({
                 />
               )}
             </div>
-
           </div>
         </div>
       </div>

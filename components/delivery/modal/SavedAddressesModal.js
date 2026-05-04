@@ -2,7 +2,7 @@
 
 // components/delivery/modal/SavedAddressesModal.js
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 /**
  * SavedAddressesModal
@@ -37,69 +37,141 @@ export default function SavedAddressesModal({
 }) {
   const [mode, setMode] = useState(initialMode);
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [selectedPvzId, setSelectedPvzId] = useState(
-    activePvzId || pvzAddresses[0]?.id || null
-  );
-  const [selectedDeliveryId, setSelectedDeliveryId] = useState(
-    activeDeliveryId || deliveryAddresses[0]?.id || null
-  );
+  const [selectedPvzId, setSelectedPvzId] = useState(activePvzId || pvzAddresses[0]?.id || null);
+  const [selectedDeliveryId, setSelectedDeliveryId] = useState(activeDeliveryId || deliveryAddresses[0]?.id || null);
 
   const isPvz = mode === 'pickup';
-  const addresses = isPvz ? pvzAddresses : deliveryAddresses;
+
+  const addresses = useMemo(() => {
+    return isPvz ? pvzAddresses : deliveryAddresses;
+  }, [isPvz, pvzAddresses, deliveryAddresses]);
+
   const selectedId = isPvz ? selectedPvzId : selectedDeliveryId;
 
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  useEffect(() => {
+    setSelectedPvzId(activePvzId || pvzAddresses[0]?.id || null);
+  }, [activePvzId, pvzAddresses]);
+
+  useEffect(() => {
+    setSelectedDeliveryId(activeDeliveryId || deliveryAddresses[0]?.id || null);
+  }, [activeDeliveryId, deliveryAddresses]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        onClose?.();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  const handleModeChange = (nextMode) => {
+    setMode(nextMode);
+    setOpenMenuId(null);
+  };
+
   const handleSelect = (id) => {
-    if (isPvz) setSelectedPvzId(id);
-    else setSelectedDeliveryId(id);
+    if (isPvz) {
+      setSelectedPvzId(id);
+    } else {
+      setSelectedDeliveryId(id);
+    }
+
     setOpenMenuId(null);
   };
 
   const handleDelete = (id) => {
     if (isPvz) {
       onDeletePvz?.(id);
+
       if (selectedPvzId === id) {
-        const remaining = pvzAddresses.filter(a => a.id !== id);
+        const remaining = pvzAddresses.filter((address) => address.id !== id);
         setSelectedPvzId(remaining[0]?.id || null);
       }
     } else {
       onDeleteDelivery?.(id);
+
       if (selectedDeliveryId === id) {
-        const remaining = deliveryAddresses.filter(a => a.id !== id);
+        const remaining = deliveryAddresses.filter((address) => address.id !== id);
         setSelectedDeliveryId(remaining[0]?.id || null);
       }
     }
+
     setOpenMenuId(null);
   };
 
   const handleSave = () => {
-    if (isPvz) onSelectPvz?.(selectedPvzId);
-    else onSelectDelivery?.(selectedDeliveryId);
+    if (!selectedId) return;
+
+    if (isPvz) {
+      onSelectPvz?.(selectedId);
+    } else {
+      onSelectDelivery?.(selectedId);
+    }
+
     onClose?.();
+  };
+
+  const handleAdd = () => {
+    if (isPvz) {
+      onAddPvz?.();
+    } else {
+      onAddDelivery?.();
+    }
   };
 
   return (
     <>
-      <div className="modal fade show d-block" style={{ zIndex: 1056 }}>
+      <div
+        className="modal fade show d-block"
+        style={{ zIndex: 1056 }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="saved-addresses-modal-title"
+      >
         <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 560 }}>
           <div className="modal-content saved-addresses-modal">
-
             <div className="pvz-modal__header">
-              <h5 className="pvz-modal__title">Адреса доставки</h5>
-              <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
+              <h5 id="saved-addresses-modal-title" className="pvz-modal__title">
+                Адреса доставки
+              </h5>
+
+              <button
+                type="button"
+                className="btn-close"
+                onClick={onClose}
+                aria-label="Закрыть"
+              />
             </div>
 
             <div className="pvz-modal__tabs">
               <button
                 type="button"
                 className={`pvz-modal__tab${mode === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
-                onClick={() => { setMode('pickup'); setOpenMenuId(null); }}
+                onClick={() => handleModeChange('pickup')}
               >
                 Самовывоз
               </button>
+
               <button
                 type="button"
                 className={`pvz-modal__tab${mode === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
-                onClick={() => { setMode('delivery'); setOpenMenuId(null); }}
+                onClick={() => handleModeChange('delivery')}
               >
                 Доставка
               </button>
@@ -107,8 +179,11 @@ export default function SavedAddressesModal({
 
             <div className="saved-addresses-list">
               {addresses.length === 0 && (
-                <div className="pvz-list__empty">Нет сохранённых адресов</div>
+                <div className="pvz-list__empty">
+                  {isPvz ? 'Нет сохранённых пунктов выдачи' : 'Нет сохранённых адресов доставки'}
+                </div>
               )}
+
               {addresses.map((addr) => (
                 <div key={addr.id} className="saved-address-item">
                   <label className="saved-address-label">
@@ -118,7 +193,10 @@ export default function SavedAddressesModal({
                       checked={selectedId === addr.id}
                       onChange={() => handleSelect(addr.id)}
                     />
-                    <span className="saved-address-text">{addr.label}</span>
+
+                    <span className="saved-address-text">
+                      {addr.label || addr.address || 'Адрес без названия'}
+                    </span>
                   </label>
 
                   <div className="saved-address-menu">
@@ -126,10 +204,11 @@ export default function SavedAddressesModal({
                       type="button"
                       className="saved-address-menu-btn"
                       onClick={() => setOpenMenuId(openMenuId === addr.id ? null : addr.id)}
+                      aria-label="Действия с адресом"
                     >
                       <svg width="4" height="16" viewBox="0 0 4 16" fill="none">
-                        <circle cx="2" cy="2"  r="2" fill="#757575" />
-                        <circle cx="2" cy="8"  r="2" fill="#757575" />
+                        <circle cx="2" cy="2" r="2" fill="#757575" />
+                        <circle cx="2" cy="8" r="2" fill="#757575" />
                         <circle cx="2" cy="14" r="2" fill="#757575" />
                       </svg>
                     </button>
@@ -154,12 +233,18 @@ export default function SavedAddressesModal({
               <button
                 type="button"
                 className="saved-addresses-add-btn"
-                onClick={isPvz ? onAddPvz : onAddDelivery}
+                onClick={handleAdd}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M8 3.33334V12.6667M3.33334 8H12.6667" stroke="#0058A3" strokeWidth="1.5" strokeLinecap="round" />
+                  <path
+                    d="M8 3.33334V12.6667M3.33334 8H12.6667"
+                    stroke="#0058A3"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
                 </svg>
-                {isPvz ? 'Добавить новый адрес' : 'Добавить новый адрес'}
+
+                {isPvz ? 'Добавить новый ПВЗ' : 'Добавить новый адрес'}
               </button>
 
               <button
@@ -171,7 +256,6 @@ export default function SavedAddressesModal({
                 Сохранить
               </button>
             </div>
-
           </div>
         </div>
       </div>

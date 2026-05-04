@@ -16,46 +16,62 @@ import { calculateDelivery } from '@/lib/api/delivery';
  *  - cartItems   {Array}  [{sku, quantity}]
  *  - onSelect    {fn(addr, calcResult)}
  */
-export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect }) {
+export default function DeliveryTab({
+  ymapsReady,
+  cartToken,
+  cartItems = [],
+  onSelect,
+}) {
   const [form, setForm] = useState({
-    fullAddress:    '',
-    city:           '',
-    street:         '',
-    house:          '',
-    building:       '',
-    apartment:      '',
-    entrance:       '',
-    floor:          '',
-    intercom:       '',
-    lift:           'none', // 'none' | 'freight' | 'passenger'
+    fullAddress: '',
+    city: '',
+    street: '',
+    house: '',
+    building: '',
+    apartment: '',
+    entrance: '',
+    floor: '',
+    intercom: '',
+    lift: 'none', // 'none' | 'freight' | 'passenger'
     isPrivateHouse: false,
   });
 
-  const [step, setStep]               = useState('form'); // 'form' | 'result'
-  const [calcResult, setCalcResult]   = useState(null);
+  const [step, setStep] = useState('form'); // 'form' | 'result'
+  const [calcResult, setCalcResult] = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
-  const [calcError, setCalcError]     = useState(null);
-  const [coords, setCoords]           = useState(null);
-  const [geoError, setGeoError]       = useState(null);
-  const [pinCoords, setPinCoords]     = useState(null);
+  const [calcError, setCalcError] = useState(null);
+  const [coords, setCoords] = useState(null);
+  const [geoError, setGeoError] = useState(null);
+  const [pinCoords, setPinCoords] = useState(null);
 
   const addressDebounce = useRef(null);
 
-  // Геолокация при открытии вкладки
   useEffect(() => {
     if (!ymapsReady) return;
+
     window.ymaps.ready(() => {
       window.ymaps.geolocation
-        .get({ provider: 'browser', autoReverseGeocode: true })
+        .get({
+          provider: 'browser',
+          autoReverseGeocode: true,
+        })
         .then((geo) => {
           const position = geo.geoObjects.get(0);
+
           if (!position) return;
+
           const pos = position.geometry.getCoordinates();
+
           setCoords(pos);
           setPinCoords(pos);
+
           const addressLine = position.properties.get('text');
+
           if (addressLine) {
-            setForm(prev => ({ ...prev, fullAddress: addressLine }));
+            setForm((prev) => ({
+              ...prev,
+              fullAddress: addressLine,
+            }));
             parseGeoAddress(position);
           }
         })
@@ -63,57 +79,121 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
     });
   }, [ymapsReady]);
 
+  useEffect(() => {
+    return () => {
+      if (addressDebounce.current) {
+        clearTimeout(addressDebounce.current);
+      }
+    };
+  }, []);
+
   function parseGeoAddress(geoObj) {
     try {
       const components = geoObj.properties.get('metaDataProperty.GeocoderMetaData.Address.Components') || [];
-      const locality = components.find(c => c.kind === 'locality')?.name || '';
-      const street   = components.find(c => c.kind === 'street')?.name   || '';
-      const house    = components.find(c => c.kind === 'house')?.name    || '';
-      setForm(prev => ({ ...prev, city: locality, street, house }));
+      const locality = components.find((component) => component.kind === 'locality')?.name || '';
+      const street = components.find((component) => component.kind === 'street')?.name || '';
+      const house = components.find((component) => component.kind === 'house')?.name || '';
+
+      setForm((prev) => ({
+        ...prev,
+        city: locality,
+        street,
+        house,
+      }));
     } catch {}
   }
 
   const geocodeAddress = useCallback((address) => {
     if (!ymapsReady || !address.trim()) return;
+
     window.ymaps.geocode(address, { results: 1 }).then((res) => {
       const obj = res.geoObjects.get(0);
-      if (obj) {
-        const pos = obj.geometry.getCoordinates();
-        setCoords(pos);
-        setPinCoords(pos);
-        parseGeoAddress(obj);
-      }
+
+      if (!obj) return;
+
+      const pos = obj.geometry.getCoordinates();
+
+      setCoords(pos);
+      setPinCoords(pos);
+      parseGeoAddress(obj);
     });
   }, [ymapsReady]);
 
-  const handleAddressChange = (e) => {
-    const val = e.target.value;
-    setForm(prev => ({ ...prev, fullAddress: val }));
+  const handleAddressChange = (event) => {
+    const value = event.target.value;
+
+    setForm((prev) => ({
+      ...prev,
+      fullAddress: value,
+    }));
+
     clearTimeout(addressDebounce.current);
-    addressDebounce.current = setTimeout(() => geocodeAddress(val), 700);
+
+    addressDebounce.current = setTimeout(() => {
+      geocodeAddress(value);
+    }, 700);
   };
 
   const handleMapClick = useCallback((pos) => {
     setCoords(pos);
     setPinCoords(pos);
+
     if (!ymapsReady) return;
+
     window.ymaps.geocode(pos, { results: 1 }).then((res) => {
       const obj = res.geoObjects.get(0);
-      if (obj) {
-        setForm(prev => ({ ...prev, fullAddress: obj.getAddressLine() }));
-        parseGeoAddress(obj);
-      }
+
+      if (!obj) return;
+
+      setForm((prev) => ({
+        ...prev,
+        fullAddress: obj.getAddressLine(),
+      }));
+
+      parseGeoAddress(obj);
     });
   }, [ymapsReady]);
 
-  // Расчёт доставки: сначала courier, при 422 — ikeya_delivery
+  function buildAddressPayload() {
+    return {
+      city: form.city || '',
+      street: form.street || '',
+      house: form.house || '',
+      building: form.building || '',
+      apartment: form.apartment || '',
+      entrance: form.entrance || '',
+      floor: form.floor || '',
+      has_elevator: form.lift !== 'none',
+      intercom: form.intercom || '',
+      is_private_house: form.isPrivateHouse,
+      lat: coords?.[0] ?? null,
+      lng: coords?.[1] ?? null,
+      full_address: form.fullAddress || '',
+    };
+  }
+
   const handleSubmit = async () => {
     if (!form.fullAddress.trim()) return;
+
     setCalcLoading(true);
     setCalcResult(null);
     setCalcError(null);
 
-    const payload = { cart_token: cartToken, delivery_type: 'courier', items: cartItems };
+    if (!cartToken || !cartItems?.length) {
+      setCalcError('Не удалось рассчитать доставку: нет данных корзины');
+      setCalcLoading(false);
+      setStep('result');
+      return;
+    }
+
+    const addressPayload = buildAddressPayload();
+
+    const payload = {
+      cart_token: cartToken,
+      delivery_type: 'courier',
+      items: cartItems,
+      address: addressPayload,
+    };
 
     try {
       const result = await calculateDelivery(payload);
@@ -121,18 +201,34 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
     } catch (err) {
       if (err.status === 422) {
         const available = err.payload?.available_methods || [];
-        if (available.some(m => m.code === 'ikeya_delivery' && m.available)) {
+        const hasIkeyaDelivery = available.some(
+          (method) => method.code === 'ikeya_delivery' && method.available
+        );
+
+        if (hasIkeyaDelivery) {
           try {
-            const fallback = await calculateDelivery({ ...payload, delivery_type: 'ikeya_delivery' });
+            const fallback = await calculateDelivery({
+              ...payload,
+              delivery_type: 'ikeya_delivery',
+            });
+
             setCalcResult(fallback);
-          } catch {
-            setCalcError('Не удалось рассчитать доставку');
+          } catch (fallbackError) {
+            setCalcError(
+              fallbackError?.message ||
+              fallbackError?.payload?.error ||
+              'Не удалось рассчитать доставку IKEYA'
+            );
           }
         } else {
-          setCalcError(err.payload?.error || 'Доставка по этому адресу недоступна');
+          setCalcError(
+            err.payload?.error ||
+            err.payload?.message ||
+            'Доставка по этому адресу недоступна'
+          );
         }
       } else {
-        setCalcError('Ошибка расчёта доставки');
+        setCalcError(err?.message || 'Ошибка расчёта доставки');
       }
     } finally {
       setCalcLoading(false);
@@ -147,45 +243,51 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
   };
 
   const handleSelect = () => {
-    // Формируем полный label для отображения
+    if (!calcResult) return;
+
     const parts = [form.fullAddress];
+
     if (form.apartment) parts.push(`кв.${form.apartment}`);
-    if (form.entrance)  parts.push(`подъезд ${form.entrance}`);
-    if (form.floor)     parts.push(`этаж ${form.floor}`);
-    if (form.intercom)  parts.push(`домофон ${form.intercom}`);
+    if (form.entrance) parts.push(`подъезд ${form.entrance}`);
+    if (form.floor) parts.push(`этаж ${form.floor}`);
+    if (form.intercom) parts.push(`домофон ${form.intercom}`);
+
     const label = parts.join(', ');
 
     const addr = {
-      city:             form.city,
-      street:           form.street,
-      house:            form.house,
-      building:         form.building,
-      apartment:        form.apartment,
-      entrance:         form.entrance,
-      floor:            form.floor,
-      has_elevator:     form.lift !== 'none',
-      intercom:         form.intercom,
+      city: form.city,
+      street: form.street,
+      house: form.house,
+      building: form.building,
+      apartment: form.apartment,
+      entrance: form.entrance,
+      floor: form.floor,
+      has_elevator: form.lift !== 'none',
+      intercom: form.intercom,
       is_private_house: form.isPrivateHouse,
-      address:          form.fullAddress,
+      address: form.fullAddress,
       label,
       coords,
+      lat: coords?.[0] ?? null,
+      lng: coords?.[1] ?? null,
     };
+
     onSelect?.(addr, calcResult);
   };
 
   const displayAddress = (() => {
     const parts = [form.fullAddress];
+
     if (form.apartment) parts.push(`кв.${form.apartment}`);
-    if (form.entrance)  parts.push(`подъезд ${form.entrance}`);
-    if (form.floor)     parts.push(`этаж ${form.floor}`);
+    if (form.entrance) parts.push(`подъезд ${form.entrance}`);
+    if (form.floor) parts.push(`этаж ${form.floor}`);
+
     return parts.join(', ');
   })();
 
   return (
     <div className="pvz-layout">
-
       <aside className="pvz-sidebar">
-
         {step === 'form' && (
           <>
             <div className="delivery-form-header">
@@ -209,7 +311,12 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
               <input
                 type="checkbox"
                 checked={form.isPrivateHouse}
-                onChange={e => setForm(prev => ({ ...prev, isPrivateHouse: e.target.checked }))}
+                onChange={(event) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    isPrivateHouse: event.target.checked,
+                  }));
+                }}
               />
               <span>Частный дом</span>
             </label>
@@ -222,50 +329,79 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
                     className="delivery-field"
                     placeholder="Квартира"
                     value={form.apartment}
-                    onChange={e => setForm(prev => ({ ...prev, apartment: e.target.value }))}
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        apartment: event.target.value,
+                      }));
+                    }}
                   />
+
                   <input
                     type="text"
                     className="delivery-field"
                     placeholder="Подъезд"
                     value={form.entrance}
-                    onChange={e => setForm(prev => ({ ...prev, entrance: e.target.value }))}
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        entrance: event.target.value,
+                      }));
+                    }}
                   />
                 </div>
+
                 <div className="delivery-fields-row">
                   <input
                     type="text"
                     className="delivery-field"
                     placeholder="Этаж"
                     value={form.floor}
-                    onChange={e => setForm(prev => ({ ...prev, floor: e.target.value }))}
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        floor: event.target.value,
+                      }));
+                    }}
                   />
+
                   <input
                     type="text"
                     className="delivery-field"
                     placeholder="Домофон"
                     value={form.intercom}
-                    onChange={e => setForm(prev => ({ ...prev, intercom: e.target.value }))}
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        intercom: event.target.value,
+                      }));
+                    }}
                   />
                 </div>
 
                 <div className="delivery-lift">
                   <span className="delivery-lift-label">Лифт</span>
+
                   <div className="delivery-lift-options">
                     {[
-                      { value: 'none',      label: 'Нет' },
-                      { value: 'freight',   label: 'грузовой' },
+                      { value: 'none', label: 'Нет' },
+                      { value: 'freight', label: 'грузовой' },
                       { value: 'passenger', label: 'пассажирский' },
-                    ].map(opt => (
-                      <label key={opt.value} className="delivery-lift-option">
+                    ].map((option) => (
+                      <label key={option.value} className="delivery-lift-option">
                         <input
                           type="radio"
                           name="lift"
-                          value={opt.value}
-                          checked={form.lift === opt.value}
-                          onChange={() => setForm(prev => ({ ...prev, lift: opt.value }))}
+                          value={option.value}
+                          checked={form.lift === option.value}
+                          onChange={() => {
+                            setForm((prev) => ({
+                              ...prev,
+                              lift: option.value,
+                            }));
+                          }}
                         />
-                        <span>{opt.label}</span>
+                        <span>{option.label}</span>
                       </label>
                     ))}
                   </div>
@@ -291,32 +427,56 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
             <div className="pvz-detail">
               <div className="pvz-detail__header">
                 <h5 className="pvz-detail__title">{displayAddress}</h5>
-                <button type="button" className="btn-close" onClick={handleBack} aria-label="Назад" />
+
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleBack}
+                  aria-label="Назад"
+                />
               </div>
 
               {calcError && <div className="delivery-geo-error">{calcError}</div>}
 
-              {!calcError && <DeliveryResult calcResult={calcResult} onSelect={handleSelect} />}
+              {!calcError && (
+                <DeliveryResult
+                  calcResult={calcResult}
+                  onSelect={handleSelect}
+                />
+              )}
             </div>
 
-            {!calcError && (
+            {!calcError && calcResult && (
               <div className="pvz-detail__footer">
-                <button type="button" className="pvz-select-btn" onClick={handleSelect}>
+                <button
+                  type="button"
+                  className="pvz-select-btn"
+                  onClick={handleSelect}
+                >
                   Выбрать
                 </button>
               </div>
             )}
 
+            {!calcError && !calcResult && (
+              <div className="delivery-geo-error" style={{ margin: '12px 16px' }}>
+                Расчёт доставки недоступен
+              </div>
+            )}
+
             {calcError && (
               <div className="pvz-detail__footer">
-                <button type="button" className="pvz-select-btn" onClick={handleBack}>
+                <button
+                  type="button"
+                  className="pvz-select-btn"
+                  onClick={handleBack}
+                >
                   Изменить адрес
                 </button>
               </div>
             )}
           </>
         )}
-
       </aside>
 
       <DeliveryMap
@@ -326,7 +486,6 @@ export default function DeliveryTab({ ymapsReady, cartToken, cartItems, onSelect
         pinCoords={pinCoords}
         onMapClick={handleMapClick}
       />
-
     </div>
   );
 }
