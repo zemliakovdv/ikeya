@@ -1,7 +1,6 @@
-// components/home/ProductTabsSection.js
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
 
 export default function ProductTabsSection({
@@ -12,6 +11,21 @@ export default function ProductTabsSection({
   showNewBadge = false
 }) {
   const swipersRef = useRef({});
+  const [productsPerSlide, setProductsPerSlide] = useState(5);
+
+  useEffect(() => {
+    const updateProductsPerSlide = () => {
+      setProductsPerSlide(window.innerWidth <= 575 ? 2 : 5);
+    };
+
+    updateProductsPerSlide();
+
+    window.addEventListener('resize', updateProductsPerSlide);
+
+    return () => {
+      window.removeEventListener('resize', updateProductsPerSlide);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.Swiper) {
@@ -50,19 +64,32 @@ export default function ProductTabsSection({
         if (swiper) swiper.destroy(true, true);
       });
     };
-  }, [tabs, tabProducts]);
+  }, [tabs, tabProducts, productsPerSlide]);
+
+  const chunkProducts = (products, size) => {
+    const chunks = [];
+
+    for (let i = 0; i < products.length; i += size) {
+      chunks.push(products.slice(i, i + size));
+    }
+
+    return chunks;
+  };
+
+  const slidesByTab = useMemo(() => {
+    const result = {};
+
+    tabs.forEach((tab) => {
+      const products = tabProducts[tab.id] || [];
+      result[tab.id] = chunkProducts(products, productsPerSlide);
+    });
+
+    return result;
+  }, [tabs, tabProducts, productsPerSlide]);
 
   if (tabs.length === 0 || Object.keys(tabProducts).length === 0) {
     return null;
   }
-
-  const chunkProducts = (products, size = 5) => {
-    const chunks = [];
-    for (let i = 0; i < products.length; i += size) {
-      chunks.push(products.slice(i, i + size));
-    }
-    return chunks;
-  };
 
   return (
     <section className={sectionClass}>
@@ -91,7 +118,7 @@ export default function ProductTabsSection({
             <div className="tab-content products-tabs__content" id={`${sectionClass}-content`}>
               {tabs.map((tab, index) => {
                 const products = tabProducts[tab.id] || [];
-                const slides = chunkProducts(products, 5);
+                const slides = slidesByTab[tab.id] || [];
 
                 return (
                   <div
@@ -117,7 +144,7 @@ export default function ProductTabsSection({
                                   {slideProducts.map((product, productIndex) => (
                                     <ProductCard
                                       key={product.id}
-                                      priority={index === 0 && slideIndex === 0 && productIndex < 5}
+                                      priority={index === 0 && slideIndex === 0 && productIndex < productsPerSlide}
                                       product={{
                                         id: product.id,
                                         attributes: {
@@ -136,8 +163,8 @@ export default function ProductTabsSection({
                                     />
                                   ))}
 
-                                  {slideProducts.length < 5 && Array.from({ length: 5 - slideProducts.length }).map((_, i) => (
-                                    <div key={`empty-${i}`} className="col-lg-3 col-md-4 col-sm-6" style={{ visibility: 'hidden' }} />
+                                  {slideProducts.length < productsPerSlide && Array.from({ length: productsPerSlide - slideProducts.length }).map((_, i) => (
+                                    <div key={`empty-${i}`} className="col product-card-inner" style={{ visibility: 'hidden' }} />
                                   ))}
                                 </div>
                               </div>

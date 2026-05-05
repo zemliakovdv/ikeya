@@ -404,10 +404,20 @@ function CheckoutPageInner() {
   const passportAddress = profile?.passport_data;
   const hasAddress = Boolean(passportAddress?.city || passportAddress?.street);
 
+  const isPickup = receiveMethod === 'pickup';
+
+  const hasValidDeliveryAddress = isPickup
+    ? !!selectedPvz
+    : !!(
+      selectedAddr?.city &&
+      selectedAddr?.street &&
+      selectedAddr?.house
+    );
+
   const canCheckout = !!(
     fullName &&
     profile?.phone &&
-    (selectedPvz || selectedAddr) &&
+    hasValidDeliveryAddress &&
     itemCount > 0 &&
     !submitting
   );
@@ -671,7 +681,12 @@ function CheckoutPageInner() {
   }
 
   async function handleCheckout() {
-    if (!canCheckout) return;
+    if (!canCheckout) {
+      if (receiveMethod === 'delivery' && selectedAddr && !selectedAddr.house) {
+        setError('Укажите номер дома для доставки.');
+      }
+      return;
+    }
 
     setError(null);
     setA1Loading(true);

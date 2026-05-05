@@ -1,6 +1,7 @@
 // app/layout.js
 import Header from '@/components/layout/Header/Header'
 import Footer from '@/components/layout/Footer/FooterServer'
+import MobileBottomNav from '@/components/layout/MobileBottomNav'
 import ClientScripts from '@/components/ClientScripts'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
@@ -50,6 +51,7 @@ export default function RootLayout({ children }) {
                 <Header />
                 {children}
                 <Footer />
+                <MobileBottomNav />
               </FavoritesProvider>
             </AuthModalsProvider>
           </CartProvider>
@@ -73,7 +75,7 @@ export default function RootLayout({ children }) {
           strategy="afterInteractive"
         />
 
-      <ClientScripts />
+        <ClientScripts />
       </body>
     </html>
   )
