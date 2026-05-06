@@ -12,7 +12,6 @@ import Pagination from '@/components/catalog/Pagination';
 import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 import PageLoader from '@/components/ui/PageLoader';
 
-// Относительный путь — работает и на локалке и на сервере
 const API_BASE_URL = '/api/v1';
 
 function getPriceRangeFromProducts(products) {
@@ -46,6 +45,11 @@ function normalizeProduct(p) {
   };
 }
 
+function hasValidPrice(p) {
+  const price = parseFloat(String(p.attributes?.price_byn || p.attributes?.price || 0).replace(/\s/g, ''));
+  return price > 0;
+}
+
 export default function SearchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -54,9 +58,7 @@ export default function SearchPageContent() {
   const q = searchParams.get('q') || '';
   const sortParam = searchParams.get('sort') || '';
 
-  // Первая загрузка — результаты первой страницы + мета
   const [firstPageData, setFirstPageData] = useState(null);
-  // Все товары включая подгруженные скроллом
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -125,7 +127,6 @@ export default function SearchPageContent() {
     return titles;
   }, [firstPageData]);
 
-  // Строим параметры запроса из текущего URL
   const buildSearchParams = useCallback((page = 1) => {
     const params = new URLSearchParams();
     params.set('q', q.trim());
@@ -141,7 +142,6 @@ export default function SearchPageContent() {
     return params;
   }, [q, sortParam, searchParams]);
 
-  // Загрузка первой страницы — сбрасывает всё состояние
   const fetchFirstPage = useCallback(async () => {
     if (!q.trim()) {
       setFirstPageData(null);
@@ -162,7 +162,9 @@ export default function SearchPageContent() {
       const data = await res.json();
 
       const meta = data.meta || {};
-      const rawProducts = (data.products?.data || []).map(normalizeProduct);
+      const rawProducts = (data.products?.data || [])
+        .map(normalizeProduct)
+        .filter(hasValidPrice);
       const pages = meta.total_pages || 1;
       const total = meta.total || rawProducts.length;
 
@@ -185,7 +187,6 @@ export default function SearchPageContent() {
     }
   }, [q, buildSearchParams]);
 
-  // Подгрузка следующей страницы скроллом
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMoreRef.current) return;
 
@@ -201,7 +202,9 @@ export default function SearchPageContent() {
       const data = await res.json();
 
       const meta = data.meta || {};
-      const rawProducts = (data.products?.data || []).map(normalizeProduct);
+      const rawProducts = (data.products?.data || [])
+        .map(normalizeProduct)
+        .filter(hasValidPrice);
 
       if (rawProducts.length > 0) {
         setProducts(prev => [...prev, ...rawProducts]);
@@ -215,7 +218,6 @@ export default function SearchPageContent() {
         hasMoreRef.current = more;
         setHasMore(more);
 
-        // Обновляем URL без перезагрузки
         const urlParams = new URLSearchParams(searchParams.toString());
         urlParams.set('page', String(currentPageNum));
         window.history.replaceState(null, '', `${pathname}?${urlParams.toString()}`);
@@ -233,12 +235,46 @@ export default function SearchPageContent() {
     }
   }, [buildSearchParams, totalPages, pathname, searchParams]);
 
-  // Перезагружаем при смене запроса/фильтров/сортировки
+  // Callback ref — переподключает observer при каждом появлении/исчезновении триггера
+  const setTriggerRef = useCallback((node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+
+    if (!node) return;
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      {
+        threshold: 0,
+        rootMargin: '200px',
+      }
+    );
+
+    observerRef.current.observe(node);
+
+    // Немедленная проверка — вдруг элемент уже виден
+    const rect = node.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 200) {
+      loadMore();
+    }
+  }, [loadMore]);
+
+  useEffect(() => {
+    return () => {
+      if (observerRef.current) observerRef.current.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     fetchFirstPage();
   }, [q, sortParam, searchParams.toString()]);
 
-  // Синхронизация draft <- URL
   useEffect(() => {
     setDraftPriceMin(safeNumberOrEmpty(searchParams.get('min_price')));
     setDraftPriceMax(safeNumberOrEmpty(searchParams.get('max_price')));
@@ -250,21 +286,6 @@ export default function SearchPageContent() {
     setDraftFilters(nextDraftFilters);
     isMountedRef.current = true;
   }, [searchParams, filtersKey]);
-
-  // IntersectionObserver для infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerRef.current) observer.observe(observerRef.current);
-    return () => observer.disconnect();
-  }, [loadMore]);
 
   const applyFilters = useCallback((minP, maxP, filters) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -351,7 +372,6 @@ export default function SearchPageContent() {
   const categories = firstPageData?.categories?.data || firstPageData?.categories || [];
   const hasResults = products.length > 0;
 
-  // Строка queryString для Pagination (без page)
   const paginationQueryString = useMemo(() => {
     const p = new URLSearchParams(searchParams.toString());
     p.delete('page');
@@ -484,29 +504,30 @@ export default function SearchPageContent() {
                     ))}
                   </div>
 
-                  {/* Триггер infinite scroll */}
+                  {/* Триггер infinite scroll — callback ref, всегда переподключается */}
                   {hasMore && (
                     <div
-                      ref={observerRef}
+                      ref={setTriggerRef}
                       className="loading-trigger"
                       style={{
                         height: '100px',
                         margin: '40px 0',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
                       }}
                     >
                       {loadingMore && <div className="page-loader__spinner" />}
                     </div>
                   )}
 
-                  {/* Пагинация — видна всегда, подсвечивает актуальную страницу */}
+                  {/* Пагинация */}
                   {totalPages > 1 && (
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
                       totalItems={totalItems}
+                      itemsPerPage={50}
                       basePath={pathname}
                       queryString={paginationQueryString}
                     />
@@ -521,7 +542,6 @@ export default function SearchPageContent() {
         </div>
       </section>
 
-      {/* Рекомендации когда ничего не найдено */}
       {noResults && (
         <Suspense fallback={null}>
           <NotFoundRecommendations />
