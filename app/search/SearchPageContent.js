@@ -12,7 +12,7 @@ import Pagination from '@/components/catalog/Pagination';
 import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 import PageLoader from '@/components/ui/PageLoader';
 
-const API_BASE_URL = '/api/v1';
+const API_BASE_URL = '/api';
 
 function getPriceRangeFromProducts(products) {
   const prices = products
@@ -157,7 +157,7 @@ export default function SearchPageContent() {
 
     try {
       const params = buildSearchParams(1);
-      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/search?${params.toString()}`)
       if (!res.ok) throw new Error('Search error');
       const data = await res.json();
 
@@ -197,7 +197,7 @@ export default function SearchPageContent() {
 
     try {
       const params = buildSearchParams(page);
-      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/search?${params.toString()}`)
       if (!res.ok) throw new Error('Search error');
       const data = await res.json();
 
@@ -258,11 +258,6 @@ export default function SearchPageContent() {
 
     observerRef.current.observe(node);
 
-    // Немедленная проверка — вдруг элемент уже виден
-    const rect = node.getBoundingClientRect();
-    if (rect.top < window.innerHeight + 200) {
-      loadMore();
-    }
   }, [loadMore]);
 
   useEffect(() => {
@@ -472,7 +467,7 @@ export default function SearchPageContent() {
                     <div className="catalog-sort__selected" onClick={() => setSortOpen(v => !v)}>
                       <span className="catalog-sort__current">{currentSortLabel}</span>
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M7.99999 10.2201C7.25333 10.2201 5.46666 8.19343 4.09999 6.5001C3.94666 6.30677 3.97333 6.02677 4.16666 5.87343C4.35999 5.7201 4.63999 5.74677 4.79333 5.9401C5.99333 7.42677 7.52666 9.1001 7.99999 9.3201C8.47333 9.1001 10.0067 7.42677 11.2067 5.9401C11.36 5.74677 11.64 5.7201 11.8333 5.87343C12.0267 6.02677 12.0533 6.30677 11.9 6.5001C10.5333 8.2001 8.74 10.2201 7.99999 10.2201Z" fill="#757575"/>
+                        <path d="M7.99999 10.2201C7.25333 10.2201 5.46666 8.19343 4.09999 6.5001C3.94666 6.30677 3.97333 6.02677 4.16666 5.87343C4.35999 5.7201 4.63999 5.74677 4.79333 5.9401C5.99333 7.42677 7.52666 9.1001 7.99999 9.3201C8.47333 9.1001 10.0067 7.42677 11.2067 5.9401C11.36 5.74677 11.64 5.7201 11.8333 5.87343C12.0267 6.02677 12.0533 6.30677 11.9 6.5001C10.5333 8.2001 8.74 10.2201 7.99999 10.2201Z" fill="#757575" />
                       </svg>
                     </div>
                     {sortOpen && (
