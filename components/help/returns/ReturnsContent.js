@@ -10,6 +10,7 @@ const SECTIONS = [
     id: 'reasons',
     title: 'Причины возврата товара',
     content: (
+      <div style={{ overflowX: 'auto' }}>
       <table className="help-table">
         <thead>
           <tr>
@@ -43,6 +44,7 @@ const SECTIONS = [
           </tr>
         </tbody>
       </table>
+      </div>
     ),
   },
   {

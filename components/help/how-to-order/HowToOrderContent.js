@@ -14,7 +14,7 @@ export default function HowToOrderContent() {
         <p className="help-step__num">1. Выберите товары на сайте <a href="https://ikeya.by">ikeya.by</a> и добавьте их в корзину.</p>
         <div className="help-step__img">
           {/* TODO: скриншот карточек товаров с кнопкой "В корзину" */}
-          <img src="/assets/img/help/how-to-order/step-1.png" alt="Выберите товары и добавьте в корзину" />
+          <img src="/assets/img/help/how-to-order/step-1.jpg" alt="Выберите товары и добавьте в корзину" />
         </div>
       </div>
 
@@ -23,7 +23,7 @@ export default function HowToOrderContent() {
         <p className="help-step__num">2. Добавьте способ получения.</p>
         <div className="help-step__img">
           {/* TODO: скриншот блока выбора способа получения */}
-          <img src="/assets/img/help/how-to-order/step-2.png" alt="Добавьте способ получения" />
+          <img src="/assets/img/help/how-to-order/step-2.jpg" alt="Добавьте способ получения" />
         </div>
         <p className="help-step__note">
           При выборе пунктов выдачи будут доступны: склад Икеа в г. Минске, а также партнёрские ПВЗ в вашем городе.

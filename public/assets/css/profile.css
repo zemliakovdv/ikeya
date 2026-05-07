@@ -1152,7 +1152,6 @@
 
     .return-table_col:nth-child(2) {
         width: 33%;
-        min-width: 632px;
         max-width: 632px;
         font-weight: 400;
         font-size: 16px;
