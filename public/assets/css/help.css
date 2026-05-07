@@ -120,7 +120,8 @@
   align-items: center;
   height: 44px;
   padding: 0 24px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
+  margin-top: 16px;
   background: #0058A3;
   color: #fff;
   font-size: 14px;
@@ -216,7 +217,7 @@
   min-width: 360px;
 }
 
-.help-table tr:last-child td{
+.help-table tr:last-child td {
   border-bottom: none;
 }
 
@@ -252,7 +253,15 @@
   line-height: 150%;
   letter-spacing: 0.03em;
   color: #181818;
-  margin-bottom: 16px;
+  margin-bottom: 0;
+}
+
+.help-article p a {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: underline;
+  text-decoration-skip-ink: none;
+  color: #0058a3;
 }
 
 .help-article ul {
@@ -350,6 +359,19 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  margin-bottom: 16px;
+}
+
+.help-cards-bottom{
+  margin-top: 16px;
+}
+
+.help-article__note a {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: underline;
+  text-decoration-skip-ink: none;
+  color: #0058a3;
 }
 
 .help-card {
@@ -400,8 +422,8 @@
   font-weight: 400;
 }
 
-.help-article .help-card--horizontal .help-card__desc{
-    text-align: left;
+.help-article .help-card--horizontal .help-card__desc {
+  text-align: left;
 }
 
 /* ========== ПОДДЕРЖКА ========== */
@@ -412,7 +434,7 @@
   padding: 20px;
   background: #F5F5F5;
   border-radius: 8px;
-  margin-top: 28px;
+  margin-top: 24px;
 }
 
 .help-support__icon img {
@@ -524,10 +546,10 @@
   color: #757575;
 }
 
-.help-lists__poriad li{
+.help-lists__poriad li {
   margin-bottom: 16px;
 }
 
-.help-lists__poriad li:last-child{
+.help-lists__poriad li:last-child {
   margin-bottom: 0;
 }

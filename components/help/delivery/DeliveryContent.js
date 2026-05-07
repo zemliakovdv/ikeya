@@ -73,7 +73,7 @@ export default function DeliveryContent() {
       {/* Сроки доставки */}
       <h2 className="help-section__title">Сроки доставки</h2>
       <p>Мы делаем всё, чтобы заказы приходили как можно быстрее. Но сроки могут зависеть от:</p>
-      <div className="help-cards">
+      <div className="help-cards help-cards-bottom">
         {TERMS.map((term, index) => (
           <div key={index} className="help-card help-card--simple">
             <div className="help-card__img">
