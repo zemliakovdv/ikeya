@@ -531,7 +531,7 @@ export default function SearchPageContent() {
                       currentPage={currentPage}
                       totalPages={totalPages}
                       totalItems={totalItems}
-                      itemsPerPage={50}
+                      itemsPerPage={20}
                       basePath={pathname}
                       queryString={paginationQueryString}
                     />

@@ -3974,10 +3974,6 @@ main {
     border: 1px solid #181818;
 }
 
-.goods-color__item.active {
-    border: 1px solid #181818;
-}
-
 .goods-color__item img {
     object-fit: cover;
     max-width: 56px;
