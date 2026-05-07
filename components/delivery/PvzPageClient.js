@@ -13,6 +13,7 @@ export default function PvzPageClient() {
   const [ymapsReady, setYmapsReady] = useState(
     typeof window !== 'undefined' && !!window.ymaps
   );
+  const [activeTab, setActiveTab] = useState('pickup');
   const needScript = !ymapsReady;
 
   return (
@@ -24,14 +25,14 @@ export default function PvzPageClient() {
           onLoad={() => setYmapsReady(true)}
         />
       )}
-      <div className="pvz-layout">
-        <PickupTab
-          ymapsReady={ymapsReady}
-          cartToken={null}
-          cartItems={[]}
-          onSelect={null}
-        />
-      </div>
+      <PickupTab
+        ymapsReady={ymapsReady}
+        cartToken={null}
+        cartItems={[]}
+        onSelect={null}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
     </>
   );
 }

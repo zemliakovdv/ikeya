@@ -1,7 +1,7 @@
 // components/catalog/sidebar/PriceFilter.js
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export default function PriceFilter({
   min = 0,
@@ -12,10 +12,14 @@ export default function PriceFilter({
 }) {
   const [localMin, setLocalMin] = useState(currentMin ?? min)
   const [localMax, setLocalMax] = useState(currentMax ?? max)
+  const [inputMin, setInputMin] = useState(String(currentMin ?? min))
+  const [inputMax, setInputMax] = useState(String(currentMax ?? max))
 
   useEffect(() => {
     setLocalMin(currentMin ?? min)
     setLocalMax(currentMax ?? max)
+    setInputMin(String(currentMin ?? min))
+    setInputMax(String(currentMax ?? max))
   }, [currentMin, currentMax, min, max])
 
   const pct = (val) => ((val - min) / (max - min)) * 100
@@ -23,26 +27,42 @@ export default function PriceFilter({
   const handleMinSlider = useCallback((e) => {
     const val = Math.min(Number(e.target.value), localMax - 1)
     setLocalMin(val)
+    setInputMin(String(val))
   }, [localMax])
 
   const handleMaxSlider = useCallback((e) => {
     const val = Math.max(Number(e.target.value), localMin + 1)
     setLocalMax(val)
+    setInputMax(String(val))
   }, [localMin])
 
   const handleMinInput = useCallback((e) => {
-    const val = e.target.value === '' ? min : Number(e.target.value)
-    setLocalMin(Math.min(val, localMax - 1))
-  }, [min, localMax])
+    setInputMin(e.target.value)
+  }, [])
 
   const handleMaxInput = useCallback((e) => {
-    const val = e.target.value === '' ? max : Number(e.target.value)
-    setLocalMax(Math.max(val, localMin + 1))
-  }, [max, localMin])
+    setInputMax(e.target.value)
+  }, [])
 
   function applyChange(newMin, newMax) {
     if (onChange) onChange(newMin, newMax)
   }
+
+  const handleMinBlur = useCallback(() => {
+    const val = inputMin === '' ? min : Number(inputMin)
+    const clamped = Math.min(Math.max(val, min), localMax - 1)
+    setLocalMin(clamped)
+    setInputMin(String(clamped))
+    if (clamped !== localMin) applyChange(clamped, localMax)
+  }, [inputMin, min, localMin, localMax])
+
+  const handleMaxBlur = useCallback(() => {
+    const val = inputMax === '' ? max : Number(inputMax)
+    const clamped = Math.max(Math.min(val, max), localMin + 1)
+    setLocalMax(clamped)
+    setInputMax(String(clamped))
+    if (clamped !== localMax) applyChange(localMin, clamped)
+  }, [inputMax, max, localMin, localMax])
 
   return (
     <div className="filter-section price-filter">
@@ -92,11 +112,11 @@ export default function PriceFilter({
           <input
             type="number"
             className="price-input"
-            value={localMin}
+            value={inputMin}
             min={min}
             max={localMax - 1}
             onChange={handleMinInput}
-            onBlur={() => applyChange(localMin, localMax)}
+            onBlur={handleMinBlur}
           />
         </div>
         <div className="price-input-group">
@@ -104,11 +124,11 @@ export default function PriceFilter({
           <input
             type="number"
             className="price-input"
-            value={localMax}
+            value={inputMax}
             min={localMin + 1}
             max={max}
             onChange={handleMaxInput}
-            onBlur={() => applyChange(localMin, localMax)}
+            onBlur={handleMaxBlur}
           />
         </div>
       </div>

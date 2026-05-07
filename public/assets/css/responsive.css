@@ -196,12 +196,17 @@
         gap: 24px;
     }
 
+    .allinone .categories-item-card {
+        max-width: 202px;
+        min-width: 202px;
+    }
+
     .popular-categories__nav-prev {
-        left: 11%;
+        left: -1%;
     }
 
     .popular-categories__nav-next {
-        right: 11%;
+        right: -1%;
     }
 
 

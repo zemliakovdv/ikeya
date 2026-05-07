@@ -5,21 +5,6 @@
 import { useEffect, useRef } from 'react';
 import { PIN_EUROPOST } from '@/hooks/usePvzData';
 
-/**
- * DeliveryMap
- *
- * Универсальная карта для вкладок самовывоза и доставки.
- *
- * Props:
- *  - mapId         {string}   — уникальный id div-а карты
- *  - ymapsReady    {boolean}
- *  - points        {Array}    — список ПВЗ для отображения маркеров (режим pickup)
- *  - pinType       {'europost'|'delivery'} — тип пина
- *  - pinCoords     {[lat,lon]} — координаты одиночного пина (режим delivery)
- *  - centerOverride {object}  — {coords, zoom} — принудительно центрировать карту
- *  - onPinClick    {fn(point)} — клик на пин ПВЗ
- *  - onMapClick    {fn([lat,lon])} — клик по карте (режим delivery)
- */
 export default function DeliveryMap({
   mapId = 'delivery-map',
   ymapsReady,
@@ -34,6 +19,42 @@ export default function DeliveryMap({
   const ymapInstance = useRef(null);
   const clusterer    = useRef(null);
   const deliveryPin  = useRef(null);
+  const pointsRef    = useRef(points);
+  const onPinClickRef = useRef(onPinClick);
+
+  // Актуализируем refs при каждом рендере
+  useEffect(() => {
+    pointsRef.current = points;
+  }, [points]);
+
+  useEffect(() => {
+    onPinClickRef.current = onPinClick;
+  }, [onPinClick]);
+
+  // Хелпер — добавить маркеры в кластер
+  function addPlacemarks(pts) {
+    if (!clusterer.current) return;
+    clusterer.current.removeAll();
+
+    const placemarks = pts
+      .filter(p => p.lat && p.lon)
+      .map(point => {
+        const pm = new window.ymaps.Placemark(
+          [point.lat, point.lon],
+          { hintContent: point.city ? `${point.city}, ${point.address}` : point.address },
+          {
+            iconLayout: 'default#image',
+            iconImageHref: PIN_EUROPOST,
+            iconImageSize: [48, 51],
+            iconImageOffset: [-24, -51],
+          }
+        );
+        pm.events.add('click', () => onPinClickRef.current?.(point));
+        return pm;
+      });
+
+    clusterer.current.add(placemarks);
+  }
 
   // Инициализация карты
   useEffect(() => {
@@ -50,16 +71,19 @@ export default function DeliveryMap({
       });
 
       if (pinType === 'europost') {
-        // Кластер для ПВЗ
         clusterer.current = new window.ymaps.Clusterer({
           preset: 'islands#invertedRedClusterIcons',
           groupByCoordinates: false,
         });
         ymapInstance.current.geoObjects.add(clusterer.current);
+
+        // Добавляем точки которые уже загружены к моменту инициализации карты
+        if (pointsRef.current.length > 0) {
+          addPlacemarks(pointsRef.current);
+        }
       }
 
       if (pinType === 'delivery') {
-        // Одиночный жёлтый пин для адреса доставки
         deliveryPin.current = new window.ymaps.Placemark(
           pinCoords || [53.9045, 27.5615],
           {},
@@ -67,7 +91,6 @@ export default function DeliveryMap({
         );
         ymapInstance.current.geoObjects.add(deliveryPin.current);
 
-        // Клик по карте
         ymapInstance.current.events.add('click', (e) => {
           const pos = e.get('coords');
           deliveryPin.current.geometry.setCoordinates(pos);
@@ -87,43 +110,24 @@ export default function DeliveryMap({
     };
   }, [ymapsReady]);
 
-  // Обновление маркеров ПВЗ
+  // Обновление маркеров при изменении points
   useEffect(() => {
     if (pinType !== 'europost') return;
     if (!ymapInstance.current || !clusterer.current) return;
 
     window.ymaps.ready(() => {
       if (!clusterer.current) return;
-      clusterer.current.removeAll();
-
-      const placemarks = points
-        .filter(p => p.lat && p.lon)
-        .map(point => {
-          const pm = new window.ymaps.Placemark(
-            [point.lat, point.lon],
-            { hintContent: point.city ? `${point.city}, ${point.address}` : point.address },
-            {
-              iconLayout: 'default#image',
-              iconImageHref: PIN_EUROPOST,
-              iconImageSize: [48, 51],
-              iconImageOffset: [-24, -51],
-            }
-          );
-          pm.events.add('click', () => onPinClick?.(point));
-          return pm;
-        });
-
-      clusterer.current.add(placemarks);
+      addPlacemarks(points);
     });
   }, [points, pinType]);
 
-  // Принудительное центрирование (при клике на карточку ПВЗ)
+  // Принудительное центрирование
   useEffect(() => {
     if (!centerOverride || !ymapInstance.current) return;
     ymapInstance.current.setCenter(centerOverride.coords, centerOverride.zoom || 15, { duration: 300 });
   }, [centerOverride]);
 
-  // Обновление пина доставки при изменении coords
+  // Обновление пина доставки
   useEffect(() => {
     if (pinType !== 'delivery' || !pinCoords) return;
     if (!deliveryPin.current || !ymapInstance.current) return;

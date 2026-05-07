@@ -63,18 +63,16 @@ export default function ClientScripts() {
 
         const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
 
-        const adsBannerSlider = new Swiper('.ads-banner-inner', {
+        new Swiper('.ads-banner-inner', {
           slidesPerView: 1,
           spaceBetween: 20,
           loop: slideCount > 2,
           speed: 600,
           watchOverflow: true,
-
           navigation: {
             nextEl: '.ads-banner-slider__nav-next',
             prevEl: '.ads-banner-slider__nav-prev',
           },
-
           pagination: {
             el: '.ads-banner-slider__pagination',
             clickable: true,
@@ -91,7 +89,6 @@ export default function ClientScripts() {
         const prevBtn = document.querySelector('.blog-slider__nav-prev');
         const nextBtn = document.querySelector('.blog-slider__nav-next');
 
-        // Скрываем стрелки если слайдов меньше 2
         if (slideCount < 2) {
           if (prevBtn) prevBtn.style.display = 'none';
           if (nextBtn) nextBtn.style.display = 'none';
@@ -104,17 +101,14 @@ export default function ClientScripts() {
           loop: slideCount > 1,
           speed: 600,
           watchOverflow: true,
-
           navigation: {
             nextEl: '.blog-slider__nav-next',
             prevEl: '.blog-slider__nav-prev',
           },
-
           pagination: {
             el: '.blog-slider__pagination',
             clickable: true,
           },
-
           on: {
             init: function () {
               updateNavButtons(this, prevBtn, nextBtn);
@@ -186,12 +180,59 @@ export default function ClientScripts() {
         });
       }
 
+      // ========== СЛАЙДЕР ДОЧЕРНИХ КАТЕГОРИЙ КАТАЛОГА ==========
+      function initChildCategoriesSlider() {
+        const sliderEl = document.querySelector('.popular-categories-inner');
+        if (!sliderEl) return;
+
+        const prevBtn = sliderEl.closest('.popular-categories')?.querySelector('.popular-categories__nav-prev');
+        const nextBtn = sliderEl.closest('.popular-categories')?.querySelector('.popular-categories__nav-next');
+
+        const swiper = new Swiper('.popular-categories-inner', {
+          slidesPerView: 8,
+          spaceBetween: 12,
+          speed: 600,
+          watchOverflow: true,
+          navigation: {
+            nextEl: '.popular-categories__nav-next',
+            prevEl: '.popular-categories__nav-prev',
+          },
+          breakpoints: {
+            0: {
+              slidesPerView: 3,
+              spaceBetween: 8,
+            },
+            576: {
+              slidesPerView: 4,
+              spaceBetween: 10,
+            },
+            768: {
+              slidesPerView: 6,
+              spaceBetween: 12,
+            },
+            992: {
+              slidesPerView: 8,
+              spaceBetween: 12,
+            },
+          },
+          on: {
+            init: function () {
+              updateNavButtons(this, prevBtn, nextBtn);
+            },
+            slideChange: function () {
+              updateNavButtons(this, prevBtn, nextBtn);
+            }
+          }
+        });
+      }
+
       // ========== ВЫЗОВ ВСЕХ ФУНКЦИЙ ==========
       initStartSlider();
       initHomeCategoriesSlider();
       initAboutCategoriesSlider();
       initAdsBannerSlider();
       initBlogSlider();
+      initChildCategoriesSlider();
     };
 
     initScripts();

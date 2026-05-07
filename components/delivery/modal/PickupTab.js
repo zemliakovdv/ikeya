@@ -9,17 +9,6 @@ import PvzDetail from '@/components/delivery/cards/PvzDetail';
 import DeliveryMap from '@/components/delivery/map/DeliveryMap';
 import { getEuropostOffices, calculateDelivery } from '@/lib/api/delivery';
 
-/**
- * PickupTab
- *
- * Props:
- *  - ymapsReady   {boolean}
- *  - cartToken    {string}
- *  - cartItems    {Array}  [{sku, quantity}]
- *  - onSelect     {fn(pvz, calcResult)}
- *  - activeTab    {'pickup'|'delivery'}
- *  - setActiveTab {fn}
- */
 export default function PickupTab({
   ymapsReady,
   cartToken,
@@ -86,13 +75,22 @@ export default function PickupTab({
 
     const q = search.toLowerCase();
 
-    setFiltered(
-      allPoints.filter((point) =>
-        point.city?.toLowerCase().includes(q) ||
-        point.address?.toLowerCase().includes(q) ||
-        point.name?.toLowerCase().includes(q)
-      )
+    const result = allPoints.filter((point) =>
+      point.city?.toLowerCase().includes(q) ||
+      point.address?.toLowerCase().includes(q) ||
+      point.name?.toLowerCase().includes(q)
     );
+
+    setFiltered(result);
+
+    // Центрируем карту на первую точку с координатами
+    const firstWithCoords = result.find(p => p.lat && p.lon);
+    if (firstWithCoords) {
+      setMapCenter({
+        coords: [firstWithCoords.lat, firstWithCoords.lon],
+        zoom: 12,
+      });
+    }
   }, [search, allPoints]);
 
   useEffect(() => {
@@ -159,7 +157,6 @@ export default function PickupTab({
 
   const handleSelect = () => {
     if (!selectedPoint || !calcResult) return;
-
     onSelect?.(selectedPoint, calcResult);
   };
 
@@ -170,7 +167,7 @@ export default function PickupTab({
           <button
             type="button"
             className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
-            onClick={() => setActiveTab('pickup')}
+            onClick={() => setActiveTab?.('pickup')}
           >
             Самовывоз
           </button>
@@ -178,7 +175,7 @@ export default function PickupTab({
           <button
             type="button"
             className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
-            onClick={() => setActiveTab('delivery')}
+            onClick={() => setActiveTab?.('delivery')}
           >
             Доставка
           </button>

@@ -28,17 +28,9 @@ const EuropostIcon = () => (
   </svg>
 );
 
-/**
- * PvzCard — карточка ПВЗ в списке
- *
- * Props:
- *  - point         {object}  — данные ПВЗ
- *  - onClick       {fn}      — клик на карточку → центрируем карту
- *  - onDetailClick {fn}      — клик на «Подробнее» → открываем детали
- */
 export default function PvzCard({ point, onClick, onDetailClick }) {
   return (
-    <div className="pvz-card" onClick={onClick}>
+    <div className="pvz-card" onClick={() => { onClick?.(); onDetailClick?.(); }}>
       <div className="pvz-card__header">
         <span className="pvz-card__icon"><EuropostIcon /></span>
         <span className="pvz-card__title">{getCardTitle(point)}</span>
@@ -59,17 +51,6 @@ export default function PvzCard({ point, onClick, onDetailClick }) {
           <span>{point.working_hours}</span>
         </div>
       )}
-
-      <button
-        type="button"
-        className="pvz-card__more"
-        onClick={(e) => { e.stopPropagation(); onDetailClick?.(); }}
-      >
-        Подробнее
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-          <path d="M12.7749 9.99999C12.7749 10.9333 10.2415 13.1667 8.12488 14.875C7.88321 15.0667 7.53321 15.0333 7.34155 14.7917C7.14988 14.55 7.18321 14.2 7.42488 14.0083C9.28321 12.5083 11.3749 10.5917 11.6499 9.99999C11.3749 9.40833 9.28321 7.49166 7.42488 5.99166C7.18321 5.79999 7.14988 5.44999 7.34155 5.20833C7.53321 4.96666 7.88321 4.93333 8.12488 5.12499C10.2499 6.83333 12.7749 9.07499 12.7749 9.99999Z" fill="#757575" />
-        </svg>
-      </button>
     </div>
   );
 }

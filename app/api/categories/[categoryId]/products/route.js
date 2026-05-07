@@ -38,7 +38,7 @@ export async function GET(request, { params }) {
 
     // Фильтруем на фронте — бэк игнорирует min_price/max_price
     const filteredProducts = (data.data || []).filter(item => {
-      const price = parseFloat(item.attributes?.price_byn || item.attributes?.price || 0);
+      const price = parseFloat(String(item.attributes?.price_byn || item.attributes?.price || 0).replace(/\s/g, ''));
       if (price <= 0) return false;
       if (searchParams.get('min_price') && price < minPrice) return false;
       if (searchParams.get('max_price') && price > maxPrice) return false;
