@@ -76,8 +76,18 @@ export default function SearchPageContent() {
   const isMountedRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(false);
-  const pageRef = useRef(1);
+  const pageRef = useRef(2);
   const observerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const loadMoreRef = useRef(null);
+
+  // Ключ для определения когда нужно перезагрузить первую страницу
+  // НЕ включаем page чтобы replaceState не вызывал перезагрузку
+  const fetchKey = useMemo(() => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete('page');
+    return p.toString();
+  }, [searchParams]);
 
   const sortOptions = [
     { value: 'cheapest', label: 'Дешевле' },
@@ -127,7 +137,7 @@ export default function SearchPageContent() {
     return titles;
   }, [firstPageData]);
 
-  const buildSearchParams = useCallback((page = 1) => {
+  const buildParams = useCallback((page = 1) => {
     const params = new URLSearchParams();
     params.set('q', q.trim());
     params.set('page', String(page));
@@ -142,6 +152,7 @@ export default function SearchPageContent() {
     return params;
   }, [q, sortParam, searchParams]);
 
+  // Загрузка первой страницы
   const fetchFirstPage = useCallback(async () => {
     if (!q.trim()) {
       setFirstPageData(null);
@@ -153,11 +164,12 @@ export default function SearchPageContent() {
     setProducts([]);
     setHasMore(false);
     hasMoreRef.current = false;
-    pageRef.current = 1;
+    pageRef.current = 2;
+    setCurrentPage(1);
 
     try {
-      const params = buildSearchParams(1);
-      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`)
+      const params = buildParams(1);
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
       if (!res.ok) throw new Error('Search error');
       const data = await res.json();
 
@@ -172,12 +184,10 @@ export default function SearchPageContent() {
       setProducts(rawProducts);
       setTotalPages(pages);
       setTotalItems(total);
-      setCurrentPage(1);
 
       const more = pages > 1;
       setHasMore(more);
       hasMoreRef.current = more;
-      pageRef.current = 2;
     } catch (e) {
       console.error('Search error:', e);
       setFirstPageData(null);
@@ -185,8 +195,9 @@ export default function SearchPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [q, buildSearchParams]);
+  }, [q, buildParams]);
 
+  // Загрузка следующих страниц
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMoreRef.current) return;
 
@@ -196,8 +207,8 @@ export default function SearchPageContent() {
     const page = pageRef.current;
 
     try {
-      const params = buildSearchParams(page);
-      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`)
+      const params = buildParams(page);
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
       if (!res.ok) throw new Error('Search error');
       const data = await res.json();
 
@@ -206,25 +217,23 @@ export default function SearchPageContent() {
         .map(normalizeProduct)
         .filter(hasValidPrice);
 
+      const pages = meta.total_pages ?? totalPages;
+      const more = page < pages;
+
       if (rawProducts.length > 0) {
         setProducts(prev => [...prev, ...rawProducts]);
-
-        const currentPageNum = meta.page ?? page;
-        const pages = meta.total_pages ?? totalPages;
-        const more = currentPageNum < pages;
-
-        pageRef.current = page + 1;
-        setCurrentPage(currentPageNum);
-        hasMoreRef.current = more;
-        setHasMore(more);
-
-        const urlParams = new URLSearchParams(searchParams.toString());
-        urlParams.set('page', String(currentPageNum));
-        window.history.replaceState(null, '', `${pathname}?${urlParams.toString()}`);
-      } else {
-        hasMoreRef.current = false;
-        setHasMore(false);
       }
+
+      pageRef.current = page + 1;
+      hasMoreRef.current = more;
+      setHasMore(more);
+      setCurrentPage(page);
+
+      // Обновляем URL без триггера перезагрузки
+      const urlParams = new URLSearchParams(searchParams.toString());
+      urlParams.set('page', String(page));
+      window.history.replaceState(null, '', `${pathname}?${urlParams.toString()}`);
+
     } catch (e) {
       console.error('Load more error:', e);
       hasMoreRef.current = false;
@@ -233,43 +242,42 @@ export default function SearchPageContent() {
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [buildSearchParams, totalPages, pathname, searchParams]);
+  }, [buildParams, totalPages, pathname, searchParams]);
 
-  // Callback ref — переподключает observer при каждом появлении/исчезновении триггера
-  const setTriggerRef = useCallback((node) => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-      observerRef.current = null;
-    }
-
-    if (!node) return;
-
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
-      },
-      {
-        threshold: 0,
-        rootMargin: '200px',
-      }
-    );
-
-    observerRef.current.observe(node);
-
+  // Держим актуальный loadMore в ref
+  useEffect(() => {
+    loadMoreRef.current = loadMore;
   }, [loadMore]);
 
+  // Observer создаётся один раз
   useEffect(() => {
-    return () => {
-      if (observerRef.current) observerRef.current.disconnect();
-    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreRef.current?.();
+        }
+      },
+      { threshold: 0, rootMargin: '200px' }
+    );
+    observerRef.current = observer;
+    if (triggerRef.current) observer.observe(triggerRef.current);
+    return () => observer.disconnect();
   }, []);
 
+  // Переподключаем observer когда триггер появляется/исчезает
+  const setTriggerRef = useCallback((node) => {
+    triggerRef.current = node;
+    if (!node || !observerRef.current) return;
+    observerRef.current.disconnect();
+    observerRef.current.observe(node);
+  }, []);
+
+  // Перезагружаем при смене запроса/фильтров/сортировки (но не при смене page)
   useEffect(() => {
     fetchFirstPage();
-  }, [q, sortParam, searchParams.toString()]);
+  }, [fetchKey]);
 
+  // Синхронизация draft фильтров из URL
   useEffect(() => {
     setDraftPriceMin(safeNumberOrEmpty(searchParams.get('min_price')));
     setDraftPriceMax(safeNumberOrEmpty(searchParams.get('max_price')));
@@ -499,14 +507,14 @@ export default function SearchPageContent() {
                     ))}
                   </div>
 
-                  {/* Триггер infinite scroll — callback ref, всегда переподключается */}
+                  {/* Триггер infinite scroll */}
                   {hasMore && (
                     <div
                       ref={setTriggerRef}
                       className="loading-trigger"
                       style={{
-                        height: '100px',
-                        margin: '40px 0',
+                        height: '80px',
+                        margin: '32px 0',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -516,7 +524,7 @@ export default function SearchPageContent() {
                     </div>
                   )}
 
-                  {/* Пагинация */}
+                  {/* Пагинация — всегда видна, синхронизирована со скроллом */}
                   {totalPages > 1 && (
                     <Pagination
                       currentPage={currentPage}
@@ -530,7 +538,6 @@ export default function SearchPageContent() {
                 </>
               )}
 
-              {/* Нет результатов */}
               {noResults && <SearchNotFound query={q} />}
             </div>
           </div>

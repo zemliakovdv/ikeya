@@ -1,8 +1,6 @@
 'use client';
 
 // components/catalog/products/ProductGridWithPagination.js
-// Клиентская обёртка — скрывает пагинацию после первой подгрузки инфинит-скроллом.
-// Пагинация остаётся в DOM для SEO-роботов (display:none не мешает индексации ссылок).
 
 import { useState } from 'react';
 import InfiniteProductGrid from './InfiniteProductGrid';
@@ -15,10 +13,10 @@ export default function ProductGridWithPagination({
   queryString,
   initialPage,
   basePath,
-  currentPage,
+  currentPage: serverCurrentPage,
   totalItems,
 }) {
-  const [loadedPages, setLoadedPages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(serverCurrentPage || initialPage || 1);
 
   return (
     <>
@@ -30,17 +28,15 @@ export default function ProductGridWithPagination({
         queryString={queryString}
         initialPage={initialPage}
         basePath={basePath}
-        onLoadedPagesChange={setLoadedPages}
+        onPageChange={setCurrentPage}
       />
-      <div style={{ display: loadedPages > 0 ? 'none' : 'block' }}>
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          basePath={basePath}
-          queryString={queryString}
-        />
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        basePath={basePath}
+        queryString={queryString}
+      />
     </>
   );
 }

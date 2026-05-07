@@ -95,6 +95,7 @@ export default function CustomsContent() {
 
       {/* Нормы беспошлинного ввоза */}
       <h2 className="help-section__title">Нормы беспошлинного ввоза</h2>
+      <div style={{ overflowX: 'auto' }}>
       <table className="help-table">
         <thead>
           <tr>
@@ -115,7 +116,8 @@ export default function CustomsContent() {
             <td>не менее 2 евро за 1 кг превышения</td>
           </tr>
         </tbody>
-      </table>
+        </table>
+      </div>
 
       <p className="help-section__rules"><strong>Важное правило:</strong> Если превышены оба лимита (и вес, и стоимость), таможенная пошлина рассчитывается по обоим параметрам, но к оплате выбирается <strong>наибольшая</strong> из полученных сумм. Дополнительно всегда оплачивается таможенный сбор <strong>в размере 10 BYN</strong>.</p>
 
