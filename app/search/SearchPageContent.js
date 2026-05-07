@@ -12,7 +12,7 @@ import Pagination from '@/components/catalog/Pagination';
 import NotFoundRecommendations from '@/components/recommendations/NotFoundRecommendations';
 import PageLoader from '@/components/ui/PageLoader';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
 function getPriceRangeFromProducts(products) {
   const prices = products
@@ -157,7 +157,7 @@ export default function SearchPageContent() {
 
     try {
       const params = buildSearchParams(1);
-      const res = await fetch(`${API_BASE_URL}/search?${params.toString()}`)
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`)
       if (!res.ok) throw new Error('Search error');
       const data = await res.json();
 
@@ -197,7 +197,7 @@ export default function SearchPageContent() {
 
     try {
       const params = buildSearchParams(page);
-      const res = await fetch(`${API_BASE_URL}/search?${params.toString()}`)
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`)
       if (!res.ok) throw new Error('Search error');
       const data = await res.json();
 
