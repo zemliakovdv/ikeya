@@ -141,6 +141,7 @@ export default function SearchPageContent() {
     const params = new URLSearchParams();
     params.set('q', q.trim());
     params.set('page', String(page));
+    params.set('per_page', '20');
     if (sortParam) params.set('sort', sortParam);
     const minP = searchParams.get('min_price');
     const maxP = searchParams.get('max_price');
