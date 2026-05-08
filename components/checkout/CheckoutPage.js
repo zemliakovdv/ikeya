@@ -651,7 +651,8 @@ function CheckoutPageInner() {
 
   function buildOrderData(a1Id = null) {
     const isPickup = receiveMethod === 'pickup';
-    const deliveryType = isPickup ? 'europost_pickup' : addrDeliveryType;
+    const rawType = isPickup ? 'europost_pickup' : addrDeliveryType;
+    const deliveryType = rawType === 'courier' ? 'ikeya_delivery' : rawType;
 
     const addressPayload = !isPickup && selectedAddr
       ? {
