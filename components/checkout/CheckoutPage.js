@@ -396,7 +396,7 @@ function CheckoutPageInner() {
     ? 0
     : parseFloat(addrCalcResult?.delivery?.total_delivery_price_byn || addrCalcResult?.delivery?.delivery_price_byn || 0);
 
-  const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'ikeya_delivery';
+  const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'courier';
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
 
   const fullName = profile ? [profile.last_name, profile.first_name, profile.middle_name].filter(Boolean).join(' ') : '';

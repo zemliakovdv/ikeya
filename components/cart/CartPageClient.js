@@ -38,19 +38,20 @@ export default function CartPageClient() {
     fetch('https://api.nbrb.by/exrates/rates/EUR?parammode=2')
       .then(r => r.json())
       .then(data => { if (data?.Cur_OfficialRate) setEurRate(data.Cur_OfficialRate); })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   useEffect(() => {
     function onAuthDone() {
       if (pendingCheckout.current) {
         pendingCheckout.current = false;
-        handleCheckoutAuthorized();
+        // Ждём пока CartContext обновит корзину после авторизации
+        setTimeout(() => handleCheckoutAuthorized(), 500);
       }
     }
     window.addEventListener('auth-change-done', onAuthDone);
     return () => window.removeEventListener('auth-change-done', onAuthDone);
-  }, []);
+  }, [handleCheckoutAuthorized]);
 
   const availableSkus = useMemo(
     () => (availableItems || []).map(it => it?.sku).filter(Boolean),
@@ -85,9 +86,9 @@ export default function CartPageClient() {
     });
 
     setDeliveryLoading(true);
-    calculateDelivery({ delivery_type: 'ikeya_delivery', items })
+    calculateDelivery({ delivery_type: 'europost_pickup', items })
       .then(data => {
-        const cost = parseFloat(data?.delivery?.delivery_to_belarus_price_byn || 0);
+        const cost = parseFloat(data?.delivery?.total_delivery_price_byn || data?.delivery?.delivery_to_belarus_price_byn || 0);
         setDelivery(cost);
       })
       .catch(() => setDelivery(0))
@@ -147,11 +148,11 @@ export default function CartPageClient() {
 
   const saveSummaryToSession = useCallback(() => {
     sessionStorage.setItem('checkoutSummary', JSON.stringify({
-      subtotal:      selectedData.subtotal,
+      subtotal: selectedData.subtotal,
       promoDiscount: selectedData.promoDiscount,
-      itemCount:     selectedData.itemCount,
-      totalWeight:   selectedData.totalWeight,
-      customsDuty:   selectedData.customsDuty,
+      itemCount: selectedData.itemCount,
+      totalWeight: selectedData.totalWeight,
+      customsDuty: selectedData.customsDuty,
       delivery,
     }));
   }, [selectedData, delivery]);
@@ -240,7 +241,7 @@ export default function CartPageClient() {
     } catch { alert('Не удалось удалить некоторые товары'); }
   }, [removeFromCart, selectedItems]);
 
-  const hasAvailableItems   = (availableItems?.length || 0) > 0;
+  const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
 
   if (isInitialLoading) return <PageLoader />;
@@ -283,7 +284,7 @@ export default function CartPageClient() {
                             selectedItems={selectedItems}
                             onQuantityChange={handleQuantityChange}
                             onDelete={handleDelete}
-                            onFavorite={() => {}}
+                            onFavorite={() => { }}
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
@@ -297,7 +298,7 @@ export default function CartPageClient() {
                             isUnavailable={true}
                             selectedItems={selectedUnavailable}
                             onDelete={handleDelete}
-                            onFavorite={() => {}}
+                            onFavorite={() => { }}
                             onSelectAll={handleSelectAllUnavailable}
                             onDeleteSelected={handleDeleteSelectedUnavailable}
                             onCheckChange={handleCheckChangeUnavailable}
