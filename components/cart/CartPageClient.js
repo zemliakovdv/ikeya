@@ -41,17 +41,18 @@ export default function CartPageClient() {
       .catch(() => { });
   }, []);
 
+  const handleCheckoutAuthorizedRef = useRef(null);
+
   useEffect(() => {
     function onAuthDone() {
       if (pendingCheckout.current) {
         pendingCheckout.current = false;
-        // Ждём пока CartContext обновит корзину после авторизации
-        setTimeout(() => handleCheckoutAuthorized(), 500);
+        setTimeout(() => handleCheckoutAuthorizedRef.current?.(), 800);
       }
     }
     window.addEventListener('auth-change-done', onAuthDone);
     return () => window.removeEventListener('auth-change-done', onAuthDone);
-  }, [handleCheckoutAuthorized]);
+  }, []);
 
   const availableSkus = useMemo(
     () => (availableItems || []).map(it => it?.sku).filter(Boolean),
@@ -175,7 +176,8 @@ export default function CartPageClient() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [canCheckout, saveSummaryToSession, router]);
+}, [canCheckout, saveSummaryToSession, router]);
+handleCheckoutAuthorizedRef.current = handleCheckoutAuthorized;
 
   const handleCheckout = useCallback(() => {
     if (!isAuth) {
