@@ -2024,6 +2024,10 @@ main {
     color: #d32f2f;
 }
 
+.mega-menu-mobile-grid {
+    display: none;
+}
+
 /* Мега-меню справа */
 .mega-menu {
     flex: 1;

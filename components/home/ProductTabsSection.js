@@ -15,7 +15,15 @@ export default function ProductTabsSection({
 
   useEffect(() => {
     const updateProductsPerSlide = () => {
-      setProductsPerSlide(window.innerWidth <= 575 ? 2 : 5);
+      if (window.innerWidth <= 575) {
+        setProductsPerSlide(2);
+      } else if (window.innerWidth <= 767) {
+        setProductsPerSlide(3);
+      } else if (window.innerWidth <= 1199) {
+        setProductsPerSlide(4);
+      } else {
+        setProductsPerSlide(5);
+      }
     };
 
     updateProductsPerSlide();
