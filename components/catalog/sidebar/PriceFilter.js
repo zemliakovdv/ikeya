@@ -49,20 +49,22 @@ export default function PriceFilter({
   }
 
   const handleMinBlur = useCallback(() => {
-    const val = inputMin === '' ? min : Number(inputMin)
+    const raw = inputMin.replace(/[^0-9]/g, '')
+    const val = raw === '' ? min : Number(raw)
     const clamped = Math.min(Math.max(val, min), localMax - 1)
     setLocalMin(clamped)
     setInputMin(String(clamped))
-    if (clamped !== localMin) applyChange(clamped, localMax)
-  }, [inputMin, min, localMin, localMax])
+    if (clamped !== (currentMin ?? min)) applyChange(clamped, localMax)
+  }, [inputMin, min, localMax, currentMin])
 
   const handleMaxBlur = useCallback(() => {
-    const val = inputMax === '' ? max : Number(inputMax)
+    const raw = inputMax.replace(/[^0-9]/g, '')
+    const val = raw === '' ? max : Number(raw)
     const clamped = Math.max(Math.min(val, max), localMin + 1)
     setLocalMax(clamped)
     setInputMax(String(clamped))
-    if (clamped !== localMax) applyChange(localMin, clamped)
-  }, [inputMax, max, localMin, localMax])
+    if (clamped !== (currentMax ?? max)) applyChange(localMin, clamped)
+  }, [inputMax, max, localMin, currentMax])
 
   return (
     <div className="filter-section price-filter">
@@ -110,11 +112,10 @@ export default function PriceFilter({
         <div className="price-input-group">
           <label className="price-input-label">от</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="price-input"
             value={inputMin}
-            min={min}
-            max={localMax - 1}
             onChange={handleMinInput}
             onBlur={handleMinBlur}
           />
@@ -122,11 +123,10 @@ export default function PriceFilter({
         <div className="price-input-group">
           <label className="price-input-label">до</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             className="price-input"
             value={inputMax}
-            min={localMin + 1}
-            max={max}
             onChange={handleMaxInput}
             onBlur={handleMaxBlur}
           />

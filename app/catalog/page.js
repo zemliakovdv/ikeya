@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import CategoriesGrid from '@/components/catalog/CategoriesGrid';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
+import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
 import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
@@ -21,7 +22,6 @@ export default async function CatalogPage({ searchParams }) {
   const allowedSorts = ['cheapest', 'expensive'];
   const sort = allowedSorts.includes(sp?.sort) ? sp.sort : null;
 
-  // Читаем номер страницы из URL — для прямых переходов по пагинации
   const currentPage = Math.max(1, Number(sp?.page) || 1);
 
   const [tree, productsResponse] = await Promise.all([
@@ -50,11 +50,13 @@ export default async function CatalogPage({ searchParams }) {
       <section className="all-catalog">
         <div className="container">
           <h1>Каталог</h1>
+
           {tree.length > 0 && (
             <div className="catalog-categories">
               <CategoriesGrid categories={tree} />
             </div>
           )}
+
           <div className="all-catalog-inner">
             <Suspense fallback={null}>
               <FilterAside
@@ -65,11 +67,26 @@ export default async function CatalogPage({ searchParams }) {
                 availableFilters={[]}
               />
             </Suspense>
+
             <div className="all-catalog-center">
-              <Suspense fallback={null}>
-                <ProductSort currentSort={sort} />
-              </Suspense>
+              <div className="catalog-toolbar">
+                <Suspense fallback={null}>
+                  <MobileCatalogFilters
+                    treeData={tree}
+                    slugChain={[]}
+                    showAllFilters={false}
+                    hasChildren={true}
+                    availableFilters={[]}
+                  />
+                </Suspense>
+
+                <Suspense fallback={null}>
+                  <ProductSort currentSort={sort} />
+                </Suspense>
+              </div>
+
               <FilterChips filterLabels={{}} filterTitles={{}} />
+
               <Suspense fallback={<div>Загрузка товаров...</div>}>
                 <ProductGridWithPagination
                   initialProducts={products}

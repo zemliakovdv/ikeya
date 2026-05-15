@@ -2,6 +2,7 @@
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import ChildCategoriesSlider from '@/components/catalog/ChildCategoriesSlider';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
+import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductSort from '@/components/catalog/ProductSort';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
@@ -70,7 +71,6 @@ export default async function CategoryPage({ params, searchParams }) {
     const allowedSorts = ['popular', 'newest', 'cheapest', 'expensive'];
     const sort = allowedSorts.includes(sp?.sort) ? sp.sort : null;
 
-    // Читаем номер страницы из URL — для прямых переходов по пагинации
     const currentPage = Math.max(1, Number(sp?.page) || 1);
 
     const tree = await getCachedCategoriesTree();
@@ -153,23 +153,33 @@ export default async function CategoryPage({ params, searchParams }) {
               />
 
               <div className="all-catalog-center" style={initialProducts.length === 0 ? { width: '100%' } : {}}>
-                <ProductSort currentSort={sort} />
+                <div className="catalog-toolbar">
+                  <MobileCatalogFilters
+                    treeData={tree}
+                    slugChain={slug}
+                    showAllFilters={showAllFilters}
+                    availableFilters={availableFilters}
+                    hasChildren={childCategories.length > 0}
+                  />
+
+                  <ProductSort currentSort={sort} />
+                </div>
+
                 <Suspense fallback={null}>
                   <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
                 </Suspense>
+
                 {initialProducts.length > 0 ? (
-                  <>
-                    <ProductGridWithPagination
-                      initialProducts={initialProducts}
-                      categoryId={currentCategory.id}
-                      totalPages={totalPages}
-                      queryString={productsQueryString}
-                      initialPage={currentPage}
-                      basePath={basePath}
-                      currentPage={currentPage}
-                      totalItems={meta.total || 0}
-                    />
-                  </>
+                  <ProductGridWithPagination
+                    initialProducts={initialProducts}
+                    categoryId={currentCategory.id}
+                    totalPages={totalPages}
+                    queryString={productsQueryString}
+                    initialPage={currentPage}
+                    basePath={basePath}
+                    currentPage={currentPage}
+                    totalItems={meta.total || 0}
+                  />
                 ) : (
                   <div className="all-catalog-empty">
                     {hasActiveFilters ? (
