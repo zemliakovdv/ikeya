@@ -401,14 +401,19 @@ function CheckoutPageInner() {
   const customsDuty = checkoutSummary?.customsDuty ?? 0;
   const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
 
-  const pvzDeliveryCost = pvzCalcResult?.delivery?.free_delivery_eligible
-    ? 0
-    : parseFloat(pvzCalcResult?.delivery?.total_delivery_price_byn || pvzCalcResult?.delivery?.delivery_price_byn || 0);
+  const pvzDeliveryCost = parseFloat(
+    pvzCalcResult?.delivery?.poland_delivery_byn ||
+    pvzCalcResult?.delivery?.pricing?.internal?.poland_delivery_byn ||
+    0
+  );
 
   const addrDeliveryCost = addrCalcResult?.delivery?.free_delivery_eligible
     ? 0
-    : parseFloat(addrCalcResult?.delivery?.total_delivery_price_byn || addrCalcResult?.delivery?.delivery_price_byn || 0);
-
+    : parseFloat(
+      addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
+      addrCalcResult?.delivery?.base_cost_byn ||
+      0
+    );
   const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'courier';
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
 
@@ -971,9 +976,11 @@ function CheckoutPageInner() {
                                       <span>
                                         {addrCalcResult?.delivery?.free_delivery_eligible
                                           ? <span className="text-success">бесплатно</span>
-                                          : addrCalcResult?.delivery?.total_delivery_price_byn
-                                            ? `${addrCalcResult.delivery.total_delivery_price_byn} р.`
-                                            : '—'}
+                                          : addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn
+                                            ? `${addrCalcResult.delivery.pricing.internal.total_delivery_byn} р.`
+                                            : addrCalcResult?.delivery?.base_cost_byn
+                                              ? `${addrCalcResult.delivery.base_cost_byn} р.`
+                                              : '—'}
                                       </span>
                                     </div>
                                     {addrCalcResult?.delivery?.delivery_date && (
