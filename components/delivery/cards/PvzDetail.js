@@ -17,12 +17,28 @@ const ClockIcon = () => (
   </svg>
 );
 
-function formatDate(dateStr) {
-  if (!dateStr) return null;
-  const date = new Date(dateStr);
-  const day = date.getDate();
-  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
-  return `${day} ${months[date.getMonth()]}`;
+const DAY_NAMES = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+// Текущий ISO день недели (1=Пн, 7=Вс)
+function getTodayIso() {
+  const d = new Date().getDay(); // 0=Вс, 1=Пн...
+  return d === 0 ? 7 : d;
+}
+
+/**
+ * Возвращает массив строк расписания по каждому дню из schedules.
+ * { iso: number, dayName: string, time: string, lunch: string|null, isToday: boolean }
+ */
+function buildScheduleRows(schedules) {
+  if (!schedules?.length) return [];
+  const todayIso = getTodayIso();
+  return schedules.map(s => ({
+    iso:     s.iso_day_of_week,
+    dayName: DAY_NAMES[s.iso_day_of_week] || '',
+    time:    s.is_working ? s.work_time : 'выходной',
+    lunch:   s.is_working && s.lunch_time ? s.lunch_time : null,
+    isToday: s.iso_day_of_week === todayIso,
+  }));
 }
 
 /**
@@ -30,17 +46,13 @@ function formatDate(dateStr) {
  *
  * Props:
  *  - point       {object}   — данные ПВЗ
- *  - calcResult  {object}   — результат calculate
+ *  - calcResult  {object}   — результат calculate (не используется для отображения)
  *  - calcLoading {boolean}
  *  - onBack      {fn}
  *  - onSelect    {fn}
  */
 export default function PvzDetail({ point, calcResult, calcLoading, onBack, onSelect }) {
-  const delivery     = calcResult?.delivery;
-  const isFree       = delivery?.free_delivery_eligible;
-  const cost         = delivery?.total_delivery_price_byn || delivery?.delivery_price_byn;
-  const deliveryDate = delivery?.delivery_date;
-  const storageUntil = delivery?.storage_until;
+  const scheduleRows = buildScheduleRows(point.schedules);
 
   return (
     <>
@@ -62,45 +74,34 @@ export default function PvzDetail({ point, calcResult, calcLoading, onBack, onSe
               <span>{point.phone}</span>
             </div>
           )}
-          {point.working_hours && (
+
+          {scheduleRows.length > 0 ? (
+            <div className="pvz-detail__row pvz-detail__row--schedule">
+              <ClockIcon />
+              <div className="pvz-detail__schedule">
+                {scheduleRows.map((row, i) => (
+                  <div
+                    key={i}
+                    className="pvz-detail__schedule-row"
+                    style={row.isToday ? { fontWeight: 700, } : {}}
+                  >
+                    <span className="pvz-detail__schedule-day">{row.dayName}:</span>
+                    {' '}
+                    <span className="pvz-detail__schedule-time">{row.time}</span>
+                    {row.lunch && (
+                      <span className="pvz-detail__schedule-lunch">, обед: {row.lunch}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : point.working_hours ? (
             <div className="pvz-detail__row">
               <ClockIcon />
               <span>{point.working_hours}</span>
             </div>
-          )}
+          ) : null}
         </div>
-
-        {calcLoading && (
-          <div className="pvz-detail__loading">Расчёт стоимости доставки...</div>
-        )}
-
-        {!calcLoading && calcResult && (
-          <div className="pvz-detail__calc">
-            <div className="pvz-detail__calc-row">
-              <span className="pvz-detail__calc-label">Стоимость доставки</span>
-              <span className="pvz-detail__calc-value">
-                {isFree
-                  ? <span className="text-success">бесплатно</span>
-                  : cost ? `${cost} р.` : '—'
-                }
-              </span>
-            </div>
-
-            {deliveryDate && (
-              <div className="pvz-detail__calc-row">
-                <span className="pvz-detail__calc-label">Дата доставки</span>
-                <span className="pvz-detail__calc-value">{formatDate(deliveryDate)}</span>
-              </div>
-            )}
-
-            {storageUntil && (
-              <div className="pvz-detail__calc-row">
-                <span className="pvz-detail__calc-label">Хранение до</span>
-                <span className="pvz-detail__calc-value">{formatDate(storageUntil)}</span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       <div className="pvz-detail__footer">
@@ -110,7 +111,7 @@ export default function PvzDetail({ point, calcResult, calcLoading, onBack, onSe
           onClick={onSelect}
           disabled={calcLoading}
         >
-          Выбрать
+          {calcLoading ? 'Загрузка...' : 'Выбрать'}
         </button>
       </div>
     </>

@@ -330,7 +330,7 @@
 }
 
 .pvz-modal__tab {
-  padding: 14px 87px;
+  padding: 10px;
   border: none;
   background: #f5f5f5;
   cursor: pointer;
@@ -345,11 +345,17 @@
   border-radius: 0;
   width: 50%;
   max-width: 256px;
+  border-radius: 8px;
 }
 
 .pvz-modal__tab--active {
   color: #fff;
   background: #0058a3;
+  border-radius: 8px;
+}
+
+.pvz-detail__schedule-row{
+  margin-bottom: 5px;
 }
 
 /* =============================================================

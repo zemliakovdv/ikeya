@@ -24,7 +24,6 @@ export default function PickupTab({
   const [search, setSearch] = useState('');
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
-  const [calcResult, setCalcResult] = useState(null);
   const [calcError, setCalcError] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
 
@@ -83,7 +82,6 @@ export default function PickupTab({
 
     setFiltered(result);
 
-    // Центрируем карту на первую точку с координатами
     const firstWithCoords = result.find(p => p.lat && p.lon);
     if (firstWithCoords) {
       setMapCenter({
@@ -95,70 +93,61 @@ export default function PickupTab({
 
   useEffect(() => {
     return () => {
-      if (searchTimer.current) {
-        clearTimeout(searchTimer.current);
-      }
+      if (searchTimer.current) clearTimeout(searchTimer.current);
     };
   }, []);
 
   const handleSearch = (event) => {
     clearTimeout(searchTimer.current);
-
     const value = event.target.value;
-
-    searchTimer.current = setTimeout(() => {
-      setSearch(value);
-    }, 300);
+    searchTimer.current = setTimeout(() => setSearch(value), 300);
   };
 
   const handleCardClick = (point) => {
     if (point.lat && point.lon) {
-      setMapCenter({
-        coords: [point.lat, point.lon],
-        zoom: 15,
-      });
+      setMapCenter({ coords: [point.lat, point.lon], zoom: 15 });
     }
   };
 
-  const handleDetailOpen = useCallback(async (point) => {
+  // Просто открываем детали — без запроса
+  const handleDetailOpen = useCallback((point) => {
     setSelectedPoint(point);
-    setCalcResult(null);
     setCalcError(null);
+  }, []);
 
+  const handleBack = () => {
+    setSelectedPoint(null);
+    setCalcError(null);
+  };
+
+  // Запрос calculate только при нажатии «Выбрать»
+  const handleSelect = useCallback(async () => {
+    if (!selectedPoint) return;
+
+    // Если нет корзины — выбираем без расчёта (страница /pvz)
     if (!cartToken || !cartItems?.length) {
-      setCalcError('Не удалось рассчитать доставку: нет данных корзины');
+      onSelect?.(selectedPoint, null);
       return;
     }
 
     setCalcLoading(true);
+    setCalcError(null);
 
     try {
       const result = await calculateDelivery({
         cart_token: cartToken,
         delivery_type: 'europost_pickup',
-        pickup_point_id: point.id,
+        pickup_point_id: selectedPoint.id,
         items: cartItems,
       });
-
-      setCalcResult(result);
+      onSelect?.(selectedPoint, result);
     } catch (error) {
       console.error('Ошибка calculate europost_pickup:', error);
       setCalcError(error?.message || 'Не удалось рассчитать доставку в выбранный ПВЗ');
     } finally {
       setCalcLoading(false);
     }
-  }, [cartToken, cartItems]);
-
-  const handleBack = () => {
-    setSelectedPoint(null);
-    setCalcResult(null);
-    setCalcError(null);
-  };
-
-  const handleSelect = () => {
-    if (!selectedPoint || !calcResult) return;
-    onSelect?.(selectedPoint, calcResult);
-  };
+  }, [selectedPoint, cartToken, cartItems, onSelect]);
 
   return (
     <div className="pvz-layout">
@@ -229,7 +218,6 @@ export default function PickupTab({
           <>
             <PvzDetail
               point={selectedPoint}
-              calcResult={calcResult}
               calcLoading={calcLoading}
               onBack={handleBack}
               onSelect={handleSelect}
@@ -238,12 +226,6 @@ export default function PickupTab({
             {calcError && (
               <div className="delivery-geo-error" style={{ margin: '12px 16px' }}>
                 {calcError}
-              </div>
-            )}
-
-            {!calcLoading && !calcError && !calcResult && (
-              <div className="delivery-geo-error" style={{ margin: '12px 16px' }}>
-                Расчёт доставки недоступен
               </div>
             )}
           </>

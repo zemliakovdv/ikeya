@@ -15,11 +15,11 @@ export default function DeliveryMap({
   onPinClick,
   onMapClick,
 }) {
-  const mapRef       = useRef(null);
+  const mapRef = useRef(null);
   const ymapInstance = useRef(null);
-  const clusterer    = useRef(null);
-  const deliveryPin  = useRef(null);
-  const pointsRef    = useRef(points);
+  const clusterer = useRef(null);
+  const deliveryPin = useRef(null);
+  const pointsRef = useRef(points);
   const onPinClickRef = useRef(onPinClick);
 
   // Актуализируем refs при каждом рендере
@@ -87,9 +87,20 @@ export default function DeliveryMap({
         deliveryPin.current = new window.ymaps.Placemark(
           pinCoords || [53.9045, 27.5615],
           {},
-          { preset: 'islands#yellowDotIcon' }
+          {
+            iconLayout: 'default#image',
+            iconImageHref: '/assets/img/pin.svg',
+            iconImageSize: [40, 65],
+            iconImageOffset: [-24, -51],
+          }
         );
         ymapInstance.current.geoObjects.add(deliveryPin.current);
+        deliveryPin.current.options.set('draggable', true);
+
+        deliveryPin.current.events.add('dragend', () => {
+          const pos = deliveryPin.current.geometry.getCoordinates();
+          onMapClick?.(pos);
+        });
 
         ymapInstance.current.events.add('click', (e) => {
           const pos = e.get('coords');

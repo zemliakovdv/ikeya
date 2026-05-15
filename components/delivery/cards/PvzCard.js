@@ -28,7 +28,45 @@ const EuropostIcon = () => (
   </svg>
 );
 
+const DAY_NAMES = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+/**
+ * Группирует расписание: дни с одинаковым временем → одна строка.
+ * Возвращает массив { days: 'Пн-Пт', time: '09:00-21:00', lunch: '14:00-15:00' }
+ */
+function groupSchedules(schedules) {
+  if (!schedules?.length) return [];
+
+  const groups = [];
+  let current = null;
+
+  for (const s of schedules) {
+    const dayName = DAY_NAMES[s.iso_day_of_week] || '';
+    const time = s.is_working ? s.work_time : 'выходной';
+    const lunch = s.is_working && s.lunch_time ? s.lunch_time : null;
+    const key = `${time}__${lunch}`;
+
+    if (current && current.key === key) {
+      current.lastDay = dayName;
+      current.lastIso = s.iso_day_of_week;
+    } else {
+      if (current) groups.push(current);
+      current = { key, firstDay: dayName, lastDay: dayName, firstIso: s.iso_day_of_week, lastIso: s.iso_day_of_week, time, lunch };
+    }
+  }
+  if (current) groups.push(current);
+
+  return groups.map(g => ({
+    days: g.firstDay === g.lastDay ? g.firstDay : `${g.firstDay}-${g.lastDay}`,
+    time: g.time,
+    lunch: g.lunch,
+  }));
+}
+
 export default function PvzCard({ point, onClick, onDetailClick }) {
+  const groups = groupSchedules(point.schedules);
+  const showSchedule = groups.length > 0;
+
   return (
     <div className="pvz-card" onClick={() => { onClick?.(); onDetailClick?.(); }}>
       <div className="pvz-card__header">
@@ -45,12 +83,28 @@ export default function PvzCard({ point, onClick, onDetailClick }) {
         </div>
       )}
 
-      {point.working_hours && (
+      {showSchedule ? (
+        <div className="pvz-card__info pvz-card__info--schedule">
+          <ClockIcon />
+          <div className="pvz-card__schedule">
+            {groups.map((g, i) => (
+              <div key={i} className="pvz-card__schedule-row">
+                <span className="pvz-card__schedule-days">{g.days}:</span>
+                {' '}
+                <span className="pvz-card__schedule-time">{g.time}</span>
+                {g.lunch && (
+                  <span className="pvz-card__schedule-lunch">, обед: {g.lunch}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : point.working_hours ? (
         <div className="pvz-card__info">
           <ClockIcon />
           <span>{point.working_hours}</span>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

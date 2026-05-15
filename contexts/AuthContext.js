@@ -13,6 +13,32 @@ import {
 
 const AuthContext = createContext(null);
 
+const ACTIVITY_KEY = 'auth_last_activity';
+const SESSION_TTL = 60 * 60 * 1000; // 1 час
+const ACTIVITY_THROTTLE = 60 * 1000; // обновляем не чаще раза в минуту
+
+function getLastActivity() {
+  if (typeof window === 'undefined') return null;
+  const val = localStorage.getItem(ACTIVITY_KEY);
+  return val ? parseInt(val, 10) : null;
+}
+
+function updateLastActivity() {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(ACTIVITY_KEY, String(Date.now()));
+}
+
+function removeLastActivity() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(ACTIVITY_KEY);
+}
+
+function isSessionExpired() {
+  const last = getLastActivity();
+  if (!last) return true;
+  return Date.now() - last > SESSION_TTL;
+}
+
 export function AuthProvider({ children }) {
   const [token, setTokenState] = useState(null);
   const [user, setUserState] = useState(null);
@@ -22,10 +48,62 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const t = getAuthToken();
     const u = getStoredUser();
-    if (t) setTokenState(t);
-    if (u) setUserState(u);
+
+    if (t) {
+      if (isSessionExpired()) {
+        // Сессия истекла — чистим всё
+        removeAuthToken();
+        removeStoredUser();
+        removeLastActivity();
+      } else {
+        setTokenState(t);
+        if (u) setUserState(u);
+      }
+    }
+
     setIsHydrated(true);
   }, []);
+
+  // Слушаем активность пользователя — обновляем timestamp (throttle 1 мин)
+  useEffect(() => {
+    if (!token) return;
+
+    let lastUpdate = Date.now();
+
+    function handleActivity() {
+      const now = Date.now();
+      if (now - lastUpdate < ACTIVITY_THROTTLE) return;
+      lastUpdate = now;
+      updateLastActivity();
+    }
+
+    const events = ['click', 'scroll', 'mousemove', 'keydown', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, handleActivity, { passive: true }));
+
+    return () => {
+      events.forEach(e => window.removeEventListener(e, handleActivity));
+    };
+  }, [token]);
+
+  // Проверяем истечение сессии раз в минуту (пока вкладка открыта)
+  useEffect(() => {
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      if (isSessionExpired()) {
+        setTokenState(null);
+        setUserState(null);
+        removeAuthToken();
+        removeStoredUser();
+        removeLastActivity();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('auth-logout'));
+        }
+      }
+    }, ACTIVITY_THROTTLE);
+
+    return () => clearInterval(interval);
+  }, [token]);
 
   const isAuth = !!token;
 
@@ -34,8 +112,7 @@ export function AuthProvider({ children }) {
     setUserState(newUser || null);
     setAuthToken(newToken);
     if (newUser) setStoredUser(newUser);
-    // ✅ НЕ диспатчим auth-change здесь — это делает AuthModalsHost
-    // после завершения переноса гостевых товаров в корзину
+    updateLastActivity();
   }
 
   function logout() {
@@ -43,7 +120,7 @@ export function AuthProvider({ children }) {
     setUserState(null);
     removeAuthToken();
     removeStoredUser();
-    // ✅ При логауте диспатчим отдельное событие — перенос товаров не нужен
+    removeLastActivity();
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('auth-logout'));
     }
@@ -57,7 +134,6 @@ export function AuthProvider({ children }) {
       isHydrated,
       setAuth,
       setUser: (u) => {
-        // Мёржим с текущим user — чтобы не затирать уже сохранённые поля
         const merged = u ? { ...(getStoredUser() || {}), ...u } : null;
         setUserState(merged);
         if (merged) setStoredUser(merged);
