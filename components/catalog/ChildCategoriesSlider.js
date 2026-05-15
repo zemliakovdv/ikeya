@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect, useRef } from 'react';
 
 const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
@@ -16,6 +17,67 @@ function resolveImage(attr) {
 }
 
 export default function ChildCategoriesSlider({ categories = [], basePath = '' }) {
+  const containerRef = useRef(null);
+  const swiperRef = useRef(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const init = () => {
+      if (!window.Swiper) {
+        setTimeout(init, 100);
+        return;
+      }
+
+      if (swiperRef.current) {
+        swiperRef.current.destroy(true, true);
+        swiperRef.current = null;
+      }
+
+      const sliderEl = containerRef.current?.querySelector('.popular-categories-inner');
+      if (!sliderEl) return;
+
+      const prevBtn = containerRef.current?.querySelector('.popular-categories__nav-prev');
+      const nextBtn = containerRef.current?.querySelector('.popular-categories__nav-next');
+
+      swiperRef.current = new window.Swiper(sliderEl, {
+        slidesPerView: 8,
+        spaceBetween: 12,
+        speed: 600,
+        watchOverflow: true,
+        navigation: {
+          nextEl: nextBtn,
+          prevEl: prevBtn,
+        },
+        breakpoints: {
+          0:   { slidesPerView: 3, spaceBetween: 8 },
+          576: { slidesPerView: 4, spaceBetween: 10 },
+          768: { slidesPerView: 6, spaceBetween: 12 },
+          992: { slidesPerView: 8, spaceBetween: 12 },
+        },
+        on: {
+          init(swiper) {
+            if (prevBtn) prevBtn.style.display = swiper.isBeginning ? 'none' : '';
+            if (nextBtn) nextBtn.style.display = swiper.isEnd ? 'none' : '';
+          },
+          slideChange(swiper) {
+            if (prevBtn) prevBtn.style.display = swiper.isBeginning ? 'none' : '';
+            if (nextBtn) nextBtn.style.display = swiper.isEnd ? 'none' : '';
+          },
+        },
+      });
+    };
+
+    init();
+
+    return () => {
+      if (swiperRef.current) {
+        swiperRef.current.destroy(true, true);
+        swiperRef.current = null;
+      }
+    };
+  }, [categories]);
+
   if (!categories.length) return null;
 
   const items = categories.map((cat) => {
@@ -30,7 +92,7 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
   });
 
   return (
-    <div className="popular-categories">
+    <div className="popular-categories" ref={containerRef}>
       <div className="popular-categories-inner swiper">
         <div className="swiper-wrapper">
           {items.map((item, index) => (
