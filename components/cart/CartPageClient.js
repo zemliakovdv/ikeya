@@ -42,7 +42,7 @@ export default function CartPageClient() {
 
   const handleCheckoutAuthorizedRef = useRef(null);
 
-useEffect(() => {
+  useEffect(() => {
     function onAuthDone() {
       const pending = sessionStorage.getItem('pendingCheckout');
       if (pending) {
@@ -96,9 +96,13 @@ useEffect(() => {
     });
 
     setDeliveryLoading(true);
-    calculateDelivery({ delivery_type: 'europost_pickup', items })
+    calculateDelivery({ delivery_type: 'pickup', items })
       .then(data => {
-        const cost = parseFloat(data?.delivery?.total_delivery_price_byn || data?.delivery?.delivery_to_belarus_price_byn || 0);
+        const cost = parseFloat(
+          data?.delivery?.pricing?.internal?.belarus_delivery_byn ||
+          data?.delivery?.base_cost_byn ||
+          0
+        );
         setDelivery(cost);
       })
       .catch(() => setDelivery(0))
