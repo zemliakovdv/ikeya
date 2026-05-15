@@ -18,7 +18,7 @@ export default function CartPageClient() {
   const { isAuth } = useAuth();
   const { openLogin } = useAuthModals();
   const {
-    cart, updateQuantity, removeFromCart,
+    cart, updateQuantity, removeFromCart, removeManyFromCart,
     availableItems, unavailableItems,
     totals, loading, items,
   } = useCart();
@@ -158,26 +158,22 @@ export default function CartPageClient() {
     }));
   }, [selectedData, delivery]);
 
-  // Создаём черновик и редиректим на /checkout
   const handleCheckoutAuthorized = useCallback(async () => {
     if (!canCheckout) return;
     setCheckoutLoading(true);
     try {
       saveSummaryToSession();
       const response = await createDraft();
-      // Бэк возвращает 200 (перезаписал старый) или 201 (новый)
-      // В обоих случаях берём order_id
       const draftId = response.order?.data?.id || response.order_id;
       router.push(`/checkout?draft_id=${draftId}`);
     } catch (err) {
       console.error('Ошибка создания черновика:', err.message);
-      // Fallback — просто переходим на чекаут без draft_id
       router.push('/checkout');
     } finally {
       setCheckoutLoading(false);
     }
-}, [canCheckout, saveSummaryToSession, router]);
-handleCheckoutAuthorizedRef.current = handleCheckoutAuthorized;
+  }, [canCheckout, saveSummaryToSession, router]);
+  handleCheckoutAuthorizedRef.current = handleCheckoutAuthorized;
 
   const handleCheckout = useCallback(() => {
     if (!isAuth) {
@@ -230,18 +226,18 @@ handleCheckoutAuthorizedRef.current = handleCheckoutAuthorized;
   const handleDeleteSelectedUnavailable = useCallback(async () => {
     if (!selectedUnavailable.length) return;
     try {
-      await Promise.all(selectedUnavailable.map(sku => removeFromCart(sku)));
+      await removeManyFromCart({ skus: selectedUnavailable });
       setSelectedUnavailable([]);
     } catch { alert('Не удалось удалить некоторые товары'); }
-  }, [removeFromCart, selectedUnavailable]);
+  }, [removeManyFromCart, selectedUnavailable]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (!selectedItems.length) return;
     try {
-      await Promise.all(selectedItems.map(sku => removeFromCart(sku)));
+      await removeManyFromCart({ skus: selectedItems });
       setSelectedItems([]);
     } catch { alert('Не удалось удалить некоторые товары'); }
-  }, [removeFromCart, selectedItems]);
+  }, [removeManyFromCart, selectedItems]);
 
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
