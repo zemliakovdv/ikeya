@@ -32,7 +32,6 @@ export default function CartPageClient() {
   const [eurRate, setEurRate] = useState(3.5);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
-  const pendingCheckout = useRef(false);
 
   useEffect(() => {
     fetch('https://api.nbrb.by/exrates/rates/EUR?parammode=2')
@@ -43,16 +42,26 @@ export default function CartPageClient() {
 
   const handleCheckoutAuthorizedRef = useRef(null);
 
-  useEffect(() => {
+useEffect(() => {
     function onAuthDone() {
-      if (pendingCheckout.current) {
-        pendingCheckout.current = false;
-        setTimeout(() => handleCheckoutAuthorizedRef.current?.(), 800);
+      const pending = sessionStorage.getItem('pendingCheckout');
+      if (pending) {
+        sessionStorage.removeItem('pendingCheckout');
+        setTimeout(() => handleCheckoutAuthorizedRef.current?.(), 1500);
       }
     }
     window.addEventListener('auth-change-done', onAuthDone);
     return () => window.removeEventListener('auth-change-done', onAuthDone);
   }, []);
+
+  useEffect(() => {
+    if (!isAuth) return;
+    const pending = sessionStorage.getItem('pendingCheckout');
+    if (!pending) return;
+    if (!availableItems?.length) return;
+    sessionStorage.removeItem('pendingCheckout');
+    handleCheckoutAuthorizedRef.current?.();
+  }, [isAuth, availableItems]);
 
   const availableSkus = useMemo(
     () => (availableItems || []).map(it => it?.sku).filter(Boolean),
@@ -163,6 +172,7 @@ export default function CartPageClient() {
     setCheckoutLoading(true);
     try {
       saveSummaryToSession();
+      sessionStorage.setItem('selectedSkus', JSON.stringify(selectedItems));
       const response = await createDraft();
       const draftId = response.order?.data?.id || response.order_id;
       router.push(`/checkout?draft_id=${draftId}`);
@@ -172,13 +182,13 @@ export default function CartPageClient() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [canCheckout, saveSummaryToSession, router]);
+  }, [canCheckout, saveSummaryToSession, router, selectedItems]);
   handleCheckoutAuthorizedRef.current = handleCheckoutAuthorized;
 
   const handleCheckout = useCallback(() => {
     if (!isAuth) {
       saveSummaryToSession();
-      pendingCheckout.current = true;
+      sessionStorage.setItem('pendingCheckout', '1');
       openLogin();
       return;
     }

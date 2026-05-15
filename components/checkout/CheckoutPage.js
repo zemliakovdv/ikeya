@@ -207,9 +207,22 @@ function CheckoutPageInner() {
 
   const cartToken = typeof window !== 'undefined' ? localStorage.getItem('cart_token') || '' : '';
 
+  const selectedSkus = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = sessionStorage.getItem('selectedSkus');
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  }, []);
+
   const checkoutItemsSource = useMemo(() => {
-    return draftItems.length ? draftItems : (items || []);
-  }, [draftItems, items]);
+    const source = draftItems.length ? draftItems : (items || []);
+    if (!selectedSkus?.length) return source;
+    return source.filter(item => {
+      const sku = item?.product_sku || item?.sku;
+      return selectedSkus.includes(sku);
+    });
+  }, [draftItems, items, selectedSkus]);
 
   const cartItems = useMemo(() => {
     return checkoutItemsSource
@@ -718,6 +731,11 @@ function CheckoutPageInner() {
       const response = await finalizeDraft(draftId, buildOrderData(a1VerificationId));
 
       await refreshCart();
+
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('cart_token');
+      }
+      sessionStorage.removeItem('selectedSkus');
 
       removeLS(LS_SELECTED_PVZ);
       removeLS(LS_SELECTED_ADDR);
