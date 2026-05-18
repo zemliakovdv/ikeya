@@ -6530,6 +6530,518 @@
         display: none !important;
     }
 
+    /* Cart page mobile 360 */
+
+    .korzina {
+        padding-top: 0;
+        padding-bottom: 32px;
+        background: #FAFAFA;
+    }
+
+    .korzina .zakaz {
+        padding-top: 14px;
+    }
+
+    .korzina .zakaz-inner h2 {
+        margin-bottom: 18px;
+        color: #181818;
+        font-size: 21px;
+        line-height: 124%;
+        font-weight: 600;
+    }
+
+    .korzina .zakaz-content {
+        display: block;
+    }
+
+    .korzina .cart {
+        width: 100%;
+    }
+
+    .korzina .cart-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .korzina .cart-main {
+        width: 100%;
+        max-width: none;
+    }
+
+    .korzina .cart-section {
+        margin-bottom: 22px;
+    }
+
+    .korzina .cart-section__title {
+        margin: 0 0 10px;
+        color: #181818;
+        font-size: 16px;
+        line-height: 150%;
+        font-weight: 600;
+    }
+
+    .korzina .cart-main__top,
+    .korzina .cart-section__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 42px;
+        margin-bottom: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #FFFFFF;
+    }
+
+    .korzina .cart-select-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .korzina .cart-select-all__input,
+    .korzina .cart-item__checkbox {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 16px;
+        margin: 0;
+    }
+
+    .korzina .cart-select-all .form-check-label {
+        margin: 0;
+        color: #757575;
+        font-size: 12px;
+        line-height: 133%;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+    }
+
+    .korzina .cart-remove-selected {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: #757575;
+        font-size: 12px;
+        line-height: 133%;
+        white-space: nowrap;
+    }
+
+    .korzina .cart-remove-selected svg {
+        flex: 0 0 16px;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Cart item mobile 360 */
+
+    .korzina .cart-item {
+        position: relative;
+        display: grid;
+        grid-template-columns: 20px 82px minmax(0, 1fr);
+        grid-template-areas:
+            "check image info"
+            "check image price"
+            "meta meta qty";
+        column-gap: 12px;
+        row-gap: 14px;
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 14px;
+        border-radius: 8px;
+        background: #FFFFFF;
+    }
+
+    .korzina .cart-item__select {
+        grid-area: check;
+        padding-top: 2px;
+    }
+
+    .korzina .cart-item__checkbox {
+        width: 20px;
+        height: 20px;
+    }
+
+    .korzina .cart-item__image {
+        grid-area: image;
+        width: 82px;
+        height: 82px;
+        align-self: start;
+    }
+
+    .korzina .cart-item__image img {
+        display: block;
+        width: 82px;
+        height: 82px;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+
+    .korzina .cart-item__info {
+        display: contents;
+    }
+
+    .korzina .cart-item__title-row {
+        grid-area: info;
+        min-width: 0;
+    }
+
+    .korzina .cart-item__name {
+        display: block;
+        max-width: 100%;
+        margin-bottom: 4px;
+        overflow: hidden;
+        color: #181818;
+        font-size: 14px;
+        line-height: 143%;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .korzina .cart-item__desc {
+        display: block;
+        max-width: 100%;
+        margin: 0;
+        overflow: hidden;
+        color: #757575;
+        font-size: 14px;
+        line-height: 143%;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .korzina .cart-item__price {
+        grid-area: price;
+        width: auto;
+        max-width: none;
+        margin: 0;
+        align-self: start;
+        text-align: left;
+    }
+
+    .korzina .cart-item__price .price-main,
+    .korzina .cart-item__price .price-promo {
+        display: inline;
+        color: #181818;
+        font-size: 22px;
+        line-height: 127%;
+        font-weight: 600;
+    }
+
+    .korzina .cart-item__price .price-currency {
+        font-size: 13px;
+        line-height: 138%;
+        font-weight: 600;
+    }
+
+    .korzina .cart-item__meta {
+        grid-area: meta;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        align-self: center;
+        padding-left: 20px;
+    }
+
+    .korzina .cart-item__meta button,
+    .korzina .cart-item__favorite,
+    .korzina .cart-item__delete {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        padding: 4px;
+        border: 0;
+        background: transparent;
+    }
+
+    .korzina .cart-item__meta svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .korzina .cart-item__qty {
+        grid-area: qty;
+        justify-self: end;
+        align-self: center;
+        display: flex;
+        align-items: center;
+        width: 126px;
+        max-width: 126px;
+        height: 54px;
+        margin: 0;
+        border-radius: 8px;
+        background: #F5F5F5;
+    }
+
+    .korzina .cart-item__qty .qty-btn {
+        flex: 0 0 40px;
+        width: 40px;
+        height: 54px;
+        padding: 8px;
+        border: 0;
+        background: transparent;
+    }
+
+    .korzina .cart-item__qty .qty-btn svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .korzina .cart-item__qty .qty-value {
+        flex: 1 1 auto;
+        color: #181818;
+        font-size: 16px;
+        line-height: 150%;
+        text-align: center;
+    }
+
+    .korzina .cart-item__issue {
+        grid-area: price;
+        margin: 0;
+        font-size: 12px !important;
+        line-height: 133%;
+    }
+
+    .korzina .cart-item__status {
+        grid-area: price;
+        display: inline-flex;
+        width: fit-content;
+        align-self: start;
+        margin-top: 2px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        background: #181818;
+        color: #FFFFFF;
+        font-size: 10px;
+        line-height: 140%;
+        font-weight: 600;
+    }
+
+    .korzina .cart-item__status .badge {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+        font-size: inherit;
+        line-height: inherit;
+    }
+
+    .korzina .cart-item__actions {
+        grid-area: qty;
+        justify-self: end;
+        align-self: center;
+        display: flex;
+        align-items: center;
+    }
+
+    .korzina .cart-item__actions .btn--ghost-small {
+        min-height: 42px;
+        padding: 10px 12px;
+        gap: 6px;
+        border-radius: 8px;
+        background: #F5F5F5;
+        color: #181818;
+        font-size: 13px;
+        line-height: 138%;
+    }
+
+    .korzina .cart-item__actions .btn--ghost-small svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* Cart summary mobile 360 */
+
+    .korzina .cart-summary {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+    }
+
+    .korzina .card-summary__coupon {
+        margin-bottom: 16px;
+        padding: 16px;
+        border-radius: 8px;
+        background: #FFFFFF;
+    }
+
+    .korzina .card-summary__coupon form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 112px;
+        gap: 8px;
+        width: 100%;
+    }
+
+    .korzina .card-summary__coupon input {
+        width: 100%;
+        min-width: 0;
+        height: 40px;
+        padding: 10px 12px;
+        border: 1px solid #BDBDBD;
+        border-radius: 8px;
+        color: #181818;
+        font-size: 13px;
+        line-height: 138%;
+    }
+
+    .korzina .card-summary__coupon input::placeholder {
+        color: #9E9E9E;
+    }
+
+    .korzina .card-summary__coupon button {
+        width: 100%;
+        height: 40px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 138%;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .korzina .cart-summary__inner {
+        margin-bottom: 16px;
+        padding: 18px 16px 16px;
+        border-radius: 8px;
+        background: #FFFFFF;
+    }
+
+    .korzina .cart-summary__title {
+        margin: 0 0 16px;
+        color: #181818;
+        font-size: 20px;
+        line-height: 130%;
+        font-weight: 600;
+    }
+
+    .korzina .cart-summary__row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: baseline;
+        gap: 8px;
+        padding: 4px 0;
+    }
+
+    .korzina .cart-summary__row p {
+        margin: 0;
+        color: #181818;
+        font-size: 14px;
+        line-height: 143%;
+        letter-spacing: 0.02em;
+    }
+
+    .korzina .cart-summary__row p span {
+        color: #BDBDBD;
+        font-size: 12px;
+        line-height: 133%;
+    }
+
+    .korzina .cart-summary__row div {
+        min-width: 20px;
+        height: 1px;
+        border-bottom: 1px dashed #EEEEEE;
+    }
+
+    .korzina .cart-summary__row .summery-row__cost,
+    .korzina .cart-summary__row .free-deliverys {
+        color: #181818;
+        font-weight: 600;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .korzina .cart-summary__total {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 18px 0 18px;
+    }
+
+    .korzina .cart-summary__total p {
+        margin: 0;
+        color: #181818;
+        font-size: 20px;
+        line-height: 130%;
+        font-weight: 600;
+    }
+
+    .korzina .cart-summary__total .summery-total__total {
+        font-size: 22px;
+        line-height: 127%;
+        font-weight: 600;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .korzina .cart-summary__total .summery-total__total span {
+        font-size: 14px;
+        line-height: 143%;
+    }
+
+    .korzina .cart-summary__checkout-btn {
+        width: 100%;
+        min-height: 48px;
+        margin-bottom: 0;
+        padding: 14px 16px;
+        border-radius: 8px;
+        background: #0058A3;
+        color: #FFFFFF;
+        font-size: 14px;
+        line-height: 143%;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .korzina .cart-summary__notice {
+        margin-top: 14px;
+        color: #757575;
+        font-size: 12px;
+        line-height: 150%;
+    }
+
+    .korzina .cart-summary__note {
+        padding: 16px;
+        border-radius: 8px;
+        background: #FFFFFF;
+    }
+
+    .korzina .summary-note__wrap {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .korzina .summary-note__wrap p {
+        margin: 0;
+        color: #757575;
+        font-size: 14px;
+        line-height: 143%;
+    }
+
+    .korzina .summary-note__wrap p span {
+        color: #181818;
+        font-weight: 600;
+    }
+
+    .korzina .cart-summary__note a {
+        display: inline-flex;
+        color: #0058A3;
+        font-size: 14px;
+        line-height: 143%;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
 }
 
 /* Small Mobile (320px - 359px) */
@@ -8453,6 +8965,163 @@
 
     .shop-card .included-products-offcanvas .nogki-item span {
         margin-left: 6px;
+    }
+
+    /* Cart page mobile 320 */
+
+    .korzina .zakaz-inner h2 {
+        margin-bottom: 16px;
+        font-size: 20px;
+        line-height: 125%;
+    }
+
+    .korzina .cart-main__top,
+    .korzina .cart-section__top {
+        min-height: 40px;
+        padding: 9px 11px;
+    }
+
+    /* Cart item mobile 320 */
+
+    .korzina .cart-item {
+        grid-template-columns: 20px 74px minmax(0, 1fr);
+        column-gap: 10px;
+        row-gap: 13px;
+        padding: 12px;
+    }
+
+    .korzina .cart-item__image,
+    .korzina .cart-item__image img {
+        width: 74px;
+        height: 74px;
+    }
+
+    .korzina .cart-item__name {
+        font-size: 13px;
+        line-height: 138%;
+    }
+
+    .korzina .cart-item__desc {
+        font-size: 13px;
+        line-height: 138%;
+    }
+
+    .korzina .cart-item__price .price-main,
+    .korzina .cart-item__price .price-promo {
+        font-size: 20px;
+        line-height: 130%;
+    }
+
+    .korzina .cart-item__price .price-currency {
+        font-size: 12px;
+        line-height: 140%;
+    }
+
+    .korzina .cart-item__meta {
+        gap: 16px;
+        padding-left: 20px;
+    }
+
+    .korzina .cart-item__meta button,
+    .korzina .cart-item__favorite,
+    .korzina .cart-item__delete {
+        width: 32px;
+        height: 32px;
+    }
+
+    .korzina .cart-item__meta svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .korzina .cart-item__qty {
+        width: 116px;
+        max-width: 116px;
+        height: 48px;
+    }
+
+    .korzina .cart-item__qty .qty-btn {
+        flex-basis: 38px;
+        width: 38px;
+        height: 48px;
+    }
+
+    .korzina .cart-item__qty .qty-btn svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .korzina .cart-item__qty .qty-value {
+        font-size: 15px;
+        line-height: 140%;
+    }
+
+    .korzina .cart-item__actions .btn--ghost-small {
+        min-height: 38px;
+        padding: 9px 10px;
+        font-size: 12px;
+        line-height: 133%;
+    }
+
+    /* Cart summary mobile 320 */
+
+    .korzina .card-summary__coupon {
+        padding: 14px;
+    }
+
+    .korzina .card-summary__coupon form {
+        grid-template-columns: minmax(0, 1fr) 106px;
+    }
+
+    .korzina .card-summary__coupon input,
+    .korzina .card-summary__coupon button {
+        height: 38px;
+        font-size: 12px;
+        line-height: 133%;
+    }
+
+    .korzina .cart-summary__inner {
+        padding: 16px 14px 14px;
+    }
+
+    .korzina .cart-summary__title {
+        margin-bottom: 14px;
+        font-size: 19px;
+        line-height: 132%;
+    }
+
+    .korzina .cart-summary__row {
+        gap: 6px;
+    }
+
+    .korzina .cart-summary__row p {
+        font-size: 13px;
+        line-height: 138%;
+    }
+
+    .korzina .cart-summary__total p {
+        font-size: 19px;
+        line-height: 132%;
+    }
+
+    .korzina .cart-summary__total .summery-total__total {
+        font-size: 21px;
+        line-height: 129%;
+    }
+
+    .korzina .cart-summary__checkout-btn {
+        min-height: 46px;
+        padding: 13px 14px;
+    }
+
+    .korzina .cart-summary__note {
+        padding: 14px;
+    }
+
+    .korzina .summary-note__wrap p,
+    .korzina .cart-summary__note a {
+        font-size: 13px;
+        line-height: 138%;
     }
 
 }
