@@ -8481,3 +8481,34 @@ main {
 .search-not-found__link:hover {
     color: #004a8f;
 }
+
+.catalog-toolbar {
+    display: block;
+}
+
+.mobile-catalog-filters {
+    display: none;
+}
+
+.mobile-filter-trigger,
+.mobile-filter-overlay,
+.mobile-filter-panel {
+    display: none;
+}
+
+.product-mobile-tabs-list,
+.product-mobile-tabs-panel {
+    display: none;
+}
+
+.product-desktop-tabs {
+    display: block;
+}
+
+.product-gallery-mobile {
+    display: none;
+}
+
+.product-mobile-header {
+    display: none;
+}

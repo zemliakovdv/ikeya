@@ -72,9 +72,9 @@ export default function IncludedProductsBlock({ groups = [], basePrice = 0 }) {
 
       {/* Offcanvas — z-index выше backdrop */}
       <div
-        className={`offcanvas offcanvas-end${activeGroup ? ' show' : ''}`}
+        className={`offcanvas offcanvas-end included-products-offcanvas${activeGroup ? ' show' : ''}`}
         tabIndex="-1"
-        style={{ visibility: activeGroup ? 'visible' : 'hidden', zIndex: 1045 }}
+        style={{ visibility: activeGroup ? 'visible' : 'hidden', zIndex: 10060 }}
       >
         {activeGroup && (
           <>

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import ProductStickyBar from '@/components/product/ProductStickyBar';
+import ProductMobileHeader from '@/components/product/ProductMobileHeader';
 import ProductGallery from '@/components/product/ProductGallery';
 import ProductInfo from '@/components/product/ProductInfo';
 import ProductTabs from '@/components/product/ProductTabs';
@@ -209,6 +210,7 @@ export default async function ProductPage({ params }) {
     <main className="shop-card">
       <Breadcrumbs items={breadcrumbs} />
       <ProductStickyBar product={product} />
+      <ProductMobileHeader product={product} />
 
       <section className="goods">
         <div className="container">

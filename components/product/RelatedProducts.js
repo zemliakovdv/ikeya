@@ -31,7 +31,7 @@ export default function RelatedProducts({ products }) {
         <div className="row">
           <div className="col-12">
             <div className="more-inner">
-              <h2>С этим товаром покупают</h2>
+              <h2>К этому товару подходят</h2>
               <div className="products-card-slider">
                 <Swiper
                   modules={[Navigation, Pagination]}
