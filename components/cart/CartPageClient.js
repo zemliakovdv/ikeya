@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { calculateDelivery, createDraft } from '@/lib/api/cart';
+import { createDraft } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -20,25 +20,14 @@ export default function CartPageClient() {
   const {
     cart, updateQuantity, removeFromCart, removeManyFromCart,
     availableItems, unavailableItems,
-    totals, loading, items,
+    totals, delivery, loading, items,
   } = useCart();
 
   const isInitialLoading = loading && (items || []).length === 0;
 
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
-  const [delivery, setDelivery] = useState(0);
-  const [deliveryLoading, setDeliveryLoading] = useState(false);
-  const [eurRate, setEurRate] = useState(3.5);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-
-
-  useEffect(() => {
-    fetch('https://api.nbrb.by/exrates/rates/EUR?parammode=2')
-      .then(r => r.json())
-      .then(data => { if (data?.Cur_OfficialRate) setEurRate(data.Cur_OfficialRate); })
-      .catch(() => { });
-  }, []);
 
   const handleCheckoutAuthorizedRef = useRef(null);
 
@@ -87,76 +76,38 @@ export default function CartPageClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableSkusKey]);
 
-  useEffect(() => {
-    if (!selectedItems.length || !availableItems?.length) { setDelivery(0); return; }
-
-    const items = selectedItems.map(sku => {
-      const found = (availableItems || []).find(it => it.sku === sku);
-      return { sku, quantity: found?.quantity || 1 };
-    });
-
-    setDeliveryLoading(true);
-    calculateDelivery({ delivery_type: 'pickup', items })
-      .then(data => {
-        const cost = parseFloat(
-          data?.delivery?.pricing?.internal?.belarus_delivery_byn ||
-          data?.delivery?.base_cost_byn ||
-          0
-        );
-        setDelivery(cost);
-      })
-      .catch(() => setDelivery(0))
-      .finally(() => setDeliveryLoading(false));
-  }, [selectedItems, availableItems]);
-
-  function calculateCustomsDuty(totalEur, totalKg, rate) {
-    const COST_LIMIT = 200;
-    const WEIGHT_LIMIT = 31;
-    const COST_RATE = 0.15;
-    const WEIGHT_RATE = 2;
-    const FEE = 10;
-    const dutyByCost = Math.max(0, totalEur - COST_LIMIT) * COST_RATE;
-    const dutyByWeight = Math.max(0, totalKg - WEIGHT_LIMIT) * WEIGHT_RATE;
-    const dutyEur = Math.max(dutyByCost, dutyByWeight);
-    if (dutyEur === 0) return 0;
-    return parseFloat((dutyEur * rate + FEE).toFixed(2));
-  }
+  // Данные из cart.totals и cart.delivery
+  const deliveryToBelarus = parseFloat(totals?.delivery_to_belarus_byn || delivery?.delivery_to_belarus_byn || 0);
+  const customsDuty = parseFloat(totals?.customs_total_byn || 0);
+  const totalWeight = parseFloat(totals?.total_weight_kg || 0);
 
   const selectedData = useMemo(() => {
-    if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0, totalWeight: 0, customsDuty: 0 };
+    if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0 };
 
     const allItems = availableItems || [];
     const selected = allItems.filter(it => selectedItems.includes(it.sku));
-    const totalQtyAll = allItems.reduce((acc, it) => acc + (it.quantity || 1), 0);
-    const totalWeightAll = parseFloat(totals?.total_weight_kg || 0);
 
-    let subtotal = 0, promoDiscount = 0, totalWeight = 0, itemCount = 0;
-    let totalEur = 0, totalKg = 0;
+    let subtotal = 0, promoDiscount = 0, itemCount = 0;
 
     selected.forEach(it => {
       const qty = it.quantity || 1;
+      const lineTotal = parseFloat(String(it.pricing?.line_total_new_byn || 0).replace(/\s/g, ''));
       const pricingNew = parseFloat(String(it.pricing?.unit_price_new_byn || 0).replace(/\s/g, ''));
       const productPrice = parseFloat(String(it.product?.price_byn || 0).replace(/\s/g, ''));
       const price = pricingNew > 0 ? pricingNew : productPrice;
       const discount = parseFloat(String(it.pricing?.unit_discount_byn || 0).replace(/\s/g, ''));
-      subtotal += price * qty;
+
+      subtotal += lineTotal > 0 ? lineTotal : price * qty;
       promoDiscount += discount * qty;
       itemCount += qty;
-      if (totalQtyAll > 0) totalWeight += (totalWeightAll / totalQtyAll) * qty;
-      totalEur += parseFloat(String(it.product?.price || 0).replace(/\s/g, '')) * qty;
-      totalKg += parseFloat(String(it.weight || 0).replace(/\s/g, '')) * qty;
     });
-
-    const customsDuty = calculateCustomsDuty(totalEur, totalKg, eurRate);
 
     return {
       subtotal: parseFloat(subtotal.toFixed(2)),
       promoDiscount: parseFloat(promoDiscount.toFixed(2)),
       itemCount,
-      totalWeight: parseFloat(totalWeight.toFixed(2)),
-      customsDuty: parseFloat(customsDuty.toFixed(2)),
     };
-  }, [selectedItems, availableItems, totals, eurRate]);
+  }, [selectedItems, availableItems]);
 
   const canCheckout = selectedItems.length > 0 && selectedData.subtotal >= MIN_ORDER_AMOUNT;
 
@@ -165,11 +116,11 @@ export default function CartPageClient() {
       subtotal: selectedData.subtotal,
       promoDiscount: selectedData.promoDiscount,
       itemCount: selectedData.itemCount,
-      totalWeight: selectedData.totalWeight,
-      customsDuty: selectedData.customsDuty,
-      delivery,
+      totalWeight,
+      customsDuty,
+      delivery: deliveryToBelarus,
     }));
-  }, [selectedData, delivery]);
+  }, [selectedData, totalWeight, customsDuty, deliveryToBelarus]);
 
   const handleCheckoutAuthorized = useCallback(async () => {
     if (!canCheckout) return;
@@ -333,14 +284,13 @@ export default function CartPageClient() {
                         <CartSummary
                           subtotal={selectedData.subtotal}
                           promoDiscount={selectedData.promoDiscount}
-                          delivery={delivery}
+                          delivery={deliveryToBelarus}
                           itemCount={selectedData.itemCount}
-                          totalWeight={selectedData.totalWeight}
-                          customsDuty={selectedData.customsDuty}
+                          totalWeight={totalWeight}
+                          customsDuty={customsDuty}
                           canCheckout={canCheckout}
                           onCheckout={handleCheckout}
                           cart={cart}
-                          deliveryLoading={deliveryLoading}
                           checkoutLoading={checkoutLoading}
                         />
                       )}

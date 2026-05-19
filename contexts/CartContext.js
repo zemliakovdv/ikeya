@@ -215,12 +215,9 @@ export function CartProvider({ children }) {
 
   const mergeGuestCart = useCallback(async (guestItems) => {
     if (!guestItems?.length) return;
-    console.log('🔄 mergeGuestCart start', guestItems);
     for (const item of guestItems) {
       try {
-        console.log('➕ adding', item.sku);
         const response = await cartAPI.addToCart(item.sku, item.quantity);
-        console.log('✅ added', item.sku, response?.cart?.items_count);
         const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
         if (nextCart) {
           setCart((prev) => ({
@@ -304,9 +301,10 @@ export function CartProvider({ children }) {
     }
   }, []);
 
-  const itemsCount = cart?.items_count || 0;
+const itemsCount = cart?.items_count || 0;
   const items = cart?.items || [];
   const totals = cart?.totals || {};
+  const delivery = cart?.delivery || {};
   const flags = cart?.flags || {};
   const recommendations = cart?.recommendations || [];
   const availableItems = items.filter(it => it.available);
@@ -319,7 +317,7 @@ export function CartProvider({ children }) {
       updateQuantity, clearCart, applyPromo, removePromo,
       checkout, refreshCart: fetchCart, mergeGuestCart,
       itemsCount, items, availableItems, unavailableItems,
-      totals, flags, recommendations,
+      totals, delivery, flags, recommendations,
     }}>
       {children}
     </CartContext.Provider>

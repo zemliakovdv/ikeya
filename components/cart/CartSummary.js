@@ -15,7 +15,6 @@ export default function CartSummary({
   onCheckout,
   checkoutButtonText = 'Перейти к оформлению',
   cart,
-  deliveryLoading = false,
   customsDuty = 0,
   checkoutLoading,
 }) {
@@ -144,7 +143,7 @@ export default function CartSummary({
           <p>Доставка в Беларусь</p>
           <div></div>
           <p className="summery-row__cost-delivery">
-            {deliveryLoading ? '...' : delivery === 0 ? '0 р.' : `${delivery.toFixed(2)} р.`}
+            {delivery === 0 ? '0 р.' : `${delivery.toFixed(2)} р.`}
           </p>
         </div>
 

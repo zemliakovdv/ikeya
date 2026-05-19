@@ -145,7 +145,12 @@ function IkeyaLogo() {
 function CheckoutPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const draftId = searchParams.get('draft_id');
+  const [draftId, setDraftId] = useState(() => searchParams.get('draft_id'));
+
+useEffect(() => {
+  const id = searchParams.get('draft_id');
+  if (id) setDraftId(id);
+}, [searchParams]);
 
   const { token } = useAuth();
   const { cart, totals, items, refreshCart } = useCart();
@@ -163,7 +168,6 @@ function CheckoutPageInner() {
   };
 
   const [pickupEligible, setPickupEligible] = useState(true);
-  const [vghLoading, setVghLoading] = useState(false);
   const [showVghModal, setShowVghModal] = useState(false);
 
   const [selectedPvz, setSelectedPvz] = useState(() => readLS(LS_SELECTED_PVZ));
@@ -205,7 +209,7 @@ function CheckoutPageInner() {
     }
   });
 
-  const cartToken = typeof window !== 'undefined' ? localStorage.getItem('cart_token') || '' : '';
+  const cartToken = typeof window !== 'undefined' ? (localStorage.getItem('cart_token') || cart?.token || '') : '';
 
   const selectedSkus = useMemo(() => {
     if (typeof window === 'undefined') return null;
@@ -357,46 +361,27 @@ function CheckoutPageInner() {
   }, [token]);
 
   useEffect(() => {
-    if (!cartItems.length) return;
-    if (!cartToken) return;
+    if (!cart?.delivery) return;
 
-    setVghLoading(true);
+    const eligible = cart.delivery.europost_eligible ?? true;
+    setPickupEligible(eligible);
 
-    calculateDelivery({
-      cart_token: cartToken,
-      delivery_type: 'europost_pickup',
-      items: cartItems,
-    })
-      .then(() => {
-        setPickupEligible(true);
-      })
-      .catch((err) => {
-        if (err.status === 422) {
-          const available = err.payload?.available_methods || [];
-          const eligible = available.some((method) => method.code === 'europost_pickup' && method.available);
-
-          setPickupEligible(eligible);
-
-          if (!eligible) {
-            setSelectedPvz(null);
-            setPvzCalcResult(null);
-            removeLS(LS_SELECTED_PVZ);
-            removeLS(LS_PVZ_CALC);
-            saveReceiveMethod('delivery');
-          }
-        }
-      })
-      .finally(() => setVghLoading(false));
-  }, [cartToken, cartItems]);
+    if (!eligible) {
+      setSelectedPvz(null);
+      setPvzCalcResult(null);
+      removeLS(LS_SELECTED_PVZ);
+      removeLS(LS_PVZ_CALC);
+      saveReceiveMethod('delivery');
+    }
+  }, [cart?.delivery]);
 
   const subtotal = checkoutSummary?.subtotal ?? parseFloat(totals?.subtotal_new_byn || totals?.subtotal || 0);
   const promoDiscount = checkoutSummary?.promoDiscount ?? parseFloat(totals?.discount_total_byn || totals?.discount || 0);
-  const deliveryCost = checkoutSummary?.delivery ??
-    parseFloat(
-      pvzCalcResult?.delivery?.delivery_to_belarus_price_byn ||
-      addrCalcResult?.delivery?.delivery_to_belarus_price_byn ||
-      0
-    );
+  const deliveryCost = parseFloat(
+    cart?.totals?.delivery_to_belarus_byn ||
+    checkoutSummary?.delivery ||
+    0
+  );
   const totalWeight = checkoutSummary?.totalWeight ?? (totals?.total_weight_kg || 0);
   const customsDuty = checkoutSummary?.customsDuty ?? 0;
   const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
@@ -407,13 +392,12 @@ function CheckoutPageInner() {
     0
   );
 
-  const addrDeliveryCost = addrCalcResult?.delivery?.free_delivery_eligible
-    ? 0
-    : parseFloat(
-      addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
-      addrCalcResult?.delivery?.base_cost_byn ||
-      0
-    );
+  const addrDeliveryCost = parseFloat(
+    addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
+    addrCalcResult?.delivery?.total_delivery_price_byn ||
+    addrCalcResult?.delivery?.base_cost_byn ||
+    0
+  );
   const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'courier';
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
 
@@ -670,7 +654,7 @@ function CheckoutPageInner() {
   function buildOrderData(a1Id = null) {
     const isPickup = receiveMethod === 'pickup';
     const rawType = isPickup ? 'europost_pickup' : addrDeliveryType;
-    const deliveryType = rawType === 'courier' ? 'ikeya_delivery' : rawType;
+    const deliveryType = rawType;
 
     const addressPayload = !isPickup && selectedAddr
       ? {
@@ -779,7 +763,7 @@ function CheckoutPageInner() {
         })
       ));
 
-      const orderId = response.order?.data?.id || response.order_id || draftId;
+      const orderId = response.order?.data?.attributes?.public_uid || response.order?.public_uid || response.order_id || response.order?.data?.id || draftId;
       router.push(`/order-success?order_id=${orderId}`);
     } catch (err) {
       setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
@@ -826,7 +810,7 @@ function CheckoutPageInner() {
                           <section className="checkout-section pickup-section">
                             <h2 className="section-title">Способ получения</h2>
 
-                            {!pickupEligible && !vghLoading && (
+                            {!pickupEligible && (
                               <div className="alert alert-danger" style={{ marginBottom: 16 }}>
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                   <path d="M10 1.66666C5.40002 1.66666 1.66669 5.39999 1.66669 9.99999C1.66669 14.6 5.40002 18.3333 10 18.3333C14.6 18.3333 18.3334 14.6 18.3334 9.99999C18.3334 5.39999 14.6 1.66666 10 1.66666ZM9.37502 6.66666C9.37502 6.32499 9.65835 6.04166 10 6.04166C10.3417 6.04166 10.625 6.32499 10.625 6.66666V10.8333C10.625 11.175 10.3417 11.4583 10 11.4583C9.65835 11.4583 9.37502 11.175 9.37502 10.8333V6.66666ZM10.7667 13.65C10.725 13.7583 10.6584 13.8583 10.575 13.9417C10.4917 14.025 10.3917 14.0917 10.2834 14.1333C10.175 14.175 10.0584 14.2 9.93335 14.2C9.81669 14.2 9.70002 14.175 9.58335 14.1333C9.47502 14.0917 9.37502 14.025 9.29169 13.9417C9.20835 13.8583 9.14169 13.7583 9.10002 13.65C9.05835 13.5417 9.03335 13.425 9.03335 13.3083C9.03335 13.1917 9.05835 13.075 9.10002 12.9667C9.14169 12.8583 9.20835 12.7583 9.29169 12.675C9.37502 12.5917 9.47502 12.525 9.58335 12.4833C9.80002 12.4 10.0667 12.4 10.2834 12.4833C10.3917 12.525 10.4917 12.5917 10.575 12.675C10.6584 12.7583 10.725 12.8583 10.7667 12.9667C10.8084 13.075 10.8334 13.1917 10.8334 13.3083C10.8334 13.425 10.8084 13.5417 10.7667 13.65Z" fill="#B71C1C" />
@@ -974,13 +958,14 @@ function CheckoutPageInner() {
                                     <div className="delivery-info-row">
                                       <span>Стоимость доставки</span>
                                       <span>
-                                        {addrCalcResult?.delivery?.free_delivery_eligible
-                                          ? <span className="text-success">бесплатно</span>
-                                          : addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn
-                                            ? `${addrCalcResult.delivery.pricing.internal.total_delivery_byn} р.`
-                                            : addrCalcResult?.delivery?.base_cost_byn
-                                              ? `${addrCalcResult.delivery.base_cost_byn} р.`
-                                              : '—'}
+                                        {(() => {
+                                          const cost = addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
+                                            addrCalcResult?.delivery?.total_delivery_price_byn ||
+                                            addrCalcResult?.delivery?.base_cost_byn;
+                                          return cost && parseFloat(cost) > 0
+                                            ? `${cost} р.`
+                                            : '—';
+                                        })()}
                                       </span>
                                     </div>
                                     {addrCalcResult?.delivery?.delivery_date && (

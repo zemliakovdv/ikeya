@@ -321,7 +321,7 @@ export default function OrderSuccessPage() {
 
                 <div className="order-number-block">
                   <div className="order-number-wrap">
-                    <h2 className="order-number">Заказ № {attrs.id || orderId}</h2>
+                    <h2 className="order-number">Заказ № {attrs.public_uid || attrs.id || orderId}</h2>
                     <button className="btn-copy-order" onClick={handleCopy} title="Скопировать номер заказа">
                       {copied ? (
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -81,7 +81,7 @@ function parseOrders(data) {
     }
 
     return {
-      id:                 String(attr.id),
+      id:                 String(attr.public_uid || attr.id),
       date:               formatDate(attr.created_at),
       rawDate:            attr.created_at,
       rawStatus,
