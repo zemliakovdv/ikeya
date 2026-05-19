@@ -91,8 +91,11 @@ export default function PriceFilter({
           max={max}
           value={localMin}
           onChange={handleMinSlider}
+          onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={() => applyChange(localMin, localMax)}
+          onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={() => applyChange(localMin, localMax)}
+          style={{ touchAction: 'none' }}
         />
 
         <input
@@ -102,8 +105,11 @@ export default function PriceFilter({
           max={max}
           value={localMax}
           onChange={handleMaxSlider}
+          onMouseDown={(e) => e.stopPropagation()}
           onMouseUp={() => applyChange(localMin, localMax)}
+          onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={() => applyChange(localMin, localMax)}
+          style={{ touchAction: 'none' }}
         />
       </div>
 

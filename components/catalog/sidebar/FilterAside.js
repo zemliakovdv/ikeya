@@ -30,8 +30,8 @@ function extractPriceRange(availableFilters) {
   const min = parseFloat(v.min || 0);
   const max = parseFloat(v.max || 10000);
   return {
-    min: Number.isFinite(min) ? Math.floor(min) : 0,
-    max: Number.isFinite(max) ? Math.ceil(max) : 10000,
+    min: Number.isFinite(min) ? min : 0,
+    max: Number.isFinite(max) ? max : 10000,
   };
 }
 
@@ -189,8 +189,22 @@ export default function FilterAside({
     return Object.values(draftFilters).some((v) => Array.isArray(v) && v.length > 0);
   }, [draftPriceMin, draftPriceMax, draftFilters]);
 
+  const asideRef = useRef(null);
+
+  const handleSliderMouseDown = useCallback(() => {
+    const el = asideRef.current;
+    if (!el) return;
+    el.style.overflowY = 'hidden';
+    const restore = () => {
+      el.style.overflowY = 'auto';
+      window.removeEventListener('mouseup', restore);
+    };
+    window.addEventListener('mouseup', restore);
+  }, []);
+
   return (
     <aside
+      ref={asideRef}
       className="filter-aside"
       style={{
         position: 'sticky',
