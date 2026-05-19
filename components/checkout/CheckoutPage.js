@@ -85,6 +85,24 @@ function genId() {
   return Math.random().toString(36).slice(2);
 }
 
+function getItemSku(item) {
+  return (
+    item?.sku ||
+    item?.product_sku ||
+    item?.product?.sku ||
+    item?.product?.data?.attributes?.sku ||
+    item?.product?.attributes?.sku ||
+    item?.attributes?.sku ||
+    item?.attributes?.product_sku ||
+    null
+  );
+}
+
+function toNumber(value, fallback = 0) {
+  const num = parseFloat(String(value ?? '').replace(/\s/g, ''));
+  return Number.isFinite(num) ? num : fallback;
+}
+
 function parseAddressToFields(addr) {
   return {
     city: addr.city || '',
@@ -147,10 +165,10 @@ function CheckoutPageInner() {
   const searchParams = useSearchParams();
   const [draftId, setDraftId] = useState(() => searchParams.get('draft_id'));
 
-useEffect(() => {
-  const id = searchParams.get('draft_id');
-  if (id) setDraftId(id);
-}, [searchParams]);
+  useEffect(() => {
+    const id = searchParams.get('draft_id');
+    if (id) setDraftId(id);
+  }, [searchParams]);
 
   const { token } = useAuth();
   const { cart, totals, items, refreshCart } = useCart();
@@ -211,27 +229,111 @@ useEffect(() => {
 
   const cartToken = typeof window !== 'undefined' ? (localStorage.getItem('cart_token') || cart?.token || '') : '';
 
+  const availableMethods = useMemo(() => {
+    const fromCart = cart?.delivery?.available_methods;
+    const fromSummary = checkoutSummary?.availableMethods;
+
+    if (Array.isArray(fromCart) && fromCart.length) return fromCart;
+    if (Array.isArray(fromSummary) && fromSummary.length) return fromSummary;
+
+    return [];
+  }, [cart?.delivery?.available_methods, checkoutSummary?.availableMethods]);
+
+  const methodIsAvailable = useCallback((code) => {
+    if (!availableMethods.length) return true;
+
+    const method = availableMethods.find((item) => item?.code === code);
+
+    return method ? method.available !== false : true;
+  }, [availableMethods]);
+
+  const europostEligible = (
+    cart?.delivery?.europost_eligible ??
+    checkoutSummary?.europostEligible ??
+    true
+  ) !== false;
+
+  const europostPickupAvailable =
+    europostEligible &&
+    methodIsAvailable('europost_pickup');
+
+  const courierAvailable = methodIsAvailable('courier');
+  const ikeyaDeliveryAvailable = methodIsAvailable('ikeya_delivery');
+
   const selectedSkus = useMemo(() => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === 'undefined') return [];
+
     try {
       const stored = sessionStorage.getItem('selectedSkus');
-      return stored ? JSON.parse(stored) : null;
-    } catch { return null; }
+      const parsed = stored ? JSON.parse(stored) : [];
+
+      return Array.isArray(parsed)
+        ? parsed.map((sku) => String(sku))
+        : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const storedCheckoutItems = useMemo(() => {
+    if (typeof window === 'undefined') return [];
+
+    try {
+      const stored = sessionStorage.getItem('checkoutItemsPayload');
+      const parsed = stored ? JSON.parse(stored) : [];
+
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   }, []);
 
   const checkoutItemsSource = useMemo(() => {
-    const source = draftItems.length ? draftItems : (items || []);
-    if (!selectedSkus?.length) return source;
-    return source.filter(item => {
-      const sku = item?.product_sku || item?.sku;
-      return selectedSkus.includes(sku);
-    });
-  }, [draftItems, items, selectedSkus]);
+    const sessionSource = (storedCheckoutItems || [])
+      .map((item) => ({
+        ...item,
+        sku: getItemSku(item),
+        quantity: item?.quantity || 1,
+      }))
+      .filter((item) => item.sku);
+
+    if (sessionSource.length) {
+      return sessionSource;
+    }
+
+    const filterUsableItems = (source) => {
+      return (source || [])
+        .map((item) => ({
+          ...item,
+          sku: getItemSku(item),
+          quantity: item?.quantity || 1,
+        }))
+        .filter((item) => item.sku);
+    };
+
+    const draftSource = filterUsableItems(draftItems);
+    const cartSource = filterUsableItems(items);
+
+    if (!selectedSkus?.length) {
+      if (draftSource.length) return draftSource;
+      return cartSource;
+    }
+
+    const selectedSet = new Set(selectedSkus.map((sku) => String(sku)));
+
+    const draftFiltered = draftSource.filter((item) => selectedSet.has(String(item.sku)));
+    if (draftFiltered.length) return draftFiltered;
+
+    const cartFiltered = cartSource.filter((item) => selectedSet.has(String(item.sku)));
+    if (cartFiltered.length) return cartFiltered;
+
+    return [];
+  }, [draftItems, items, selectedSkus, storedCheckoutItems]);
 
   const cartItems = useMemo(() => {
     return checkoutItemsSource
       .map((item) => ({
-        sku: item?.product_sku || item?.sku,
+        sku: getItemSku(item),
         quantity: item?.quantity || 1,
       }))
       .filter((item) => item.sku);
@@ -290,12 +392,16 @@ useEffect(() => {
         }
 
         const summary = {
-          subtotal: parseFloat(subtotal.toFixed(2)),
+          subtotal: toNumber(subtotal.toFixed(2)),
           promoDiscount: previousSummary?.promoDiscount ?? 0,
           itemCount,
-          totalWeight,
+          totalWeight: totalWeight > 0 ? totalWeight : previousSummary?.totalWeight ?? 0,
           customsDuty: previousSummary?.customsDuty ?? 0,
           delivery: previousSummary?.delivery ?? 0,
+          logisticsDelivery: previousSummary?.logisticsDelivery ?? 0,
+          finalTotal: previousSummary?.finalTotal ?? null,
+          europostEligible: previousSummary?.europostEligible ?? null,
+          availableMethods: previousSummary?.availableMethods ?? [],
         };
 
         sessionStorage.setItem('checkoutSummary', JSON.stringify(summary));
@@ -361,41 +467,56 @@ useEffect(() => {
   }, [token]);
 
   useEffect(() => {
-    if (!cart?.delivery) return;
+    setPickupEligible(europostPickupAvailable);
 
-    const eligible = cart.delivery.europost_eligible ?? true;
-    setPickupEligible(eligible);
-
-    if (!eligible) {
+    if (!europostPickupAvailable) {
       setSelectedPvz(null);
       setPvzCalcResult(null);
       removeLS(LS_SELECTED_PVZ);
       removeLS(LS_PVZ_CALC);
-      saveReceiveMethod('delivery');
-    }
-  }, [cart?.delivery]);
 
-  const subtotal = checkoutSummary?.subtotal ?? parseFloat(totals?.subtotal_new_byn || totals?.subtotal || 0);
-  const promoDiscount = checkoutSummary?.promoDiscount ?? parseFloat(totals?.discount_total_byn || totals?.discount || 0);
-  const deliveryCost = parseFloat(
-    cart?.totals?.delivery_to_belarus_byn ||
-    checkoutSummary?.delivery ||
-    0
+      if (receiveMethod !== 'delivery') {
+        saveReceiveMethod('delivery');
+      }
+    }
+
+    if (!receiveMethod) {
+      saveReceiveMethod(europostPickupAvailable ? 'pickup' : 'delivery');
+    }
+  }, [europostPickupAvailable, receiveMethod]);
+
+  const subtotal = checkoutSummary?.subtotal ?? toNumber(totals?.subtotal_new_byn || totals?.subtotal);
+  const promoDiscount = checkoutSummary?.promoDiscount ?? toNumber(totals?.discount_total_byn || totals?.discount);
+
+  const deliveryCost = toNumber(
+    checkoutSummary?.delivery ??
+    cart?.delivery?.delivery_to_belarus_byn ??
+    cart?.totals?.delivery_to_belarus_byn
   );
-  const totalWeight = checkoutSummary?.totalWeight ?? (totals?.total_weight_kg || 0);
+
+  const totalWeight = checkoutSummary?.totalWeight ?? toNumber(totals?.total_weight_kg);
   const customsDuty = checkoutSummary?.customsDuty ?? 0;
   const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+  const finalTotal = checkoutSummary?.finalTotal ?? null;
 
-  const pvzDeliveryCost = parseFloat(
+  const pvzDeliveryCost = toNumber(
+    pvzCalcResult?.delivery?.price_byn ||
+    pvzCalcResult?.delivery?.delivery_price_byn ||
+    pvzCalcResult?.delivery?.total_delivery_byn ||
+    pvzCalcResult?.delivery?.total_delivery_price_byn ||
+    pvzCalcResult?.delivery?.base_cost_byn ||
     pvzCalcResult?.delivery?.poland_delivery_byn ||
+    pvzCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
+    pvzCalcResult?.delivery?.pricing?.internal?.total_delivery_price_byn ||
+    pvzCalcResult?.delivery?.pricing?.internal?.base_cost_byn ||
     pvzCalcResult?.delivery?.pricing?.internal?.poland_delivery_byn ||
     0
   );
 
-  const addrDeliveryCost = parseFloat(
-    addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
-    addrCalcResult?.delivery?.total_delivery_price_byn ||
-    addrCalcResult?.delivery?.base_cost_byn ||
+  const addrDeliveryCost = toNumber(
+    addrCalcResult?.delivery?.delivery_price_byn ??
+    addrCalcResult?.delivery?.poland_delivery_byn ??
+    addrCalcResult?.delivery?.pricing?.internal?.poland_delivery_byn ??
     0
   );
   const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'courier';
@@ -513,6 +634,11 @@ useEffect(() => {
   }, [token, savedAddrList]);
 
   const handleChangePvz = () => {
+    if (!pickupEligible || !europostPickupAvailable) {
+      setShowVghModal(true);
+      return;
+    }
+
     if (savedPvzList.length > 0) setShowSavedPvz(true);
     else {
       setDeliveryModalTab('pickup');
@@ -529,6 +655,11 @@ useEffect(() => {
   };
 
   const handleSelectSavedPvz = async (id) => {
+    if (!pickupEligible || !europostPickupAvailable) {
+      setShowVghModal(true);
+      return;
+    }
+
     const found = savedPvzList.find((addr) => addr.id === id);
     if (!found) return;
 
@@ -624,7 +755,10 @@ useEffect(() => {
   };
 
   const handlePickupCardClick = () => {
-    if (!pickupEligible) return;
+    if (!pickupEligible || !europostPickupAvailable) {
+      setShowVghModal(true);
+      return;
+    }
 
     if (selectedPvz) {
       saveReceiveMethod('pickup');
@@ -1236,7 +1370,10 @@ useEffect(() => {
                         promoDiscount={promoDiscount}
                         delivery={deliveryCost}
                         pvzDelivery={receiveMethod === 'pickup' ? pvzDeliveryCost : 0}
+                        showPvzDelivery={receiveMethod === 'pickup' && !!selectedPvz}
                         courierDelivery={receiveMethod === 'delivery' && !isIkeyaDelivery ? addrDeliveryCost : 0}
+                        showCourierDelivery={receiveMethod === 'delivery' && !!selectedAddr && !isIkeyaDelivery}
+                        finalTotal={finalTotal}
                         itemCount={itemCount}
                         totalWeight={totalWeight}
                         customsDuty={customsDuty}

@@ -173,8 +173,13 @@ export default function PickupTab({
   const handleSelect = useCallback(async () => {
     if (!selectedPoint) return;
 
-    if (!cartToken || !cartItems?.length) {
-      onSelect?.(selectedPoint, null);
+    if (!cartToken) {
+      setCalcError('Не удалось рассчитать доставку: нет токена корзины');
+      return;
+    }
+
+    if (!cartItems?.length) {
+      setCalcError('Не удалось рассчитать доставку: нет товаров для расчёта');
       return;
     }
 
