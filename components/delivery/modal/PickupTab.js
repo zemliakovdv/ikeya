@@ -9,6 +9,19 @@ import PvzDetail from '@/components/delivery/cards/PvzDetail';
 import DeliveryMap from '@/components/delivery/map/DeliveryMap';
 import { getEuropostOffices, calculateDelivery } from '@/lib/api/delivery';
 
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function PickupTab({
   ymapsReady,
   cartToken,
@@ -26,8 +39,27 @@ export default function PickupTab({
   const [calcLoading, setCalcLoading] = useState(false);
   const [calcError, setCalcError] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
+  const [userCoords, setUserCoords] = useState(null);
 
   const searchTimer = useRef(null);
+
+  // Геолокация при маунте
+  useEffect(() => {
+    if (!ymapsReady) return;
+
+    window.ymaps.ready(() => {
+      window.ymaps.geolocation
+        .get({ provider: 'browser', autoReverseGeocode: false })
+        .then((geo) => {
+          const position = geo.geoObjects.get(0);
+          if (!position) return;
+          const coords = position.geometry.getCoordinates();
+          setUserCoords(coords);
+          setMapCenter({ coords, zoom: 12 });
+        })
+        .catch(() => {});
+    });
+  }, [ymapsReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +97,22 @@ export default function PickupTab({
       cancelled = true;
     };
   }, [cartToken]);
+
+  // Сортировка по близости когда есть геолокация и точки
+  useEffect(() => {
+    if (!userCoords || !allPoints.length) return;
+
+    const sorted = [...allPoints].sort((a, b) => {
+      if (!a.lat || !a.lon) return 1;
+      if (!b.lat || !b.lon) return -1;
+      const dA = getDistanceKm(userCoords[0], userCoords[1], a.lat, a.lon);
+      const dB = getDistanceKm(userCoords[0], userCoords[1], b.lat, b.lon);
+      return dA - dB;
+    });
+
+    setAllPoints(sorted);
+    if (!search.trim()) setFiltered(sorted);
+  }, [userCoords]);
 
   useEffect(() => {
     if (!search.trim()) {
@@ -105,14 +153,16 @@ export default function PickupTab({
 
   const handleCardClick = (point) => {
     if (point.lat && point.lon) {
-      setMapCenter({ coords: [point.lat, point.lon], zoom: 15 });
+      setMapCenter({ coords: [point.lat, point.lon], zoom: 17 });
     }
   };
 
-  // Просто открываем детали — без запроса
   const handleDetailOpen = useCallback((point) => {
     setSelectedPoint(point);
     setCalcError(null);
+    if (point.lat && point.lon) {
+      setMapCenter({ coords: [point.lat, point.lon], zoom: 17 });
+    }
   }, []);
 
   const handleBack = () => {
@@ -120,11 +170,9 @@ export default function PickupTab({
     setCalcError(null);
   };
 
-  // Запрос calculate только при нажатии «Выбрать»
   const handleSelect = useCallback(async () => {
     if (!selectedPoint) return;
 
-    // Если нет корзины — выбираем без расчёта (страница /pvz)
     if (!cartToken || !cartItems?.length) {
       onSelect?.(selectedPoint, null);
       return;
