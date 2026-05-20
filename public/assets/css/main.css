@@ -2269,6 +2269,8 @@ main {
     cursor: pointer;
     transition: all 0.3s ease;
     user-select: none;
+    width: 100%;
+    text-align: left;
 }
 
 .catalog-sort__selected:hover {
@@ -2328,7 +2330,7 @@ main {
     opacity: 1;
 }
 
-.catalog-sort__option {
+.catalog-sort__option button {
     padding: 15px 8px 15px 16px;
     cursor: pointer;
     transition: background 0.2s ease;
@@ -2337,14 +2339,22 @@ main {
     font-weight: 400;
     line-height: 18px;
     letter-spacing: 0.25px;
+    background: #fff;
+    border: none;
+    width: 100%;
+    text-align: left;
 }
 
 .catalog-sort__option:hover {
     background: #FAFAFA;
+
+}
+
+.catalog-sort__option:hover button {
     color: #0058A3;
 }
 
-.catalog-sort__option.active {
+.catalog-sort__option.active button {
     background: #FAFAFA;
     font-weight: 400;
     color: #0058A3;

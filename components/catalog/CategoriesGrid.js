@@ -2,23 +2,37 @@
 'use client';
 
 import Link from 'next/link';
+import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
+const CARD_PLACEHOLDER = '/assets/img/catalog-modal/placeholder.svg';
 
 function normalizeBasePath(basePath) {
   if (!basePath) return '';
-  if (basePath.endsWith('/')) return basePath.slice(0, -1);
-  return basePath;
+  return basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+}
+
+function resolveImageUrl(url) {
+  if (!url) return null;
+
+  if (url.startsWith('/assets')) {
+    return url;
+  }
+
+  if (url.startsWith('http')) {
+    return url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
+  }
+
+  return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
 }
 
 export default function CategoriesGrid({
   categories = [],
   limit = null,
   showTitle = false,
-  basePath = ''
+  basePath = '',
 }) {
-  if (!categories || categories.length === 0) return null;
+  if (!Array.isArray(categories) || categories.length === 0) return null;
 
   const displayCategories = limit ? categories.slice(0, limit) : categories;
   const base = normalizeBasePath(basePath);
@@ -31,38 +45,33 @@ export default function CategoriesGrid({
         {displayCategories.map((category) => {
           if (!category) return null;
 
-          let name, url, image;
           const id = category.id;
 
-          // 1) Формат PopularCategory
+          let name = 'Категория';
+          let url = '/catalog';
+          let image = null;
+
           if (category.name && (category.href || category.url)) {
             name = category.name;
             url = category.href || category.url;
-            image = category.image;
-          } 
-          // 2) Формат дерева API
-          else if (category.attributes) {
+            image = resolveImageUrl(category.image);
+          } else if (category.attributes) {
             const attr = category.attributes;
-            name = attr.translated_name || attr.name || 'Категория';
             const slug = attr.slug || id;
-            
+
+            name = attr.translated_name || attr.name || 'Категория';
             url = base ? `${base}/${slug}` : `/catalog/${slug}`;
 
-            // ЛОГИКА ПО ТВОЕМУ ЗАПРОСУ:
-            // Сначала icon_url, если нет — pictogram_url
-            const rawPath = attr.icon_url || attr.pictogram_url;
-
-            if (rawPath) {
-              if (rawPath.startsWith('http') || rawPath.startsWith('/assets')) {
-                image = rawPath;
-              } else {
-                const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
-                image = `${API_BASE_URL}${cleanPath}`;
-              }
-            }
+            image = resolveImageUrl(
+              attr.icon_url ||
+              attr.pictogram_url ||
+              attr.background_image_url ||
+              attr.local_image_path ||
+              attr.remote_image_url
+            );
           }
 
-          const finalImage = image || '/assets/img/catalog-modal/placeholder.svg';
+          const finalImage = image || CARD_PLACEHOLDER;
 
           return (
             <div key={id || url} className="catalog-categoties-card">
@@ -73,7 +82,7 @@ export default function CategoriesGrid({
                     alt={name}
                     loading="lazy"
                     onError={(e) => {
-                      e.target.src = PLACEHOLDER;
+                      e.currentTarget.src = PLACEHOLDER;
                     }}
                   />
                 </div>

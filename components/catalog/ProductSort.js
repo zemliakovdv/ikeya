@@ -1,7 +1,7 @@
 // components/catalog/ProductSort.js
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export default function ProductSort({ currentSort = null }) {
@@ -9,24 +9,48 @@ export default function ProductSort({ currentSort = null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const sortRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
 
-const sortOptions = useMemo(
-  () => [
-    { value: null,        label: 'По умолчанию' },
-    { value: 'cheapest',  label: 'Дешевле' },
-    { value: 'expensive', label: 'Дороже' },
-  ],
-  []
-);
-
+  const sortOptions = useMemo(
+    () => [
+      { value: null, label: 'По умолчанию' },
+      { value: 'cheapest', label: 'Дешевле' },
+      { value: 'expensive', label: 'Дороже' },
+    ],
+    []
+  );
 
   const currentLabel =
-    sortOptions.find(opt => opt.value === currentSort)?.label ||
+    sortOptions.find((opt) => opt.value === currentSort)?.label ||
     'Сортировка';
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleDocumentClick = (event) => {
+      if (!sortRef.current?.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
+
   const toggleDropdown = useCallback(() => {
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
   }, []);
 
   const handleSelectSort = useCallback(
@@ -51,19 +75,25 @@ const sortOptions = useMemo(
 
   return (
     <div className="all-catalog-sort">
-      <div className="catalog-sort">
-        <div className="catalog-sort__selected" onClick={toggleDropdown}>
+      <div className="catalog-sort" ref={sortRef}>
+        <button
+          className="catalog-sort__selected"
+          type="button"
+          onClick={toggleDropdown}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+        >
           <span className="catalog-sort__current">{currentLabel}</span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
               d="M7.99999 10.2201C7.25333 10.2201 5.46666 8.19343 4.09999 6.5001C3.94666 6.30677 3.97333 6.02677 4.16666 5.87343C4.35999 5.7201 4.63999 5.74677 4.79333 5.9401C5.99333 7.42677 7.52666 9.1001 7.99999 9.3201C8.47333 9.1001 10.0067 7.42677 11.2067 5.9401C11.36 5.74677 11.64 5.7201 11.8333 5.87343C12.0267 6.02677 12.0533 6.30677 11.9 6.5001C10.5333 8.2001 8.74 10.2201 7.99999 10.2201Z"
               fill="#757575"
             />
           </svg>
-        </div>
+        </button>
 
         {isOpen && (
-          <ul className="catalog-sort__dropdown">
+          <ul className="catalog-sort__dropdown" role="listbox">
             {sortOptions.map((option) => (
               <li
                 key={String(option.value)}
@@ -71,9 +101,16 @@ const sortOptions = useMemo(
                   option.value === currentSort ? 'active' : ''
                 }`}
                 data-sort={option.value || ''}
-                onClick={() => handleSelectSort(option.value)}
+                role="option"
+                aria-selected={option.value === currentSort}
               >
-                {option.label}
+                <button
+                  type="button"
+                  className="catalog-sort__option-button"
+                  onClick={() => handleSelectSort(option.value)}
+                >
+                  {option.label}
+                </button>
               </li>
             ))}
           </ul>

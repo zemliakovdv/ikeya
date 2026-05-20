@@ -1,126 +1,180 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ProductCard from './ProductCard';
 
+const ITEMS_PER_PAGE = 20;
 const API_BASE_URL = '/api/v1';
 
-const sanitize = (arr) => (arr || []).filter(p => p && p.attributes);
+function sanitize(products) {
+  return (products || []).filter((product) => product && product.attributes);
+}
+
+function parsePrice(value) {
+  if (value === null || value === undefined || value === '') return 0;
+
+  const normalized = String(value)
+    .replace(/\s/g, '')
+    .replace(',', '.');
+
+  const parsed = Number.parseFloat(normalized);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function filterByPrice(products, queryString) {
+  const params = new URLSearchParams(queryString);
+  const hasMin = params.has('min_price');
+  const hasMax = params.has('max_price');
+
+  if (!hasMin && !hasMax) return products;
+
+  const minPrice = hasMin ? parsePrice(params.get('min_price')) : 0;
+  const maxPrice = hasMax ? parsePrice(params.get('max_price')) : Infinity;
+
+  return products.filter((product) => {
+    const price = parsePrice(product.attributes?.price_byn || product.attributes?.price);
+
+    if (price <= 0) return false;
+    if (hasMin && price < minPrice) return false;
+    if (hasMax && price > maxPrice) return false;
+
+    return true;
+  });
+}
 
 export default function InfiniteProductGrid({
-  initialProducts,
+  initialProducts = [],
   categoryId,
   totalPages,
   queryString = '',
   initialPage = 1,
   basePath = '',
-  onPageChange, // колбэк → сообщаем родителю текущую страницу
+  onPageChange,
 }) {
-  const [products, setProducts] = useState(sanitize(initialProducts));
+  const sanitizedInitialProducts = useMemo(
+    () => sanitize(initialProducts),
+    [initialProducts]
+  );
+
+  const [products, setProducts] = useState(sanitizedInitialProducts);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [hasMore, setHasMore] = useState(
-    totalPages ? initialPage < totalPages : (initialProducts?.length || 0) >= 20
+    totalPages ? initialPage < totalPages : sanitizedInitialProducts.length >= ITEMS_PER_PAGE
   );
 
-  // Refs — не вызывают ре-рендер
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(hasMore);
   const pageRef = useRef(initialPage + 1);
   const observerRef = useRef(null);
   const triggerRef = useRef(null);
-  const loadMoreRef = useRef(null); // актуальная функция loadMore
+  const loadMoreRef = useRef(null);
+  const abortRef = useRef(null);
+  const requestKeyRef = useRef('');
 
-  // Сбрасываем состояние при смене фильтров/категории/страницы
+  const requestKey = useMemo(() => {
+    return `${categoryId || 'all'}-${initialPage}-${totalPages || 1}-${queryString}`;
+  }, [categoryId, initialPage, totalPages, queryString]);
+
   useEffect(() => {
-    setProducts(sanitize(initialProducts));
+    requestKeyRef.current = requestKey;
+
+    abortRef.current?.abort();
+
+    setProducts(sanitizedInitialProducts);
     setCurrentPage(initialPage);
+
     pageRef.current = initialPage + 1;
-    const more = totalPages ? initialPage < totalPages : (initialProducts?.length || 0) >= 20;
+    loadingRef.current = false;
+    setLoading(false);
+
+    const more = totalPages
+      ? initialPage < totalPages
+      : sanitizedInitialProducts.length >= ITEMS_PER_PAGE;
+
     setHasMore(more);
     hasMoreRef.current = more;
-  }, [initialProducts, totalPages, initialPage]);
-
-  const filterByPrice = useCallback((items) => {
-    const params = new URLSearchParams(queryString);
-    const hasMin = params.has('min_price');
-    const hasMax = params.has('max_price');
-    if (!hasMin && !hasMax) return items;
-
-    const minPrice = hasMin ? parseFloat(params.get('min_price')) : 0;
-    const maxPrice = hasMax ? parseFloat(params.get('max_price')) : Infinity;
-
-    return items.filter(item => {
-      const price = parseFloat(
-        String(item.attributes?.price_byn || item.attributes?.price || '0').replace(/\s/g, '')
-      );
-      if (price <= 0) return false;
-      if (hasMin && price < minPrice) return false;
-      if (hasMax && price > maxPrice) return false;
-      return true;
-    });
-  }, [queryString]);
+  }, [sanitizedInitialProducts, totalPages, initialPage, requestKey]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current) return;
 
+    abortRef.current?.abort();
+
+    const controller = new AbortController();
+    const activeRequestKey = requestKeyRef.current;
+    const page = pageRef.current;
+
+    abortRef.current = controller;
     loadingRef.current = true;
     setLoading(true);
-
-    const page = pageRef.current;
 
     try {
       const searchParams = new URLSearchParams(queryString);
       searchParams.set('page', String(page));
-      searchParams.set('per_page', '20');
+      searchParams.set('per_page', String(ITEMS_PER_PAGE));
 
-      const url = categoryId
-        ? `${API_BASE_URL}/categories/${categoryId}/products?${searchParams.toString()}`
-        : `${API_BASE_URL}/products?${searchParams.toString()}`;
+      const endpoint = categoryId
+        ? `${API_BASE_URL}/categories/${categoryId}/products`
+        : `${API_BASE_URL}/products`;
 
-      const response = await fetch(url);
+      const response = await fetch(`${endpoint}?${searchParams.toString()}`, {
+        signal: controller.signal,
+      });
+
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const data = await response.json();
+
+      if (controller.signal.aborted || requestKeyRef.current !== activeRequestKey) return;
+
       const rawProducts = sanitize(data.data || []);
+      const filteredProducts = filterByPrice(rawProducts, queryString);
       const meta = data.meta || {};
 
-      const filtered = filterByPrice(rawProducts);
-      const serverTotalPages = Number(meta.total_pages) || Math.ceil((Number(meta.total) || 0) / 20);
+      const serverTotalPages = Number(meta.total_pages) ||
+        Math.ceil((Number(meta.total) || 0) / ITEMS_PER_PAGE);
+
       const more = page < serverTotalPages;
 
-      if (filtered.length > 0) {
-        setProducts(prev => [...prev, ...filtered]);
+      if (filteredProducts.length > 0) {
+        setProducts((prev) => [...prev, ...filteredProducts]);
       }
 
       pageRef.current = page + 1;
       hasMoreRef.current = more;
+
       setHasMore(more);
       setCurrentPage(page);
 
-      // Обновляем URL и уведомляем родителя
       const params = new URLSearchParams(queryString);
       params.set('page', String(page));
-      const newUrl = `${basePath}?${params.toString()}`;
-      window.history.replaceState(null, '', newUrl);
-      onPageChange?.(page);
 
+      const nextUrl = params.toString()
+        ? `${basePath}?${params.toString()}`
+        : basePath;
+
+      window.history.replaceState(null, '', nextUrl);
+      onPageChange?.(page);
     } catch (error) {
+      if (error.name === 'AbortError') return;
+
       console.error('Error loading more products:', error);
       hasMoreRef.current = false;
       setHasMore(false);
     } finally {
-      loadingRef.current = false;
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        loadingRef.current = false;
+        setLoading(false);
+      }
     }
-  }, [categoryId, queryString, basePath, filterByPrice, onPageChange]);
+  }, [categoryId, queryString, basePath, onPageChange]);
 
-  // Всегда держим актуальную версию loadMore в ref
   useEffect(() => {
     loadMoreRef.current = loadMore;
   }, [loadMore]);
 
-  // Observer создаётся один раз, использует loadMoreRef
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -137,13 +191,17 @@ export default function InfiniteProductGrid({
       observer.observe(triggerRef.current);
     }
 
-    return () => observer.disconnect();
-  }, []); // создаётся один раз
+    return () => {
+      observer.disconnect();
+      abortRef.current?.abort();
+    };
+  }, []);
 
-  // Переподключаем observer к триггеру когда hasMore меняется
   const setTriggerRef = useCallback((node) => {
     triggerRef.current = node;
+
     if (!node || !observerRef.current) return;
+
     observerRef.current.disconnect();
     observerRef.current.observe(node);
   }, []);
@@ -152,7 +210,10 @@ export default function InfiniteProductGrid({
     <>
       <div className="products-grid">
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard
+            key={`${product.id}-${product.attributes?.sku || ''}`}
+            product={product}
+          />
         ))}
       </div>
 

@@ -17,22 +17,53 @@ function readAll(sp, key) {
 
 function safeNumberOrEmpty(v) {
   if (v === null || v === undefined) return '';
-  const s = String(v);
-  if (s.trim() === '') return '';
+
+  const s = String(v).trim().replace(',', '.');
+  if (s === '') return '';
+
   const n = Number(s);
   return Number.isFinite(n) ? s : '';
 }
 
+function parsePriceValue(value, fallback) {
+  const n = Number(String(value ?? '').replace(',', '.'));
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function extractPriceRange(availableFilters) {
-  const priceBucket = (availableFilters || []).find(f => f.parameter === 'f-price-buckets');
-  if (!priceBucket?.values?.length) return { min: 0, max: 10000 };
-  const v = priceBucket.values[0];
-  const min = parseFloat(v.min || 0);
-  const max = parseFloat(v.max || 10000);
-  return {
-    min: Number.isFinite(min) ? min : 0,
-    max: Number.isFinite(max) ? max : 10000,
-  };
+  const fallback = { min: 0, max: 10000 };
+  const priceBucket = (availableFilters || []).find((f) => f.parameter === 'f-price-buckets');
+
+  if (!priceBucket?.values?.length) {
+    return fallback;
+  }
+
+  const firstValue = priceBucket.values[0] || {};
+
+  if (firstValue.min !== undefined || firstValue.max !== undefined) {
+    const min = parsePriceValue(firstValue.min, fallback.min);
+    const max = parsePriceValue(firstValue.max, fallback.max);
+
+    return {
+      min,
+      max: max > min ? max : fallback.max,
+    };
+  }
+
+  const id = String(firstValue.id || '');
+  const match = id.match(/^PRICE_(\d+(?:[.,]\d+)?)_(\d+(?:[.,]\d+)?)$/);
+
+  if (match) {
+    const min = parsePriceValue(match[1], fallback.min);
+    const max = parsePriceValue(match[2], fallback.max);
+
+    return {
+      min,
+      max: max > min ? max : fallback.max,
+    };
+  }
+
+  return fallback;
 }
 
 export default function FilterAside({
@@ -46,8 +77,11 @@ export default function FilterAside({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const priceRange = useMemo(() => extractPriceRange(availableFilters), [availableFilters]);  const normalizedAvailableFilters = useMemo(() => {
+  const priceRange = useMemo(() => extractPriceRange(availableFilters), [availableFilters]);
+
+  const normalizedAvailableFilters = useMemo(() => {
     if (!Array.isArray(availableFilters)) return [];
+
     return availableFilters
       .filter((f) => f && f.parameter && Array.isArray(f.values) && f.values.length > 0)
       .filter((f) => !EXCLUDED_FILTERS.includes(f.parameter))
@@ -64,12 +98,12 @@ export default function FilterAside({
   }, [availableFilters]);
 
   const seriesFilter = useMemo(
-    () => normalizedAvailableFilters.find(f => f.parameter === SERIES_PARAMETER) || null,
+    () => normalizedAvailableFilters.find((f) => f.parameter === SERIES_PARAMETER) || null,
     [normalizedAvailableFilters]
   );
 
   const otherFilters = useMemo(
-    () => normalizedAvailableFilters.filter(f => f.parameter !== SERIES_PARAMETER),
+    () => normalizedAvailableFilters.filter((f) => f.parameter !== SERIES_PARAMETER),
     [normalizedAvailableFilters]
   );
 
@@ -88,6 +122,7 @@ export default function FilterAside({
 
   const priceDebounceRef = useRef(null);
   const isMountedRef = useRef(false);
+  const asideRef = useRef(null);
 
   useEffect(() => {
     const minPrice = safeNumberOrEmpty(searchParams.get('min_price'));
@@ -103,7 +138,15 @@ export default function FilterAside({
     setDraftPriceMax(maxPrice);
     setDraftFilters(nextDraftFilters);
     isMountedRef.current = true;
-  }, [searchParams, filtersKey]);
+  }, [searchParams, filtersKey, normalizedAvailableFilters]);
+
+  useEffect(() => {
+    return () => {
+      if (priceDebounceRef.current) {
+        clearTimeout(priceDebounceRef.current);
+      }
+    };
+  }, []);
 
   const applyFilters = useCallback((minP, maxP, filters) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -135,12 +178,16 @@ export default function FilterAside({
   const handlePriceChange = useCallback((minV, maxV) => {
     const min = String(minV);
     const max = String(maxV);
+
     setDraftPriceMin(min);
     setDraftPriceMax(max);
 
     if (!isMountedRef.current) return;
 
-    if (priceDebounceRef.current) clearTimeout(priceDebounceRef.current);
+    if (priceDebounceRef.current) {
+      clearTimeout(priceDebounceRef.current);
+    }
+
     priceDebounceRef.current = setTimeout(() => {
       applyFilters(min, max, draftFilters);
     }, 600);
@@ -148,59 +195,55 @@ export default function FilterAside({
 
   const toggleValue = useCallback((parameter, value) => {
     const v = String(value);
+
     setDraftFilters((prev) => {
       const current = Array.isArray(prev[parameter]) ? prev[parameter] : [];
       const next = current.includes(v)
         ? current.filter((x) => x !== v)
         : [...current, v];
+
       const newFilters = { ...prev, [parameter]: next };
       applyFilters(draftPriceMin, draftPriceMax, newFilters);
+
       return newFilters;
     });
   }, [applyFilters, draftPriceMin, draftPriceMax]);
 
   const handleClear = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
+
     params.delete('min_price');
     params.delete('max_price');
     params.delete('page');
+
     for (const key of Array.from(params.keys())) {
       if (key.startsWith('filters[')) params.delete(key);
     }
+
     const qs = params.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   }, [pathname, router, searchParams]);
 
   const currentMin = useMemo(() => {
     if (draftPriceMin === '') return priceRange.min;
-    const n = Number(draftPriceMin);
+
+    const n = Number(String(draftPriceMin).replace(',', '.'));
     return Number.isFinite(n) ? n : priceRange.min;
   }, [draftPriceMin, priceRange.min]);
 
   const currentMax = useMemo(() => {
     if (draftPriceMax === '') return priceRange.max;
-    const n = Number(draftPriceMax);
+
+    const n = Number(String(draftPriceMax).replace(',', '.'));
     return Number.isFinite(n) ? n : priceRange.max;
   }, [draftPriceMax, priceRange.max]);
 
   const hasActiveFilters = useMemo(() => {
     if (draftPriceMin !== '') return true;
     if (draftPriceMax !== '') return true;
+
     return Object.values(draftFilters).some((v) => Array.isArray(v) && v.length > 0);
   }, [draftPriceMin, draftPriceMax, draftFilters]);
-
-  const asideRef = useRef(null);
-
-  const handleSliderMouseDown = useCallback(() => {
-    const el = asideRef.current;
-    if (!el) return;
-    el.style.overflowY = 'hidden';
-    const restore = () => {
-      el.style.overflowY = 'auto';
-      window.removeEventListener('mouseup', restore);
-    };
-    window.addEventListener('mouseup', restore);
-  }, []);
 
   return (
     <aside
