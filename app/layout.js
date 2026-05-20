@@ -2,7 +2,6 @@
 import Header from '@/components/layout/Header/Header'
 import Footer from '@/components/layout/Footer/FooterServer'
 import MobileBottomNav from '@/components/layout/MobileBottomNav'
-import ClientScripts from '@/components/ClientScripts'
 import { CartProvider } from '@/contexts/CartContext'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { AuthModalsProvider } from '@/components/auth/AuthModalsHost'
@@ -27,8 +26,6 @@ export default function RootLayout({ children }) {
           integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
           crossOrigin="anonymous"
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
           rel="stylesheet"
@@ -74,8 +71,6 @@ export default function RootLayout({ children }) {
           src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"
           strategy="afterInteractive"
         />
-
-        <ClientScripts />
       </body>
     </html>
   )
