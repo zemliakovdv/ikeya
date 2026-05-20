@@ -9,7 +9,12 @@ import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
 
 function resolveImage(attr) {
-  const raw = attr?.icon_url || attr?.pictogram_url || attr?.background_image_url;
+  const raw =
+    attr?.icon_url ||
+    attr?.pictogram_url ||
+    attr?.background_image_url ||
+    attr?.local_image_path ||
+    attr?.remote_image_url;
 
   if (!raw) return PLACEHOLDER;
 
@@ -150,7 +155,7 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
                     alt={item.name}
                     width={120}
                     height={120}
-                    priority={index < 8}
+                    priority={index < 3}
                     onError={(e) => {
                       e.currentTarget.src = PLACEHOLDER;
                     }}

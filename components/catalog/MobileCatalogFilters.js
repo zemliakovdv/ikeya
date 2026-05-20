@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
+
+const PANEL_ID = 'mobile-catalog-filter-panel';
 
 export default function MobileCatalogFilters({
   treeData = [],
@@ -12,7 +14,12 @@ export default function MobileCatalogFilters({
 }) {
   const [isOpen, setIsOpen] = useState(false);
 
+  const triggerRef = useRef(null);
+  const closeButtonRef = useRef(null);
+  const shouldRestoreFocusRef = useRef(false);
+
   const openFilters = useCallback(() => {
+    shouldRestoreFocusRef.current = true;
     setIsOpen(true);
   }, []);
 
@@ -26,9 +33,21 @@ export default function MobileCatalogFilters({
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    const focusTimer = window.setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 0);
+
     return () => {
+      window.clearTimeout(focusTimer);
       document.body.style.overflow = originalOverflow;
     };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen || !shouldRestoreFocusRef.current) return;
+
+    shouldRestoreFocusRef.current = false;
+    triggerRef.current?.focus();
   }, [isOpen]);
 
   useEffect(() => {
@@ -50,10 +69,12 @@ export default function MobileCatalogFilters({
   return (
     <div className="mobile-catalog-filters">
       <button
+        ref={triggerRef}
         className="mobile-filter-trigger"
         type="button"
         onClick={openFilters}
         aria-expanded={isOpen}
+        aria-controls={PANEL_ID}
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path
@@ -75,10 +96,17 @@ export default function MobileCatalogFilters({
             onClick={closeFilters}
           />
 
-          <div className="mobile-filter-panel" role="dialog" aria-modal="true" aria-label="Фильтры">
+          <div
+            id={PANEL_ID}
+            className="mobile-filter-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Фильтры"
+          >
             <div className="mobile-filter-panel__header">
               <h2>Фильтры</h2>
               <button
+                ref={closeButtonRef}
                 className="mobile-filter-panel__close"
                 type="button"
                 aria-label="Закрыть"

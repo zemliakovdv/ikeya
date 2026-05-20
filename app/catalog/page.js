@@ -9,12 +9,18 @@ import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
 import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
+import SeoSection from '@/components/home/SeoSection';
 import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
 
 export const metadata = {
   title: 'Каталог товаров — мебель и товары для дома | IKEYA',
   description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
 };
+
+const catalogSeoText = `
+  <h2>Каталог товаров IKEYA</h2>
+  <p>Тестовый SEO-текст для корневого каталога. Здесь будет описание ассортимента мебели и товаров для дома, условий покупки, доставки по Беларуси и преимуществ интернет-магазина.</p>
+`;
 
 export default async function CatalogPage({ searchParams }) {
   const sp = await searchParams;
@@ -47,6 +53,7 @@ export default async function CatalogPage({ searchParams }) {
   return (
     <main className="main catalog-inner">
       <Breadcrumbs items={breadcrumbs} />
+
       <section className="all-catalog">
         <div className="container">
           <h1>Каталог</h1>
@@ -103,6 +110,8 @@ export default async function CatalogPage({ searchParams }) {
           </div>
         </div>
       </section>
+
+      <SeoSection seoText={catalogSeoText} />
     </main>
   );
 }

@@ -8,8 +8,19 @@ function uniq(arr) {
   return Array.from(new Set((arr || []).map(String)));
 }
 
+function formatPriceLabel(value, fallback) {
+  if (value === null || value === undefined || value === '') return fallback;
+
+  const normalized = String(value).trim().replace(',', '.');
+  const n = Number(normalized);
+
+  if (!Number.isFinite(n)) return String(value);
+
+  return String(n);
+}
+
 // Удаляем фильтры по всем ключам filters[...][]
-// (потому что теперь параметры динамические и мы не можем заранее знать список)
+// потому что параметры динамические и мы не можем заранее знать список.
 function clearAllFiltersFromParams(params) {
   params.delete('min_price');
   params.delete('max_price');
@@ -25,6 +36,7 @@ function removeOneFilterValue(params, parameter, value) {
   const existing = params.getAll(key).map(String);
 
   params.delete(key);
+
   existing
     .filter((v) => v !== String(value))
     .forEach((v) => params.append(key, v));
@@ -42,8 +54,9 @@ export default function FilterChips({ filterLabels = {}, filterTitles = {} }) {
     const maxPrice = searchParams.get('max_price');
 
     if (minPrice || maxPrice) {
-      const minLabel = minPrice ? String(minPrice) : '0';
-      const maxLabel = maxPrice ? String(maxPrice) : '∞';
+      const minLabel = formatPriceLabel(minPrice, '0');
+      const maxLabel = formatPriceLabel(maxPrice, '∞');
+
       list.push({
         id: 'price',
         type: 'price',
@@ -53,14 +66,11 @@ export default function FilterChips({ filterLabels = {}, filterTitles = {} }) {
       });
     }
 
-    // собираем ВСЕ filters[PARAM][] из URL
-    // URLSearchParams не даёт прямого getAll по маске — поэтому перебираем keys()
     const paramToValues = new Map();
 
     for (const key of searchParams.keys()) {
       if (!key.startsWith('filters[') || !key.endsWith('][]')) continue;
 
-      // key = filters[some-param][]
       const match = key.match(/^filters\[(.+?)\]\[\]$/);
       if (!match) continue;
 
@@ -75,6 +85,7 @@ export default function FilterChips({ filterLabels = {}, filterTitles = {} }) {
         const valueLabel = filterLabels[v] || v;
         const paramTitle = filterTitles[parameter];
         const label = paramTitle ? `${paramTitle}: ${valueLabel}` : valueLabel;
+
         list.push({
           id: `${parameter}:${v}`,
           type: 'filter',
@@ -86,11 +97,12 @@ export default function FilterChips({ filterLabels = {}, filterTitles = {} }) {
     }
 
     return list;
-  }, [searchParams]);
+  }, [searchParams, filterLabels, filterTitles]);
 
   const push = useCallback(
     (params) => {
       params.delete('page');
+
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname);
     },
@@ -118,6 +130,7 @@ export default function FilterChips({ filterLabels = {}, filterTitles = {} }) {
 
   const handleClearAll = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
+
     clearAllFiltersFromParams(params);
     push(params);
   }, [searchParams, push]);

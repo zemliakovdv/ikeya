@@ -10,39 +10,6 @@ function sanitize(products) {
   return (products || []).filter((product) => product && product.attributes);
 }
 
-function parsePrice(value) {
-  if (value === null || value === undefined || value === '') return 0;
-
-  const normalized = String(value)
-    .replace(/\s/g, '')
-    .replace(',', '.');
-
-  const parsed = Number.parseFloat(normalized);
-
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function filterByPrice(products, queryString) {
-  const params = new URLSearchParams(queryString);
-  const hasMin = params.has('min_price');
-  const hasMax = params.has('max_price');
-
-  if (!hasMin && !hasMax) return products;
-
-  const minPrice = hasMin ? parsePrice(params.get('min_price')) : 0;
-  const maxPrice = hasMax ? parsePrice(params.get('max_price')) : Infinity;
-
-  return products.filter((product) => {
-    const price = parsePrice(product.attributes?.price_byn || product.attributes?.price);
-
-    if (price <= 0) return false;
-    if (hasMin && price < minPrice) return false;
-    if (hasMax && price > maxPrice) return false;
-
-    return true;
-  });
-}
-
 export default function InfiniteProductGrid({
   initialProducts = [],
   categoryId,
@@ -129,8 +96,7 @@ export default function InfiniteProductGrid({
 
       if (controller.signal.aborted || requestKeyRef.current !== activeRequestKey) return;
 
-      const rawProducts = sanitize(data.data || []);
-      const filteredProducts = filterByPrice(rawProducts, queryString);
+      const nextProducts = sanitize(data.data || []);
       const meta = data.meta || {};
 
       const serverTotalPages = Number(meta.total_pages) ||
@@ -138,8 +104,8 @@ export default function InfiniteProductGrid({
 
       const more = page < serverTotalPages;
 
-      if (filteredProducts.length > 0) {
-        setProducts((prev) => [...prev, ...filteredProducts]);
+      if (nextProducts.length > 0) {
+        setProducts((prev) => [...prev, ...nextProducts]);
       }
 
       pageRef.current = page + 1;

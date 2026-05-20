@@ -6,6 +6,7 @@ import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductSort from '@/components/catalog/ProductSort';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
+import SeoSection from '@/components/home/SeoSection';
 import { getCachedCategoriesTree, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
 import {
   flattenCategoriesTree,
@@ -28,37 +29,27 @@ export async function generateMetadata({ params }) {
 
     if (!category) return {};
 
-    const name = category.attributes.translated_name || category.attributes.name || 'Каталог';
+    const attrs = category.attributes || {};
+    const seo = attrs.seo || {};
+    const name = attrs.translated_name || attrs.name || 'Каталог';
 
     return {
-      title: `${name} — купить в Беларуси | IKEYA`,
-      description: `Купить ${name.toLowerCase()} в интернет-магазине IKEYA. Большой выбор, доступные цены, доставка по Беларуси. Заказывайте онлайн!`,
+      title: seo.title || `${name} — купить в Беларуси | IKEYA`,
+      description: seo.description || `Купить ${name.toLowerCase()} в интернет-магазине IKEYA. Большой выбор, доступные цены, доставка по Беларуси. Заказывайте онлайн!`,
     };
   } catch {
     return {};
   }
 }
 
-function getPriceRangeFromFilters(filters) {
-  const priceBucket = (filters || []).find(f => f.parameter === 'f-price-buckets');
-  if (!priceBucket?.values?.length) return { min: 0, max: 10000 };
+function toPositiveInt(value, fallback = 1) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+}
 
-  let min = Infinity;
-  let max = 0;
-
-  priceBucket.values.forEach(({ id }) => {
-    const match = id.match(/^PRICE_(\d+)_(\d+)$/);
-    if (!match) return;
-    const lo = parseInt(match[1]) / 100;
-    const hi = parseInt(match[2]) / 100;
-    if (lo < min) min = lo;
-    if (hi < 92233720368547 && hi > max) max = hi;
-  });
-
-  return {
-    min: min === Infinity ? 0 : Math.floor(min),
-    max: max === 0 ? 10000 : Math.ceil(max)
-  };
+function toNonNegativeInt(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
 }
 
 export default async function CategoryPage({ params, searchParams }) {
@@ -86,15 +77,22 @@ export default async function CategoryPage({ params, searchParams }) {
       getCategoryProducts(currentCategory.id, currentPage, 20, sort, sp || {}),
     ]);
 
+    const categoryData = categoryWithFilters.data;
+    const categoryAttrs = categoryData?.attributes || {};
+    const seoText = categoryAttrs.seo?.seo_text || categoryAttrs.seo_text || '';
+
     const availableFilters = categoryWithFilters.available_filters || [];
-    const priceRange = getPriceRangeFromFilters(availableFilters);
 
     const filterLabels = {};
     const filterTitles = {};
-    availableFilters.forEach(f => {
+
+    availableFilters.forEach((f) => {
       filterTitles[f.parameter] = f.translated_name || f.name || f.parameter;
-      (f.values || []).forEach(v => {
-        if (v.id !== undefined) filterLabels[String(v.id)] = v.translated_name || v.name || String(v.id);
+
+      (f.values || []).forEach((v) => {
+        if (v.id !== undefined) {
+          filterLabels[String(v.id)] = v.translated_name || v.name || String(v.id);
+        }
       });
     });
 
@@ -109,24 +107,28 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const initialProducts = productsResponse.data || [];
     const meta = productsResponse.meta || {};
-    const totalPages = meta.total_pages || 1;
+    const totalPages = toPositiveInt(meta.total_pages, 1);
+    const totalItems = toNonNegativeInt(meta.total, 0);
 
     const hasActiveFilters = !!(
       sp?.min_price || sp?.max_price ||
-      Object.keys(sp || {}).some(k => k.startsWith('filters['))
+      Object.keys(sp || {}).some((k) => k.startsWith('filters['))
     );
 
     const queryParams = new URLSearchParams();
+
     if (sort) queryParams.set('sort', sort);
     if (sp?.min_price) queryParams.set('min_price', sp.min_price);
     if (sp?.max_price) queryParams.set('max_price', sp.max_price);
+
     for (const [key, value] of Object.entries(sp || {})) {
       if (!key.startsWith('filters[')) continue;
+
       const values = Array.isArray(value) ? value : [value];
       values.forEach((v) => queryParams.append(key, v));
     }
-    const productsQueryString = queryParams.toString();
 
+    const productsQueryString = queryParams.toString();
     const basePath = `/catalog/${categoryChain.map((c) => c.attributes.slug).join('/')}`;
 
     return (
@@ -178,7 +180,7 @@ export default async function CategoryPage({ params, searchParams }) {
                     initialPage={currentPage}
                     basePath={basePath}
                     currentPage={currentPage}
-                    totalItems={meta.total || 0}
+                    totalItems={totalItems}
                   />
                 ) : (
                   <div className="all-catalog-empty">
@@ -197,10 +199,13 @@ export default async function CategoryPage({ params, searchParams }) {
             </div>
           </div>
         </section>
+
+        <SeoSection seoText={seoText} />
       </main>
     );
   } catch (error) {
     if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
+
     console.error('Error loading category:', error);
     redirect('/catalog');
   }
