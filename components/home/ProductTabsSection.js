@@ -3,14 +3,39 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
 
+function toLocalImagePath(image) {
+  if (!image) return '';
+
+  if (image.startsWith('/images/')) {
+    return image;
+  }
+
+  try {
+    const url = new URL(image);
+
+    if (url.pathname.startsWith('/images/')) {
+      return url.pathname;
+    }
+
+    return image;
+  } catch {
+    return image.startsWith('/') ? image : `/${image}`;
+  }
+}
+
 export default function ProductTabsSection({
   title = 'Товары',
   tabs = [],
   tabProducts = {},
   sectionClass = 'products-tabs',
-  showNewBadge = false
+  showNewBadge = false,
 }) {
+  const sectionRef = useRef(null);
   const swipersRef = useRef({});
+  const retryTimerRef = useRef(0);
+  const raf1Ref = useRef(0);
+  const raf2Ref = useRef(0);
+
   const [productsPerSlide, setProductsPerSlide] = useState(5);
 
   useEffect(() => {
@@ -35,45 +60,6 @@ export default function ProductTabsSection({
     };
   }, []);
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.Swiper) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      Object.values(swipersRef.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true);
-      });
-      swipersRef.current = {};
-
-      document.querySelectorAll('.products-slider').forEach((slider) => {
-        const sliderId = slider.getAttribute('data-slider');
-
-        swipersRef.current[sliderId] = new window.Swiper(slider, {
-          slidesPerView: 1,
-          spaceBetween: 0,
-          loop: false,
-          speed: 600,
-          pagination: {
-            el: slider.querySelector('.products-slider__pagination'),
-            clickable: true,
-          },
-          navigation: {
-            nextEl: slider.querySelector('.products-slider__nav-next'),
-            prevEl: slider.querySelector('.products-slider__nav-prev'),
-          },
-        });
-      });
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      Object.values(swipersRef.current).forEach(swiper => {
-        if (swiper) swiper.destroy(true, true);
-      });
-    };
-  }, [tabs, tabProducts, productsPerSlide]);
-
   const chunkProducts = (products, size) => {
     const chunks = [];
 
@@ -95,12 +81,119 @@ export default function ProductTabsSection({
     return result;
   }, [tabs, tabProducts, productsPerSlide]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!sectionRef.current) return;
+
+    let cancelled = false;
+
+    const destroySwipers = () => {
+      Object.values(swipersRef.current).forEach((swiper) => {
+        swiper?.destroy?.(true, true);
+      });
+
+      swipersRef.current = {};
+    };
+
+    const initSliders = () => {
+      if (cancelled) return;
+
+      if (!window.Swiper) {
+        retryTimerRef.current = window.setTimeout(initSliders, 100);
+        return;
+      }
+
+      const sectionEl = sectionRef.current;
+      if (!sectionEl) return;
+
+      destroySwipers();
+
+      const sliders = sectionEl.querySelectorAll('.products-slider');
+
+      sliders.forEach((slider) => {
+        const sliderId = slider.getAttribute('data-slider');
+
+        if (!sliderId) return;
+
+        const slideCount = slider.querySelectorAll('.swiper-slide').length;
+        const prevBtn = slider.querySelector('.products-slider__nav-prev');
+        const nextBtn = slider.querySelector('.products-slider__nav-next');
+        const pagination = slider.querySelector('.products-slider__pagination');
+
+        if (slideCount <= 1) {
+          if (prevBtn) prevBtn.style.display = 'none';
+          if (nextBtn) nextBtn.style.display = 'none';
+          if (pagination) pagination.style.display = 'none';
+          return;
+        }
+
+        if (prevBtn) prevBtn.style.display = '';
+        if (nextBtn) nextBtn.style.display = '';
+        if (pagination) pagination.style.display = '';
+
+        swipersRef.current[sliderId] = new window.Swiper(slider, {
+          slidesPerView: 1,
+          spaceBetween: 0,
+          loop: false,
+          speed: 600,
+          watchOverflow: true,
+          pagination: {
+            el: pagination,
+            clickable: true,
+          },
+          navigation: {
+            nextEl: nextBtn,
+            prevEl: prevBtn,
+          },
+        });
+      });
+    };
+
+    const updateVisibleSwiper = () => {
+      if (!sectionRef.current) return;
+
+      requestAnimationFrame(() => {
+        const activePane = sectionRef.current.querySelector('.tab-pane.active');
+        const activeSlider = activePane?.querySelector('.products-slider');
+        const activeSliderId = activeSlider?.getAttribute('data-slider');
+
+        if (activeSliderId && swipersRef.current[activeSliderId]) {
+          swipersRef.current[activeSliderId].update();
+        }
+      });
+    };
+
+    const tabButtons = sectionRef.current.querySelectorAll('[data-bs-toggle="tab"]');
+
+    tabButtons.forEach((button) => {
+      button.addEventListener('shown.bs.tab', updateVisibleSwiper);
+    });
+
+    raf1Ref.current = requestAnimationFrame(() => {
+      raf2Ref.current = requestAnimationFrame(initSliders);
+    });
+
+    return () => {
+      cancelled = true;
+
+      if (retryTimerRef.current) window.clearTimeout(retryTimerRef.current);
+      if (raf1Ref.current) cancelAnimationFrame(raf1Ref.current);
+      if (raf2Ref.current) cancelAnimationFrame(raf2Ref.current);
+
+      tabButtons.forEach((button) => {
+        button.removeEventListener('shown.bs.tab', updateVisibleSwiper);
+      });
+
+      destroySwipers();
+    };
+  }, [tabs, tabProducts, productsPerSlide]);
+
   if (tabs.length === 0 || Object.keys(tabProducts).length === 0) {
     return null;
   }
 
   return (
-    <section className={sectionClass}>
+    <section ref={sectionRef} className={sectionClass}>
       <div className="container">
         <div className="row">
           <div className="col-12">
@@ -160,37 +253,51 @@ export default function ProductTabsSection({
                                           small_desc_name: product.title,
                                           name_ru: product.description,
                                           price_byn: product.price,
-                                          local_images: (product.images || []).map(img =>
-                                            img.replace('https://test.ikeya.by/', '')
-                                          ),
+                                          local_images: (product.images || [])
+                                            .map(toLocalImagePath)
+                                            .filter(Boolean),
                                           variants: product.variants || null,
                                           is_bestseller: product.badges?.includes('hit'),
                                           is_new: product.badges?.includes('new'),
-                                        }
+                                        },
                                       }}
                                     />
                                   ))}
 
-                                  {slideProducts.length < productsPerSlide && Array.from({ length: productsPerSlide - slideProducts.length }).map((_, i) => (
-                                    <div key={`empty-${i}`} className="col product-card-inner" style={{ visibility: 'hidden' }} />
-                                  ))}
+                                  {slideProducts.length < productsPerSlide &&
+                                    Array.from({ length: productsPerSlide - slideProducts.length }).map((_, i) => (
+                                      <div
+                                        key={`empty-${i}`}
+                                        className="col product-card-inner"
+                                        style={{ visibility: 'hidden' }}
+                                      />
+                                    ))}
                                 </div>
                               </div>
                             ))}
                           </div>
 
                           {slides.length > 1 && (
-                            <div className="products-slider__pagination"></div>
+                            <div className="products-slider__pagination" />
                           )}
 
                           {slides.length > 1 && (
                             <>
-                              <button className="products-slider__nav products-slider__nav-prev">
+                              <button
+                                className="products-slider__nav products-slider__nav-prev"
+                                type="button"
+                                aria-label="Предыдущий слайд"
+                              >
                                 <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </button>
-                              <button className="products-slider__nav products-slider__nav-next">
+
+                              <button
+                                className="products-slider__nav products-slider__nav-next"
+                                type="button"
+                                aria-label="Следующий слайд"
+                              >
                                 <svg width="7" height="12" viewBox="0 0 7 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>

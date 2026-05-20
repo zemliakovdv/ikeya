@@ -7,31 +7,34 @@ const MAX_TABS = 7;
 const PRODUCTS_PER_TAB = 15;
 const FETCH_LIMIT = 100; // Увеличиваем лимит для получения достаточного кол-ва товаров для группировки
 
+function resolveImageUrl(url) {
+  if (!url) return null;
+
+  if (url.startsWith('http')) {
+    return url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
+  }
+
+  return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
 function mapProductToCard(product) {
   const attr = product.attributes;
 
-  let images = [];
-  if (Array.isArray(attr.local_images) && attr.local_images.length > 0) {
-    images = attr.local_images.map(img =>
-      `${IMAGES_BASE_URL}${img.startsWith('/') ? img : '/' + img}`
-    );
-  }
+  const images = Array.isArray(attr.local_images)
+    ? attr.local_images.map(resolveImageUrl).filter(Boolean)
+    : [];
 
-  // Формируем массив бейджей, который ожидает ProductTabsSection
   const badges = [];
-  if (attr.is_bestseller || true) badges.push('hit'); // Добавляем 'hit', чтобы сработало product.badges?.includes('hit')
+  if (attr.is_bestseller || true) badges.push('hit');
   if (attr.is_new) badges.push('new');
   if (attr.promo) badges.push('promo');
 
   return {
     id: product.id,
     sku: attr.sku || product.id,
-    // 1. Заголовок из small_desc_name
-    title: attr.small_desc_name || 'Товар IKEA', 
-    // 2. Описание из name_ru
-    description: attr.name_ru || 'Без названия', 
-    // 3. Цена из price_byn
-    price: attr.price_byn || '0.00', 
+    title: attr.small_desc_name || 'Товар IKEA',
+    description: attr.name_ru || 'Без названия',
+    price: attr.price_byn || '0.00',
     images,
     url: `/product/${attr.slug}-${attr.sku}`,
     categoryId: String(attr.category_id),
@@ -43,7 +46,7 @@ function mapProductToCard(product) {
 export default async function RecommendedSection() {
   const [productsResponse, tree] = await Promise.all([
     // Используем правильный эндпоинт для рекомендаций
-    getRecommendedProducts({ page: 1, per_page: FETCH_LIMIT }), 
+    getRecommendedProducts({ page: 1, per_page: FETCH_LIMIT }),
     getCachedCategoriesTree(),
   ]);
 
@@ -56,7 +59,7 @@ export default async function RecommendedSection() {
   allCategories.forEach(cat => {
     const name = cat.attributes?.translated_name || cat.attributes?.name;
     // Сохраняем ID как строку для гарантированного совпадения
-    if (name) categoryMap.set(String(cat.id), name); 
+    if (name) categoryMap.set(String(cat.id), name);
   });
 
   const groupedByCategory = {};
@@ -70,7 +73,7 @@ export default async function RecommendedSection() {
         products: []
       };
     }
-    
+
     if (groupedByCategory[catId].products.length < PRODUCTS_PER_TAB) {
       groupedByCategory[catId].products.push(product);
     }

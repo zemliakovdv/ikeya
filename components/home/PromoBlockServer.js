@@ -4,12 +4,24 @@ import PromoBlock from './PromoBlock';
 
 const API_BASE_URL = 'https://test.ikeya.by/api/v1';
 
+function resolveImageUrl(url) {
+    if (!url) return null;
+
+    if (url.startsWith('http')) {
+        return url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
+    }
+
+    return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
 async function getCustomCategories() {
     try {
         const res = await fetch(`${API_BASE_URL}/categories/custom`, {
-            next: { revalidate: 300 }
+            next: { revalidate: 300 },
         });
+
         if (!res.ok) return [];
+
         const data = await res.json();
         return data.data || [];
     } catch (e) {
@@ -21,9 +33,11 @@ async function getCustomCategories() {
 async function getCategoryProducts(categoryId) {
     try {
         const res = await fetch(`${API_BASE_URL}/categories/${categoryId}/products?per_page=100`, {
-            next: { revalidate: 60 }
+            next: { revalidate: 60 },
         });
+
         if (!res.ok) return [];
+
         const data = await res.json();
         return data.data || [];
     } catch (e) {
@@ -33,28 +47,29 @@ async function getCategoryProducts(categoryId) {
 }
 
 function mapProductToCard(product) {
-    const attr = product.attributes;
+    const attr = product.attributes || {};
 
-    let images = [];
-    if (Array.isArray(attr.local_images) && attr.local_images.length > 0) {
-        images = attr.local_images.map(img =>
-            `${IMAGES_BASE_URL}${img.startsWith('/') ? img : '/' + img}`
-        );
-    }
+    const images = Array.isArray(attr.local_images)
+        ? attr.local_images.map(resolveImageUrl).filter(Boolean)
+        : [];
+
+    const sku = attr.sku || product.id;
+    const slug = attr.slug;
 
     return {
         id: product.id,
-        sku: attr.sku,
-        slug: attr.slug,
+        sku,
+        slug,
         title: attr.name_ru || attr.name || 'Без названия',
         description: attr.collection || attr.name_ru || '',
-        price: attr.price ? `${parseFloat(attr.price).toFixed(2)}` : '0.00',
+        price: attr.price_byn || attr.price || '0.00',
         images,
         badges: [
             attr.is_bestseller && 'hit',
-            attr.is_popular && 'promo'
+            attr.is_popular && 'promo',
+            attr.promo && 'promo',
         ].filter(Boolean),
-        url: `/product/${attr.slug}-${attr.sku}`,
+        url: slug && sku ? `/product/${slug}-${sku}` : '#',
     };
 }
 
@@ -63,36 +78,14 @@ export default async function PromoBlockServer() {
 
     if (!customCategories.length) return null;
 
-    // Берём первую кастомную категорию
     const category = customCategories[0];
-    const attr = category.attributes;
+    const attr = category.attributes || {};
 
-    // Баннер — берём local_image_path или background_image_url
-    let bannerImage = null;
-    if (attr.local_image_path) {
-        const path = attr.local_image_path;
-        bannerImage = path.startsWith('http')
-            ? path
-            : `https://test.ikeya.by${path.startsWith('/') ? '' : '/'}${path}`;
-    } else if (attr.background_image_url) {
-        const path = attr.background_image_url;
-        // ✅ то же самое для background_image_url
-        bannerImage = path.startsWith('http')
-            ? path
-            : `https://test.ikeya.by${path.startsWith('/') ? '' : '/'}${path}`;
-    }
+    const bannerImage = resolveImageUrl(attr.local_image_path || attr.background_image_url);
+    const bannerUrl = attr.slug ? `/catalog/${attr.slug}` : '/catalog';
 
-
-    // Ссылка баннера — на страницу категории
-    const bannerUrl = `/catalog/${attr.slug}`;
-
-    // Загружаем товары категории
     const rawProducts = await getCategoryProducts(category.id);
     const products = rawProducts.map(mapProductToCard);
-
-    console.log('bannerImage:', bannerImage);
-    console.log('local_image_path:', attr.local_image_path);
-
 
     if (!products.length) return null;
 

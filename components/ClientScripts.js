@@ -232,8 +232,6 @@ export default function ClientScripts() {
       }
 
       // ========== ВЫЗОВ ВСЕХ ФУНКЦИЙ ==========
-      initStartSlider();
-      initHomeCategoriesSlider();
       initAboutCategoriesSlider();
       initChildCategoriesSlider();
     };
