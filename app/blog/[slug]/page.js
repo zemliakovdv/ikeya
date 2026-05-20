@@ -29,12 +29,37 @@ async function getMoreArticles(slug) {
   return (data.data || []).filter(a => a.attributes.slug !== slug);
 }
 
-function extractImage(article) {
-  const blocks = article.attributes.body_blocks || [];
-  for (const block of blocks) {
-    const hero = (block.images || []).find(img => img.slot === 'hero_image') || (block.images || [])[0];
-    if (hero?.url) return hero.url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
+function resolveImageUrl(url) {
+  if (!url) return null;
+
+  if (url.startsWith('http')) {
+    return url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
   }
+
+  return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
+function extractImage(article) {
+  const attr = article?.attributes || {};
+  const blockGroups = [
+    attr.tile_blocks || [],
+    attr.body_blocks || [],
+  ];
+
+  for (const blocks of blockGroups) {
+    for (const block of blocks) {
+      const images = block.images || [];
+
+      const image =
+        images.find((img) => img.slot === 'hero_image' && img.url) ||
+        images.find((img) => img.url);
+
+      const imageUrl = resolveImageUrl(image?.url);
+
+      if (imageUrl) return imageUrl;
+    }
+  }
+
   return null;
 }
 

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
 function resolveUrl(url) {
@@ -11,14 +12,24 @@ function resolveUrl(url) {
   return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
 }
 
-export default function TextWithImageBlock({ block }) {
+export default function TextButtonWideImageBlock({ block }) {
   const hero = (block.images || []).find((img) => img.slot === 'hero_image');
   const imageUrl = resolveUrl(hero?.url);
+  const buttonCategory = block.button_category;
 
   return (
-    <section className="text-with-big-image">
+    <section className="text-button-wide-image">
       {block.content && (
         <div dangerouslySetInnerHTML={{ __html: block.content }} />
+      )}
+
+      {block.button_enabled && buttonCategory && (
+        <Link
+          href={`/categories/${buttonCategory.ikea_id}`}
+          className="article-detail-button-transparent"
+        >
+          {block.button_text}
+        </Link>
       )}
 
       {imageUrl && (
