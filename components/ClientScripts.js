@@ -82,31 +82,36 @@ export default function ClientScripts() {
 
       // ========== СЛАЙДЕР БЛОГА ==========
       function initBlogSlider() {
-        const sliderEl = document.querySelector('.blog-inner');
+        const sliderEl = document.querySelector('.blog-inner--home');
         if (!sliderEl) return;
 
+        const sliderWrapper = sliderEl.closest('.blog-slider--home');
+        if (!sliderWrapper) return;
+
         const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
-        const prevBtn = document.querySelector('.blog-slider__nav-prev');
-        const nextBtn = document.querySelector('.blog-slider__nav-next');
+        const prevBtn = sliderWrapper.querySelector('.blog-slider__nav-prev--home');
+        const nextBtn = sliderWrapper.querySelector('.blog-slider__nav-next--home');
+        const pagination = sliderWrapper.querySelector('.blog-slider__pagination--home');
 
         if (slideCount < 2) {
           if (prevBtn) prevBtn.style.display = 'none';
           if (nextBtn) nextBtn.style.display = 'none';
+          if (pagination) pagination.style.display = 'none';
           return;
         }
 
-        const blogSlider = new Swiper('.blog-inner', {
+        const blogSlider = new Swiper(sliderEl, {
           slidesPerView: 1,
           spaceBetween: 0,
           loop: slideCount > 1,
           speed: 600,
           watchOverflow: true,
           navigation: {
-            nextEl: '.blog-slider__nav-next',
-            prevEl: '.blog-slider__nav-prev',
+            nextEl: nextBtn,
+            prevEl: prevBtn,
           },
           pagination: {
-            el: '.blog-slider__pagination',
+            el: pagination,
             clickable: true,
           },
           on: {
@@ -230,8 +235,6 @@ export default function ClientScripts() {
       initStartSlider();
       initHomeCategoriesSlider();
       initAboutCategoriesSlider();
-      initAdsBannerSlider();
-      initBlogSlider();
       initChildCategoriesSlider();
     };
 

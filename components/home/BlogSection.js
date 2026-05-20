@@ -1,4 +1,5 @@
 // components/home/BlogSection.js
+
 import BlogSlider from '@/components/home/BlogSlider';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
@@ -15,7 +16,9 @@ async function getArticles() {
       `${API_BASE_URL}/content/articles?per_page=9`,
       { next: { revalidate: 60 } }
     );
+
     if (!res.ok) return [];
+
     const data = await res.json();
     return data.data || [];
   } catch (e) {
@@ -24,17 +27,37 @@ async function getArticles() {
   }
 }
 
+function resolveImageUrl(url) {
+  if (!url) return null;
+
+  if (url.startsWith('http')) {
+    return url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
+  }
+
+  return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+}
+
 function extractImage(article) {
-  const blocks = article.attributes.body_blocks || [];
-  for (const block of blocks) {
-    const images = block.images || [];
-    const hero = images.find(img => img.slot === 'hero_image') || images[0];
-    if (hero?.url) {
-      // Заменяем localhost на боевой IMAGES_BASE_URL
-      if (hero.url.startsWith('http')) return hero.url;
-      return `${IMAGES_BASE_URL}${hero.url}`;
+  const attr = article?.attributes || {};
+  const blockGroups = [
+    attr.tile_blocks || [],
+    attr.body_blocks || [],
+  ];
+
+  for (const blocks of blockGroups) {
+    for (const block of blocks) {
+      const images = block.images || [];
+
+      const image =
+        images.find((img) => img.slot === 'hero_image' && img.url) ||
+        images.find((img) => img.url);
+
+      const imageUrl = resolveImageUrl(image?.url);
+
+      if (imageUrl) return imageUrl;
     }
   }
+
   return null;
 }
 
@@ -43,16 +66,19 @@ export default async function BlogSection() {
 
   if (!articles.length) return null;
 
-  const mapped = articles.map(a => ({
-    id: a.id,
-    title: a.attributes.title,
-    excerpt: a.attributes.excerpt,
-    category: CONTENT_TYPE_LABELS[a.attributes.content_type] || a.attributes.content_type,
-    image: extractImage(a),
-    link: `/blog/${a.attributes.slug}`,
-  }));
+  const mapped = articles.map((article) => {
+    const attr = article.attributes || {};
 
-  // По 3 статьи на слайд
+    return {
+      id: article.id,
+      title: attr.title,
+      excerpt: attr.excerpt,
+      category: CONTENT_TYPE_LABELS[attr.content_type] || attr.content_type,
+      image: extractImage(article),
+      link: `/blog/${attr.slug}`,
+    };
+  });
+
   const slides = [];
   for (let i = 0; i < mapped.length; i += 3) {
     slides.push(mapped.slice(i, i + 3));
