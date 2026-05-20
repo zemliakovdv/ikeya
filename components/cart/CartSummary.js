@@ -4,7 +4,11 @@ import { useMemo, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 
 function toNumber(value, fallback = 0) {
-  const num = parseFloat(String(value ?? '').replace(/\s/g, ''));
+  const normalized = String(value ?? '')
+    .replace(/\s/g, '')
+    .replace(',', '.');
+
+  const num = Number.parseFloat(normalized);
   return Number.isFinite(num) ? num : fallback;
 }
 
@@ -21,30 +25,39 @@ function formatMoney(value) {
   );
 }
 
+function formatMoneyPlain(value) {
+  return `${toNumber(value).toFixed(2)} р.`;
+}
+
 function formatWeight(value) {
   const weight = toNumber(value, 0);
 
   if (weight <= 0) return '';
 
   const rounded = Number(weight.toFixed(2));
+
   return rounded.toLocaleString('ru-RU', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
 }
 
+function getItemWord(count) {
+  const absCount = Math.abs(Number(count || 0));
+  const lastTwo = absCount % 100;
+  const lastOne = absCount % 10;
+
+  if (lastTwo >= 11 && lastTwo <= 14) return 'товаров';
+  if (lastOne === 1) return 'товар';
+  if (lastOne >= 2 && lastOne <= 4) return 'товара';
+
+  return 'товаров';
+}
+
 export default function CartSummary({
   subtotal = 0,
   promoDiscount = 0,
-
-  // Доставка в Беларусь: cart.delivery.delivery_to_belarus_byn / cart.totals.delivery_to_belarus_byn
   delivery = 0,
-
-  // Вся логистика: cart.totals.delivery_total_byn
-  logisticsDelivery = 0,
-
-  // Итог заказа: cart.totals.total_byn
-  finalTotal = null,
 
   // Checkout-специфичные доставки
   pvzDelivery = 0,
@@ -59,7 +72,7 @@ export default function CartSummary({
   checkoutButtonText = 'Перейти к оформлению',
   cart,
   customsDuty = 0,
-  checkoutLoading,
+  checkoutLoading = false,
 }) {
   const { applyPromo, removePromo, loading } = useCart();
 
@@ -71,6 +84,7 @@ export default function CartSummary({
   const appliedPromo = useMemo(() => {
     const items = cart?.items || [];
     const found = items.find((it) => it?.pricing?.promo_applied && it?.pricing?.promo_code);
+
     return found?.pricing?.promo_code || null;
   }, [cart]);
 
@@ -83,6 +97,8 @@ export default function CartSummary({
     toNumber(pvzDelivery) +
     toNumber(courierDelivery);
 
+  const isCheckoutDisabled = !canCheckout || checkoutLoading || loading;
+
   const show = (type, msg) => {
     setToastType(type);
     setToastMessage(msg);
@@ -90,8 +106,8 @@ export default function CartSummary({
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const handlePromoSubmit = async (e) => {
-    e.preventDefault();
+  const handlePromoSubmit = async (event) => {
+    event.preventDefault();
 
     const code = promoCode.trim();
 
@@ -109,7 +125,9 @@ export default function CartSummary({
     }
   };
 
-  const handlePromoRemove = async () => {
+  const handlePromoRemove = async (event) => {
+    event.preventDefault();
+
     try {
       await removePromo();
       show('success', 'Промокод удалён');
@@ -150,13 +168,13 @@ export default function CartSummary({
       </div>
 
       <div className="card-summary__coupon">
-        <form onSubmit={hasPromo ? (e) => { e.preventDefault(); handlePromoRemove(); } : handlePromoSubmit}>
+        <form onSubmit={hasPromo ? handlePromoRemove : handlePromoSubmit}>
           <input
             type="text"
             id="cardSummaryCoupon"
             placeholder={hasPromo ? appliedPromo : 'Промокод или купон'}
             value={hasPromo ? appliedPromo : promoCode}
-            onChange={(e) => !hasPromo && setPromoCode(e.target.value)}
+            onChange={(event) => !hasPromo && setPromoCode(event.target.value)}
             disabled={loading || hasPromo}
           />
 
@@ -177,7 +195,7 @@ export default function CartSummary({
           <p>Всего</p>
           <div />
           <p>
-            {itemCount} {itemCount === 1 ? 'товар' : itemCount < 5 ? 'товара' : 'товаров'}
+            {itemCount} {getItemWord(itemCount)}
             {toNumber(totalWeight) > 0 && <span> ({formatWeight(totalWeight)} кг)</span>}
           </p>
         </div>
@@ -185,7 +203,9 @@ export default function CartSummary({
         <div className="cart-summary__row">
           <p>Стоимость товаров</p>
           <div />
-          <p className="summery-row__cost">{toNumber(subtotal).toFixed(2)} р.</p>
+          <p className="summery-row__cost">
+            {formatMoney(subtotal)}
+          </p>
         </div>
 
         {hasPromo && toNumber(promoDiscount) > 0 && (
@@ -193,7 +213,7 @@ export default function CartSummary({
             <p>Скидка по промокоду</p>
             <div />
             <p className="summery-row__cost-promo" style={{ color: '#B71C1C' }}>
-              -{toNumber(promoDiscount).toFixed(2)} р.
+              -{formatMoneyPlain(promoDiscount)}
             </p>
           </div>
         )}
@@ -202,7 +222,7 @@ export default function CartSummary({
           <p>Доставка в Беларусь</p>
           <div />
           <p className="summery-row__cost-delivery">
-            {toNumber(delivery) === 0 ? '0 р.' : `${toNumber(delivery).toFixed(2)} р.`}
+            {formatMoney(delivery)}
           </p>
         </div>
 
@@ -211,7 +231,7 @@ export default function CartSummary({
             <p>Доставка до ПВЗ</p>
             <div />
             <p className="summery-row__cost pvz-delivery">
-              {toNumber(pvzDelivery).toFixed(2)} р.
+              {formatMoney(pvzDelivery)}
             </p>
           </div>
         )}
@@ -221,7 +241,7 @@ export default function CartSummary({
             <p>Доставка</p>
             <div />
             <p className="summery-row__cost">
-              {toNumber(courierDelivery).toFixed(2)} р.
+              {formatMoney(courierDelivery)}
             </p>
           </div>
         )}
@@ -236,11 +256,11 @@ export default function CartSummary({
 
         <button
           className="cart-summary__checkout-btn"
-          disabled={!canCheckout || (checkoutLoading !== undefined ? checkoutLoading : loading)}
+          disabled={isCheckoutDisabled}
           onClick={onCheckout}
           type="button"
         >
-          {checkoutButtonText}
+          {checkoutLoading ? 'Оформляем...' : checkoutButtonText}
         </button>
 
         <p className="cart-summary__notice">
@@ -253,15 +273,23 @@ export default function CartSummary({
           <div className="summary-note__wrap">
             <p className="cart-summary__note-icon">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M9.99996 1.66669C5.40829 1.66669 1.66663 5.40835 1.66663 10C1.66663 14.5917 5.40829 18.3334 9.99996 18.3334C14.5916 18.3334 18.3333 14.5917 18.3333 10C18.3333 5.40835 14.5916 1.66669 9.99996 1.66669ZM13.1 10.5834H10.5833V13.1C10.5833 13.425 10.325 13.6834 9.99996 13.6834C9.67496 13.6834 9.41663 13.425 9.41663 13.1V10.5834H6.89996C6.57496 10.5834 6.31663 10.325 6.31663 10C6.31663 9.67502 6.57496 9.41669 6.89996 9.41669H9.41663V6.90002C9.41663 6.57502 9.67496 6.31669 9.99996 6.31669C10.325 6.31669 10.5833 6.57502 10.5833 6.90002V9.41669H13.1C13.425 9.41669 13.6833 9.67502 13.6833 10C13.6833 10.325 13.425 10.5834 13.1 10.5834Z" fill="#CE0061" />
+                <path
+                  d="M9.99996 1.66669C5.40829 1.66669 1.66663 5.40835 1.66663 10C1.66663 14.5917 5.40829 18.3334 9.99996 18.3334C14.5916 18.3334 18.3333 14.5917 18.3333 10C18.3333 5.40835 14.5916 1.66669 9.99996 1.66669ZM13.1 10.5834H10.5833V13.1C10.5833 13.425 10.325 13.6834 9.99996 13.6834C9.67496 13.6834 9.41663 13.425 9.41663 13.1V10.5834H6.89996C6.57496 10.5834 6.31663 10.325 6.31663 10C6.31663 9.67502 6.57496 9.41669 6.89996 9.41669H9.41663V6.90002C9.41663 6.57502 9.67496 6.31669 9.99996 6.31669C10.325 6.31669 10.5833 6.57502 10.5833 6.90002V9.41669H13.1C13.425 9.41669 13.6833 9.67502 13.6833 10C13.6833 10.325 13.425 10.5834 13.1 10.5834Z"
+                  fill="#CE0061"
+                />
               </svg>
             </p>
 
             <p>
-              {toNumber(customsDuty) > 0
-                ? <><span>≈{toNumber(customsDuty).toFixed(2)} р.</span> пошлина не входит в цену</>
-                : <><span>0 р.</span> пошлина не входит в цену</>
-              }
+              {toNumber(customsDuty) > 0 ? (
+                <>
+                  <span>≈{formatMoney(customsDuty)}</span> пошлина не входит в цену
+                </>
+              ) : (
+                <>
+                  <span>0 р.</span> пошлина не входит в цену
+                </>
+              )}
             </p>
           </div>
 
