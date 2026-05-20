@@ -2048,6 +2048,15 @@ main {
     flex-direction: column;
 }
 
+.mega-menu-loader {
+    width: 100%;
+    min-height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
 .section-header {
     display: flex;
     align-items: center;
@@ -8248,12 +8257,15 @@ main {
 
 .page-loader {
     position: fixed;
-    inset: 0;
+    left: 0;
+    right: 0;
+    top: 188px;
+    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     background: #fff;
-    z-index: 9998;
+    z-index: 9990;
 }
 
 .page-loader__spinner {
