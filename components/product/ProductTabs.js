@@ -35,7 +35,7 @@ function TabContent({ tab, product, includedProducts, tips }) {
 }
 
 export default function ProductTabs({ product, includedProducts = [] }) {
-  const attr = product.attributes;
+  const attr = product?.attributes || {};
   const fa = attr.full_attributes_ru || {};
 
   const tips = Array.isArray(attr.tips) && attr.tips.length > 0 ? attr.tips : [];
@@ -116,6 +116,7 @@ export default function ProductTabs({ product, includedProducts = [] }) {
                       key={tab}
                       className="product-mobile-tabs-list__item"
                       type="button"
+                      data-tab={tab}
                       onClick={() => openMobilePanel(tab)}
                     >
                       <span>
@@ -142,6 +143,7 @@ export default function ProductTabs({ product, includedProducts = [] }) {
                           key={tab}
                           className={`nav-link ${activeTab === tab ? 'active' : ''}`}
                           type="button"
+                          data-tab={tab}
                           onClick={() => setActiveTab(tab)}
                         >
                           {TAB_LABELS[tab]}
@@ -190,6 +192,7 @@ export default function ProductTabs({ product, includedProducts = [] }) {
                           key={tab}
                           className={`product-mobile-tabs-panel__nav-item ${activeTab === tab ? 'active' : ''}`}
                           type="button"
+                          data-tab={tab}
                           onClick={() => setActiveTab(tab)}
                         >
                           {TAB_LABELS[tab]}

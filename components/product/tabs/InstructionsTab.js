@@ -1,10 +1,18 @@
-export default function InstructionsTab({ product }) {
-  const fa = product?.attributes?.full_attributes_ru || {}
-  const files = fa.instructions?.files || []
-  const attr = product.attributes
+const FILES_BASE_URL = 'https://test.ikeya.by';
 
-  // SVG иконка PDF
-  const PdfIcon = () => (
+function resolveInstructionUrl(link) {
+  if (!link || typeof link !== 'string') return null;
+
+  const cleanLink = link.trim();
+
+  if (!cleanLink) return null;
+  if (cleanLink.startsWith('http')) return cleanLink;
+
+  return `${FILES_BASE_URL}${cleanLink.startsWith('/') ? cleanLink : `/${cleanLink}`}`;
+}
+
+function PdfIcon() {
+  return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M14 4C12.62 4 11.5 5.12 11.5 6.5V41.5C11.5 42.88 12.62 44 14 44H39C40.38 44 41.5 42.88 41.5 41.5V14L31.5 4H14Z"
@@ -29,27 +37,44 @@ export default function InstructionsTab({ product }) {
       />
     </svg>
   );
+}
+
+export default function InstructionsTab({ product }) {
+  const attr = product?.attributes || {};
+  const fa = attr.full_attributes_ru || {};
+
+  const files = Array.isArray(fa.instructions?.files)
+    ? fa.instructions.files
+        .map((file) => ({
+          ...file,
+          resolvedUrl: resolveInstructionUrl(file?.link),
+        }))
+        .filter((file) => file.resolvedUrl)
+    : [];
 
   return (
     <div className="tab-pane fade show active">
       <div className="tab-instrustions__content">
-        
-        {/* Инструкции по сборке */}
         <h5>Инструкции по сборке</h5>
+
         {files.length > 0 ? (
           <div className="instrustions-content__files">
             {files.map((file, index) => (
               <a
-                key={index}
-                href={`https://test.ikeya.by${file.link}`}
+                key={file.resolvedUrl || index}
+                href={file.resolvedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="content-files__item"
               >
                 <PdfIcon />
+
                 <div className="content-files__info">
-                  <p>{file.title || attr.name_ru || attr.name}</p>
-                  <p className="artikul">Артикул: <span>{attr.sku}</span></p>
+                  <p>{file.title || attr.name_ru || attr.name || 'Инструкция'}</p>
+
+                  {attr.sku && (
+                    <p className="artikul">Артикул: <span>{attr.sku}</span></p>
+                  )}
                 </div>
               </a>
             ))}

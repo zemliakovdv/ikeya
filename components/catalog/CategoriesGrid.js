@@ -4,8 +4,7 @@
 import Link from 'next/link';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-const PLACEHOLDER = '/assets/img/no-image.jpg';
-const CARD_PLACEHOLDER = '/assets/img/catalog-modal/placeholder.svg';
+const PLACEHOLDER = '/assets/img/catalog-modal/placeholder.svg';
 
 function normalizeBasePath(basePath) {
   if (!basePath) return '';
@@ -71,7 +70,7 @@ export default function CategoriesGrid({
             );
           }
 
-          const finalImage = image || CARD_PLACEHOLDER;
+          const finalImage = image || PLACEHOLDER;
 
           return (
             <div key={id || url} className="catalog-categoties-card">
@@ -81,6 +80,7 @@ export default function CategoriesGrid({
                     src={finalImage}
                     alt={name}
                     loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = PLACEHOLDER;
                     }}

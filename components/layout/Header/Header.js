@@ -45,9 +45,17 @@ export default function Header() {
 
   useEffect(() => {
     const handleScroll = () => setIsSticky(window.scrollY > 50)
+
+    handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
+
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    setIsMegaMenuOpen(false)
+    setIsProfileOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     getTopCategories()
@@ -58,14 +66,25 @@ export default function Header() {
   useEffect(() => {
     function onDocClick(e) {
       if (!isProfileOpen) return
+
       if (
         dropdownRef.current && !dropdownRef.current.contains(e.target) &&
         toggleRef.current && !toggleRef.current.contains(e.target)
-      ) setIsProfileOpen(false)
+      ) {
+        setIsProfileOpen(false)
+      }
     }
-    function onEsc(e) { if (e.key === 'Escape') setIsProfileOpen(false) }
+
+    function onEsc(e) {
+      if (e.key === 'Escape') {
+        setIsProfileOpen(false)
+        setIsMegaMenuOpen(false)
+      }
+    }
+
     document.addEventListener('click', onDocClick)
     window.addEventListener('keydown', onEsc)
+
     return () => {
       document.removeEventListener('click', onDocClick)
       window.removeEventListener('keydown', onEsc)
@@ -77,6 +96,7 @@ export default function Header() {
 
     const init = () => {
       if (!window.Swiper || swiperInst.current) return
+
       swiperInst.current = new window.Swiper(swiperElRef.current, {
         slidesPerView: 'auto',
         spaceBetween: 8,
@@ -98,6 +118,7 @@ export default function Header() {
 
     return () => {
       window.removeEventListener('swiper-ready', init)
+
       if (swiperInst.current) {
         swiperInst.current.destroy(true, true)
         swiperInst.current = null
@@ -115,6 +136,7 @@ export default function Header() {
     menuCategories.length > 0
       ? menuCategories.map((cat) => {
         const a = cat.attributes || {}
+
         return {
           key: cat.id,
           href: `/catalog/${a.slug}`,
@@ -124,10 +146,30 @@ export default function Header() {
       : FALLBACK_CATEGORIES
   )
 
+  function handleCatalogToggle() {
+    setIsProfileOpen(false)
+    setIsMegaMenuOpen((value) => !value)
+  }
+
+  function handleProfileToggle() {
+    setIsMegaMenuOpen(false)
+    setIsProfileOpen((value) => !value)
+  }
+
+  function handleLoginClick() {
+    setIsMegaMenuOpen(false)
+    setIsProfileOpen(false)
+    openLogin()
+  }
+
   function handleLogout() {
     logout()
     setIsProfileOpen(false)
-    if (pathname.startsWith('/profile')) router.push('/')
+    setIsMegaMenuOpen(false)
+
+    if (pathname.startsWith('/profile')) {
+      router.push('/')
+    }
   }
 
   return (
@@ -165,16 +207,18 @@ export default function Header() {
                   <Link href="/" className="logo">
                     <img src="/assets/img/logo.svg" alt="IKEYA — главная" />
                   </Link>
+
                   <div className="header-middle-phone--mobile">
                     <MobilePhoneDropdown />
                   </div>
+
                   <button
                     id="catalogButton"
                     className="catalog-btn"
                     type="button"
                     aria-label={isMegaMenuOpen ? 'Закрыть каталог' : 'Открыть каталог'}
                     aria-expanded={isMegaMenuOpen}
-                    onClick={() => setIsMegaMenuOpen((v) => !v)}
+                    onClick={handleCatalogToggle}
                   >
                     {isMegaMenuOpen ? (
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -185,6 +229,7 @@ export default function Header() {
                     )}
                     <p>Каталог</p>
                   </button>
+
                   <Link href="/services">Услуги</Link>
                 </div>
 
@@ -206,7 +251,7 @@ export default function Header() {
                       <button
                         type="button"
                         className="panel-item-button"
-                        onClick={openLogin}
+                        onClick={handleLoginClick}
                         aria-label="Войти в профиль"
                         style={{ background: 'transparent', border: 0, padding: 0 }}
                       >
@@ -214,7 +259,6 @@ export default function Header() {
                           <path d="M18.8125 16.9125C21.1375 15.5875 22.7125 13.0875 22.7125 10.2125C22.7125 5.9625 19.25 2.5 15 2.5C10.75 2.5 7.28755 5.9625 7.28755 10.2125C7.28755 13.075 8.86255 15.575 11.1875 16.9125C7.31255 18.4375 4.55005 22.2125 4.55005 26.6375C4.55005 27.125 4.93755 27.5125 5.42505 27.5125C5.91255 27.5125 6.30005 27.125 6.30005 26.6375C6.30005 21.8375 10.2 17.9375 15 17.9375C19.8 17.9375 23.7 21.8375 23.7 26.6375C23.7 27.125 24.0875 27.5125 24.5751 27.5125C25.0625 27.5125 25.4501 27.125 25.4501 26.6375C25.4501 22.225 22.6875 18.45 18.8125 16.925V16.9125ZM9.03755 10.2125C9.03755 6.925 11.7125 4.25 15 4.25C18.2875 4.25 20.9625 6.925 20.9625 10.2125C20.9625 13.5 18.2875 16.175 15 16.175C11.7125 16.175 9.03755 13.5 9.03755 10.2125Z" fill="#181818" />
                         </svg>
                         <p>Войти</p>
-                        <span>0</span>
                       </button>
                     </div>
                   ) : (
@@ -226,7 +270,7 @@ export default function Header() {
                         id="profileMenuToggle"
                         aria-label="Открыть меню профиля"
                         aria-expanded={isProfileOpen}
-                        onClick={() => setIsProfileOpen((v) => !v)}
+                        onClick={handleProfileToggle}
                       >
                         <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                           <path d="M18.8125 16.9125C21.1375 15.5875 22.7125 13.0875 22.7125 10.2125C22.7125 5.9625 19.25 2.5 15 2.5C10.75 2.5 7.28755 5.9625 7.28755 10.2125C7.28755 13.075 8.86255 15.575 11.1875 16.9125C7.31255 18.4375 4.55005 22.2125 4.55005 26.6375C4.55005 27.125 4.93755 27.5125 5.42505 27.5125C5.91255 27.5125 6.30005 27.125 6.30005 26.6375C6.30005 21.8375 10.2 17.9375 15 17.9375C19.8 17.9375 23.7 21.8375 23.7 26.6375C23.7 27.125 24.0875 27.5125 24.5751 27.5125C25.0625 27.5125 25.4501 27.125 25.4501 26.6375C25.4501 22.225 22.6875 18.45 18.8125 16.925V16.9125ZM9.03755 10.2125C9.03755 6.925 11.7125 4.25 15 4.25C18.2875 4.25 20.9625 6.925 20.9625 10.2125C20.9625 13.5 18.2875 16.175 15 16.175C11.7125 16.175 9.03755 13.5 9.03755 10.2125Z" fill="#181818" />
@@ -317,7 +361,7 @@ export default function Header() {
 
               <div className="profile-divider" />
 
-              <button className="profile-logout" id="logoutButton" onClick={handleLogout}>
+              <button className="profile-logout" id="logoutButton" onClick={handleLogout} type="button">
                 Выход
               </button>
             </div>

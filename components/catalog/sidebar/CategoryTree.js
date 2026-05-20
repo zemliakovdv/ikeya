@@ -13,25 +13,40 @@ function getNodeName(node) {
   );
 }
 
+function getNodeSlug(node) {
+  return node?.attributes?.slug || node?.id || '';
+}
+
 function buildUrl(slugs) {
   return slugs.length ? `/catalog/${slugs.join('/')}` : '/catalog';
+}
+
+function buildUrlFromNodes(nodes) {
+  const slugs = (nodes || [])
+    .map(getNodeSlug)
+    .filter(Boolean);
+
+  return buildUrl(slugs);
 }
 
 export default function CategoryTree({ treeData = [], slugChain = [] }) {
   const pathname = usePathname();
   const roots = Array.isArray(treeData) ? treeData : [];
+  const currentSlugChain = Array.isArray(slugChain) ? slugChain : [];
 
-  // ── Уровень 0: /catalog ──────────────────────────────────────────────────
-  if (!slugChain || slugChain.length === 0) {
+  if (currentSlugChain.length === 0) {
     return (
       <div className="category-sidebar">
         <h3 className="category-sidebar__title">Категория</h3>
+
         <nav className="category-tree">
           {roots.map((cat) => {
-            const slug = cat?.attributes?.slug;
+            const slug = getNodeSlug(cat);
             if (!slug) return null;
+
             const href = `/catalog/${slug}`;
             const isActive = pathname === href;
+
             return (
               <Link
                 key={cat.id || slug}
@@ -47,13 +62,13 @@ export default function CategoryTree({ treeData = [], slugChain = [] }) {
     );
   }
 
-  // ── Уровень 1+: ищем узел в дереве по slugChain ──────────────────────────
-  const { node, ancestors, siblings } = findNodeInTree(roots, slugChain);
+  const { node, ancestors, siblings } = findNodeInTree(roots, currentSlugChain);
 
   if (!node) {
     return (
       <div className="category-sidebar">
         <h3 className="category-sidebar__title">Категория</h3>
+
         <nav className="category-tree">
           <Link href="/catalog" className="category-tree__back">
             ‹ Все категории
@@ -63,28 +78,31 @@ export default function CategoryTree({ treeData = [], slugChain = [] }) {
     );
   }
 
-  const children = node.children || [];
-  const hasChildren = children.length > 0;
+  const safeAncestors = Array.isArray(ancestors) ? ancestors : [];
+  const safeSiblings = Array.isArray(siblings) ? siblings : [];
+  const children = Array.isArray(node.children) ? node.children : [];
 
-  // Список для вывода под текущей:
-  // есть дети — показываем детей, нет — показываем siblings
-  const subItems = hasChildren ? children : siblings.filter((s) => s.id !== node.id);
-  // URL для subItems строится относительно slugChain (дети) или его родителя (siblings)
-  const subItemsBaseSlugs = hasChildren ? slugChain : slugChain.slice(0, -1);
+  const hasChildren = children.length > 0;
+  const subItems = hasChildren
+    ? children
+    : safeSiblings.filter((s) => s.id !== node.id);
+
+  const subItemsBaseSlugs = hasChildren
+    ? currentSlugChain
+    : currentSlugChain.slice(0, -1);
 
   return (
     <div className="category-sidebar">
       <h3 className="category-sidebar__title">Категория</h3>
-      <nav className="category-tree">
 
-        {/* Кнопка возврата на уровень 0 */}
+      <nav className="category-tree">
         <Link href="/catalog" className="category-tree__back">
           ‹ Все категории
         </Link>
 
-        {/* Вся цепочка предков — каждый со ссылкой назад */}
-        {ancestors.map((ancestor, index) => {
-          const ancestorHref = buildUrl(slugChain.slice(0, index + 1));
+        {safeAncestors.map((ancestor, index) => {
+          const ancestorHref = buildUrlFromNodes(safeAncestors.slice(0, index + 1));
+
           return (
             <Link
               key={ancestor.id || ancestorHref}
@@ -96,19 +114,19 @@ export default function CategoryTree({ treeData = [], slugChain = [] }) {
           );
         })}
 
-        {/* Текущая категория — выделена */}
         <div className="category-tree__current">
           {getNodeName(node)}
         </div>
 
-        {/* Дети (если есть) или siblings (если детей нет) */}
         {subItems.length > 0 && (
           <div className="category-tree__children">
             {subItems.map((item) => {
-              const itemSlug = item?.attributes?.slug;
+              const itemSlug = getNodeSlug(item);
               if (!itemSlug) return null;
+
               const itemHref = buildUrl([...subItemsBaseSlugs, itemSlug]);
               const isActive = pathname === itemHref;
+
               return (
                 <Link
                   key={item.id || itemSlug}
@@ -121,7 +139,6 @@ export default function CategoryTree({ treeData = [], slugChain = [] }) {
             })}
           </div>
         )}
-
       </nav>
     </div>
   );

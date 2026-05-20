@@ -2,14 +2,14 @@
 
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs } from 'swiper/modules';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import ProductMobileGallery from '@/components/product/ProductMobileGallery';
+import { resolveImageUrl } from '@/lib/api/ikea';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/thumbs';
 
-const API_BASE_URL = 'https://test.ikeya.by';
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
 export default function ProductGallery({ images = [] }) {
@@ -17,9 +17,13 @@ export default function ProductGallery({ images = [] }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  const validImages = Array.isArray(images) && images.length > 0
-    ? images.map(img => img?.replace(/^\/+/, '')).filter(Boolean)
-    : [];
+  const validImages = useMemo(() => {
+    if (!Array.isArray(images)) return [];
+
+    return images
+      .map((image) => resolveImageUrl(image))
+      .filter(Boolean);
+  }, [images]);
 
   const openLightbox = useCallback((index) => {
     setLightboxIndex(index);
@@ -31,20 +35,22 @@ export default function ProductGallery({ images = [] }) {
   }, []);
 
   const lightboxPrev = useCallback(() => {
-    setLightboxIndex(i => (i - 1 + validImages.length) % validImages.length);
+    setLightboxIndex((index) => (index - 1 + validImages.length) % validImages.length);
   }, [validImages.length]);
 
   const lightboxNext = useCallback(() => {
-    setLightboxIndex(i => (i + 1) % validImages.length);
+    setLightboxIndex((index) => (index + 1) % validImages.length);
   }, [validImages.length]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
 
-    const handleKey = (e) => {
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowLeft') lightboxPrev();
-      if (e.key === 'ArrowRight') lightboxNext();
+    const previousOverflow = document.body.style.overflow;
+
+    const handleKey = (event) => {
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === 'ArrowLeft') lightboxPrev();
+      if (event.key === 'ArrowRight') lightboxNext();
     };
 
     window.addEventListener('keydown', handleKey);
@@ -52,7 +58,7 @@ export default function ProductGallery({ images = [] }) {
 
     return () => {
       window.removeEventListener('keydown', handleKey);
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
     };
   }, [lightboxOpen, lightboxPrev, lightboxNext, closeLightbox]);
 
@@ -93,18 +99,20 @@ export default function ProductGallery({ images = [] }) {
                 nextEl: '.goods-images__main .swiper-button-next',
               }}
               thumbs={{
-                swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null
+                swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null,
               }}
               spaceBetween={10}
               className="swiper mySwiper2 goods-images__main"
             >
               {validImages.map((image, index) => (
-                <SwiperSlide key={index} className="goods-main__item">
+                <SwiperSlide key={`${image}-${index}`} className="goods-main__item">
                   <img
-                    src={`${API_BASE_URL}/${image}`}
+                    src={image}
                     alt={`Фото товара ${index + 1}`}
                     loading="lazy"
-                    onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                    onError={(event) => {
+                      event.currentTarget.src = PLACEHOLDER_IMAGE;
+                    }}
                     onClick={() => openLightbox(index)}
                     style={{ cursor: 'zoom-in' }}
                   />
@@ -123,14 +131,16 @@ export default function ProductGallery({ images = [] }) {
                 className="swiper mySwiper goods-images__minis"
               >
                 {validImages.map((image, index) => (
-                  <SwiperSlide key={index} className="goods-minis__item">
+                  <SwiperSlide key={`${image}-${index}`} className="goods-minis__item">
                     <img
-                      src={`${API_BASE_URL}/${image}`}
+                      src={image}
                       alt={`Миниатюра ${index + 1}`}
                       loading="lazy"
                       width="80"
                       height="80"
-                      onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                      onError={(event) => {
+                        event.currentTarget.src = PLACEHOLDER_IMAGE;
+                      }}
                     />
                   </SwiperSlide>
                 ))}
@@ -172,14 +182,15 @@ export default function ProductGallery({ images = [] }) {
               lineHeight: 1,
               zIndex: 1,
             }}
+            aria-label="Закрыть"
           >
             ✕
           </button>
 
           {validImages.length > 1 && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 lightboxPrev();
               }}
               type="button"
@@ -197,15 +208,19 @@ export default function ProductGallery({ images = [] }) {
                 color: '#fff',
                 fontSize: 20,
               }}
+              aria-label="Предыдущее фото"
             >
               ‹
             </button>
           )}
 
           <img
-            src={`${API_BASE_URL}/${validImages[lightboxIndex]}`}
+            src={validImages[lightboxIndex]}
             alt={`Фото товара ${lightboxIndex + 1}`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+            onError={(event) => {
+              event.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
             style={{
               maxWidth: '90vw',
               maxHeight: '90vh',
@@ -216,8 +231,8 @@ export default function ProductGallery({ images = [] }) {
 
           {validImages.length > 1 && (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
+              onClick={(event) => {
+                event.stopPropagation();
                 lightboxNext();
               }}
               type="button"
@@ -235,6 +250,7 @@ export default function ProductGallery({ images = [] }) {
                 color: '#fff',
                 fontSize: 20,
               }}
+              aria-label="Следующее фото"
             >
               ›
             </button>

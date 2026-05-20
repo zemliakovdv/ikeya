@@ -1723,6 +1723,12 @@
         text-align: center;
         cursor: pointer;
     }
+
+    .goods-images {
+        position: static;
+        top: auto;
+        align-self: auto;
+    }
 }
 
 /* Tablet (768px - 991px) */

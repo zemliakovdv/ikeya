@@ -2,37 +2,37 @@
 'use client';
 
 export default function ProductDeliveryLink() {
-  
   const handleClick = () => {
-    // Находим секцию с табами
     const tabsSection = document.querySelector('.character');
-    
-    if (tabsSection) {
-      // Прокручиваем к табам
-      tabsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      
-      // Ждём завершения прокрутки и активируем таб "Доставка"
-      setTimeout(() => {
-        const deliveryTab = document.querySelector('.character-nav__tabs button[data-tab="delivery"]');
-        if (deliveryTab) {
-          deliveryTab.click();
-        } else {
-          // Если кнопка не найдена по data-tab, ищем по тексту
-          const allTabs = document.querySelectorAll('.character-nav__tabs button');
-          allTabs.forEach(tab => {
-            if (tab.textContent.includes('Услуги') || tab.textContent.includes('Доставка')) {
-              tab.click();
-            }
-          });
-        }
-      }, 500);
-    }
+
+    if (!tabsSection) return;
+
+    tabsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    window.setTimeout(() => {
+      const desktopDeliveryTab = document.querySelector(
+        '.character-nav__tabs button[data-tab="delivery"]'
+      );
+
+      if (desktopDeliveryTab) {
+        desktopDeliveryTab.click();
+        return;
+      }
+
+      const mobileDeliveryTab = document.querySelector(
+        '.product-mobile-tabs-list__item[data-tab="delivery"]'
+      );
+
+      if (mobileDeliveryTab) {
+        mobileDeliveryTab.click();
+      }
+    }, 300);
   };
 
   return (
     <div className="goods-dostavka">
-      <button 
-        className="goods-add__item" 
+      <button
+        className="goods-add__item"
         type="button"
         onClick={handleClick}
       >

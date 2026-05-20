@@ -1,70 +1,97 @@
 // components/product/info/ProductColors.js
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { resolveImageUrl } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by';
+const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
-// Нормализует любой путь к картинке — убирает двойные слеши
-function resolveImage(path) {
-  if (!path) return '/assets/img/no-image.jpg';
-  if (path.startsWith('http')) return path;
-  const clean = path.replace(/^\/+/, '');
-  return `${API_BASE_URL}/${clean}`;
+function buildProductPath(item) {
+  const sku = item?.sku;
+
+  if (!sku) return '#';
+
+  return item?.slug
+    ? `/product/${item.slug}-${sku}`
+    : `/product/${sku}`;
 }
 
 // Берём первую локальную картинку из массива images варианта.
-// Бэк всегда кладёт ikea.com ссылку первой — её пропускаем.
 // Если локальных нет — fallback на localImages основного товара, затем плейсхолдер.
 function resolveVariantImage(images, localImages) {
   if (Array.isArray(images) && images.length > 0) {
-    const local = images.find(img => !img.startsWith('http'));
-    if (local) return resolveImage(local);
+    const local = images.find((image) => image && !image.startsWith('http'));
+
+    if (local) {
+      return resolveImageUrl(local) || PLACEHOLDER_IMAGE;
+    }
+
+    const firstImage = images.find(Boolean);
+
+    if (firstImage) {
+      return resolveImageUrl(firstImage) || PLACEHOLDER_IMAGE;
+    }
   }
+
   if (Array.isArray(localImages) && localImages.length > 0) {
-    return resolveImage(localImages[0]);
+    return resolveImageUrl(localImages[0]) || PLACEHOLDER_IMAGE;
   }
-  return '/assets/img/no-image.jpg';
+
+  return PLACEHOLDER_IMAGE;
 }
 
-export default function ProductColors({ variants, currentSku, localImages }) {
+export default function ProductColors({ variants = [], currentSku, localImages = [] }) {
+  const router = useRouter();
   const [selectedSku, setSelectedSku] = useState(currentSku);
 
-  const allVariants = variants.filter(v => v.item?.sku);
+  useEffect(() => {
+    setSelectedSku(currentSku);
+  }, [currentSku]);
+
+  const allVariants = Array.isArray(variants)
+    ? variants.filter((variant) => variant.item?.sku)
+    : [];
+
   if (allVariants.length === 0) return null;
 
-  // Находим вариант текущего товара среди всех — он будет первой миниатюрой
-  const baseVariant = allVariants.find(v => v.item.sku === currentSku);
-  const baseImage = resolveVariantImage(baseVariant?.item?.images, localImages);
+  const baseVariant = allVariants.find((variant) => variant.item.sku === currentSku);
+  const baseItem = baseVariant?.item || { sku: currentSku };
+  const baseImage = resolveVariantImage(baseItem.images, localImages);
   const baseColorName = baseVariant?.color || '—';
 
-  // Остальные варианты — исключаем текущий товар чтобы не дублировать
-  const otherVariants = allVariants.filter(v => v.item.sku !== currentSku);
+  const otherVariants = allVariants.filter((variant) => variant.item.sku !== currentSku);
 
-  // Название активного цвета
-  const activeVariant = allVariants.find(v => v.item.sku === selectedSku);
+  const activeVariant = allVariants.find((variant) => variant.item.sku === selectedSku);
   const activeColorName = activeVariant?.color || baseColorName;
 
   const isBaseActive = selectedSku === currentSku;
+
+  const handleNavigate = (item) => {
+    const path = buildProductPath(item);
+    if (path === '#') return;
+
+    setSelectedSku(item.sku);
+    router.push(path);
+  };
 
   return (
     <div className="goods-color">
       <p>Цвет: <span>{activeColorName}</span></p>
 
       <div className="goods-color__buttons">
-        {/* Миниатюра текущего товара — всегда первая, без дублирования */}
         <button
           className={`goods-color__item ${isBaseActive ? 'active' : ''}`}
           title={baseColorName}
-          onClick={() => {
-            setSelectedSku(currentSku);
-            window.location.href = `/product/${currentSku}`;
-          }}
+          onClick={() => handleNavigate(baseItem)}
+          type="button"
         >
           <img
             src={baseImage}
             alt={baseColorName}
-            onError={(e) => { e.target.src = '/assets/img/no-image.jpg'; }}
+            onError={(event) => {
+              event.currentTarget.src = PLACEHOLDER_IMAGE;
+            }}
           />
         </button>
 
@@ -78,15 +105,15 @@ export default function ProductColors({ variants, currentSku, localImages }) {
               key={item.sku}
               className={`goods-color__item ${isActive ? 'active' : ''}`}
               title={variant.color}
-              onClick={() => {
-                setSelectedSku(item.sku);
-                window.location.href = `/product/${item.sku}`;
-              }}
+              onClick={() => handleNavigate(item)}
+              type="button"
             >
               <img
                 src={imgSrc}
                 alt={variant.color || ''}
-                onError={(e) => { e.target.src = '/assets/img/no-image.jpg'; }}
+                onError={(event) => {
+                  event.currentTarget.src = PLACEHOLDER_IMAGE;
+                }}
               />
             </button>
           );

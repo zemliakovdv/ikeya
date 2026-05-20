@@ -1,29 +1,49 @@
 // components/product/info/ProductParameters.js
 'use client';
 
+function parseNumber(value) {
+  const normalized = String(value ?? '')
+    .replace(/\s/g, '')
+    .replace(',', '.');
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatWeight(value) {
+  const weight = parseNumber(value);
+
+  if (!weight) return null;
+
+  return weight.toLocaleString('ru-RU', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
 export default function ProductParameters({ product }) {
-  const attr = product.attributes;
-  const fa = attr.full_attributes_ru || {}
-  const sizeData = fa.size || {}
+  const attr = product?.attributes || {};
+  const fa = attr.full_attributes_ru || {};
+  const sizeData = fa.size || {};
 
-  // Исключаем служебные ключи, берём только размеры
-  const excludedKeys = ['packaging', 'packages', 'desc']
-  const sizeEntries = Object.entries(sizeData)
-    .filter(([key]) => !excludedKeys.includes(key))
-    .slice(0, 3) // Показываем первые 3 параметра
+  const excludedKeys = ['packaging', 'packages', 'desc'];
 
-  const weight = attr.weight ? parseFloat(attr.weight) : null
+  const allSizeEntries = Object.entries(sizeData)
+    .filter(([key]) => !excludedKeys.includes(key));
 
-  if (sizeEntries.length === 0 && !weight) {
-    return null
+  const previewSizeEntries = allSizeEntries.slice(0, 3);
+  const weight = formatWeight(attr.weight);
+
+  if (allSizeEntries.length === 0 && !weight) {
+    return null;
   }
 
   return (
     <>
       <div className="goods-parametrs">
         <h2>Основные характеристики</h2>
-        
-        {sizeEntries.map(([key, value]) => (
+
+        {previewSizeEntries.map(([key, value]) => (
           <div key={key} className="goods-parametrs__item">
             <p className="parametrs-name">{key}</p>
             <p className="parametrs-number">{value}</p>
@@ -36,10 +56,10 @@ export default function ProductParameters({ product }) {
             <p className="parametrs-number">{weight} <span>кг</span></p>
           </div>
         )}
-        
-        <button 
-          className="goods-parametrs__button" 
-          type="button" 
+
+        <button
+          className="goods-parametrs__button"
+          type="button"
           data-bs-toggle="offcanvas"
           data-bs-target="#offcanvasGoodsParametrs"
           aria-controls="offcanvasGoodsParametrs"
@@ -54,10 +74,9 @@ export default function ProductParameters({ product }) {
         </button>
       </div>
 
-      {/* Offcanvas с полными характеристиками */}
-      <div 
-        className="offcanvas offcanvas-end offcanvac-charart" 
-        tabIndex="-1" 
+      <div
+        className="offcanvas offcanvas-end offcanvac-charart"
+        tabIndex="-1"
         id="offcanvasGoodsParametrs"
         aria-labelledby="offcanvasGoodsParametrsLabel"
       >
@@ -65,20 +84,21 @@ export default function ProductParameters({ product }) {
           <h5 className="offcanvas-title" id="offcanvasGoodsParametrsLabel">
             О товаре
           </h5>
-          <button 
-            type="button" 
-            className="btn-close" 
-            data-bs-dismiss="offcanvas" 
+          <button
+            type="button"
+            className="btn-close"
+            data-bs-dismiss="offcanvas"
             aria-label="Закрыть"
-          ></button>
+          />
         </div>
+
         <div className="offcanvas-body">
           <div className="offcanvac-charart__modal">
             <div className="tab-size__content">
               <div className="size-contet__info">
                 <h5>Размер в собранном виде</h5>
 
-                {sizeEntries.map(([key, value]) => (
+                {allSizeEntries.map(([key, value]) => (
                   <div key={key} className="size-info__item">
                     <p>{key}:</p>
                     <p>{value}</p>
