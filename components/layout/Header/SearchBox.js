@@ -9,6 +9,7 @@ import { IMAGES_BASE_URL } from '@/lib/api/ikea'
 const API_BASE_URL = 'https://test.ikeya.by/api/v1'
 const HISTORY_KEY = 'search_history'
 const MAX_HISTORY = 6
+const MIN_QUERY_LENGTH = 2
 
 const POPULAR_QUERIES = [
   'Системы хранения',
@@ -17,7 +18,6 @@ const POPULAR_QUERIES = [
   'Настольные лампы',
 ]
 
-// Статичные категории для блока "Часто ищут" — соответствуют POPULAR_QUERIES
 const POPULAR_CATEGORIES = [
   { slug: 'sistemy-khraneniya', name: 'Системы хранения' },
   { slug: 'sad-i-balkon', name: 'Сад и балкон' },
@@ -27,23 +27,52 @@ const POPULAR_CATEGORIES = [
 
 function getHistory() {
   if (typeof window === 'undefined') return []
+
   try {
-    return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+    const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]')
+    return Array.isArray(parsed) ? parsed : []
   } catch {
     return []
   }
 }
 
+function setHistoryStorage(history) {
+  if (typeof window === 'undefined') return
+
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  } catch {
+    // localStorage может быть недоступен в приватном режиме или при переполнении
+  }
+}
+
 function saveToHistory(query) {
-  if (!query?.trim()) return
-  const history = getHistory().filter((h) => h.toLowerCase() !== query.toLowerCase())
-  history.unshift(query.trim())
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)))
+  const normalized = query?.trim()
+
+  if (!normalized) return
+
+  const history = getHistory().filter((item) => item.toLowerCase() !== normalized.toLowerCase())
+  history.unshift(normalized)
+  setHistoryStorage(history.slice(0, MAX_HISTORY))
 }
 
 function removeFromHistory(query) {
-  const history = getHistory().filter((h) => h !== query)
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+  const history = getHistory().filter((item) => item !== query)
+  setHistoryStorage(history)
+}
+
+function resolveImageUrl(url) {
+  if (!url) return null
+
+  if (url.startsWith('/assets')) {
+    return url
+  }
+
+  if (url.startsWith('http')) {
+    return url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL)
+  }
+
+  return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`
 }
 
 export default function SearchBox() {
@@ -52,9 +81,12 @@ export default function SearchBox() {
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState([])
+
   const wrapperRef = useRef(null)
   const inputRef = useRef(null)
   const debounceRef = useRef(null)
+  const abortRef = useRef(null)
+
   const router = useRouter()
 
   useEffect(() => {
@@ -67,8 +99,12 @@ export default function SearchBox() {
         setIsOpen(false)
       }
     }
+
     document.addEventListener('click', onDocClick)
-    return () => document.removeEventListener('click', onDocClick)
+
+    return () => {
+      document.removeEventListener('click', onDocClick)
+    }
   }, [])
 
   useEffect(() => {
@@ -78,48 +114,82 @@ export default function SearchBox() {
         inputRef.current?.blur()
       }
     }
+
     window.addEventListener('keydown', onEsc)
-    return () => window.removeEventListener('keydown', onEsc)
+
+    return () => {
+      window.removeEventListener('keydown', onEsc)
+    }
   }, [])
 
-  // Блокировка скролла страницы при открытом дропдауне
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    if (!isOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousOverflow
     }
   }, [isOpen])
 
-  const fetchSuggestions = useCallback(async (q) => {
-    if (!q || q.trim().length < 2) {
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  const fetchSuggestions = useCallback(async (value) => {
+    const trimmed = value.trim()
+
+    if (trimmed.length < MIN_QUERY_LENGTH) {
+      abortRef.current?.abort()
       setResults(null)
       setLoading(false)
       return
     }
+
+    abortRef.current?.abort()
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setLoading(true)
+
     try {
-      const res = await fetch(`${API_BASE_URL}/search/suggest?q=${encodeURIComponent(q.trim())}`)
+      const res = await fetch(
+        `${API_BASE_URL}/search/suggest?q=${encodeURIComponent(trimmed)}`,
+        { signal: controller.signal }
+      )
+
       if (!res.ok) throw new Error('Search error')
+
       const data = await res.json()
       setResults(data)
     } catch (e) {
+      if (e.name === 'AbortError') return
+
       console.error('Search suggest error:', e)
       setResults(null)
     } finally {
-      setLoading(false)
+      if (!controller.signal.aborted) {
+        setLoading(false)
+      }
     }
   }, [])
 
   function handleInputChange(e) {
-    const val = e.target.value
-    setQuery(val)
+    const value = e.target.value
+
+    setQuery(value)
     setIsOpen(true)
-    clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => fetchSuggestions(val), 300)
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = window.setTimeout(() => {
+      fetchSuggestions(value)
+    }, 300)
   }
 
   function handleFocus() {
@@ -127,75 +197,108 @@ export default function SearchBox() {
     setIsOpen(true)
   }
 
-  // Правка #3: очистка поля по кнопке ×
   function handleClear() {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    abortRef.current?.abort()
+
     setQuery('')
     setResults(null)
+    setLoading(false)
     setIsOpen(true)
+
     inputRef.current?.focus()
   }
 
   function handleSubmit(e) {
     e.preventDefault()
-    if (!query.trim()) return
-    saveToHistory(query.trim())
+
+    const trimmed = query.trim()
+
+    if (!trimmed) return
+
+    saveToHistory(trimmed)
     setHistory(getHistory())
     setIsOpen(false)
-    router.push(`/search?q=${encodeURIComponent(query.trim())}`)
+
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
   }
 
   function handleSuggestionClick(suggestion) {
-    setQuery(suggestion)
-    saveToHistory(suggestion)
+    const trimmed = suggestion.trim()
+
+    if (!trimmed) return
+
+    saveToHistory(trimmed)
     setHistory(getHistory())
+    setQuery(trimmed)
     setIsOpen(false)
-    router.push(`/search?q=${encodeURIComponent(suggestion)}`)
+
+    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
   }
 
   function handleRemoveHistory(e, item) {
     e.stopPropagation()
     e.preventDefault()
+
     removeFromHistory(item)
     setHistory(getHistory())
   }
 
-  function highlight(text, q) {
-    if (!q || !text) return text
-    const idx = text.toLowerCase().indexOf(q.toLowerCase())
-    if (idx === -1) return text
+  function highlight(text, value) {
+    if (!value || !text) return text
+
+    const source = String(text)
+    const q = value.trim()
+
+    if (!q) return source
+
+    const idx = source.toLowerCase().indexOf(q.toLowerCase())
+
+    if (idx === -1) return source
+
     return (
       <>
-        {text.slice(0, idx)}
-        <strong>{text.slice(idx, idx + q.length)}</strong>
-        {text.slice(idx + q.length)}
+        {source.slice(0, idx)}
+        <strong>{source.slice(idx, idx + q.length)}</strong>
+        {source.slice(idx + q.length)}
       </>
     )
   }
 
   function categoryPath(cat) {
-    return `/catalog/${cat.attributes?.slug || cat.slug || cat.id}/`
+    const slug = cat.attributes?.slug || cat.slug || cat.id
+
+    return `/catalog/${slug}/`
   }
 
   function productPath(product) {
-    // Всегда используем SKU — надёжно и однозначно
-    const sku = product.attributes?.sku || product.id
-    return `/product/${sku}/`
+    const attrs = product.attributes || {}
+    const sku = attrs.sku || product.id
+    const slug = attrs.slug
+
+    if (slug && sku) return `/product/${slug}-${sku}/`
+    if (sku) return `/product/${sku}/`
+
+    return '#'
   }
 
   function productImage(product) {
     const attrs = product.attributes || {}
-    const localImages = attrs.local_images || []
-    const images = attrs.images || []
-    if (localImages.length > 0) return `${IMAGES_BASE_URL}/${localImages[0]}`
-    if (images.length > 0) return images[0]
+    const localImages = Array.isArray(attrs.local_images) ? attrs.local_images : []
+    const images = Array.isArray(attrs.images) ? attrs.images : []
+
+    if (localImages.length > 0) return resolveImageUrl(localImages[0])
+    if (images.length > 0) return resolveImageUrl(images[0])
+
     return null
   }
 
-  const hasQuery = query.trim().length >= 2
+  const trimmedQuery = query.trim()
+  const hasQuery = trimmedQuery.length >= MIN_QUERY_LENGTH
   const suggestions = results?.suggestions || []
   const categories = results?.categories?.data || results?.categories || []
   const products = results?.products?.data || []
-  const isArticleQuery = /^[\d\s.,-]+$/.test(query.trim())
+  const isArticleQuery = /^[\d\s.,-]+$/.test(trimmedQuery)
 
   return (
     <div className="header-middle-search search-box" ref={wrapperRef}>
@@ -210,7 +313,7 @@ export default function SearchBox() {
           onFocus={handleFocus}
           autoComplete="off"
         />
-        {/* Правка #3: кнопка × появляется когда есть текст */}
+
         {query.length > 0 && (
           <button
             type="button"
@@ -223,18 +326,19 @@ export default function SearchBox() {
             </svg>
           </button>
         )}
-        <button type="submit" className="search-but">
-          <img src="/assets/img/icons/header-search.svg" alt="Поиск" />
+
+        <button type="submit" className="search-but" aria-label="Поиск">
+          <img src="/assets/img/icons/header-search.svg" alt="" />
         </button>
       </form>
 
       {isOpen && (
         <div className="search-dropdown">
 
-          {/* Поле пустое — история поиска */}
           {!hasQuery && history.length > 0 && (
             <div className="search-section">
               <div className="search-section-title">Вы искали</div>
+
               <ul className="search-suggestions">
                 {history.map((item) => (
                   <li key={item}>
@@ -248,8 +352,10 @@ export default function SearchBox() {
                           <circle cx="12" cy="12" r="9" stroke="#9e9e9e" strokeWidth="1.5" />
                           <path d="M12 7v5l3 3" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
+
                         <span>{item}</span>
                       </button>
+
                       <button
                         type="button"
                         className="search-history-remove"
@@ -267,33 +373,34 @@ export default function SearchBox() {
             </div>
           )}
 
-          {/* Поле пустое — нет истории: часто ищут + статичные категории */}
           {!hasQuery && history.length === 0 && (
             <>
               <div className="search-section">
                 <div className="search-section-title">Часто ищут</div>
+
                 <ul className="search-suggestions">
-                  {POPULAR_QUERIES.map((s) => (
-                    <li key={s}>
+                  {POPULAR_QUERIES.map((item) => (
+                    <li key={item}>
                       <button
                         type="button"
                         className="search-suggestion-item"
-                        onClick={() => handleSuggestionClick(s)}
+                        onClick={() => handleSuggestionClick(item)}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                           <circle cx="11" cy="11" r="7" stroke="#9e9e9e" strokeWidth="1.5" />
                           <path d="M16.5 16.5L21 21" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
-                        <span>{s}</span>
+
+                        <span>{item}</span>
                       </button>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {/* Правка #1: статичные категории вместо динамических из API */}
               <div className="search-section">
                 <div className="search-section-title">Категории</div>
+
                 <ul className="search-categories-list">
                   {POPULAR_CATEGORIES.map((cat) => (
                     <li key={cat.slug}>
@@ -303,6 +410,7 @@ export default function SearchBox() {
                         onClick={() => setIsOpen(false)}
                       >
                         <strong>{cat.name}</strong>
+
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                           <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
@@ -314,23 +422,23 @@ export default function SearchBox() {
             </>
           )}
 
-          {/* Есть запрос — результаты поиска */}
           {hasQuery && (
             <>
               {suggestions.length > 0 && (
                 <ul className="search-suggestions">
-                  {suggestions.slice(0, 5).map((s) => (
-                    <li key={s}>
+                  {suggestions.slice(0, 5).map((item) => (
+                    <li key={item}>
                       <button
                         type="button"
                         className="search-suggestion-item"
-                        onClick={() => handleSuggestionClick(s)}
+                        onClick={() => handleSuggestionClick(item)}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                           <circle cx="11" cy="11" r="7" stroke="#9e9e9e" strokeWidth="1.5" />
                           <path d="M16.5 16.5L21 21" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
-                        <span>{highlight(s, query)}</span>
+
+                        <span>{highlight(item, query)}</span>
                       </button>
                     </li>
                   ))}
@@ -340,6 +448,7 @@ export default function SearchBox() {
               {categories.length > 0 && !isArticleQuery && (
                 <div className="search-section">
                   <div className="search-section-title">Категории</div>
+
                   <ul className="search-categories-list">
                     {categories.slice(0, 4).map((cat) => (
                       <li key={cat.id}>
@@ -348,7 +457,17 @@ export default function SearchBox() {
                           className="search-category-row"
                           onClick={() => setIsOpen(false)}
                         >
-                          <span>{highlight(cat.attributes?.translated_name || cat.attributes?.name || cat.translated_name || cat.name || '', query)}</span>
+                          <span>
+                            {highlight(
+                              cat.attributes?.translated_name ||
+                              cat.attributes?.name ||
+                              cat.translated_name ||
+                              cat.name ||
+                              '',
+                              query
+                            )}
+                          </span>
+
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                             <path d="M9 18l6-6-6-6" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
@@ -362,12 +481,17 @@ export default function SearchBox() {
               {products.length > 0 && (
                 <div className="search-section">
                   <div className="search-section-title">Товары</div>
+
                   <ul className="search-products">
                     {products.slice(0, 4).map((product) => {
                       const attrs = product.attributes || {}
                       const img = productImage(product)
-                      const breadcrumbs = attrs.breadcrumbs || []
-                      const breadcrumbText = breadcrumbs.map((b) => b.title).join(' / ')
+                      const breadcrumbs = Array.isArray(attrs.breadcrumbs) ? attrs.breadcrumbs : []
+                      const breadcrumbText = breadcrumbs
+                        .map((item) => item.title || item.name)
+                        .filter(Boolean)
+                        .join(' / ')
+
                       return (
                         <li key={product.id}>
                           <Link
@@ -377,16 +501,25 @@ export default function SearchBox() {
                           >
                             <div className="search-product-img">
                               {img ? (
-                                <img src={img} alt={attrs.name || ''} width={48} height={48} />
+                                <img
+                                  src={img}
+                                  alt={attrs.name_ru || attrs.name || ''}
+                                  width={48}
+                                  height={48}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none'
+                                  }}
+                                />
                               ) : (
                                 <div className="search-product-img-placeholder" />
                               )}
                             </div>
-                            {/* Правка #2: убрана цена, только название + хлебные крошки */}
+
                             <div className="search-product-info">
                               <div className="search-product-name">
                                 {highlight(attrs.small_desc_name || attrs.name_ru || attrs.name || '', query)}
                               </div>
+
                               {breadcrumbText && (
                                 <div className="search-product-breadcrumb">{breadcrumbText}</div>
                               )}

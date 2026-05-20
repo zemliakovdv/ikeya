@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { Suspense } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
 import PriceFilter from '@/components/catalog/sidebar/PriceFilter';
@@ -13,40 +14,66 @@ import NotFoundRecommendations from '@/components/recommendations/NotFoundRecomm
 import PageLoader from '@/components/ui/PageLoader';
 
 const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+const ITEMS_PER_PAGE = 20;
+
+function parsePrice(value) {
+  if (value === null || value === undefined || value === '') return 0;
+
+  const normalized = String(value)
+    .replace(/\s/g, '')
+    .replace(',', '.');
+
+  const parsed = Number.parseFloat(normalized);
+
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 function getPriceRangeFromProducts(products) {
   const prices = products
-    .map(p => parseFloat(String(p.attributes?.price_byn || p.attributes?.price || 0).replace(/\s/g, '')))
-    .filter(p => p > 0);
+    .map((product) => parsePrice(product.attributes?.price_byn || product.attributes?.price))
+    .filter((price) => price > 0);
+
   if (!prices.length) return { min: 0, max: 10000 };
-  return { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) };
-}
 
-function safeNumberOrEmpty(v) {
-  if (v === null || v === undefined) return '';
-  const s = String(v);
-  if (s.trim() === '') return '';
-  const n = Number(s);
-  return Number.isFinite(n) ? s : '';
-}
-
-function readAll(sp, key) {
-  return sp.getAll(key).map(String);
-}
-
-function normalizeProduct(p) {
   return {
-    ...p,
-    attributes: {
-      ...p.attributes,
-      small_desc_name: p.attributes?.small_desc_name || p.attributes?.name_ru || p.attributes?.name,
-      price_byn: p.attributes?.price_byn || p.attributes?.price,
-    }
+    min: Math.floor(Math.min(...prices)),
+    max: Math.ceil(Math.max(...prices)),
   };
 }
 
-function hasValidPrice(p) {
-  const price = parseFloat(String(p.attributes?.price_byn || p.attributes?.price || 0).replace(/\s/g, ''));
+function safeNumberOrEmpty(value) {
+  if (value === null || value === undefined) return '';
+
+  const stringValue = String(value);
+
+  if (stringValue.trim() === '') return '';
+
+  const normalized = stringValue.replace(',', '.');
+  const numberValue = Number(normalized);
+
+  return Number.isFinite(numberValue) ? stringValue : '';
+}
+
+function readAll(searchParams, key) {
+  return searchParams.getAll(key).map(String);
+}
+
+function normalizeProduct(product) {
+  const attr = product?.attributes || {};
+
+  return {
+    ...product,
+    attributes: {
+      ...attr,
+      small_desc_name: attr.small_desc_name || attr.name_ru || attr.name,
+      price_byn: attr.price_byn || attr.price,
+    },
+  };
+}
+
+function hasValidPrice(product) {
+  const price = parsePrice(product.attributes?.price_byn || product.attributes?.price);
+
   return price > 0;
 }
 
@@ -80,13 +107,15 @@ export default function SearchPageContent() {
   const observerRef = useRef(null);
   const triggerRef = useRef(null);
   const loadMoreRef = useRef(null);
+  const firstPageAbortRef = useRef(null);
+  const loadMoreAbortRef = useRef(null);
+  const requestKeyRef = useRef('');
 
-  // Ключ для определения когда нужно перезагрузить первую страницу
-  // НЕ включаем page чтобы replaceState не вызывал перезагрузку
   const fetchKey = useMemo(() => {
-    const p = new URLSearchParams(searchParams.toString());
-    p.delete('page');
-    return p.toString();
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('page');
+
+    return params.toString();
   }, [searchParams]);
 
   const sortOptions = [
@@ -94,26 +123,27 @@ export default function SearchPageContent() {
     { value: 'expensive', label: 'Дороже' },
   ];
 
-  const currentSortLabel = sortOptions.find(o => o.value === sortParam)?.label || 'Сортировка';
+  const currentSortLabel = sortOptions.find((option) => option.value === sortParam)?.label || 'Сортировка';
 
   const normalizedFilters = useMemo(() => {
     const filters = firstPageData?.available_filters || [];
+
     return filters
-      .filter(f => f.parameter !== 'f-price-buckets' && Array.isArray(f.values) && f.values.length > 0)
-      .map(f => ({
-        parameter: String(f.parameter),
-        title: f.name || String(f.parameter),
-        values: f.values
-          .filter(v => v && v.id !== undefined)
-          .map(v => ({
-            value: String(v.id),
-            label: v.name || String(v.id),
+      .filter((filter) => filter.parameter !== 'f-price-buckets' && Array.isArray(filter.values) && filter.values.length > 0)
+      .map((filter) => ({
+        parameter: String(filter.parameter),
+        title: filter.translated_name || filter.name || String(filter.parameter),
+        values: filter.values
+          .filter((value) => value && value.id !== undefined)
+          .map((value) => ({
+            value: String(value.id),
+            label: value.translated_name || value.name || String(value.id),
           })),
       }));
   }, [firstPageData]);
 
   const filtersKey = useMemo(
-    () => normalizedFilters.map(f => f.parameter).join(','),
+    () => normalizedFilters.map((filter) => filter.parameter).join(','),
     [normalizedFilters]
   );
 
@@ -121,43 +151,61 @@ export default function SearchPageContent() {
 
   const filterLabels = useMemo(() => {
     const labels = {};
-    (firstPageData?.available_filters || []).forEach(f => {
-      (f.values || []).forEach(v => {
-        if (v.id !== undefined) labels[String(v.id)] = v.translated_name || v.name || String(v.id);
+
+    (firstPageData?.available_filters || []).forEach((filter) => {
+      (filter.values || []).forEach((value) => {
+        if (value.id !== undefined) {
+          labels[String(value.id)] = value.translated_name || value.name || String(value.id);
+        }
       });
     });
+
     return labels;
   }, [firstPageData]);
 
   const filterTitles = useMemo(() => {
     const titles = {};
-    (firstPageData?.available_filters || []).forEach(f => {
-      titles[f.parameter] = f.translated_name || f.name || f.parameter;
+
+    (firstPageData?.available_filters || []).forEach((filter) => {
+      titles[filter.parameter] = filter.translated_name || filter.name || filter.parameter;
     });
+
     return titles;
   }, [firstPageData]);
 
   const buildParams = useCallback((page = 1) => {
     const params = new URLSearchParams();
+
     params.set('q', q.trim());
     params.set('page', String(page));
-    params.set('per_page', '20');
+    params.set('per_page', String(ITEMS_PER_PAGE));
+
     if (sortParam) params.set('sort', sortParam);
-    const minP = searchParams.get('min_price');
-    const maxP = searchParams.get('max_price');
-    if (minP) params.set('min_price', minP);
-    if (maxP) params.set('max_price', maxP);
-    for (const [key, val] of searchParams.entries()) {
-      if (key.startsWith('filters[')) params.append(key, val);
+
+    const minPrice = searchParams.get('min_price');
+    const maxPrice = searchParams.get('max_price');
+
+    if (minPrice) params.set('min_price', minPrice);
+    if (maxPrice) params.set('max_price', maxPrice);
+
+    for (const [key, value] of searchParams.entries()) {
+      if (key.startsWith('filters[')) {
+        params.append(key, value);
+      }
     }
+
     return params;
   }, [q, sortParam, searchParams]);
 
-  // Загрузка первой страницы
-  const fetchFirstPage = useCallback(async () => {
+  const fetchFirstPage = useCallback(async (signal, activeRequestKey) => {
     if (!q.trim()) {
       setFirstPageData(null);
       setProducts([]);
+      setHasMore(false);
+      hasMoreRef.current = false;
+      setTotalPages(1);
+      setTotalItems(0);
+      setCurrentPage(1);
       return;
     }
 
@@ -170,14 +218,19 @@ export default function SearchPageContent() {
 
     try {
       const params = buildParams(1);
-      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`, { signal });
+
       if (!res.ok) throw new Error('Search error');
+
       const data = await res.json();
+
+      if (signal.aborted || requestKeyRef.current !== activeRequestKey) return;
 
       const meta = data.meta || {};
       const rawProducts = (data.products?.data || [])
         .map(normalizeProduct)
         .filter(hasValidPrice);
+
       const pages = meta.total_pages || 1;
       const total = meta.total || rawProducts.length;
 
@@ -189,29 +242,45 @@ export default function SearchPageContent() {
       const more = pages > 1;
       setHasMore(more);
       hasMoreRef.current = more;
-    } catch (e) {
-      console.error('Search error:', e);
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+
+      console.error('Search error:', error);
       setFirstPageData(null);
       setProducts([]);
+      setHasMore(false);
+      hasMoreRef.current = false;
     } finally {
-      setLoading(false);
+      if (!signal.aborted && requestKeyRef.current === activeRequestKey) {
+        setLoading(false);
+      }
     }
   }, [q, buildParams]);
 
-  // Загрузка следующих страниц
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMoreRef.current) return;
 
+    loadMoreAbortRef.current?.abort();
+
+    const controller = new AbortController();
+    const activeRequestKey = requestKeyRef.current;
+    const page = pageRef.current;
+
+    loadMoreAbortRef.current = controller;
     loadingMoreRef.current = true;
     setLoadingMore(true);
 
-    const page = pageRef.current;
-
     try {
       const params = buildParams(page);
-      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`);
+      const res = await fetch(`${API_BASE_URL}/search/suggest?${params.toString()}`, {
+        signal: controller.signal,
+      });
+
       if (!res.ok) throw new Error('Search error');
+
       const data = await res.json();
+
+      if (controller.signal.aborted || requestKeyRef.current !== activeRequestKey) return;
 
       const meta = data.meta || {};
       const rawProducts = (data.products?.data || [])
@@ -222,7 +291,7 @@ export default function SearchPageContent() {
       const more = page < pages;
 
       if (rawProducts.length > 0) {
-        setProducts(prev => [...prev, ...rawProducts]);
+        setProducts((prev) => [...prev, ...rawProducts]);
       }
 
       pageRef.current = page + 1;
@@ -230,27 +299,27 @@ export default function SearchPageContent() {
       setHasMore(more);
       setCurrentPage(page);
 
-      // Обновляем URL без триггера перезагрузки
       const urlParams = new URLSearchParams(searchParams.toString());
       urlParams.set('page', String(page));
       window.history.replaceState(null, '', `${pathname}?${urlParams.toString()}`);
+    } catch (error) {
+      if (error.name === 'AbortError') return;
 
-    } catch (e) {
-      console.error('Load more error:', e);
+      console.error('Load more error:', error);
       hasMoreRef.current = false;
       setHasMore(false);
     } finally {
-      loadingMoreRef.current = false;
-      setLoadingMore(false);
+      if (!controller.signal.aborted) {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
     }
   }, [buildParams, totalPages, pathname, searchParams]);
 
-  // Держим актуальный loadMore в ref
   useEffect(() => {
     loadMoreRef.current = loadMore;
   }, [loadMore]);
 
-  // Observer создаётся один раз
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -260,126 +329,189 @@ export default function SearchPageContent() {
       },
       { threshold: 0, rootMargin: '200px' }
     );
+
     observerRef.current = observer;
-    if (triggerRef.current) observer.observe(triggerRef.current);
-    return () => observer.disconnect();
+
+    if (triggerRef.current) {
+      observer.observe(triggerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
-  // Переподключаем observer когда триггер появляется/исчезает
   const setTriggerRef = useCallback((node) => {
     triggerRef.current = node;
+
     if (!node || !observerRef.current) return;
+
     observerRef.current.disconnect();
     observerRef.current.observe(node);
   }, []);
 
-  // Перезагружаем при смене запроса/фильтров/сортировки (но не при смене page)
   useEffect(() => {
-    fetchFirstPage();
-  }, [fetchKey]);
+    requestKeyRef.current = fetchKey;
 
-  // Синхронизация draft фильтров из URL
+    firstPageAbortRef.current?.abort();
+    loadMoreAbortRef.current?.abort();
+
+    loadingMoreRef.current = false;
+    setLoadingMore(false);
+
+    const controller = new AbortController();
+    firstPageAbortRef.current = controller;
+
+    fetchFirstPage(controller.signal, fetchKey);
+
+    return () => {
+      controller.abort();
+    };
+  }, [fetchKey, fetchFirstPage]);
+
+  useEffect(() => {
+    return () => {
+      if (priceDebounceRef.current) clearTimeout(priceDebounceRef.current);
+      firstPageAbortRef.current?.abort();
+      loadMoreAbortRef.current?.abort();
+    };
+  }, []);
+
   useEffect(() => {
     setDraftPriceMin(safeNumberOrEmpty(searchParams.get('min_price')));
     setDraftPriceMax(safeNumberOrEmpty(searchParams.get('max_price')));
 
     const nextDraftFilters = {};
-    normalizedFilters.forEach(f => {
-      nextDraftFilters[f.parameter] = readAll(searchParams, `filters[${f.parameter}][]`);
+
+    normalizedFilters.forEach((filter) => {
+      nextDraftFilters[filter.parameter] = readAll(searchParams, `filters[${filter.parameter}][]`);
     });
+
     setDraftFilters(nextDraftFilters);
     isMountedRef.current = true;
-  }, [searchParams, filtersKey]);
+  }, [searchParams, filtersKey, normalizedFilters]);
 
-  const applyFilters = useCallback((minP, maxP, filters) => {
+  const applyFilters = useCallback((minPrice, maxPrice, filters) => {
     const params = new URLSearchParams(searchParams.toString());
 
-    const min = safeNumberOrEmpty(minP);
-    const max = safeNumberOrEmpty(maxP);
+    const min = safeNumberOrEmpty(minPrice);
+    const max = safeNumberOrEmpty(maxPrice);
+
     if (min !== '') params.set('min_price', min);
     else params.delete('min_price');
+
     if (max !== '') params.set('max_price', max);
     else params.delete('max_price');
 
     for (const key of Array.from(params.keys())) {
       if (key.startsWith('filters[')) params.delete(key);
     }
+
     Object.entries(filters || {}).forEach(([parameter, values]) => {
-      (values || []).forEach(val => params.append(`filters[${parameter}][]`, String(val)));
+      (values || []).forEach((value) => {
+        params.append(`filters[${parameter}][]`, String(value));
+      });
     });
+
     params.delete('page');
 
     router.push(`${pathname}?${params.toString()}`);
   }, [searchParams, pathname, router]);
 
-  const handlePriceChange = useCallback((minV, maxV) => {
-    const min = String(minV);
-    const max = String(maxV);
+  const handlePriceChange = useCallback((minValue, maxValue) => {
+    const min = String(minValue);
+    const max = String(maxValue);
+
     setDraftPriceMin(min);
     setDraftPriceMax(max);
+
     if (!isMountedRef.current) return;
-    if (priceDebounceRef.current) clearTimeout(priceDebounceRef.current);
-    priceDebounceRef.current = setTimeout(() => {
+
+    if (priceDebounceRef.current) {
+      clearTimeout(priceDebounceRef.current);
+    }
+
+    priceDebounceRef.current = window.setTimeout(() => {
       applyFilters(min, max, draftFilters);
     }, 600);
   }, [applyFilters, draftFilters]);
 
   const toggleValue = useCallback((parameter, value) => {
-    const v = String(value);
-    setDraftFilters(prev => {
+    const nextValue = String(value);
+
+    setDraftFilters((prev) => {
       const current = Array.isArray(prev[parameter]) ? prev[parameter] : [];
-      const next = current.includes(v) ? current.filter(x => x !== v) : [...current, v];
+      const next = current.includes(nextValue)
+        ? current.filter((item) => item !== nextValue)
+        : [...current, nextValue];
+
       const newFilters = { ...prev, [parameter]: next };
+
       applyFilters(draftPriceMin, draftPriceMax, newFilters);
+
       return newFilters;
     });
   }, [applyFilters, draftPriceMin, draftPriceMax]);
 
   const handleClear = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
+
     params.delete('min_price');
     params.delete('max_price');
     params.delete('page');
+
     for (const key of Array.from(params.keys())) {
-      if (key.startsWith('filters[')) params.delete(key);
+      if (key.startsWith('filters[')) {
+        params.delete(key);
+      }
     }
+
     router.push(`${pathname}?${params.toString()}`);
   }, [pathname, router, searchParams]);
 
   function handleSort(value) {
     const params = new URLSearchParams(searchParams.toString());
+
     if (!value) params.delete('sort');
     else params.set('sort', value);
+
     params.delete('page');
+
     router.push(`${pathname}?${params.toString()}`);
     setSortOpen(false);
   }
 
   const currentMin = useMemo(() => {
     if (draftPriceMin === '') return priceRange.min;
-    const n = Number(draftPriceMin);
-    return Number.isFinite(n) ? n : priceRange.min;
+
+    const numberValue = Number(String(draftPriceMin).replace(',', '.'));
+
+    return Number.isFinite(numberValue) ? numberValue : priceRange.min;
   }, [draftPriceMin, priceRange.min]);
 
   const currentMax = useMemo(() => {
     if (draftPriceMax === '') return priceRange.max;
-    const n = Number(draftPriceMax);
-    return Number.isFinite(n) ? n : priceRange.max;
+
+    const numberValue = Number(String(draftPriceMax).replace(',', '.'));
+
+    return Number.isFinite(numberValue) ? numberValue : priceRange.max;
   }, [draftPriceMax, priceRange.max]);
 
   const hasActiveFilters = useMemo(() => {
     if (draftPriceMin !== '') return true;
     if (draftPriceMax !== '') return true;
-    return Object.values(draftFilters).some(v => Array.isArray(v) && v.length > 0);
+
+    return Object.values(draftFilters).some((value) => Array.isArray(value) && value.length > 0);
   }, [draftPriceMin, draftPriceMax, draftFilters]);
 
   const categories = firstPageData?.categories?.data || firstPageData?.categories || [];
   const hasResults = products.length > 0;
 
   const paginationQueryString = useMemo(() => {
-    const p = new URLSearchParams(searchParams.toString());
-    p.delete('page');
-    return p.toString();
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('page');
+
+    return params.toString();
   }, [searchParams]);
 
   if (!q) {
@@ -415,24 +547,38 @@ export default function SearchPageContent() {
 
           <div className="all-catalog-inner" style={{ visibility: loading ? 'hidden' : 'visible' }}>
 
-            {/* Сайдбар */}
             {!hideSidebar && (
-              <aside className="filter-aside" style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', overflowY: 'auto', overflowX: 'hidden' }}>
-
+              <aside
+                className="filter-aside"
+                style={{
+                  position: 'sticky',
+                  top: 0,
+                  alignSelf: 'flex-start',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                }}
+              >
                 {categories.length > 0 && (
                   <div className="category-sidebar">
                     <h3 className="category-sidebar__title">Категория</h3>
+
                     <nav className="category-tree">
                       <div className="category-tree__root">
-                        {categories.map(cat => (
-                          <a
-                            key={cat.id}
-                            href={`/catalog/${cat.attributes?.slug || cat.slug || cat.id}/`}
-                            className="category-tree__link"
-                          >
-                            {cat.attributes?.translated_name || cat.translated_name || cat.name}
-                          </a>
-                        ))}
+                        {categories.map((cat) => {
+                          const attrs = cat.attributes || {};
+                          const slug = attrs.slug || cat.slug || cat.id;
+                          const title = attrs.translated_name || cat.translated_name || attrs.name || cat.name || 'Категория';
+
+                          return (
+                            <Link
+                              key={cat.id}
+                              href={`/catalog/${slug}/`}
+                              className="category-tree__link"
+                            >
+                              {title}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </nav>
                   </div>
@@ -446,14 +592,14 @@ export default function SearchPageContent() {
                   onChange={handlePriceChange}
                 />
 
-                {normalizedFilters.map(f => (
+                {normalizedFilters.map((filter) => (
                   <CheckboxFilter
-                    key={f.parameter}
-                    title={f.title}
-                    filterKey={f.parameter}
-                    selectedOptions={draftFilters[f.parameter] || []}
+                    key={filter.parameter}
+                    title={filter.title}
+                    filterKey={filter.parameter}
+                    selectedOptions={draftFilters[filter.parameter] || []}
                     onToggle={toggleValue}
-                    options={f.values}
+                    options={filter.values}
                     showMore
                   />
                 ))}
@@ -466,28 +612,34 @@ export default function SearchPageContent() {
               </aside>
             )}
 
-            {/* Центральная колонка */}
             <div className="all-catalog-center" style={hideSidebar ? { width: '100%' } : {}}>
-
-              {/* Сортировка */}
               {!hideSidebar && (
                 <div className="all-catalog-sort">
                   <div className="catalog-sort">
-                    <div className="catalog-sort__selected" onClick={() => setSortOpen(v => !v)}>
+                    <button
+                      className="catalog-sort__selected"
+                      onClick={() => setSortOpen((value) => !value)}
+                      type="button"
+                      aria-expanded={sortOpen}
+                    >
                       <span className="catalog-sort__current">{currentSortLabel}</span>
+
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M7.99999 10.2201C7.25333 10.2201 5.46666 8.19343 4.09999 6.5001C3.94666 6.30677 3.97333 6.02677 4.16666 5.87343C4.35999 5.7201 4.63999 5.74677 4.79333 5.9401C5.99333 7.42677 7.52666 9.1001 7.99999 9.3201C8.47333 9.1001 10.0067 7.42677 11.2067 5.9401C11.36 5.74677 11.64 5.7201 11.8333 5.87343C12.0267 6.02677 12.0533 6.30677 11.9 6.5001C10.5333 8.2001 8.74 10.2201 7.99999 10.2201Z" fill="#757575" />
                       </svg>
-                    </div>
+                    </button>
+
                     {sortOpen && (
                       <ul className="catalog-sort__dropdown">
-                        {sortOptions.map(opt => (
-                          <li
-                            key={opt.value}
-                            className={`catalog-sort__option ${opt.value === sortParam ? 'active' : ''}`}
-                            onClick={() => handleSort(opt.value)}
-                          >
-                            {opt.label}
+                        {sortOptions.map((option) => (
+                          <li key={option.value}>
+                            <button
+                              className={`catalog-sort__option ${option.value === sortParam ? 'active' : ''}`}
+                              onClick={() => handleSort(option.value)}
+                              type="button"
+                            >
+                              {option.label}
+                            </button>
                           </li>
                         ))}
                       </ul>
@@ -496,19 +648,16 @@ export default function SearchPageContent() {
                 </div>
               )}
 
-              {/* Чипсы фильтров */}
               <FilterChips filterLabels={filterLabels} filterTitles={filterTitles} />
 
-              {/* Товары */}
               {!loading && hasResults && (
                 <>
                   <div className="products-grid">
-                    {products.map(product => (
-                      <ProductCard key={product.id} product={product} />
+                    {products.map((product) => (
+                      <ProductCard key={`${product.id}-${product.attributes?.sku || ''}`} product={product} />
                     ))}
                   </div>
 
-                  {/* Триггер infinite scroll */}
                   {hasMore && (
                     <div
                       ref={setTriggerRef}
@@ -525,13 +674,12 @@ export default function SearchPageContent() {
                     </div>
                   )}
 
-                  {/* Пагинация — всегда видна, синхронизирована со скроллом */}
                   {totalPages > 1 && (
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
                       totalItems={totalItems}
-                      itemsPerPage={20}
+                      itemsPerPage={ITEMS_PER_PAGE}
                       basePath={pathname}
                       queryString={paginationQueryString}
                     />

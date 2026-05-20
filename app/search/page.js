@@ -1,9 +1,10 @@
 import { Suspense } from 'react';
 import SearchPageContent from './SearchPageContent';
+import PageLoader from '@/components/ui/PageLoader';
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="container" style={{ padding: '60px 0' }}>Загрузка...</div>}>
+    <Suspense fallback={<PageLoader />}>
       <SearchPageContent />
     </Suspense>
   );

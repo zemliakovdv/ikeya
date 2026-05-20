@@ -5,7 +5,9 @@ import { useState } from 'react'
 export default function SeoSection({ seoText }) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  if (!seoText) return null
+  const html = typeof seoText === 'string' ? seoText.trim() : ''
+
+  if (!html) return null
 
   return (
     <section className="seo">
@@ -13,26 +15,26 @@ export default function SeoSection({ seoText }) {
         <div className="row">
           <div className="col-12">
             <div className="seo-inner">
-              {/* Весь текст всегда в DOM, без display:none */}
               <div
+                id="seo-text-content"
                 className={`seo-text-content ${isExpanded ? 'seo-text-content--expanded' : ''}`}
-                dangerouslySetInnerHTML={{ __html: seoText }}
+                dangerouslySetInnerHTML={{ __html: html }}
               />
 
               <div className="seo-text-bottom">
-                <div
+                <button
                   className="seo-text-bottom-btn"
-                  onClick={() => setIsExpanded(prev => !prev)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && setIsExpanded(prev => !prev)}
+                  type="button"
+                  onClick={() => setIsExpanded((prev) => !prev)}
+                  aria-expanded={isExpanded}
+                  aria-controls="seo-text-content"
                 >
-                  <div className="button-text">
-                    <div className="else-link">
-                      <p>{isExpanded ? 'Скрыть текст' : 'Показать полностью'}</p>
-                    </div>
-                  </div>
-                </div>
+                  <span className="button-text">
+                    <span className="else-link">
+                      <span>{isExpanded ? 'Скрыть текст' : 'Показать полностью'}</span>
+                    </span>
+                  </span>
+                </button>
               </div>
 
             </div>
