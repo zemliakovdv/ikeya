@@ -899,10 +899,6 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     /* Футер */
 
-    .footer .container {
-        max-width: 1140px;
-    }
-
     .footer-links {
         flex-basis: 210px;
         width: 210px;
