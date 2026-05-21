@@ -44,7 +44,7 @@ export default function ProductTabsSection({
         setProductsPerSlide(2);
       } else if (window.innerWidth <= 767) {
         setProductsPerSlide(3);
-      } else if (window.innerWidth <= 1199) {
+      } else if (window.innerWidth <= 1399) {
         setProductsPerSlide(4);
       } else {
         setProductsPerSlide(5);

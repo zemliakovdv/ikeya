@@ -1,27 +1,74 @@
 // components/home/BlogSlider.js
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+function flattenSlides(slides) {
+  return slides.flatMap((slideArticles) => slideArticles || []);
+}
+
+function BlogCard({ article, priority = false }) {
+  return (
+    <Link href={article.link} className="blog-card">
+      {article.image ? (
+        <Image
+          src={article.image}
+          alt=""
+          width={400}
+          height={300}
+          priority={priority}
+          loading={priority ? undefined : 'lazy'}
+          unoptimized
+        />
+      ) : (
+        <div className="blog-card__no-image" />
+      )}
+
+      {article.category && (
+        <span>{article.category}</span>
+      )}
+
+      <h4>{article.title}</h4>
+
+      {article.excerpt && (
+        <p>{article.excerpt}</p>
+      )}
+    </Link>
+  );
+}
+
 export default function BlogSlider({ slides = [] }) {
-  const sliderRef = useRef(null);
-  const swiperRef = useRef(null);
+  const desktopSliderRef = useRef(null);
+  const mobileSliderRef = useRef(null);
+  const desktopSwiperRef = useRef(null);
+  const mobileSwiperRef = useRef(null);
+
+  const mobileSlides = useMemo(() => flattenSlides(slides), [slides]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.Swiper) return;
-    if (!sliderRef.current) return;
+    if (typeof window === 'undefined') return;
+    if (!desktopSliderRef.current) return;
     if (!slides.length) return;
 
     let raf1 = 0;
     let raf2 = 0;
+    let retryTimer = 0;
+    let cancelled = false;
 
     const init = () => {
-      const sliderEl = sliderRef.current;
+      if (cancelled) return;
+
+      if (!window.Swiper) {
+        retryTimer = window.setTimeout(init, 100);
+        return;
+      }
+
+      const sliderEl = desktopSliderRef.current;
       if (!sliderEl) return;
 
-      const wrapper = sliderEl.closest('.blog-slider--home');
+      const wrapper = sliderEl.closest('.blog-slider--desktop');
       if (!wrapper) return;
 
       const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
@@ -29,9 +76,9 @@ export default function BlogSlider({ slides = [] }) {
       const nextBtn = wrapper.querySelector('.blog-slider__nav-next--home');
       const pagination = wrapper.querySelector('.blog-slider__pagination--home');
 
-      if (swiperRef.current) {
-        swiperRef.current.destroy(true, true);
-        swiperRef.current = null;
+      if (desktopSwiperRef.current) {
+        desktopSwiperRef.current.destroy(true, true);
+        desktopSwiperRef.current = null;
       }
 
       if (slideCount < 2) {
@@ -45,7 +92,7 @@ export default function BlogSlider({ slides = [] }) {
       if (nextBtn) nextBtn.style.display = '';
       if (pagination) pagination.style.display = '';
 
-      swiperRef.current = new window.Swiper(sliderEl, {
+      desktopSwiperRef.current = new window.Swiper(sliderEl, {
         slidesPerView: 1,
         spaceBetween: 0,
         loop: slideCount > 1,
@@ -67,15 +114,106 @@ export default function BlogSlider({ slides = [] }) {
     });
 
     return () => {
+      cancelled = true;
+
+      if (retryTimer) window.clearTimeout(retryTimer);
       if (raf1) cancelAnimationFrame(raf1);
       if (raf2) cancelAnimationFrame(raf2);
 
-      if (swiperRef.current) {
-        swiperRef.current.destroy(true, true);
-        swiperRef.current = null;
+      if (desktopSwiperRef.current) {
+        desktopSwiperRef.current.destroy(true, true);
+        desktopSwiperRef.current = null;
       }
     };
   }, [slides]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!mobileSliderRef.current) return;
+    if (!mobileSlides.length) return;
+
+    let raf1 = 0;
+    let raf2 = 0;
+    let retryTimer = 0;
+    let cancelled = false;
+
+    const init = () => {
+      if (cancelled) return;
+
+      if (!window.Swiper) {
+        retryTimer = window.setTimeout(init, 100);
+        return;
+      }
+
+      const sliderEl = mobileSliderRef.current;
+      if (!sliderEl) return;
+
+      const wrapper = sliderEl.closest('.blog-slider--mobile');
+      if (!wrapper) return;
+
+      const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+      const pagination = wrapper.querySelector('.blog-slider__pagination--home');
+
+      if (mobileSwiperRef.current) {
+        mobileSwiperRef.current.destroy(true, true);
+        mobileSwiperRef.current = null;
+      }
+
+      if (slideCount < 2) {
+        if (pagination) pagination.style.display = 'none';
+        return;
+      }
+
+      if (pagination) pagination.style.display = '';
+
+      mobileSwiperRef.current = new window.Swiper(sliderEl, {
+        slidesPerView: 1.18,
+        spaceBetween: 12,
+        loop: false,
+        speed: 500,
+        watchOverflow: true,
+        pagination: {
+          el: pagination,
+          clickable: true,
+        },
+        breakpoints: {
+          320: {
+            slidesPerView: 1.18,
+            spaceBetween: 12,
+          },
+          360: {
+            slidesPerView: 1.25,
+            spaceBetween: 12,
+          },
+          576: {
+            slidesPerView: 2.35,
+            spaceBetween: 16,
+          },
+          768: {
+            slidesPerView: 2.65,
+            spaceBetween: 16,
+          },
+        },
+      });
+    };
+
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(init);
+    });
+
+    return () => {
+      cancelled = true;
+
+      if (retryTimer) window.clearTimeout(retryTimer);
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+
+      if (mobileSwiperRef.current) {
+        mobileSwiperRef.current.destroy(true, true);
+        mobileSwiperRef.current = null;
+      }
+    };
+  }, [mobileSlides]);
 
   if (!slides.length) return null;
 
@@ -86,42 +224,18 @@ export default function BlogSlider({ slides = [] }) {
           <div className="col-12">
             <h2>Советы и лайфхаки</h2>
 
-            <div className="blog-slider blog-slider--home">
-              <div ref={sliderRef} className="blog-inner blog-inner--home swiper">
+            <div className="blog-slider blog-slider--home blog-slider--desktop">
+              <div ref={desktopSliderRef} className="blog-inner blog-inner--home swiper">
                 <div className="swiper-wrapper">
                   {slides.map((slideArticles, index) => (
                     <div key={index} className="swiper-slide">
                       <div className="blog-item">
                         {slideArticles.map((article) => (
-                          <Link
+                          <BlogCard
                             key={article.id}
-                            href={article.link}
-                            className="blog-card"
-                          >
-                            {article.image ? (
-                              <Image
-                                src={article.image}
-                                alt=""
-                                width={400}
-                                height={300}
-                                priority={index === 0}
-                                loading={index === 0 ? undefined : 'lazy'}
-                                unoptimized
-                              />
-                            ) : (
-                              <div className="blog-card__no-image" />
-                            )}
-
-                            {article.category && (
-                              <span>{article.category}</span>
-                            )}
-
-                            <h4>{article.title}</h4>
-
-                            {article.excerpt && (
-                              <p>{article.excerpt}</p>
-                            )}
-                          </Link>
+                            article={article}
+                            priority={index === 0}
+                          />
                         ))}
                       </div>
                     </div>
@@ -165,6 +279,25 @@ export default function BlogSlider({ slides = [] }) {
 
                   <div className="blog-slider__pagination blog-slider__pagination--home" />
                 </>
+              )}
+            </div>
+
+            <div className="blog-slider blog-slider--home blog-slider--mobile">
+              <div ref={mobileSliderRef} className="blog-mobile-inner swiper">
+                <div className="swiper-wrapper">
+                  {mobileSlides.map((article, index) => (
+                    <div key={`${article.id}-${index}`} className="swiper-slide">
+                      <BlogCard
+                        article={article}
+                        priority={index === 0}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {mobileSlides.length > 1 && (
+                <div className="blog-slider__pagination blog-slider__pagination--home" />
               )}
             </div>
           </div>

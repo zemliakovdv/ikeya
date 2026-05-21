@@ -51,7 +51,7 @@ export default function Footer({ categoryLinks = [] }) {
     <footer>
 
       {/* ===== ДЕСКТОП (≥992px) ===== */}
-      <div className="footer d-none d-lg-block" aria-hidden="false">
+      <div className="footer d-none d-xl-block" aria-hidden="false">
         <div className="container">
           <div className="row">
             <div className="col-12">
@@ -113,7 +113,7 @@ export default function Footer({ categoryLinks = [] }) {
       </div>
 
       {/* ===== МОБИЛЬНЫЙ (<992px) ===== */}
-      <div className="footer-mobile d-lg-none" aria-hidden="false">
+      <div className="footer-mobile d-xl-none" aria-hidden="false">
         <div className="container">
           <div className="row">
             <div className="col-12">
