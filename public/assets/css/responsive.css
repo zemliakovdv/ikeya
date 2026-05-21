@@ -1,3 +1,15 @@
+@media (hover: hover) and (pointer: fine) {
+    html,
+    body {
+        min-width: 1200px;
+    }
+
+    .mobile-bottom-nav,
+    .mobile-bottom-nav-catalog {
+        display: none !important;
+    }
+}
+
 .products-tabs,
 .sales-tabs,
 .bestsellers-tabs,
@@ -821,10 +833,6 @@ body.mobile-phone-open .mobile-phone-sheet {
         width: calc((100% - 48px) / 4);
     }
 
-    .product-card__img-wrap {
-        height: 168px;
-    }
-
     .shop_button {
         width: 144px;
         max-width: 144px;
@@ -1527,7 +1535,7 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .mega-menu-overlay {
         position: fixed;
-        top: var(--header-height, 118px);
+        top: var(--header-height, 109px);
         left: 0;
         right: 0;
         bottom: calc(64px + env(safe-area-inset-bottom, 0px));
