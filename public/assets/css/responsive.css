@@ -1,4 +1,5 @@
 @media (hover: hover) and (pointer: fine) {
+
     html,
     body {
         min-width: 1200px;
@@ -311,6 +312,12 @@ body.mobile-phone-open .mobile-phone-sheet {
 /* Large Desktop (1400px - 1919px) */
 @media (max-width: 1919px) {
     /* Стили для макета 1400px */
+
+    .container {
+        max-width: 100%;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
 
     .popular-category .container {
         max-width: 100%;
