@@ -82,7 +82,7 @@
 .product-card-inner {
     flex: 0 0 auto;
     width: 100%;
-    min-width: 0;
+    min-width: 293px;
     max-width: 293px;
     margin: 0;
 }
@@ -103,7 +103,7 @@
 .product-card__img {
     width: 100% !important;
     height: 100% !important;
-    object-fit: contain;
+    object-fit: cover;
 }
 
 .product-card__info {
@@ -158,6 +158,7 @@
     width: 100%;
     justify-content: center;
     padding: 12px 16px;
+    max-width: 131px;
 }
 
 .like {
@@ -167,8 +168,8 @@
 }
 
 .sales-hit {
-    top: 0;
-    left: 0;
+    top: 12px;
+    left: 20px;
 }
 
 .products-slider__nav {
@@ -319,6 +320,7 @@ body.mobile-phone-open .mobile-phone-sheet {
         padding-right: 20px;
     }
 
+
     .popular-category .container {
         max-width: 100%;
         padding-left: 20px;
@@ -352,18 +354,18 @@ body.mobile-phone-open .mobile-phone-sheet {
     }
 
     .popular-categories-item {
-        gap: 44px;
+        gap: 23px;
         justify-content: flex-start;
     }
 
-    .categories-item-card {
-        min-width: 146px;
-        max-width: 146px;
+    .categories-card-img {
+        min-width: 166.5px;
+        max-width: 166.5px;
     }
 
     .categories-card-img {
-        width: 165px;
-        height: 165px;
+        width: 1166.5px;
+        height: 166.5px;
         padding: 16px;
         display: flex;
         align-items: center;
@@ -398,7 +400,7 @@ body.mobile-phone-open .mobile-phone-sheet {
     }
 
     .swiper-slide-inner {
-        gap: 24px;
+        gap: 6px;
     }
 
     .product-card-inner {
@@ -790,17 +792,19 @@ body.mobile-phone-open .mobile-phone-sheet {
     }
 
     .popular-categories-item {
-        gap: 16px;
+        gap: 26px;
     }
 
     .categories-item-card {
-        min-width: 130px;
-        max-width: 130px;
+        min-width: 141px;
+        max-width: 141px;
     }
 
     .categories-card-img {
-        width: 130px;
-        height: 130px;
+        width: 141px;
+        min-width: 141px;
+        max-width: 141px;
+        height: 141px;
         padding: 14px;
     }
 
@@ -838,6 +842,8 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .product-card-inner {
         width: calc((100% - 48px) / 4);
+        min-width: 278px;
+        max-width: 278px;
     }
 
     .shop_button {
