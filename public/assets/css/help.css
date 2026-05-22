@@ -274,6 +274,14 @@
   margin-left: 25px;
 }
 
+.help-article ul li{
+  white-space: normal !important;
+}
+
+.help-article ol li{
+  white-space: normal !important;
+}
+
 .help-article__lead {
   font-size: 15px;
   color: #424242;

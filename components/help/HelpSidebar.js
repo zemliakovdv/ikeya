@@ -5,21 +5,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const MENU = [
-  {
-    title: 'Правовая информация',
-    items: [
-      { label: 'Публичная оферта', href: '/help/oferta' },
-      { label: 'Политика обработки персональных данных', href: '/help/privacy' },
-      { label: 'Политика обработки файлов cookie', href: '/help/cookies' },
-      { label: 'Правила публикации отзывов', href: '/help/reviews-rules' },
-    ],
-  },
+const STATIC_MENU = [
   {
     title: 'Покупателям',
     items: [
       { label: 'Таможенная пошлина', href: '/help/customs' },
-      { label: 'Правила возврата', href: '/help/returns' },
       { label: 'Как сделать заказ', href: '/help/how-to-order' },
       { label: 'Способ оплаты', href: '/help/payment' },
       { label: 'Доставка', href: '/help/delivery' },
@@ -27,21 +17,33 @@ const MENU = [
   },
 ];
 
-export default function HelpSidebar() {
+export default function HelpSidebar({ legalPages = [] }) {
   const pathname = usePathname().replace(/\/$/, '');
 
-  // Определяем какой раздел содержит активный пункт — он открыт по умолчанию
-  const initialOpen = MENU.map(() => true);
+  const menu = [
+    ...(legalPages.length > 0
+      ? [
+          {
+            title: 'Правовая информация',
+            items: legalPages.map((page) => ({
+              label: page.attributes.title,
+              href: `/help/${page.attributes.slug}`,
+            })),
+          },
+        ]
+      : []),
+    ...STATIC_MENU,
+  ];
 
-  const [open, setOpen] = useState(initialOpen);
+  const [open, setOpen] = useState(menu.map(() => true));
 
   const toggle = (index) => {
-    setOpen(prev => prev.map((val, i) => i === index ? !val : val));
+    setOpen((prev) => prev.map((val, i) => (i === index ? !val : val)));
   };
 
   return (
     <aside className="help-sidebar">
-      {MENU.map((section, sectionIndex) => (
+      {menu.map((section, sectionIndex) => (
         <div key={section.title} className="help-sidebar__section">
           <button
             className={`help-sidebar__title ${open[sectionIndex] ? 'open' : ''}`}
@@ -53,7 +55,11 @@ export default function HelpSidebar() {
               <path
                 d="M8 10.22C7.25 10.22 5.47 8.19 4.1 6.5C3.95 6.31 3.97 6.03 4.17 5.87C4.36 5.72 4.64 5.75 4.79 5.94C5.99 7.43 7.53 9.1 8 9.32C8.47 9.1 10.01 7.43 11.21 5.94C11.36 5.75 11.64 5.72 11.83 5.87C12.03 6.03 12.05 6.31 11.9 6.5C10.53 8.2 8.74 10.22 8 10.22Z"
                 fill="#181818"
-                style={{ transform: open[sectionIndex] ? 'rotate(180deg)' : 'rotate(0deg)', transformOrigin: 'center', transition: 'transform 0.2s' }}
+                style={{
+                  transform: open[sectionIndex] ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transformOrigin: 'center',
+                  transition: 'transform 0.2s',
+                }}
               />
             </svg>
           </button>

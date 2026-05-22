@@ -135,6 +135,7 @@ export default function Footer({ categoryLinks = [] }) {
                                 <li><a href="/blog">Советы и идеи</a></li>
                                 <li><a href="/pvz">Пункты выдачи</a></li>
                                 <li><a href="#">Контакты</a></li>
+                                <li><a href="/help">Контакты</a></li>
                               </ul>
                             </div>
                           </div>

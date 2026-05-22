@@ -265,7 +265,7 @@ export default function CartSummary({
 
         <p className="cart-summary__notice">
           Оформляя заказ, я принимаю условия{' '}
-          <a href="#" target="_blank" rel="nofollow">договора-оферты</a>{' '}
+          <a href="/help/customs-broker-agreement/" target="_blank" rel="nofollow">договора-оферты</a>{' '}
           таможенного представителя
         </p>
 

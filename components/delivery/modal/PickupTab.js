@@ -19,6 +19,7 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
       Math.cos((lat2 * Math.PI) / 180) *
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
+
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -43,7 +44,6 @@ export default function PickupTab({
 
   const searchTimer = useRef(null);
 
-  // Геолокация при маунте
   useEffect(() => {
     if (!ymapsReady) return;
 
@@ -53,6 +53,7 @@ export default function PickupTab({
         .then((geo) => {
           const position = geo.geoObjects.get(0);
           if (!position) return;
+
           const coords = position.geometry.getCoordinates();
           setUserCoords(coords);
           setMapCenter({ coords, zoom: 12 });
@@ -77,10 +78,9 @@ export default function PickupTab({
 
         setAllPoints(points);
         setFiltered(points);
-      } catch (error) {
+      } catch {
         if (cancelled) return;
 
-        console.error('Ошибка загрузки ПВЗ:', error);
         setLoadError('Не удалось загрузить пункты выдачи');
         setAllPoints([]);
         setFiltered([]);
@@ -98,20 +98,24 @@ export default function PickupTab({
     };
   }, [cartToken]);
 
-  // Сортировка по близости когда есть геолокация и точки
   useEffect(() => {
     if (!userCoords || !allPoints.length) return;
 
     const sorted = [...allPoints].sort((a, b) => {
       if (!a.lat || !a.lon) return 1;
       if (!b.lat || !b.lon) return -1;
+
       const dA = getDistanceKm(userCoords[0], userCoords[1], a.lat, a.lon);
       const dB = getDistanceKm(userCoords[0], userCoords[1], b.lat, b.lon);
+
       return dA - dB;
     });
 
     setAllPoints(sorted);
-    if (!search.trim()) setFiltered(sorted);
+
+    if (!search.trim()) {
+      setFiltered(sorted);
+    }
   }, [userCoords]);
 
   useEffect(() => {
@@ -130,7 +134,8 @@ export default function PickupTab({
 
     setFiltered(result);
 
-    const firstWithCoords = result.find(p => p.lat && p.lon);
+    const firstWithCoords = result.find((point) => point.lat && point.lon);
+
     if (firstWithCoords) {
       setMapCenter({
         coords: [firstWithCoords.lat, firstWithCoords.lon],
@@ -141,13 +146,17 @@ export default function PickupTab({
 
   useEffect(() => {
     return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current);
+      if (searchTimer.current) {
+        clearTimeout(searchTimer.current);
+      }
     };
   }, []);
 
   const handleSearch = (event) => {
     clearTimeout(searchTimer.current);
+
     const value = event.target.value;
+
     searchTimer.current = setTimeout(() => setSearch(value), 300);
   };
 
@@ -160,6 +169,7 @@ export default function PickupTab({
   const handleDetailOpen = useCallback((point) => {
     setSelectedPoint(point);
     setCalcError(null);
+
     if (point.lat && point.lon) {
       setMapCenter({ coords: [point.lat, point.lon], zoom: 17 });
     }
@@ -193,10 +203,14 @@ export default function PickupTab({
         pickup_point_id: selectedPoint.id,
         items: cartItems,
       });
+
       onSelect?.(selectedPoint, result);
     } catch (error) {
-      console.error('Ошибка calculate europost_pickup:', error);
-      setCalcError(error?.message || 'Не удалось рассчитать доставку в выбранный ПВЗ');
+      if (error?.status === 422) {
+        setCalcError('Самовывоз Европочтой недоступен для выбранных товаров. Выберите доставку.');
+      } else {
+        setCalcError(error?.message || 'Не удалось рассчитать доставку в выбранный ПВЗ');
+      }
     } finally {
       setCalcLoading(false);
     }

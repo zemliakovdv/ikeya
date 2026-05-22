@@ -103,6 +103,46 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(num) ? num : fallback;
 }
 
+function getDeliveryPrice(calcResult) {
+  const delivery = calcResult?.delivery || {};
+
+  const candidates = [
+    delivery.total_delivery_price_byn,
+    delivery.total_delivery_byn,
+    delivery.delivery_price_byn,
+    delivery.delivery_total_byn,
+    delivery.price_byn,
+    delivery.base_cost_byn,
+    delivery.poland_delivery_byn,
+    delivery.pricing?.internal?.total_delivery_byn,
+    delivery.pricing?.internal?.total_delivery_price_byn,
+    delivery.pricing?.internal?.delivery_total_byn,
+    delivery.pricing?.internal?.delivery_price_byn,
+    delivery.pricing?.internal?.base_cost_byn,
+    delivery.pricing?.internal?.poland_delivery_byn,
+  ];
+
+  const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
+
+  return toNumber(found);
+}
+
+function getAvailableMethodsFromError(error) {
+  const payload = error?.payload || {};
+
+  const candidates = [
+    payload.available_methods,
+    payload.delivery?.available_methods,
+    payload.cart?.delivery?.available_methods,
+    payload.data?.available_methods,
+    payload.data?.delivery?.available_methods,
+  ];
+
+  const found = candidates.find((item) => Array.isArray(item));
+
+  return found || [];
+}
+
 function parseAddressToFields(addr) {
   return {
     city: addr.city || '',
@@ -499,26 +539,9 @@ function CheckoutPageInner() {
   const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
   const finalTotal = checkoutSummary?.finalTotal ?? null;
 
-  const pvzDeliveryCost = toNumber(
-    pvzCalcResult?.delivery?.price_byn ||
-    pvzCalcResult?.delivery?.delivery_price_byn ||
-    pvzCalcResult?.delivery?.total_delivery_byn ||
-    pvzCalcResult?.delivery?.total_delivery_price_byn ||
-    pvzCalcResult?.delivery?.base_cost_byn ||
-    pvzCalcResult?.delivery?.poland_delivery_byn ||
-    pvzCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
-    pvzCalcResult?.delivery?.pricing?.internal?.total_delivery_price_byn ||
-    pvzCalcResult?.delivery?.pricing?.internal?.base_cost_byn ||
-    pvzCalcResult?.delivery?.pricing?.internal?.poland_delivery_byn ||
-    0
-  );
+  const pvzDeliveryCost = getDeliveryPrice(pvzCalcResult);
 
-  const addrDeliveryCost = toNumber(
-    addrCalcResult?.delivery?.delivery_price_byn ??
-    addrCalcResult?.delivery?.poland_delivery_byn ??
-    addrCalcResult?.delivery?.pricing?.internal?.poland_delivery_byn ??
-    0
-  );
+  const addrDeliveryCost = getDeliveryPrice(addrCalcResult);
   const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'courier';
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
 
@@ -682,45 +705,48 @@ function CheckoutPageInner() {
     } catch { }
   };
 
-  const handleSelectSavedAddr = async (id) => {
-    const found = savedAddrList.find((addr) => addr.id === id);
-    if (!found) return;
+const handleSelectSavedAddr = async (id) => {
+  const found = savedAddrList.find((addr) => addr.id === id);
+  if (!found) return;
 
-    setSelectedAddr(found);
-    writeLS(LS_SELECTED_ADDR, found);
-    saveReceiveMethod('delivery');
+  setSelectedAddr(found);
+  writeLS(LS_SELECTED_ADDR, found);
+  saveReceiveMethod('delivery');
 
-    if (!cartToken || !cartItems.length) return;
+  if (!cartToken || !cartItems.length) return;
 
-    const payload = {
-      cart_token: cartToken,
-      delivery_type: 'courier',
-      items: cartItems,
-    };
+  const payload = {
+    cart_token: cartToken,
+    delivery_type: 'courier',
+    items: cartItems,
+    address: parseAddressToFields(found),
+  };
+
+  try {
+    const result = await calculateDelivery(payload);
+    setAddrCalcResult(result);
+    writeLS(LS_ADDR_CALC, result);
+  } catch (err) {
+    if (err.status !== 422) return;
+
+    const available = getAvailableMethodsFromError(err);
+    const hasIkeyaDelivery = available.some(
+      (method) => method?.code === 'ikeya_delivery' && method?.available
+    );
+
+    if (!hasIkeyaDelivery) return;
 
     try {
-      const result = await calculateDelivery(payload);
-      setAddrCalcResult(result);
-      writeLS(LS_ADDR_CALC, result);
-    } catch (err) {
-      if (err.status === 422) {
-        const available = err.payload?.available_methods || [];
-        const hasIkeyaDelivery = available.some((method) => method.code === 'ikeya_delivery' && method.available);
+      const fallback = await calculateDelivery({
+        ...payload,
+        delivery_type: 'ikeya_delivery',
+      });
 
-        if (hasIkeyaDelivery) {
-          try {
-            const fallback = await calculateDelivery({
-              ...payload,
-              delivery_type: 'ikeya_delivery',
-            });
-
-            setAddrCalcResult(fallback);
-            writeLS(LS_ADDR_CALC, fallback);
-          } catch { }
-        }
-      }
-    }
-  };
+      setAddrCalcResult(fallback);
+      writeLS(LS_ADDR_CALC, fallback);
+    } catch { }
+  }
+};
 
   const handleDeletePvz = async (id) => {
     if (token) {
@@ -814,6 +840,7 @@ function CheckoutPageInner() {
       address: addressPayload,
       a1_verification_id: a1Id,
       services: selectedServices,
+      items: cartItems,
     };
   }
 
@@ -855,10 +882,9 @@ function CheckoutPageInner() {
 
       await refreshCart();
 
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('cart_token');
-      }
       sessionStorage.removeItem('selectedSkus');
+      sessionStorage.removeItem('checkoutItemsPayload');
+      sessionStorage.removeItem('checkoutSummary');
 
       removeLS(LS_SELECTED_PVZ);
       removeLS(LS_SELECTED_ADDR);

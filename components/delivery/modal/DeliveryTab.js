@@ -16,6 +16,23 @@ import { calculateDelivery } from '@/lib/api/delivery';
  *  - cartItems   {Array}  [{sku, quantity}]
  *  - onSelect    {fn(addr, calcResult)}
  */
+
+function getAvailableMethodsFromError(error) {
+  const payload = error?.payload || {};
+
+  const candidates = [
+    payload.available_methods,
+    payload.delivery?.available_methods,
+    payload.cart?.delivery?.available_methods,
+    payload.data?.available_methods,
+    payload.data?.delivery?.available_methods,
+  ];
+
+  const found = candidates.find((item) => Array.isArray(item));
+
+  return found || [];
+}
+
 export default function DeliveryTab({
   ymapsReady,
   cartToken,
@@ -200,9 +217,9 @@ export default function DeliveryTab({
       setCalcResult(result);
     } catch (err) {
       if (err.status === 422) {
-        const available = err.payload?.available_methods || [];
+        const available = getAvailableMethodsFromError(err);
         const hasIkeyaDelivery = available.some(
-          (method) => method.code === 'ikeya_delivery' && method.available
+          (method) => method?.code === 'ikeya_delivery' && method?.available
         );
 
         if (hasIkeyaDelivery) {
@@ -217,6 +234,7 @@ export default function DeliveryTab({
             setCalcError(
               fallbackError?.message ||
               fallbackError?.payload?.error ||
+              fallbackError?.payload?.message ||
               'Не удалось рассчитать доставку IKEYA'
             );
           }

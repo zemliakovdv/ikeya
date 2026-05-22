@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { createDraft } from '@/lib/api/cart';
+import { createDraft, getCartSummary } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -42,6 +42,46 @@ function getCartItemSku(item) {
   );
 }
 
+function buildItemsPayload(sourceItems = []) {
+  return sourceItems
+    .map((item) => ({
+      sku: getCartItemSku(item),
+      quantity: item?.quantity || 1,
+    }))
+    .filter((item) => item.sku)
+    .map((item) => ({
+      sku: String(item.sku),
+      quantity: Number(item.quantity || 1),
+    }));
+}
+
+function normalizeSummaryResponse(response) {
+  const summary = response?.summary || response?.data?.summary || response?.cart?.totals || null;
+  const delivery = response?.delivery || response?.data?.delivery || response?.cart?.delivery || null;
+
+  if (!summary) return null;
+
+  return {
+    subtotal: toNumber(
+      summary.subtotal_new_byn ??
+      summary.items_total_byn
+    ),
+    promoDiscount: toNumber(summary.discount_total_byn),
+    itemCount: Number(summary.items_count || 0),
+    totalWeight: toNumber(summary.total_weight_kg ?? delivery?.total_weight_kg),
+    customsDuty: toNumber(summary.customs_total_byn),
+    deliveryToBelarus: toNumber(
+      summary.delivery_to_belarus_byn ??
+      delivery?.delivery_to_belarus_byn
+    ),
+    logisticsDelivery: toNumber(
+      summary.delivery_total_byn ??
+      delivery?.delivery_total_byn
+    ),
+    delivery,
+  };
+}
+
 export default function CartPageClient() {
   const router = useRouter();
   const { isAuth } = useAuth();
@@ -65,6 +105,7 @@ export default function CartPageClient() {
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [remoteSummary, setRemoteSummary] = useState(null);
 
   const handleCheckoutAuthorizedRef = useRef(null);
 
@@ -142,16 +183,17 @@ export default function CartPageClient() {
     });
   }, [availableItems, selectedItems]);
 
-  const allAvailableSelected = useMemo(() => {
-    if (!availableSkus.length) return false;
-    if (selectedItems.length !== availableSkus.length) return false;
+  const selectedItemsPayload = useMemo(
+    () => buildItemsPayload(selectedAvailableItems),
+    [selectedAvailableItems]
+  );
 
-    const selectedSet = new Set(selectedItems);
+  const selectedItemsPayloadKey = useMemo(
+    () => selectedItemsPayload.map((item) => `${item.sku}:${item.quantity}`).join('|'),
+    [selectedItemsPayload]
+  );
 
-    return availableSkus.every((sku) => selectedSet.has(sku));
-  }, [availableSkus, selectedItems]);
-
-  const selectedData = useMemo(() => {
+  const selectedDataFallback = useMemo(() => {
     let subtotal = 0;
     let promoDiscount = 0;
     let itemCount = 0;
@@ -184,48 +226,70 @@ export default function CartPageClient() {
       itemCount,
       totalWeight: toNumber(totalWeight.toFixed(2)),
       customsDuty: toNumber(customsDuty.toFixed(2)),
+      deliveryToBelarus: toNumber(
+        delivery?.delivery_to_belarus_byn ||
+        totals?.delivery_to_belarus_byn
+      ),
+      logisticsDelivery: toNumber(
+        delivery?.delivery_total_byn ||
+        totals?.delivery_total_byn
+      ),
+      delivery,
     };
-  }, [selectedAvailableItems]);
+  }, [selectedAvailableItems, delivery, totals]);
 
-  const deliveryToBelarus = toNumber(
-    delivery?.delivery_to_belarus_byn ||
-    totals?.delivery_to_belarus_byn
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  const logisticsDelivery = toNumber(
-    delivery?.delivery_total_byn ||
-    totals?.delivery_total_byn
-  );
+    async function loadSelectedSummary() {
+      if (!selectedItemsPayload.length) {
+        setRemoteSummary(null);
+        return;
+      }
 
-  const customsDuty = selectedData.customsDuty;
-  const totalWeight = selectedData.totalWeight;
+      try {
+        const response = await getCartSummary({ items: selectedItemsPayload });
+        const normalized = normalizeSummaryResponse(response);
+
+        if (!cancelled) {
+          setRemoteSummary(normalized);
+        }
+      } catch {
+        if (!cancelled) {
+          setRemoteSummary(null);
+        }
+      }
+    }
+
+    loadSelectedSummary();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedItemsPayloadKey]);
+
+  const selectedData = remoteSummary || selectedDataFallback;
 
   const canCheckout = Boolean(
-    allAvailableSelected &&
     selectedData.subtotal >= minOrderAmount &&
     selectedAvailableItems.length > 0
   );
 
   const saveSummaryToSession = useCallback(() => {
+    const summaryDelivery = selectedData.delivery || delivery;
+
     sessionStorage.setItem('checkoutSummary', JSON.stringify({
       subtotal: selectedData.subtotal,
       promoDiscount: selectedData.promoDiscount,
       itemCount: selectedData.itemCount,
-      totalWeight,
-      customsDuty,
-      delivery: deliveryToBelarus,
-      logisticsDelivery,
-      europostEligible: delivery?.europost_eligible ?? null,
-      availableMethods: delivery?.available_methods || [],
+      totalWeight: selectedData.totalWeight,
+      customsDuty: selectedData.customsDuty,
+      delivery: selectedData.deliveryToBelarus,
+      logisticsDelivery: selectedData.logisticsDelivery,
+      europostEligible: summaryDelivery?.europost_eligible ?? null,
+      availableMethods: summaryDelivery?.available_methods || [],
     }));
-  }, [
-    selectedData,
-    totalWeight,
-    customsDuty,
-    deliveryToBelarus,
-    logisticsDelivery,
-    delivery,
-  ]);
+  }, [selectedData, delivery]);
 
   const handleCheckoutAuthorized = useCallback(async () => {
     if (!canCheckout) return;
@@ -235,28 +299,20 @@ export default function CartPageClient() {
     try {
       saveSummaryToSession();
 
-      const checkoutItemsPayload = selectedAvailableItems
-        .map((item) => ({
-          sku: getCartItemSku(item),
-          quantity: item?.quantity || 1,
-        }))
-        .filter((item) => item.sku)
-        .map((item) => ({
-          sku: String(item.sku),
-          quantity: item.quantity,
-        }));
-
       sessionStorage.setItem(
         'selectedSkus',
-        JSON.stringify(checkoutItemsPayload.map((item) => item.sku))
+        JSON.stringify(selectedItemsPayload.map((item) => item.sku))
       );
 
       sessionStorage.setItem(
         'checkoutItemsPayload',
-        JSON.stringify(checkoutItemsPayload)
+        JSON.stringify(selectedItemsPayload)
       );
 
-      const response = await createDraft();
+      const response = await createDraft({
+        items: selectedItemsPayload,
+      });
+
       const draftId = response.order?.data?.id || response.order_id;
 
       router.push(`/checkout?draft_id=${draftId}`);
@@ -265,13 +321,13 @@ export default function CartPageClient() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [canCheckout, saveSummaryToSession, router, selectedAvailableItems]);
+  }, [canCheckout, saveSummaryToSession, router, selectedItemsPayload]);
 
   handleCheckoutAuthorizedRef.current = handleCheckoutAuthorized;
 
   const handleCheckout = useCallback(() => {
-    if (!allAvailableSelected) {
-      alert('Оформление части корзины пока недоступно. Сейчас можно оформить только все доступные товары.');
+    if (!selectedAvailableItems.length) {
+      alert('Выберите товары, чтобы перейти к оформлению заказа.');
       return;
     }
 
@@ -284,7 +340,7 @@ export default function CartPageClient() {
 
     handleCheckoutAuthorized();
   }, [
-    allAvailableSelected,
+    selectedAvailableItems,
     isAuth,
     openLogin,
     saveSummaryToSession,
@@ -372,7 +428,6 @@ export default function CartPageClient() {
 
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
-  const hasPartialSelection = hasAvailableItems && selectedItems.length > 0 && !allAvailableSelected;
 
   if (isInitialLoading || checkoutLoading) return <PageLoader />;
 
@@ -400,15 +455,6 @@ export default function CartPageClient() {
                       <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
                     </svg>
                     <p>Выберите товары, чтобы перейти к оформлению заказа</p>
-                  </div>
-                )}
-
-                {hasPartialSelection && (
-                  <div className="order-toast_choose">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
-                    </svg>
-                    <p>Оформление выбранных товаров будет доступно после доработки checkout. Доставка в корзине отображается для всей корзины.</p>
                   </div>
                 )}
 
@@ -458,10 +504,10 @@ export default function CartPageClient() {
                         <CartSummary
                           subtotal={selectedData.subtotal}
                           promoDiscount={selectedData.promoDiscount}
-                          delivery={deliveryToBelarus}
+                          delivery={selectedData.deliveryToBelarus}
                           itemCount={selectedData.itemCount}
-                          totalWeight={totalWeight}
-                          customsDuty={customsDuty}
+                          totalWeight={selectedData.totalWeight}
+                          customsDuty={selectedData.customsDuty}
                           canCheckout={canCheckout}
                           onCheckout={handleCheckout}
                           cart={cart}
