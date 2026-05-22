@@ -2,7 +2,7 @@
 
 // components/delivery/modal/PickupTab.js
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { normalizePoint } from '@/hooks/usePvzData';
 import PvzCard from '@/components/delivery/cards/PvzCard';
 import PvzDetail from '@/components/delivery/cards/PvzDetail';
@@ -25,6 +25,7 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
 
 export default function PickupTab({
   ymapsReady,
+  orderId,
   cartToken,
   cartItems = [],
   onSelect,
@@ -43,6 +44,18 @@ export default function PickupTab({
   const [userCoords, setUserCoords] = useState(null);
 
   const searchTimer = useRef(null);
+
+  const deliveryContext = useMemo(() => {
+    if (orderId) {
+      return { order_id: orderId };
+    }
+
+    if (cartToken) {
+      return { cart_token: cartToken };
+    }
+
+    return null;
+  }, [orderId, cartToken]);
 
   useEffect(() => {
     if (!ymapsReady) return;
@@ -70,7 +83,10 @@ export default function PickupTab({
       setLoadError(null);
 
       try {
-        const data = await getEuropostOffices(cartToken || null);
+        const data = await getEuropostOffices({
+          orderId,
+          cartToken,
+        });
 
         if (cancelled) return;
 
@@ -96,7 +112,7 @@ export default function PickupTab({
     return () => {
       cancelled = true;
     };
-  }, [cartToken]);
+  }, [orderId, cartToken]);
 
   useEffect(() => {
     if (!userCoords || !allPoints.length) return;
@@ -183,8 +199,8 @@ export default function PickupTab({
   const handleSelect = useCallback(async () => {
     if (!selectedPoint) return;
 
-    if (!cartToken) {
-      setCalcError('Не удалось рассчитать доставку: нет токена корзины');
+    if (!deliveryContext) {
+      setCalcError('Не удалось рассчитать доставку: нет данных заказа');
       return;
     }
 
@@ -198,7 +214,7 @@ export default function PickupTab({
 
     try {
       const result = await calculateDelivery({
-        cart_token: cartToken,
+        ...deliveryContext,
         delivery_type: 'europost_pickup',
         pickup_point_id: selectedPoint.id,
         items: cartItems,
@@ -214,7 +230,7 @@ export default function PickupTab({
     } finally {
       setCalcLoading(false);
     }
-  }, [selectedPoint, cartToken, cartItems, onSelect]);
+  }, [selectedPoint, deliveryContext, cartItems, onSelect]);
 
   return (
     <div className="pvz-layout">

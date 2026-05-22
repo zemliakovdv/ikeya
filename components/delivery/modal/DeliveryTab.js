@@ -2,7 +2,7 @@
 
 // components/delivery/modal/DeliveryTab.js
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import DeliveryMap from '@/components/delivery/map/DeliveryMap';
 import DeliveryResult from '@/components/delivery/cards/DeliveryResult';
 import { calculateDelivery } from '@/lib/api/delivery';
@@ -12,6 +12,7 @@ import { calculateDelivery } from '@/lib/api/delivery';
  *
  * Props:
  *  - ymapsReady  {boolean}
+ *  - orderId     {string|number}
  *  - cartToken   {string}
  *  - cartItems   {Array}  [{sku, quantity}]
  *  - onSelect    {fn(addr, calcResult)}
@@ -35,6 +36,7 @@ function getAvailableMethodsFromError(error) {
 
 export default function DeliveryTab({
   ymapsReady,
+  orderId,
   cartToken,
   cartItems = [],
   onSelect,
@@ -62,6 +64,18 @@ export default function DeliveryTab({
   const [pinCoords, setPinCoords] = useState(null);
 
   const addressDebounce = useRef(null);
+
+  const deliveryContext = useMemo(() => {
+    if (orderId) {
+      return { order_id: orderId };
+    }
+
+    if (cartToken) {
+      return { cart_token: cartToken };
+    }
+
+    return null;
+  }, [orderId, cartToken]);
 
   useEffect(() => {
     if (!ymapsReady) return;
@@ -196,8 +210,8 @@ export default function DeliveryTab({
     setCalcResult(null);
     setCalcError(null);
 
-    if (!cartToken || !cartItems?.length) {
-      setCalcError('Не удалось рассчитать доставку: нет данных корзины');
+    if (!deliveryContext || !cartItems?.length) {
+      setCalcError('Не удалось рассчитать доставку: нет данных заказа');
       setCalcLoading(false);
       setStep('result');
       return;
@@ -206,7 +220,7 @@ export default function DeliveryTab({
     const addressPayload = buildAddressPayload();
 
     const payload = {
-      cart_token: cartToken,
+      ...deliveryContext,
       delivery_type: 'courier',
       items: cartItems,
       address: addressPayload,

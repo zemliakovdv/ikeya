@@ -58,6 +58,7 @@ export default function CartSummary({
   subtotal = 0,
   promoDiscount = 0,
   delivery = 0,
+  finalTotal = null,
 
   // Checkout-специфичные доставки
   pvzDelivery = 0,
@@ -90,12 +91,16 @@ export default function CartSummary({
 
   const hasPromo = appliedPromo !== null;
 
-  const displayTotal =
+  const calculatedTotal =
     toNumber(subtotal) -
     toNumber(promoDiscount) +
     toNumber(delivery) +
     toNumber(pvzDelivery) +
     toNumber(courierDelivery);
+
+  const displayTotal = finalTotal !== null && finalTotal !== undefined
+    ? toNumber(finalTotal)
+    : calculatedTotal;
 
   const isCheckoutDisabled = !canCheckout || checkoutLoading || loading;
 

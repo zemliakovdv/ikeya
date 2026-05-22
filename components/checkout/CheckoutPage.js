@@ -9,7 +9,8 @@ import DeliveryModal from '@/components/delivery/modal/DeliveryModal';
 import SavedAddressesModal from '@/components/delivery/modal/SavedAddressesModal';
 import EditPersonalDataModal from '@/components/profile/modals/EditPersonalDataModal';
 import EditPassportModal from '@/components/profile/modals/EditPassportModal';
-import { getProfile, getDraft } from '@/lib/api/cart';
+import { getProfile, getDraft, finalizeDraft, updateCheckoutDraft } from '@/lib/api/cart';
+import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import { requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 import {
@@ -79,6 +80,25 @@ function removeLS(key) {
   try {
     localStorage.removeItem(key);
   } catch { }
+}
+
+function readSessionJSON(key, fallback = null) {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const value = sessionStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function readSessionValue(key, fallback = null) {
+  if (typeof window === 'undefined') return fallback;
+  try {
+    return sessionStorage.getItem(key) ?? fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 function genId() {
@@ -203,11 +223,22 @@ function IkeyaLogo() {
 function CheckoutPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [draftId, setDraftId] = useState(() => searchParams.get('draft_id'));
+  const [draftId, setDraftId] = useState(() => {
+    const queryDraftId = searchParams.get('draft_id');
+    return queryDraftId || readSessionValue('checkoutDraftId', '');
+  });
 
   useEffect(() => {
-    const id = searchParams.get('draft_id');
-    if (id) setDraftId(id);
+    const queryDraftId = searchParams.get('draft_id');
+
+    if (queryDraftId) {
+      sessionStorage.setItem('checkoutDraftId', String(queryDraftId));
+      setDraftId(String(queryDraftId));
+      return;
+    }
+
+    const storedDraftId = readSessionValue('checkoutDraftId', '');
+    setDraftId(storedDraftId || '');
   }, [searchParams]);
 
   const { token } = useAuth();
@@ -258,26 +289,19 @@ function CheckoutPageInner() {
   const [a1Loading, setA1Loading] = useState(false);
   const [a1Error, setA1Error] = useState(null);
 
-  const [checkoutSummary, setCheckoutSummary] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      return JSON.parse(sessionStorage.getItem('checkoutSummary') || 'null');
-    } catch {
-      return null;
-    }
-  });
+  const [checkoutSummary, setCheckoutSummary] = useState(() => readSessionJSON('checkoutSummary'));
 
   const cartToken = typeof window !== 'undefined' ? (localStorage.getItem('cart_token') || cart?.token || '') : '';
 
   const availableMethods = useMemo(() => {
-    const fromCart = cart?.delivery?.available_methods;
     const fromSummary = checkoutSummary?.availableMethods;
+    const fromCart = cart?.delivery?.available_methods;
 
-    if (Array.isArray(fromCart) && fromCart.length) return fromCart;
     if (Array.isArray(fromSummary) && fromSummary.length) return fromSummary;
+    if (Array.isArray(fromCart) && fromCart.length) return fromCart;
 
     return [];
-  }, [cart?.delivery?.available_methods, checkoutSummary?.availableMethods]);
+  }, [checkoutSummary?.availableMethods, cart?.delivery?.available_methods]);
 
   const methodIsAvailable = useCallback((code) => {
     if (!availableMethods.length) return true;
@@ -301,46 +325,19 @@ function CheckoutPageInner() {
   const ikeyaDeliveryAvailable = methodIsAvailable('ikeya_delivery');
 
   const selectedSkus = useMemo(() => {
-    if (typeof window === 'undefined') return [];
+    const parsed = readSessionJSON('selectedSkus', []);
 
-    try {
-      const stored = sessionStorage.getItem('selectedSkus');
-      const parsed = stored ? JSON.parse(stored) : [];
-
-      return Array.isArray(parsed)
-        ? parsed.map((sku) => String(sku))
-        : [];
-    } catch {
-      return [];
-    }
+    return Array.isArray(parsed)
+      ? parsed.map((sku) => String(sku))
+      : [];
   }, []);
 
   const storedCheckoutItems = useMemo(() => {
-    if (typeof window === 'undefined') return [];
-
-    try {
-      const stored = sessionStorage.getItem('checkoutItemsPayload');
-      const parsed = stored ? JSON.parse(stored) : [];
-
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
+    const parsed = readSessionJSON('checkoutItemsPayload', []);
+    return Array.isArray(parsed) ? parsed : [];
   }, []);
 
   const checkoutItemsSource = useMemo(() => {
-    const sessionSource = (storedCheckoutItems || [])
-      .map((item) => ({
-        ...item,
-        sku: getItemSku(item),
-        quantity: item?.quantity || 1,
-      }))
-      .filter((item) => item.sku);
-
-    if (sessionSource.length) {
-      return sessionSource;
-    }
-
     const filterUsableItems = (source) => {
       return (source || [])
         .map((item) => ({
@@ -352,22 +349,23 @@ function CheckoutPageInner() {
     };
 
     const draftSource = filterUsableItems(draftItems);
+    const sessionSource = filterUsableItems(storedCheckoutItems);
     const cartSource = filterUsableItems(items);
 
+    if (draftSource.length) {
+      return draftSource;
+    }
+
+    if (sessionSource.length) {
+      return sessionSource;
+    }
+
     if (!selectedSkus?.length) {
-      if (draftSource.length) return draftSource;
       return cartSource;
     }
 
     const selectedSet = new Set(selectedSkus.map((sku) => String(sku)));
-
-    const draftFiltered = draftSource.filter((item) => selectedSet.has(String(item.sku)));
-    if (draftFiltered.length) return draftFiltered;
-
-    const cartFiltered = cartSource.filter((item) => selectedSet.has(String(item.sku)));
-    if (cartFiltered.length) return cartFiltered;
-
-    return [];
+    return cartSource.filter((item) => selectedSet.has(String(item.sku)));
   }, [draftItems, items, selectedSkus, storedCheckoutItems]);
 
   const cartItems = useMemo(() => {
@@ -380,10 +378,10 @@ function CheckoutPageInner() {
   }, [checkoutItemsSource]);
 
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem('checkoutSummary');
-      if (stored) setCheckoutSummary(JSON.parse(stored));
-    } catch { }
+    const storedSummary = readSessionJSON('checkoutSummary');
+    if (storedSummary) {
+      setCheckoutSummary(storedSummary);
+    }
   }, []);
 
   useEffect(() => {
@@ -423,13 +421,7 @@ function CheckoutPageInner() {
         const itemCount = loadedDraftItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
         const totalWeight = parseFloat(attr.address?.weight_kg || 0);
 
-        let previousSummary = null;
-
-        try {
-          previousSummary = JSON.parse(sessionStorage.getItem('checkoutSummary') || 'null');
-        } catch {
-          previousSummary = null;
-        }
+        const previousSummary = readSessionJSON('checkoutSummary');
 
         const summary = {
           subtotal: toNumber(subtotal.toFixed(2)),
@@ -449,7 +441,11 @@ function CheckoutPageInner() {
         setDraftItems(loadedDraftItems);
         setCheckoutSummary(summary);
       })
-      .catch(() => { })
+      .catch(() => {
+        sessionStorage.removeItem('checkoutDraftId');
+        setDraftItems([]);
+        setError('Не удалось загрузить черновик заказа. Вернитесь в корзину и начните оформление заново.');
+      })
       .finally(() => setDraftLoading(false));
   }, [draftId]);
 
@@ -568,12 +564,44 @@ function CheckoutPageInner() {
     !submitting
   );
 
+  const saveDeliveryToDraft = useCallback(async ({
+    deliveryType,
+    pickupPointId,
+    address,
+  } = {}) => {
+    if (!draftId) return;
+
+    const payload = {
+      delivery_type: deliveryType,
+      payment_method: paymentMethod,
+    };
+
+    if (pickupPointId) {
+      payload.pickup_point_id = pickupPointId;
+    }
+
+    if (address) {
+      payload.address = address;
+    }
+
+    await updateCheckoutDraft(draftId, payload);
+  }, [draftId, paymentMethod]);
+
   const handleSelectPvz = useCallback(async (pvz, calcResult) => {
     setSelectedPvz(pvz);
     setPvzCalcResult(calcResult);
     writeLS(LS_SELECTED_PVZ, pvz);
     writeLS(LS_PVZ_CALC, calcResult);
     saveReceiveMethod('pickup');
+
+    try {
+      await saveDeliveryToDraft({
+        deliveryType: 'europost_pickup',
+        pickupPointId: pvz.pickup_point_id || pvz.external_id || pvz.id,
+      });
+    } catch {
+      setError('ПВЗ выбран, но не удалось сохранить способ доставки в заказе.');
+    }
 
     if (token) {
       try {
@@ -613,7 +641,7 @@ function CheckoutPageInner() {
       setSavedPvzList(updated);
       writeLS(LS_SAVED_PVZ, updated);
     }
-  }, [token, savedPvzList]);
+  }, [token, savedPvzList, saveDeliveryToDraft]);
 
   const handleSelectAddr = useCallback(async (addr, calcResult) => {
     setSelectedAddr(addr);
@@ -621,6 +649,21 @@ function CheckoutPageInner() {
     writeLS(LS_SELECTED_ADDR, addr);
     writeLS(LS_ADDR_CALC, calcResult);
     saveReceiveMethod('delivery');
+
+    const resolvedDeliveryType =
+      calcResult?.delivery?.normalized_delivery_type ||
+      calcResult?.delivery?.delivery_type ||
+      calcResult?.delivery?.type ||
+      'courier';
+
+    try {
+      await saveDeliveryToDraft({
+        deliveryType: resolvedDeliveryType,
+        address: parseAddressToFields(addr),
+      });
+    } catch {
+      setError('Адрес выбран, но не удалось сохранить способ доставки в заказе.');
+    }
 
     if (token) {
       try {
@@ -654,7 +697,7 @@ function CheckoutPageInner() {
       setSavedAddrList(updated);
       writeLS(LS_SAVED_ADDR, updated);
     }
-  }, [token, savedAddrList]);
+  }, [token, savedAddrList, saveDeliveryToDraft]);
 
   const handleChangePvz = () => {
     if (!pickupEligible || !europostPickupAvailable) {
@@ -690,11 +733,19 @@ function CheckoutPageInner() {
     writeLS(LS_SELECTED_PVZ, found);
     saveReceiveMethod('pickup');
 
-    if (!cartToken || !cartItems.length) return;
+    if (!cartItems.length) return;
+
+    const deliveryContext = draftId
+      ? { order_id: draftId }
+      : cartToken
+        ? { cart_token: cartToken }
+        : null;
+
+    if (!deliveryContext) return;
 
     try {
       const result = await calculateDelivery({
-        cart_token: cartToken,
+        ...deliveryContext,
         delivery_type: 'europost_pickup',
         pickup_point_id: found.pickup_point_id || found.id,
         items: cartItems,
@@ -702,51 +753,92 @@ function CheckoutPageInner() {
 
       setPvzCalcResult(result);
       writeLS(LS_PVZ_CALC, result);
+
+      try {
+        await saveDeliveryToDraft({
+          deliveryType: 'europost_pickup',
+          pickupPointId: found.pickup_point_id || found.external_id || found.id,
+        });
+      } catch {
+        setError('ПВЗ выбран, но не удалось сохранить способ доставки в заказе.');
+      }
     } catch { }
   };
 
-const handleSelectSavedAddr = async (id) => {
-  const found = savedAddrList.find((addr) => addr.id === id);
-  if (!found) return;
+  const handleSelectSavedAddr = async (id) => {
+    const found = savedAddrList.find((addr) => addr.id === id);
+    if (!found) return;
 
-  setSelectedAddr(found);
-  writeLS(LS_SELECTED_ADDR, found);
-  saveReceiveMethod('delivery');
+    setSelectedAddr(found);
+    writeLS(LS_SELECTED_ADDR, found);
+    saveReceiveMethod('delivery');
 
-  if (!cartToken || !cartItems.length) return;
+    if (!cartItems.length) return;
 
-  const payload = {
-    cart_token: cartToken,
-    delivery_type: 'courier',
-    items: cartItems,
-    address: parseAddressToFields(found),
-  };
+    const deliveryContext = draftId
+      ? { order_id: draftId }
+      : cartToken
+        ? { cart_token: cartToken }
+        : null;
 
-  try {
-    const result = await calculateDelivery(payload);
-    setAddrCalcResult(result);
-    writeLS(LS_ADDR_CALC, result);
-  } catch (err) {
-    if (err.status !== 422) return;
+    if (!deliveryContext) return;
 
-    const available = getAvailableMethodsFromError(err);
-    const hasIkeyaDelivery = available.some(
-      (method) => method?.code === 'ikeya_delivery' && method?.available
-    );
-
-    if (!hasIkeyaDelivery) return;
+    const payload = {
+      ...deliveryContext,
+      delivery_type: 'courier',
+      items: cartItems,
+      address: parseAddressToFields(found),
+    };
 
     try {
-      const fallback = await calculateDelivery({
-        ...payload,
-        delivery_type: 'ikeya_delivery',
-      });
+      const result = await calculateDelivery(payload);
+      setAddrCalcResult(result);
+      writeLS(LS_ADDR_CALC, result);
 
-      setAddrCalcResult(fallback);
-      writeLS(LS_ADDR_CALC, fallback);
-    } catch { }
-  }
-};
+      const resolvedDeliveryType =
+        result?.delivery?.normalized_delivery_type ||
+        result?.delivery?.delivery_type ||
+        result?.delivery?.type ||
+        'courier';
+
+      try {
+        await saveDeliveryToDraft({
+          deliveryType: resolvedDeliveryType,
+          address: parseAddressToFields(found),
+        });
+      } catch {
+        setError('Адрес выбран, но не удалось сохранить способ доставки в заказе.');
+      }
+    } catch (err) {
+      if (err.status !== 422) return;
+
+      const available = getAvailableMethodsFromError(err);
+      const hasIkeyaDelivery = available.some(
+        (method) => method?.code === 'ikeya_delivery' && method?.available
+      );
+
+      if (!hasIkeyaDelivery) return;
+
+      try {
+        const fallback = await calculateDelivery({
+          ...payload,
+          delivery_type: 'ikeya_delivery',
+        });
+
+        setAddrCalcResult(fallback);
+        writeLS(LS_ADDR_CALC, fallback);
+
+        try {
+          await saveDeliveryToDraft({
+            deliveryType: 'ikeya_delivery',
+            address: parseAddressToFields(found),
+          });
+        } catch {
+          setError('Адрес выбран, но не удалось сохранить способ доставки в заказе.');
+        }
+      } catch { }
+    }
+  };
 
   const handleDeletePvz = async (id) => {
     if (token) {
@@ -835,109 +927,150 @@ const handleSelectSavedAddr = async (id) => {
     }
   }
 
-async function handleA1Verify(code) {
-  setA1Loading(true);
-  setA1Error(null);
+  async function handleA1Verify(code) {
+    setA1Loading(true);
+    setA1Error(null);
 
-  try {
-    const verifyResponse = await verifyA1Code(a1VerificationId, code);
+    try {
+      const verifyResponse = await verifyA1Code(a1VerificationId, code);
 
-    if (!verifyResponse?.success) {
-      throw new Error('Проверка не пройдена');
-    }
+      if (verifyResponse?.success !== true) {
+        throw new Error('Проверка не пройдена');
+      }
 
-    setA1Modal(false);
-    setSubmitting(true);
+      if (!draftId) {
+        throw new Error('Не найден черновик заказа');
+      }
 
-    const successItems = checkoutItemsSource;
+      if (!cartItems.length) {
+        throw new Error('Нет товаров для оформления');
+      }
 
-    await refreshCart();
+      setA1Modal(false);
+      setSubmitting(true);
 
-    sessionStorage.removeItem('selectedSkus');
-    sessionStorage.removeItem('checkoutItemsPayload');
-    sessionStorage.removeItem('checkoutSummary');
+      const deliveryType = receiveMethod === 'pickup'
+        ? 'europost_pickup'
+        : addrDeliveryType;
 
-    removeLS(LS_SELECTED_PVZ);
-    removeLS(LS_SELECTED_ADDR);
-    removeLS(LS_PVZ_CALC);
-    removeLS(LS_ADDR_CALC);
-    removeLS(LS_RECEIVE_METHOD);
+      const finalizePayload = {
+        full_name: fullName,
+        phone: profile.phone,
+        delivery_type: deliveryType,
+        payment_method: paymentMethod,
+        a1_verification_id: a1VerificationId,
+        services: selectedServices,
+        items: cartItems,
+      };
 
-    if (receiveMethod === 'pickup' && selectedPvz) {
-      sessionStorage.setItem('selectedPvz', JSON.stringify(selectedPvz));
-    }
+      if (receiveMethod === 'pickup') {
+        finalizePayload.pickup_point_id =
+          selectedPvz?.pickup_point_id ||
+          selectedPvz?.external_id ||
+          selectedPvz?.id;
+      }
 
-    if (receiveMethod === 'delivery' && selectedAddr) {
-      sessionStorage.setItem('selectedDeliveryAddr', JSON.stringify({
-        ...selectedAddr,
-        calcResult: addrCalcResult,
-      }));
-    }
+      if (receiveMethod === 'delivery') {
+        finalizePayload.address = parseAddressToFields(selectedAddr);
+      }
 
-    sessionStorage.setItem('selectedServices', JSON.stringify(selectedServices));
+      const finalizeResponse = await finalizeDraft(draftId, finalizePayload);
 
-    sessionStorage.setItem('checkoutOrder', JSON.stringify(
-      verifyResponse.order ||
-      verifyResponse.data?.order ||
-      {
-        id: verifyResponse.order_id || verifyResponse.public_uid || draftId,
-        public_uid: verifyResponse.public_uid || verifyResponse.order_id || draftId,
-        status: verifyResponse.status || 'created',
-        total_amount: finalTotal ?? subtotal,
+      const order =
+        finalizeResponse?.order ||
+        finalizeResponse?.data?.order ||
+        finalizeResponse?.data?.attributes ||
+        finalizeResponse;
+
+      const orderId =
+        order?.public_uid ||
+        order?.order_id ||
+        order?.id ||
+        finalizeResponse?.public_uid ||
+        finalizeResponse?.order_id ||
+        draftId;
+
+      const paymentUrl = resolvePaymentUrl(
+        order?.payment_url ||
+        finalizeResponse?.payment_url ||
+        finalizeResponse?.data?.payment_url
+      );
+
+      if (receiveMethod === 'pickup' && selectedPvz) {
+        sessionStorage.setItem('selectedPvz', JSON.stringify(selectedPvz));
+      }
+
+      if (receiveMethod === 'delivery' && selectedAddr) {
+        sessionStorage.setItem('selectedDeliveryAddr', JSON.stringify({
+          ...selectedAddr,
+          calcResult: addrCalcResult,
+        }));
+      }
+
+      sessionStorage.setItem('selectedServices', JSON.stringify(selectedServices));
+
+      sessionStorage.setItem('checkoutOrder', JSON.stringify({
+        ...order,
+        id: order?.id || orderId,
+        public_uid: order?.public_uid || orderId,
+        total_amount: order?.total_amount || finalTotal || subtotal,
         delivery_price: receiveMethod === 'pickup'
           ? pvzDeliveryCost
           : isIkeyaDelivery
             ? null
             : addrDeliveryCost,
-        delivery_type: receiveMethod === 'pickup' ? 'europost_pickup' : addrDeliveryType,
+        delivery_type: deliveryType,
         payment_method: paymentMethod,
         full_name: fullName,
         phone: profile.phone,
-        payment_url: verifyResponse.payment_url || null,
-        payment_expires_at: verifyResponse.payment_expires_at || null,
+        payment_url: order?.payment_url || finalizeResponse?.payment_url || null,
+        payment_expires_at: order?.payment_expires_at || finalizeResponse?.payment_expires_at || null,
         payment_expired: false,
         address: {
           delivery: receiveMethod === 'delivery' ? addrCalcResult?.delivery : pvzCalcResult?.delivery,
           services: selectedServices,
         },
-      }
-    ));
+      }));
 
-    sessionStorage.setItem('checkoutItems', JSON.stringify(
-      successItems.map((item) => {
-        const normalized = normalizeCheckoutItem(item);
+      sessionStorage.setItem('checkoutItems', JSON.stringify(
+        checkoutItemsSource.map((item) => {
+          const normalized = normalizeCheckoutItem(item);
 
-        return {
-          id: normalized.sku,
-          attributes: {
-            product_sku: normalized.sku,
-            name: normalized.name,
-            description: normalized.description,
-            quantity: normalized.quantity,
-            price_byn: normalized.price_byn,
-            image_url: normalized.image_url,
-          },
-        };
-      })
-    ));
+          return {
+            id: normalized.sku,
+            attributes: {
+              product_sku: normalized.sku,
+              name: normalized.name,
+              description: normalized.description,
+              quantity: normalized.quantity,
+              price_byn: normalized.price_byn,
+              image_url: normalized.image_url,
+            },
+          };
+        })
+      ));
 
-    const orderId =
-      verifyResponse.order?.data?.attributes?.public_uid ||
-      verifyResponse.order?.public_uid ||
-      verifyResponse.data?.order?.public_uid ||
-      verifyResponse.public_uid ||
-      verifyResponse.order_id ||
-      verifyResponse.data?.order_id ||
-      draftId;
+      await refreshCart();
 
-    router.push(`/order-success?order_id=${orderId}`);
-  } catch (err) {
-    setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
-  } finally {
-    setA1Loading(false);
-    setSubmitting(false);
+      sessionStorage.removeItem('selectedSkus');
+      sessionStorage.removeItem('checkoutItemsPayload');
+      sessionStorage.removeItem('checkoutSummary');
+      sessionStorage.removeItem('checkoutDraftId');
+
+      removeLS(LS_SELECTED_PVZ);
+      removeLS(LS_SELECTED_ADDR);
+      removeLS(LS_PVZ_CALC);
+      removeLS(LS_ADDR_CALC);
+      removeLS(LS_RECEIVE_METHOD);
+
+      router.push(`/order-success?order_id=${orderId}`);
+    } catch (err) {
+      setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
+    } finally {
+      setA1Loading(false);
+      setSubmitting(false);
+    }
   }
-}
 
   if (draftLoading) {
     return (
@@ -1427,7 +1560,8 @@ async function handleA1Verify(code) {
       {showDeliveryModal && (
         <DeliveryModal
           initialTab={deliveryModalTab}
-          cartToken={cartToken}
+          orderId={draftId}
+          cartToken={draftId ? '' : cartToken}
           cartItems={cartItems}
           onClose={() => setShowDeliveryModal(false)}
           onSelectPvz={handleSelectPvz}

@@ -15,14 +15,16 @@ const YMAPS_SRC = `https://api-maps.yandex.ru/2.1/?apikey=${YMAPS_API_KEY}&lang=
  *
  * Props:
  *  - initialTab   {'pickup'|'delivery'}  — активная вкладка при открытии
- *  - cartToken    {string}               — токен корзины для calculate
- *  - cartItems    {Array}                — [{sku, quantity}]
+ *  - orderId      {string|number}         — id checkout draft для delivery/calculate на checkout
+ *  - cartToken    {string}                — fallback-токен корзины для сценариев до draft
+ *  - cartItems    {Array}                 — [{sku, quantity}]
  *  - onClose      {fn}
- *  - onSelectPvz  {fn(pvz, calcResult)}  — выбран ПВЗ самовывоза
- *  - onSelectAddr {fn(addr, calcResult)} — выбран адрес доставки
+ *  - onSelectPvz  {fn(pvz, calcResult)}   — выбран ПВЗ самовывоза
+ *  - onSelectAddr {fn(addr, calcResult)}  — выбран адрес доставки
  */
 export default function DeliveryModal({
   initialTab = 'pickup',
+  orderId,
   cartToken,
   cartItems = [],
   onClose,
@@ -106,6 +108,7 @@ export default function DeliveryModal({
               {activeTab === 'pickup' && (
                 <PickupTab
                   ymapsReady={ymapsReady}
+                  orderId={orderId}
                   cartToken={cartToken}
                   cartItems={cartItems}
                   onSelect={handlePvzSelect}
@@ -117,6 +120,7 @@ export default function DeliveryModal({
               {activeTab === 'delivery' && (
                 <DeliveryTab
                   ymapsReady={ymapsReady}
+                  orderId={orderId}
                   cartToken={cartToken}
                   cartItems={cartItems}
                   onSelect={handleAddrSelect}

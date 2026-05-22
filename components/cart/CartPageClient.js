@@ -389,11 +389,43 @@ export default function CartPageClient() {
         items: selectedItemsPayload,
       });
 
-      const draftId = response.order?.data?.id || response.order_id;
+      const draftId =
+        response?.order_id ||
+        response?.draft_order_id ||
+        response?.id ||
+        response?.data?.order_id ||
+        response?.data?.id ||
+        response?.data?.attributes?.id ||
+        response?.order?.id ||
+        response?.order?.order_id ||
+        response?.order?.data?.id ||
+        response?.order?.data?.attributes?.id;
+
+      if (!draftId) {
+        throw new Error('Бэк не вернул order_id черновика');
+      }
+
+      sessionStorage.setItem('checkoutDraftId', String(draftId));
 
       router.push(`/checkout?draft_id=${draftId}`);
-    } catch {
-      router.push('/checkout');
+    } catch (err) {
+      const conflictDraftId =
+        err?.payload?.draft_order_id ||
+        err?.payload?.order_id ||
+        err?.payload?.draft?.id ||
+        err?.payload?.order?.id;
+
+      const isDraftConflict =
+        err?.status === 409 ||
+        err?.payload?.code === 'checkout_draft_exists';
+
+      if (isDraftConflict && conflictDraftId) {
+        sessionStorage.setItem('checkoutDraftId', String(conflictDraftId));
+        router.push(`/checkout?draft_id=${conflictDraftId}`);
+        return;
+      }
+
+      alert(err.message || 'Не удалось создать черновик заказа');
     } finally {
       setCheckoutLoading(false);
     }

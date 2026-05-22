@@ -2,6 +2,18 @@
 
 import CartItem from './CartItem';
 
+function getItemSku(item) {
+  return (
+    item?.sku ||
+    item?.product_sku ||
+    item?.product?.sku ||
+    item?.product?.attributes?.sku ||
+    item?.attributes?.sku ||
+    item?.attributes?.product_sku ||
+    null
+  );
+}
+
 export default function CartItemsSection({
   items = [],
   isUnavailable = false,
@@ -24,7 +36,10 @@ export default function CartItemsSection({
 
   const topClass = isUnavailable ? 'cart-section__top' : 'cart-main__top';
 
-  const allSkus = items.map((item) => item?.sku).filter(Boolean);
+  const allSkus = items
+    .map((item) => getItemSku(item))
+    .filter(Boolean)
+    .map((sku) => String(sku));
   const selectedSet = new Set(selectedItems);
 
   const selectedInSectionCount = allSkus.reduce(
@@ -80,13 +95,14 @@ export default function CartItemsSection({
         </button>
       </div>
 
-      {items.map((item) => {
-        const sku = item?.sku;
+      {items.map((item, index) => {
+        const rawSku = getItemSku(item);
+        const sku = rawSku ? String(rawSku) : '';
         const checked = !!sku && selectedSet.has(sku);
 
         return (
           <CartItem
-            key={sku}
+            key={sku || index}
             item={item}
             checked={checked}
             isUnavailable={isUnavailable}
