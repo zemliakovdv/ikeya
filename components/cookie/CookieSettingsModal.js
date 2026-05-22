@@ -71,7 +71,7 @@ export default function CookieSettingsModal({ initialPrefs, onSave, onReject, on
         </div>
 
         <div className="cookie-modal__footer">
-          <p>Подробнее <a href="/help/cookies" className="cookie-modal__policy-link">о Политике обработки файлов cookie</a></p>
+          <p>Подробнее <a href="/help/cookie-policy-ikeya-by/" className="cookie-modal__policy-link">о Политике обработки файлов cookie</a></p>
           <div className="cookie-modal__actions">
             <button
               className="cookie-banner__btn cookie-banner__btn--outline"

@@ -11,7 +11,6 @@ const STATIC_MENU = [
     items: [
       { label: 'Таможенная пошлина', href: '/help/customs' },
       { label: 'Как сделать заказ', href: '/help/how-to-order' },
-      { label: 'Способ оплаты', href: '/help/payment' },
       { label: 'Доставка', href: '/help/delivery' },
     ],
   },
