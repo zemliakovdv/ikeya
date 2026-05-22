@@ -76,6 +76,7 @@ export default function Footer({ categoryLinks = [] }) {
                         <li><a href="/blog">Советы и идеи</a></li>
                         <li><a href="/pvz">Пункты выдачи</a></li>
                         <li><a href="#">Контакты</a></li>
+                        <li><a href="/help">Помощь</a></li>
                       </ul>
                     </div>
                     <div className="footer-navigation-list">
@@ -88,13 +89,13 @@ export default function Footer({ categoryLinks = [] }) {
                         <li><a href="/help/how-to-order">Как сделать заказ</a></li>
                         <li><a href="/help/delivery">Доставка</a></li>
                         <li><a href="/help/payment">Оплата</a></li>
-                        <li><a href="#">Правовая информация</a></li>
+                        <li><a href="/help/personal-data-consent-ikeya-by/">Правовая информация</a></li>
                         <li>
                           <button type="button" className="footer-cookie-btn" onClick={openCookieModal}>
                             Настройка cookie
                           </button>
                         </li>
-                        <li><a href="#">Политика конфиденциальности</a></li>
+                        <li><a href="/help/user-agreement-ikeya-service/">Политика конфиденциальности</a></li>
                       </ul>
                     </div>
                   </div>
@@ -135,7 +136,7 @@ export default function Footer({ categoryLinks = [] }) {
                                 <li><a href="/blog">Советы и идеи</a></li>
                                 <li><a href="/pvz">Пункты выдачи</a></li>
                                 <li><a href="#">Контакты</a></li>
-                                <li><a href="/help">Контакты</a></li>
+                                <li><a href="/help">Помощь</a></li>
                               </ul>
                             </div>
                           </div>
