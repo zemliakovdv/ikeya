@@ -32,7 +32,7 @@ export default function ProfileLayout({ children, breadcrumbs, mainClassName = '
         }
       })
       .catch(() => {});
-  }, [isHydrated, isAuth]);
+  }, [isHydrated, isAuth, user, setUser]);
 
   if (!isHydrated || !isAuth) return null;
 
