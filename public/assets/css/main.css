@@ -1191,7 +1191,7 @@ main {
 
 .product-card__img-wrap img {
     min-height: 234px;
-    max-height: 234px;
+    max-height: fit-content;
 }
 
 .like {
@@ -2009,7 +2009,7 @@ main {
 
 .footer-payment img {
     display: block;
-    max-width: 170px;
+    max-width: fit-content;
     height: auto;
 }
 
@@ -2020,7 +2020,7 @@ main {
 .footer-bottom p {
     margin-bottom: 12px;
     font-weight: 400;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 20px;
     letter-spacing: 0.02em;
     color: #757575;
@@ -3705,6 +3705,26 @@ main {
     top: 0;
 }
 
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control-plaintext ~ label,
+.form-floating > .form-select ~ label {
+  transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
+  opacity: 1 !important;
+}
+
+.form-floating > .form-control.is-invalid ~ label {
+  opacity: 1 !important;
+transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
+}
+
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  background-image: none !important;
+  padding-right: 16px !important;
+}
+
 .form-control:focus {
     border-color: #BDBDBD;
     box-shadow: none;
@@ -4639,6 +4659,379 @@ main {
 
 .feedbacks-content__alert p:last-child {
     margin-bottom: 0;
+}
+
+/* ========== ОТЗЫВЫ ТОВАРА ========== */
+
+.tab-feedbacks__content {
+    width: 100%;
+}
+
+.feedbacks-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 428px;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.feedbacks-main {
+    min-width: 0;
+}
+
+.feedbacks-photos {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.feedbacks-photos__item {
+    flex: 0 0 96px;
+    width: 96px;
+    height: 96px;
+    border: none;
+    padding: 0;
+    background: transparent;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.feedbacks-photos__item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.feedbacks-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.feedbacks-rating-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+}
+
+.feedbacks-rating-filter__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.01em;
+    text-align: center;
+    color: #181818;
+    flex-direction: row-reverse;
+}
+
+.feedbacks-rating-filter__item.active {
+    background: #0058a3;
+    color: #fff;
+}
+
+.feedbacks-sort {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.feedbacks-sort__photo,
+.feedbacks-sort__button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 8px 16px;
+    background: #fff;
+    white-space: nowrap;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #181818;
+    width: 218px;
+    justify-content: space-between;
+}
+
+.feedbacks-sort__photo.active {
+    border-color: #0058a3;
+    background: #eaf4ff;
+    color: #0058a3;
+}
+
+.feedbacks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.feedbacks-review {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 16px;
+    padding-bottom: 24px;
+}
+
+.feedbacks-review__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f5f5f5;
+}
+
+.feedbacks-review__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.feedbacks-review__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.feedbacks-review__header h6 {
+    margin: 0 0 4px;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 150%;
+    color: #181818;
+}
+
+.feedbacks-review__variant {
+    margin: 0;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    color: #757575;
+}
+
+.feedbacks-review__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex: 0 0 auto;
+}
+
+.review-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.feedbacks-review__meta p {
+    margin: 0;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    color: #757575;
+    white-space: nowrap;
+}
+
+.feedbacks-review__text {
+    margin: 0;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    color: #181818;
+}
+
+.feedbacks-review__photos {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    overflow-x: auto;
+}
+
+.feedbacks-review__photos img {
+    width: 72px;
+    height: 72px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.feedbacks-load-more {
+    margin-top: 24px;
+    border: 1px solid #181818;
+    border-radius: 4px;
+    padding: 12px 24px;
+    background: #fff;
+    font-weight: 600;
+    font-size: 16px;
+    line-height: 150%;
+    color: #181818;
+}
+
+.feedbacks-load-more:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.feedbacks-rating {
+    position: sticky;
+    top: 90px;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fafafa;
+}
+
+.feedbacks-rating__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.feedbacks-rating__value {
+    margin: 0;
+    font-weight: 600;
+    font-size: 22px;
+    line-height: 127%;
+    color: #181818;
+}
+
+.feedbacks-rating__description,
+.feedbacks-rating__notice,
+.feedbacks-rating__empty {
+    margin: 0;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    letter-spacing: 0.03em;
+    color: #757575;
+}
+
+.feedbacks-rating__description {
+    padding-top: 16px;
+}
+
+
+.feedbacks-rating__distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 32px;
+    margin-bottom: 16px;
+}
+
+.feedbacks-rating__row {
+    display: grid;
+    grid-template-columns: 66px minmax(0, 1fr) 24px;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.feedbacks-rating__row p {
+    margin: 0;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    color: #757575;
+}
+
+.feedbacks-rating__row p:last-child {
+    text-align: right;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 143%;
+    letter-spacing: 0.02em;
+    text-align: right;
+    color: #181818;
+}
+
+.feedbacks-rating__bar {
+    height: 8px;
+    border-radius: 3px;
+    background: #e0e0e0;
+    overflow: hidden;
+}
+
+.feedbacks-rating__bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #ffb300;
+}
+
+.feedbacks-sort-dropdown {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.feedbacks-sort-dropdown__menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    z-index: 20;
+}
+
+.feedbacks-sort-dropdown__item {
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: #fff;
+    padding: 14px 16px;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 150%;
+    color: #181818;
+}
+
+.feedbacks-sort-dropdown__item:hover {
+    background: #f7f7f7;
+}
+
+.feedbacks-sort-dropdown__item.active {
+    color: #0058a3;
+}
+
+.feedbacks-review__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.feedbacks-review__avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .tab-delivery__content {

@@ -1,8 +1,8 @@
 // components/profile/ReturnOffcanvas.js
 'use client';
 
-import { useState, useRef } from 'react';
-import { createReturn } from '@/lib/api/account';
+import { useState, useRef, useEffect } from 'react';
+import { createReturn, getProfile } from '@/lib/api/account';
 import { useAuth } from '@/contexts/AuthContext';
 
 const RETURN_REASONS = [
@@ -16,37 +16,138 @@ const RETURN_REASONS = [
 const MAX_FILES = 5;
 const ALLOWED_TYPES = ['image/avif', 'image/heic', 'image/webp', 'image/jpeg', 'image/png'];
 
+const EMPTY_FORM = {
+  lastName:     '',
+  firstName:    '',
+  middleName:   '',
+  orderNumber:  '',
+  phone:        '',
+  email:        '',
+  reason:       '',
+  comment:      '',
+  compensation: 'return',
+};
+
+const EMPTY_ERRORS = {
+  lastName:    '',
+  firstName:   '',
+  middleName:  '',
+  orderNumber: '',
+  phone:       '',
+  email:       '',
+  reason:      '',
+  general:     '',
+};
+
+// Валидаторы
+const LETTERS_RE  = /^[a-zA-Zа-яА-ЯёЁ\s-]+$/;
+const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateForm(form) {
+  const errors = { ...EMPTY_ERRORS };
+  let valid = true;
+
+  if (!form.lastName.trim()) {
+    errors.lastName = 'Обязательное поле'; valid = false;
+  } else if (!LETTERS_RE.test(form.lastName.trim())) {
+    errors.lastName = 'Только буквы'; valid = false;
+  }
+
+  if (!form.firstName.trim()) {
+    errors.firstName = 'Обязательное поле'; valid = false;
+  } else if (!LETTERS_RE.test(form.firstName.trim())) {
+    errors.firstName = 'Только буквы'; valid = false;
+  }
+
+  if (form.middleName.trim() && !LETTERS_RE.test(form.middleName.trim())) {
+    errors.middleName = 'Только буквы'; valid = false;
+  }
+
+  if (!form.orderNumber.trim()) {
+    errors.orderNumber = 'Обязательное поле'; valid = false;
+  } else if (!/^\d{8}$/.test(form.orderNumber.trim())) {
+    errors.orderNumber = 'Номер заказа — 8 цифр'; valid = false;
+  }
+
+  if (!form.phone.trim()) {
+    errors.phone = 'Обязательное поле'; valid = false;
+  } else if (!/^\d{9}$/.test(form.phone.trim())) {
+    errors.phone = 'Введите 9 цифр'; valid = false;
+  }
+
+  if (!form.email.trim()) {
+    errors.email = 'Обязательное поле'; valid = false;
+  } else if (!EMAIL_RE.test(form.email.trim())) {
+    errors.email = 'Некорректный email'; valid = false;
+  }
+
+  if (!form.reason) {
+    errors.reason = 'Выберите причину возврата'; valid = false;
+  }
+
+  return { errors, valid };
+}
+
+// Маппинг полей бэка → полей формы
+const BACKEND_FIELD_MAP = {
+  order_id: 'orderNumber',
+  reason:   'reason',
+  comment:  'comment',
+};
+
 export default function ReturnOffcanvas({ isOpen, onClose }) {
-  const { user } = useAuth();
+  const { isAuth } = useAuth();
   const fileInputRef = useRef(null);
 
-  const [form, setForm] = useState({
-    lastName:     '',
-    firstName:    user?.username || '',
-    middleName:   '',
-    orderNumber:  '',
-    phone:        '',
-    email:        '',
-    reason:       '',
-    comment:      '',
-    compensation: 'return',
-  });
+  const [form,       setForm]       = useState(EMPTY_FORM);
+  const [errors,     setErrors]     = useState(EMPTY_ERRORS);
+  const [files,      setFiles]      = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [success,    setSuccess]    = useState(false);
 
-  const [files,       setFiles]       = useState([]);
-  const [submitting,  setSubmitting]  = useState(false);
-  const [error,       setError]       = useState('');
-  const [success,     setSuccess]     = useState(false);
+  // Загрузка профиля при открытии
+  useEffect(() => {
+    if (!isOpen || !isAuth) return;
+
+    getProfile()
+      .then(profile => {
+        if (!profile) return;
+        // Телефон хранится как +375XXXXXXXXX — убираем +375
+        const rawPhone = profile.phone ? profile.phone.replace(/^\+?375/, '') : '';
+
+        setForm(prev => ({
+          ...prev,
+          lastName:   profile.last_name   || prev.lastName,
+          firstName:  profile.first_name  || prev.firstName,
+          middleName: profile.middle_name || prev.middleName,
+          phone:      rawPhone            || prev.phone,
+          email:      profile.email       || prev.email,
+        }));
+      })
+      .catch(() => {
+        // Не критично — пользователь заполнит сам
+      });
+  }, [isOpen, isAuth]);
 
   function handleChange(e) {
     const { name, value } = e.target;
+
+    // Только цифры для телефона и номера заказа
+    if (name === 'phone' && value && !/^\d*$/.test(value)) return;
+    if (name === 'orderNumber' && value && !/^\d*$/.test(value)) return;
+
     setForm(prev => ({ ...prev, [name]: value }));
+
+    // Сбрасываем ошибку поля при изменении
+    if (name in errors) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   }
 
   function handleFileChange(e) {
     const selected = Array.from(e.target.files || []);
     const valid = selected.filter(f => ALLOWED_TYPES.includes(f.type));
-    const merged = [...files, ...valid].slice(0, MAX_FILES);
-    setFiles(merged);
+    setFiles(prev => [...prev, ...valid].slice(0, MAX_FILES));
     e.target.value = '';
   }
 
@@ -54,8 +155,7 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
     e.preventDefault();
     const dropped = Array.from(e.dataTransfer.files || []);
     const valid = dropped.filter(f => ALLOWED_TYPES.includes(f.type));
-    const merged = [...files, ...valid].slice(0, MAX_FILES);
-    setFiles(merged);
+    setFiles(prev => [...prev, ...valid].slice(0, MAX_FILES));
   }
 
   function removeFile(idx) {
@@ -64,26 +164,22 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError('');
 
-    if (!form.orderNumber.trim()) {
-      setError('Укажите номер заказа');
-      return;
-    }
-    if (!form.reason) {
-      setError('Выберите причину возврата');
+    const { errors: validationErrors, valid } = validateForm(form);
+    if (!valid) {
+      setErrors(validationErrors);
       return;
     }
 
     setSubmitting(true);
+    setErrors(EMPTY_ERRORS);
+
     try {
       const fd = new FormData();
-      fd.append('order_id', form.orderNumber.trim());
+      fd.append('order_id', parseInt(form.orderNumber.trim(), 10));
       fd.append('reason', form.reason);
       fd.append('comment', [
-        form.lastName,
-        form.firstName,
-        form.middleName,
+        [form.lastName, form.firstName, form.middleName].filter(Boolean).join(' '),
         form.phone ? `+375${form.phone}` : '',
         form.email,
         form.comment,
@@ -94,33 +190,53 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
 
       await createReturn(fd);
       setSuccess(true);
-    } catch (e) {
-      setError(e.message || 'Ошибка при отправке заявки');
+    } catch (err) {
+      const status  = err.status;
+      const payload = err.payload || {};
+
+      if (status === 422 && payload && typeof payload === 'object') {
+        // Ошибки валидации с бэка — раскладываем по полям
+        const backendErrors = { ...EMPTY_ERRORS };
+        let hasFieldError = false;
+
+        Object.entries(payload).forEach(([backendField, messages]) => {
+          const formField = BACKEND_FIELD_MAP[backendField];
+          const message = Array.isArray(messages) ? messages[0] : String(messages);
+          if (formField) {
+            backendErrors[formField] = message;
+            hasFieldError = true;
+          }
+        });
+
+        if (!hasFieldError) {
+          backendErrors.general = 'Ошибка валидации. Проверьте данные и попробуйте снова.';
+        }
+
+        setErrors(backendErrors);
+      } else if (status === 404) {
+        setErrors(prev => ({ ...prev, orderNumber: 'Заказ не найден или не принадлежит вашему аккаунту' }));
+      } else if (status === 401) {
+        setErrors(prev => ({ ...prev, general: 'Необходима авторизация. Пожалуйста, войдите в аккаунт.' }));
+      } else {
+        setErrors(prev => ({ ...prev, general: err.message || 'Ошибка при отправке заявки. Попробуйте позже.' }));
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
   function handleClose() {
-    setForm({
-      lastName: '', firstName: user?.username || '', middleName: '',
-      orderNumber: '', phone: '', email: '',
-      reason: '', comment: '', compensation: 'return',
-    });
+    setForm(EMPTY_FORM);
     setFiles([]);
-    setError('');
+    setErrors(EMPTY_ERRORS);
     setSuccess(false);
     onClose();
   }
 
   return (
     <>
-      {/* Backdrop */}
       {isOpen && (
-        <div
-          className="offcanvas-backdrop fade show"
-          onClick={handleClose}
-        />
+        <div className="offcanvas-backdrop fade show" onClick={handleClose} />
       )}
 
       <div
@@ -142,51 +258,51 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
         <div className="offcanvas-body">
           {success ? (
             <div className="return-success">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
                 <path d="M24 4C12.95 4 4 12.95 4 24C4 35.05 12.95 44 24 44C35.05 44 44 35.05 44 24C44 12.95 35.05 4 24 4ZM33.7 19.7L22.3 31.1C22 31.4 21.6 31.55 21.2 31.55C20.8 31.55 20.4 31.4 20.1 31.1L14.3 25.3C13.7 24.7 13.7 23.7 14.3 23.1C14.9 22.5 15.9 22.5 16.5 23.1L21.2 27.8L31.5 17.5C32.1 16.9 33.1 16.9 33.7 17.5C34.3 18.1 34.3 19.1 33.7 19.7Z" fill="#04A31A"/>
               </svg>
               <h6>Заявка отправлена!</h6>
               <p>Мы рассмотрим её в течение 1–2 рабочих дней и свяжемся с вами.</p>
-              <button className="btn btn-submit" onClick={handleClose}>
-                Закрыть
-              </button>
+              <button className="btn btn-submit" onClick={handleClose}>Закрыть</button>
             </div>
           ) : (
-            <form className="returns-order_form" onSubmit={handleSubmit}>
+            <form className="returns-order_form" onSubmit={handleSubmit} noValidate>
 
               {/* Фамилия */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
                   id="lastName"
                   name="lastName"
                   placeholder="Фамилия"
                   value={form.lastName}
                   onChange={handleChange}
                 />
-                <label htmlFor="lastName">Фамилия</label>
+                <label htmlFor="lastName">Фамилия *</label>
+                {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
               </div>
 
               {/* Имя */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
                   id="firstName"
                   name="firstName"
                   placeholder="Имя"
                   value={form.firstName}
                   onChange={handleChange}
                 />
-                <label htmlFor="firstName">Имя</label>
+                <label htmlFor="firstName">Имя *</label>
+                {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
               </div>
 
               {/* Отчество */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.middleName ? 'is-invalid' : ''}`}
                   id="middleName"
                   name="middleName"
                   placeholder="Отчество"
@@ -194,25 +310,28 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   onChange={handleChange}
                 />
                 <label htmlFor="middleName">Отчество</label>
+                {errors.middleName && <div className="invalid-feedback">{errors.middleName}</div>}
               </div>
 
               {/* Номер заказа */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
-                  className="form-control"
+                  className={`form-control ${errors.orderNumber ? 'is-invalid' : ''}`}
                   id="orderNumber"
                   name="orderNumber"
                   placeholder="Номер заказа"
                   value={form.orderNumber}
                   onChange={handleChange}
-                  required
+                  inputMode="numeric"
+                  maxLength={8}
                 />
                 <label htmlFor="orderNumber">Номер заказа *</label>
+                {errors.orderNumber && <div className="invalid-feedback">{errors.orderNumber}</div>}
               </div>
 
               {/* Телефон */}
-              <div className="phone-input-container mb-3">
+              <div className={`phone-input-container mb-1 ${errors.phone ? 'is-invalid-container' : ''}`}>
                 <div className="country-code">
                   <span className="flag-icon">
                     <img src="/assets/img/icons/rb.svg" alt="BY" />
@@ -221,7 +340,7 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 </div>
                 <input
                   type="tel"
-                  className="phone-input"
+                  className={`phone-input ${errors.phone ? 'is-invalid' : ''}`}
                   name="phone"
                   placeholder="00 000 00 00"
                   inputMode="numeric"
@@ -230,35 +349,40 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   onChange={handleChange}
                 />
               </div>
+              {errors.phone && (
+                <div className="invalid-feedback d-block mb-3">{errors.phone}</div>
+              )}
+              {!errors.phone && <div className="mb-3" />}
 
               {/* Email */}
               <div className="form-floating mb-3">
                 <input
                   type="email"
-                  className="form-control"
+                  className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                   id="email"
                   name="email"
                   placeholder="Электронная почта"
                   value={form.email}
                   onChange={handleChange}
                 />
-                <label htmlFor="email">Электронная почта</label>
+                <label htmlFor="email">Электронная почта *</label>
+                {errors.email && <div className="invalid-feedback">{errors.email}</div>}
               </div>
 
               {/* Причина возврата */}
               <div className="mb-3">
                 <select
-                  className="form-select"
+                  className={`form-select ${errors.reason ? 'is-invalid' : ''}`}
                   name="reason"
                   value={form.reason}
                   onChange={handleChange}
-                  required
                 >
                   <option value="" disabled>Причина возврата *</option>
                   {RETURN_REASONS.map(r => (
                     <option key={r.value} value={r.value}>{r.label}</option>
                   ))}
                 </select>
+                {errors.reason && <div className="invalid-feedback">{errors.reason}</div>}
               </div>
 
               {/* Комментарий */}
@@ -300,7 +424,7 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                       disabled={files.length >= MAX_FILES}
                     >
                       Загрузите файл
-                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                         <path d="M13.1 10.1919H10.5833V7.6752C10.5833 7.3502 10.325 7.09186 10 7.09186C9.675 7.09186 9.41667 7.3502 9.41667 7.6752V10.1919H6.9C6.575 10.1919 6.31667 10.4502 6.31667 10.7752C6.31667 11.1002 6.575 11.3585 6.9 11.3585H9.41667V13.8752C9.41667 14.2002 9.675 14.4585 10 14.4585C10.325 14.4585 10.5833 14.2002 10.5833 13.8752V11.3585H13.1C13.425 11.3585 13.6833 11.1002 13.6833 10.7752C13.6833 10.4502 13.425 10.1919 13.1 10.1919Z" fill="white"/>
                       </svg>
                     </button>
@@ -308,9 +432,8 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   </div>
                 </div>
 
-                {/* Список загруженных файлов */}
                 {files.length > 0 && (
-                  <div id="fileList" style={{ marginTop: '8px' }}>
+                  <div style={{ marginTop: '8px' }}>
                     {files.map((file, idx) => (
                       <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                         <span style={{ fontSize: '13px', color: '#424242' }}>{file.name}</span>
@@ -341,9 +464,7 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                       checked={form.compensation === 'return'}
                       onChange={handleChange}
                     />
-                    <label className="form-check-label" htmlFor="compensationReturn">
-                      возврат
-                    </label>
+                    <label className="form-check-label" htmlFor="compensationReturn">возврат</label>
                   </div>
                   <div className="form-check">
                     <input
@@ -355,15 +476,16 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                       checked={form.compensation === 'exchange'}
                       onChange={handleChange}
                     />
-                    <label className="form-check-label" htmlFor="compensationExchange">
-                      обмен
-                    </label>
+                    <label className="form-check-label" htmlFor="compensationExchange">обмен</label>
                   </div>
                 </div>
               </div>
 
-              {error && (
-                <p style={{ color: '#B71C1C', marginBottom: '12px', fontSize: '14px' }}>{error}</p>
+              {/* Общая ошибка */}
+              {errors.general && (
+                <p style={{ color: '#B71C1C', marginBottom: '12px', fontSize: '14px' }}>
+                  {errors.general}
+                </p>
               )}
 
               <button

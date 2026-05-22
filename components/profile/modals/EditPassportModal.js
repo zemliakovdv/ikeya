@@ -18,79 +18,101 @@ const REGIONS = [
 const STEPS = { FORM: 'form', CODE: 'code', SUCCESS: 'success' };
 
 // ─── Регулярки ───────────────────────────────────────────────────────────────
-const RE_CYRILLIC     = /^[а-яёА-ЯЁ]+$/;
-const RE_CYRILLIC_CITY = /^[а-яёА-ЯЁ][а-яёА-ЯЁ\- ]*$/;
-const RE_LATIN_ONLY   = /^[A-Za-z]+$/;
-const RE_DIGITS_ONLY  = /^\d+$/;
+const RE_CYRILLIC       = /^[а-яёА-ЯЁ]+$/;
+const RE_CYRILLIC_CITY  = /^[а-яёА-ЯЁ][а-яёА-ЯЁ\- ]*$/;
+const RE_LATIN_ONLY     = /^[A-Za-z]+$/;
+const RE_DIGITS_ONLY    = /^\d+$/;
 const RE_ALPHANUMERIC_LATIN = /^[A-Za-z0-9]+$/;
-const RE_HOUSE        = /^[0-9]+([/А-ЯЁа-яёA-Za-z])?$/;
+const RE_HOUSE          = /^[0-9]+([/А-ЯЁа-яёA-Za-z])?$/;
 
-// ─── Валидаторы ──────────────────────────────────────────────────────────────
-function validateForm(form) {
-  const errors = {};
+// Фильтры для блокировки ввода
+const LATIN_CHARS       = /^[A-Za-z]$/;
+const LATIN_DIGIT_CHARS = /^[A-Za-z0-9]$/;
+const DIGIT_CHARS       = /^[0-9]$/;
+const HOUSE_CHARS       = /^[0-9/А-ЯЁа-яёA-Za-z]$/;
 
-  if (!form.first_name.trim())
-    errors.first_name = 'Введите имя';
-  else if (!RE_CYRILLIC.test(form.first_name.trim()))
-    errors.first_name = 'Только кириллица, без цифр и символов';
-
-  if (!form.last_name.trim())
-    errors.last_name = 'Введите фамилию';
-  else if (!RE_CYRILLIC.test(form.last_name.trim()))
-    errors.last_name = 'Только кириллица, без цифр и символов';
-
-  if (!form.middle_name.trim())
-    errors.middle_name = 'Введите отчество';
-  else if (!RE_CYRILLIC.test(form.middle_name.trim()))
-    errors.middle_name = 'Только кириллица, без цифр и символов';
-
-  if (!form.series.trim())
-    errors.series = 'Введите серию паспорта';
-  else if (!RE_LATIN_ONLY.test(form.series.trim()) || form.series.trim().length !== 2)
-    errors.series = 'Ровно 2 латинские буквы (например MC)';
-
-  if (!form.number.trim())
-    errors.number = 'Введите номер паспорта';
-  else if (!RE_DIGITS_ONLY.test(form.number.trim()) || form.number.trim().length !== 7)
-    errors.number = 'Ровно 7 цифр';
-
-  if (!form.identification_number.trim())
-    errors.identification_number = 'Введите идентификационный номер';
-  else if (
-    !RE_ALPHANUMERIC_LATIN.test(form.identification_number.trim()) ||
-    form.identification_number.trim().length !== 14
-  )
-    errors.identification_number = 'Ровно 14 символов: цифры и латинские буквы';
-
-  if (!form.dob)
-    errors.dob = 'Введите дату рождения';
-  else {
-    const dob = new Date(form.dob);
-    const now = new Date();
-    const age = now.getFullYear() - dob.getFullYear() -
-      (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
-    if (age < 14)
-      errors.dob = 'Возраст должен быть не менее 14 лет';
-    else if (age > 100)
-      errors.dob = 'Возраст не может превышать 100 лет';
+// ─── Валидатор одного поля ───────────────────────────────────────────────────
+function validateField(name, value) {
+  switch (name) {
+    case 'first_name':
+      if (!value.trim()) return 'Введите имя';
+      if (!RE_CYRILLIC.test(value.trim())) return 'Только кириллица, без цифр и символов';
+      return '';
+    case 'last_name':
+      if (!value.trim()) return 'Введите фамилию';
+      if (!RE_CYRILLIC.test(value.trim())) return 'Только кириллица, без цифр и символов';
+      return '';
+    case 'middle_name':
+      if (!value.trim()) return 'Введите отчество';
+      if (!RE_CYRILLIC.test(value.trim())) return 'Только кириллица, без цифр и символов';
+      return '';
+    case 'series':
+      if (!value.trim()) return 'Введите серию паспорта';
+      if (!RE_LATIN_ONLY.test(value.trim()) || value.trim().length !== 2) return 'Только латиница';
+      return '';
+    case 'number':
+      if (!value.trim()) return 'Введите номер паспорта';
+      if (!RE_DIGITS_ONLY.test(value.trim()) || value.trim().length !== 7) return 'Номер - 7 цифр';
+      return '';
+    case 'identification_number':
+      if (!value.trim()) return 'Введите идентификационный номер';
+      if (!RE_ALPHANUMERIC_LATIN.test(value.trim()) || value.trim().length !== 14) return '14 символов';
+      return '';
+    case 'dob': {
+      if (!value) return 'Введите дату рождения';
+      const dob = new Date(value);
+      const now = new Date();
+      const age = now.getFullYear() - dob.getFullYear() -
+        (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+      if (age < 14) return 'Возраст должен быть не менее 14 лет';
+      if (age > 100) return 'Возраст не может превышать 100 лет';
+      return '';
+    }
+    case 'city':
+      if (!value.trim()) return 'Введите город';
+      if (!RE_CYRILLIC_CITY.test(value.trim())) return 'Только кириллица и дефис';
+      return '';
+    case 'postcode':
+      if (!value.trim()) return 'Введите индекс';
+      if (!RE_DIGITS_ONLY.test(value.trim())) return 'Только цифры';
+      return '';
+    case 'house':
+      if (!value.trim()) return 'Введите номер дома';
+      if (!RE_HOUSE.test(value.trim())) return 'Например: 12, 12А или 3/5';
+      return '';
+    case 'street':
+      if (!value.trim()) return 'Введите улицу';
+      return '';
+    case 'issued_by':
+      if (!value.trim()) return 'Введите кем выдан';
+      return '';
+    default:
+      return '';
   }
+}
 
-  if (!form.city.trim())
-    errors.city = 'Введите город';
-  else if (!RE_CYRILLIC_CITY.test(form.city.trim()))
-    errors.city = 'Только кириллица и дефис';
-
-  if (!form.postcode.trim())
-    errors.postcode = 'Введите индекс';
-  else if (!RE_DIGITS_ONLY.test(form.postcode.trim()))
-    errors.postcode = 'Только цифры';
-
-  if (!form.house.trim())
-    errors.house = 'Введите номер дома';
-  else if (!RE_HOUSE.test(form.house.trim()))
-    errors.house = 'Например: 12, 12А или 3/5';
-
+function validateAll(form) {
+  const fields = [
+    'first_name', 'last_name', 'middle_name',
+    'series', 'number', 'identification_number',
+    'dob', 'city', 'postcode', 'house', 'street', 'issued_by',
+  ];
+  const errors = {};
+  fields.forEach(f => {
+    const err = validateField(f, form[f] || '');
+    if (err) errors[f] = err;
+  });
   return errors;
+}
+
+// ─── Компонент ошибки под полем ──────────────────────────────────────────────
+function FieldError({ error }) {
+  if (!error) return null;
+  return (
+    <p style={{ color: '#b71c1c', fontSize: '12px', marginTop: '4px', marginBottom: 0 }}>
+      {error}
+    </p>
+  );
 }
 
 export default function EditPassportModal({ profile, onClose, onSave }) {
@@ -117,22 +139,56 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     apartment:             passport.apartment             || '',
   });
 
-  const [fieldErrors,        setFieldErrors]        = useState({});
+  // touched — помечаем поле как "тронутое" после первого blur или submit
+  const [touched,        setTouched]        = useState({});
+  const [fieldErrors,    setFieldErrors]    = useState({});
   const [verificationId,     setVerificationId]     = useState(null);
   const [callerNumberMasked, setCallerNumberMasked] = useState('');
-  const [loading,            setLoading]            = useState(false);
-  const [error,              setError]              = useState('');
+  const [loading,        setLoading]        = useState(false);
+  const [error,          setError]          = useState('');
 
-  const set = (key, val) => {
-    setForm(p => ({ ...p, [key]: val }));
-    if (fieldErrors[key]) setFieldErrors(p => ({ ...p, [key]: '' }));
-  };
+  // Установить значение с блокировкой недопустимых символов
+  function set(key, rawValue) {
+    let value = rawValue;
+
+    // Блокируем недопустимые символы на уровне ввода
+    if (key === 'series') {
+      value = rawValue.split('').filter(c => LATIN_CHARS.test(c)).join('').toUpperCase();
+    } else if (key === 'number' || key === 'postcode') {
+      value = rawValue.split('').filter(c => DIGIT_CHARS.test(c)).join('');
+    } else if (key === 'identification_number') {
+      value = rawValue.split('').filter(c => LATIN_DIGIT_CHARS.test(c)).join('').toUpperCase();
+    } else if (key === 'house') {
+      value = rawValue.split('').filter(c => HOUSE_CHARS.test(c)).join('');
+    }
+
+    setForm(prev => ({ ...prev, [key]: value }));
+
+    // Если поле уже тронуто — валидируем в реальном времени
+    if (touched[key]) {
+      setFieldErrors(prev => ({ ...prev, [key]: validateField(key, value) }));
+    }
+  }
+
+  function handleBlur(key) {
+    setTouched(prev => ({ ...prev, [key]: true }));
+    setFieldErrors(prev => ({ ...prev, [key]: validateField(key, form[key] || '') }));
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    const errors = validateForm(form);
+    // Помечаем все поля как тронутые
+    const allFields = [
+      'first_name', 'last_name', 'middle_name',
+      'series', 'number', 'identification_number',
+      'dob', 'city', 'postcode', 'house', 'street', 'issued_by',
+    ];
+    const allTouched = Object.fromEntries(allFields.map(f => [f, true]));
+    setTouched(allTouched);
+
+    const errors = validateAll(form);
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -204,11 +260,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     );
   }
 
-  const FieldError = ({ name }) =>
-    fieldErrors[name]
-      ? <p style={{ color: '#b71c1c', fontSize: '12px', marginTop: '4px' }}>{fieldErrors[name]}</p>
-      : null;
-
   return (
     <>
       <div id="editPassportModal" className="modal fade show d-block" style={{ zIndex: 1055 }}>
@@ -245,9 +296,10 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           value={form.first_name}
                           onChange={e => set('first_name', e.target.value)}
+                          onBlur={() => handleBlur('first_name')}
                         />
                         <label>Имя <span className="req">*</span></label>
-                        <FieldError name="first_name" />
+                        <FieldError error={fieldErrors.first_name} />
                       </div>
                       <div className="form-group form-floating">
                         <input
@@ -256,9 +308,10 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           value={form.last_name}
                           onChange={e => set('last_name', e.target.value)}
+                          onBlur={() => handleBlur('last_name')}
                         />
                         <label>Фамилия <span className="req">*</span></label>
-                        <FieldError name="last_name" />
+                        <FieldError error={fieldErrors.last_name} />
                       </div>
                       <div className="form-group form-floating">
                         <input
@@ -267,9 +320,10 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           value={form.middle_name}
                           onChange={e => set('middle_name', e.target.value)}
+                          onBlur={() => handleBlur('middle_name')}
                         />
                         <label>Отчество <span className="req">*</span></label>
-                        <FieldError name="middle_name" />
+                        <FieldError error={fieldErrors.middle_name} />
                       </div>
                     </div>
 
@@ -282,10 +336,11 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           maxLength={2}
                           value={form.series}
-                          onChange={e => set('series', e.target.value.toUpperCase())}
+                          onChange={e => set('series', e.target.value)}
+                          onBlur={() => handleBlur('series')}
                         />
                         <label>Серия паспорта <span className="req">*</span></label>
-                        <FieldError name="series" />
+                        <FieldError error={fieldErrors.series} />
                       </div>
                       <div className="form-group form-floating">
                         <input
@@ -294,10 +349,11 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           maxLength={7}
                           value={form.number}
-                          onChange={e => set('number', e.target.value.replace(/\D/g, ''))}
+                          onChange={e => set('number', e.target.value)}
+                          onBlur={() => handleBlur('number')}
                         />
                         <label>Номер паспорта <span className="req">*</span></label>
-                        <FieldError name="number" />
+                        <FieldError error={fieldErrors.number} />
                       </div>
                       <DatePicker
                         value={form.issue_date}
@@ -310,13 +366,14 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                     {/* Кем выдан */}
                     <div className="form-group who-group">
                       <textarea
-                        className="form-control passport-textarea"
+                        className={`form-control passport-textarea${fieldErrors.issued_by ? ' is-invalid' : ''}`}
                         placeholder="Кем выдан *"
                         rows={4}
                         value={form.issued_by}
                         onChange={e => set('issued_by', e.target.value)}
-                        required
+                        onBlur={() => handleBlur('issued_by')}
                       />
+                      <FieldError error={fieldErrors.issued_by} />
                     </div>
 
                     {/* Идентификационный номер / Дата рождения */}
@@ -328,19 +385,26 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           maxLength={14}
                           value={form.identification_number}
-                          onChange={e => set('identification_number', e.target.value.toUpperCase())}
+                          onChange={e => set('identification_number', e.target.value)}
+                          onBlur={() => handleBlur('identification_number')}
                         />
                         <label>Идентификационный номер <span className="req">*</span></label>
-                        <FieldError name="identification_number" />
+                        <FieldError error={fieldErrors.identification_number} />
                       </div>
                       <div className="datepicker-wrap">
                         <DatePicker
                           value={form.dob}
-                          onChange={val => set('dob', val)}
+                          onChange={val => {
+                            set('dob', val);
+                            if (touched.dob) {
+                              setFieldErrors(prev => ({ ...prev, dob: validateField('dob', val) }));
+                            }
+                          }}
+                          onBlur={() => handleBlur('dob')}
                           label="Дата рождения"
                           required
                         />
-                        <FieldError name="dob" />
+                        <FieldError error={fieldErrors.dob} />
                       </div>
                     </div>
 
@@ -370,9 +434,10 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           value={form.city}
                           onChange={e => set('city', e.target.value)}
+                          onBlur={() => handleBlur('city')}
                         />
                         <label>Город <span className="req">*</span></label>
-                        <FieldError name="city" />
+                        <FieldError error={fieldErrors.city} />
                       </div>
                       <div className="form-group form-floating">
                         <input
@@ -381,10 +446,11 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           maxLength={6}
                           value={form.postcode}
-                          onChange={e => set('postcode', e.target.value.replace(/\D/g, ''))}
+                          onChange={e => set('postcode', e.target.value)}
+                          onBlur={() => handleBlur('postcode')}
                         />
                         <label>Индекс <span className="req">*</span></label>
-                        <FieldError name="postcode" />
+                        <FieldError error={fieldErrors.postcode} />
                       </div>
                     </div>
 
@@ -393,13 +459,14 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                       <div className="form-group form-floating">
                         <input
                           type="text"
-                          className="form-control"
+                          className={`form-control${fieldErrors.street ? ' is-invalid' : ''}`}
                           placeholder=" "
                           value={form.street}
                           onChange={e => set('street', e.target.value)}
-                          required
+                          onBlur={() => handleBlur('street')}
                         />
                         <label>Улица <span className="req">*</span></label>
+                        <FieldError error={fieldErrors.street} />
                       </div>
                       <div className="form-group form-floating">
                         <input
@@ -408,9 +475,10 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           placeholder=" "
                           value={form.house}
                           onChange={e => set('house', e.target.value)}
+                          onBlur={() => handleBlur('house')}
                         />
                         <label>Дом <span className="req">*</span></label>
-                        <FieldError name="house" />
+                        <FieldError error={fieldErrors.house} />
                       </div>
                       <div className="form-group form-floating">
                         <input

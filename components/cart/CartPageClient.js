@@ -55,29 +55,89 @@ function buildItemsPayload(sourceItems = []) {
     }));
 }
 
+function sumItemsQuantity(items = []) {
+  return items.reduce((acc, item) => acc + Number(item?.quantity || 0), 0);
+}
+
 function normalizeSummaryResponse(response) {
-  const summary = response?.summary || response?.data?.summary || response?.cart?.totals || null;
-  const delivery = response?.delivery || response?.data?.delivery || response?.cart?.delivery || null;
+  const summary =
+    response?.summary ||
+    response?.data?.summary ||
+    response?.cart?.totals ||
+    response ||
+    null;
+
+  const delivery =
+    response?.delivery ||
+    response?.data?.delivery ||
+    response?.cart?.delivery ||
+    summary?.delivery ||
+    null;
 
   if (!summary) return null;
 
+  const responseItems = Array.isArray(response?.items)
+    ? response.items
+    : Array.isArray(summary?.items)
+      ? summary.items
+      : [];
+
+  const meta = response?.meta || summary?.meta || response?.data?.meta || {};
+
+  const subtotal = toNumber(
+    summary.subtotal_new_byn ??
+    summary.items_total_byn ??
+    response?.subtotal_new_byn ??
+    response?.items_total_byn
+  );
+
+  const finalTotalRaw =
+    summary.total_byn ??
+    response?.total_byn ??
+    summary.final_total_byn ??
+    response?.final_total_byn ??
+    null;
+
   return {
-    subtotal: toNumber(
-      summary.subtotal_new_byn ??
-      summary.items_total_byn
+    subtotal,
+    finalTotal: finalTotalRaw !== null ? toNumber(finalTotalRaw) : null,
+    promoDiscount: toNumber(
+      summary.discount_total_byn ??
+      response?.discount_total_byn
     ),
-    promoDiscount: toNumber(summary.discount_total_byn),
-    itemCount: Number(summary.items_count || 0),
-    totalWeight: toNumber(summary.total_weight_kg ?? delivery?.total_weight_kg),
-    customsDuty: toNumber(summary.customs_total_byn),
+    itemCount: Number(
+      summary.items_count ??
+      response?.items_count ??
+      sumItemsQuantity(responseItems)
+    ),
+    totalWeight: toNumber(
+      summary.total_weight_kg ??
+      response?.total_weight_kg ??
+      delivery?.total_weight_kg
+    ),
+    customsDuty: toNumber(
+      summary.customs_total_byn ??
+      response?.customs_total_byn
+    ),
     deliveryToBelarus: toNumber(
       summary.delivery_to_belarus_byn ??
+      response?.delivery_to_belarus_byn ??
       delivery?.delivery_to_belarus_byn
     ),
     logisticsDelivery: toNumber(
       summary.delivery_total_byn ??
+      response?.delivery_total_byn ??
       delivery?.delivery_total_byn
     ),
+    checkoutAllowed:
+      typeof meta.checkout_allowed === 'boolean'
+        ? meta.checkout_allowed
+        : undefined,
+    minOrderError:
+      meta.min_order_error ||
+      meta.min_order_message ||
+      meta.checkout_error ||
+      '',
     delivery,
   };
 }
@@ -222,6 +282,7 @@ export default function CartPageClient() {
 
     return {
       subtotal: toNumber(subtotal.toFixed(2)),
+      finalTotal: null,
       promoDiscount: toNumber(promoDiscount.toFixed(2)),
       itemCount,
       totalWeight: toNumber(totalWeight.toFixed(2)),
@@ -234,6 +295,8 @@ export default function CartPageClient() {
         delivery?.delivery_total_byn ||
         totals?.delivery_total_byn
       ),
+      checkoutAllowed: undefined,
+      minOrderError: '',
       delivery,
     };
   }, [selectedAvailableItems, delivery, totals]);
@@ -270,16 +333,29 @@ export default function CartPageClient() {
 
   const selectedData = remoteSummary || selectedDataFallback;
 
-  const canCheckout = Boolean(
+  const fallbackCanCheckout = Boolean(
     selectedData.subtotal >= minOrderAmount &&
     selectedAvailableItems.length > 0
   );
+
+  const canCheckout = Boolean(
+    selectedAvailableItems.length > 0 &&
+    (
+      typeof selectedData.checkoutAllowed === 'boolean'
+        ? selectedData.checkoutAllowed
+        : fallbackCanCheckout
+    )
+  );
+
+  const checkoutErrorMessage = selectedData.minOrderError ||
+    `Оформление заказа доступно от ${formatAmount(minOrderAmount)} р. стоимости товаров`;
 
   const saveSummaryToSession = useCallback(() => {
     const summaryDelivery = selectedData.delivery || delivery;
 
     sessionStorage.setItem('checkoutSummary', JSON.stringify({
       subtotal: selectedData.subtotal,
+      finalTotal: selectedData.finalTotal,
       promoDiscount: selectedData.promoDiscount,
       itemCount: selectedData.itemCount,
       totalWeight: selectedData.totalWeight,
@@ -331,6 +407,11 @@ export default function CartPageClient() {
       return;
     }
 
+    if (!canCheckout) {
+      alert(checkoutErrorMessage);
+      return;
+    }
+
     if (!isAuth) {
       saveSummaryToSession();
       sessionStorage.setItem('pendingCheckout', '1');
@@ -341,6 +422,8 @@ export default function CartPageClient() {
     handleCheckoutAuthorized();
   }, [
     selectedAvailableItems,
+    canCheckout,
+    checkoutErrorMessage,
     isAuth,
     openLogin,
     saveSummaryToSession,
@@ -440,12 +523,12 @@ export default function CartPageClient() {
               <div className="zakaz-inner">
                 <h2>Корзина</h2>
 
-                {selectedItems.length > 0 && selectedData.subtotal < minOrderAmount && (
+                {selectedItems.length > 0 && !canCheckout && (
                   <div className="order-toast_choose">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
                     </svg>
-                    <p>Оформление заказа доступно от {formatAmount(minOrderAmount)} р. стоимости товаров</p>
+                    <p>{checkoutErrorMessage}</p>
                   </div>
                 )}
 
@@ -505,6 +588,7 @@ export default function CartPageClient() {
                           subtotal={selectedData.subtotal}
                           promoDiscount={selectedData.promoDiscount}
                           delivery={selectedData.deliveryToBelarus}
+                          finalTotal={selectedData.finalTotal}
                           itemCount={selectedData.itemCount}
                           totalWeight={selectedData.totalWeight}
                           customsDuty={selectedData.customsDuty}

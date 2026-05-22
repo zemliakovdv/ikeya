@@ -7,7 +7,7 @@ import CookieSettingsModal from '@/components/cookie/CookieSettingsModal';
 const STORAGE_KEY = 'ikeya_cookie_consent';
 
 const LEGAL_TEXT = [
-  'ПТЧУП «В2В Авто», УНП: 690542762, Р/с: BY09UNBS30120154200000015933, БИК UNBSBY2X ЗАО «БСБ Банк», г. Минск, пр. Победителей, 23, корп. 4, 223017 агрогор.Гатово, ул.Металлургическая, 3-4 Директор — Есьман Е.Е.',
+  'Общество с ограниченной ответственностью «БелкаБокс», 220019, г. Минск, ул. Сухаревская, д.16, пом. 6, УНП 193748031, р/с BY25MTBK30120001093300124557 в ЗАО «МТБанк», БИК MTBKBY22, тел: +375 44 579 44 44',
   'Режим работы интернет-магазина: круглосуточно, без выходных.',
   'Дата включения сведений об интернет-магазине в Торговый реестр Республики Беларусь --.--.----, № регистрации ------',
   'Номера городских телефонов уполномоченных по защите прав потребителей: +375 (17) 270-35-26 – Минский районный исполнительный комитет, +375 (17) 328-53-54 – главное управление торговли и услуг Миноблисполкома',
@@ -63,9 +63,7 @@ export default function Footer({ categoryLinks = [] }) {
                     </a>
                     <p>Мы в социальных сетях:</p>
                     <div className="footer-links__social">
-                      <a href="#"><img src="/assets/img/icons/tg.svg" alt="Telegram" /></a>
-                      <a href="#"><img src="/assets/img/icons/tik-tok.svg" alt="TikTok" /></a>
-                      <a href="#"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
+                      <a href="https://www.instagram.com/shopbyshop_by?igsh=MWRoazFqbGE5ZHlibg%3D%3D"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
                     </div>
                   </div>
                   <div className="footer-navigation">
@@ -183,9 +181,7 @@ export default function Footer({ categoryLinks = [] }) {
                     <div className="footer-sociai-inner">
                       <p>Мы в социальных сетях:</p>
                       <div className="footer-links__social">
-                        <a href="#"><img src="/assets/img/icons/tg.svg" alt="Telegram" /></a>
-                        <a href="#"><img src="/assets/img/icons/tik-tok.svg" alt="TikTok" /></a>
-                        <a href="#"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
+                        <a href="https://www.instagram.com/shopbyshop_by?igsh=MWRoazFqbGE5ZHlibg%3D%3D"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
                       </div>
                     </div>
                     <div className="footer-payment">
