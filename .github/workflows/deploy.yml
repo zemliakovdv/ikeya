@@ -150,6 +150,15 @@ jobs:
             docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
             echo "Checking front from prod NPM container..."
-            docker exec nginxproxymanager-app-1 sh -lc "curl -I --max-time 5 http://ikea-front:3000 || true"
+
+            for i in 1 2 3 4 5 6 7 8 9 10; do
+              if docker exec nginxproxymanager-app-1 sh -lc "curl -I --max-time 5 http://ikea-front:3000"; then
+                echo "Front is reachable from NPM"
+                break
+              fi
+
+              echo "Front is not ready yet, retry $i/10..."
+              sleep 3
+            done
 
             docker image prune -f
