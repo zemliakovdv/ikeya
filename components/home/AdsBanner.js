@@ -3,11 +3,11 @@
 import AdsBannerSlider from '@/components/home/AdsBannerSlider';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 async function getAdsBanners() {
   try {
-    const res = await fetch(`${API_BASE_URL}/homepage/slider/banners`, {
+    const res = await fetch(buildApiUrl('/homepage/slider/banners'), {
       next: { revalidate: 60 },
     });
 

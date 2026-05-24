@@ -11,10 +11,10 @@ const breadcrumbs = [
   { label: 'Отзывы', href: null },
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 async function fetchAvailableProducts(token) {
-  const res = await fetch(`${API_BASE}/account/reviews/available`, {
+  const res = await fetch(buildApiUrl('/account/reviews/available'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Ошибка загрузки товаров для отзыва');
@@ -23,7 +23,7 @@ async function fetchAvailableProducts(token) {
 }
 
 async function fetchReviews(token) {
-  const res = await fetch(`${API_BASE}/account/reviews?per_page=100`, {
+  const res = await fetch(buildApiUrl('/account/reviews?per_page=100'), {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Ошибка загрузки отзывов');

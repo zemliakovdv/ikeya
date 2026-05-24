@@ -1,4 +1,4 @@
-const FILES_BASE_URL = 'https://test.ikeya.by';
+import { buildBackendUrl } from '@/lib/config/api';
 
 function resolveInstructionUrl(link) {
   if (!link || typeof link !== 'string') return null;
@@ -8,7 +8,7 @@ function resolveInstructionUrl(link) {
   if (!cleanLink) return null;
   if (cleanLink.startsWith('http')) return cleanLink;
 
-  return `${FILES_BASE_URL}${cleanLink.startsWith('/') ? cleanLink : `/${cleanLink}`}`;
+  return buildBackendUrl(cleanLink.startsWith('/') ? cleanLink : `/${cleanLink}`);
 }
 
 function PdfIcon() {

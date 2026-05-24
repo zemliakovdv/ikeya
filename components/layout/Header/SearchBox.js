@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { IMAGES_BASE_URL } from '@/lib/api/ikea'
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1'
+import { buildApiUrl } from '@/lib/config/api'
 const HISTORY_KEY = 'search_history'
 const MAX_HISTORY = 6
 const MIN_QUERY_LENGTH = 2
@@ -159,7 +159,7 @@ export default function SearchBox() {
 
     try {
       const res = await fetch(
-        `${API_BASE_URL}/search/suggest?q=${encodeURIComponent(trimmed)}`,
+        buildApiUrl(`/search/suggest?q=${encodeURIComponent(trimmed)}`),
         { signal: controller.signal }
       )
 

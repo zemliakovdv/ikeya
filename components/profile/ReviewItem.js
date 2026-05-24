@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_URL || 'https://test.ikeya.by';
+import { buildAssetUrl } from '@/lib/config/api';
 
 function parseImages(value) {
   if (Array.isArray(value)) return value;
@@ -15,7 +15,7 @@ function parseImages(value) {
 function getImageSrc(product) {
   const localImages = parseImages(product?.local_images);
   if (localImages.length > 0) {
-    return `${IMAGE_BASE}${localImages[0]}`;
+    return buildAssetUrl(localImages[0]);
   }
   const images = parseImages(product?.images);
   if (images.length > 0) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
+import { stripBackendOrigin } from '@/lib/config/api';
 
 export default function ProductsGridSlider({ slides, blockId }) {
   const swiperRef = useRef(null);
@@ -130,7 +131,7 @@ export default function ProductsGridSlider({ slides, blockId }) {
                         name_ru: product.description,
                         price_byn: product.price,
                         local_images: (product.images || []).map(img =>
-                          img.replace('https://test.ikeya.by/', '')
+                          stripBackendOrigin(img)
                         ),
                         variants: product.variants || null,
                         is_bestseller: product.badges?.includes('hit'),

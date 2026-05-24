@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -15,7 +15,7 @@ export async function GET(request) {
       forwardParams.append(key, value);
     }
 
-    const url = `${API_BASE_URL}/search/suggest?${forwardParams.toString()}`;
+    const url = buildApiUrl(`/search/suggest?${forwardParams.toString()}`);
 
     const response = await fetch(url, { cache: 'no-store' });
 

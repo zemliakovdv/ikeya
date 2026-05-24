@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 
-const API_BASE_URL = 'https://test.ikeya.by';
+import { buildAssetUrl } from '@/lib/config/api';
 
 export default function ProductVariants({ variants, currentSku, localImages }) {
   const [selectedSku, setSelectedSku] = useState(currentSku);
@@ -25,10 +25,10 @@ export default function ProductVariants({ variants, currentSku, localImages }) {
             ? variant.images[0]
             : null;
           const fallbackImg = localImages && localImages[index]
-            ? `${API_BASE_URL}/${localImages[index]}`
+            ? buildAssetUrl(localImages[index])
             : '/assets/img/placeholder.png';
           const imgSrc = variantImg
-            ? (variantImg.startsWith('http') ? variantImg : `${API_BASE_URL}/${variantImg}`)
+            ? buildAssetUrl(variantImg)
             : fallbackImg;
 
           const isActive = variant.sku === selectedSku;

@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import BlogTabs from '@/components/blog/BlogTabs';
 import BlogCard from '@/components/blog/BlogCard';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 const PER_PAGE = 20;
 
 async function fetchArticles({ page = 1, rubric = null } = {}) {
@@ -16,7 +16,7 @@ async function fetchArticles({ page = 1, rubric = null } = {}) {
     });
     if (rubric) params.set('rubric', rubric);
 
-    const res = await fetch(`${API_BASE_URL}/content/articles?${params}`);
+    const res = await fetch(buildApiUrl(`/content/articles?${params}`));
     if (!res.ok) throw new Error('Ошибка загрузки статей');
     return res.json();
 }

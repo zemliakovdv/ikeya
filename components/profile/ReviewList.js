@@ -2,10 +2,10 @@
 
 import ReviewItem from '@/components/profile/ReviewItem';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 async function deleteReview(id, token) {
-  const res = await fetch(`${API_BASE}/reviews/${id}`, {
+  const res = await fetch(buildApiUrl(`/reviews/${id}`), {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });

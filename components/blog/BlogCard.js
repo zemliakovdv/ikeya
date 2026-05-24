@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
-const IMAGES_BASE_URL = 'https://test.ikeya.by';
+import { buildAssetUrl } from '@/lib/config/api';
 
 function extractImage(article) {
   const blocks = article.attributes.body_blocks || [];
@@ -13,9 +13,7 @@ function extractImage(article) {
     const images = block.images || [];
     const hero = images.find((img) => img.slot === 'hero_image') || images[0];
     if (hero?.url) {
-      return hero.url.startsWith('http')
-        ? hero.url
-        : `${IMAGES_BASE_URL}${hero.url}`;
+      return buildAssetUrl(hero.url);
     }
   }
   return null;

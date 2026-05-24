@@ -1,13 +1,13 @@
 // components/layout/Footer/FooterServer.js
 import Footer from './Footer';
 
-const API_BASE = 'https://test.ikeya.by';
+import { buildApiUrl } from '@/lib/config/api';
 
 export default async function FooterServer() {
   let categoryLinks = [];
 
   try {
-    const res = await fetch(`${API_BASE}/api/v1/categories/tree`, {
+    const res = await fetch(buildApiUrl('/categories/tree'), {
       next: { revalidate: 300 },
     });
 

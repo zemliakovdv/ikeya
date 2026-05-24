@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 // ─── Пины для карты ───────────────────────────────────────────────────────────
 
@@ -102,8 +102,8 @@ export function usePvzData() {
       setLoading(true);
       try {
         const [pvzRes, euroRes] = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/delivery/pickup_points`),
-          fetch(`${API_BASE_URL}/delivery/europost_offices`),
+          fetch(buildApiUrl('/delivery/pickup_points')),
+          fetch(buildApiUrl('/delivery/europost_offices')),
         ]);
 
         const pvzPoints = pvzRes.status === 'fulfilled' && pvzRes.value.ok

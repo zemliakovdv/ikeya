@@ -7,7 +7,7 @@ import ActiveOrders from '@/components/profile/ActiveOrders';
 import OrderHistory from '@/components/profile/OrderHistory';
 import Purchases from '@/components/profile/Purchases';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
 
 const ACTIVE_STATUSES = [
   'created',
@@ -98,7 +98,7 @@ function resolveImage(imageUrl) {
 
   if (!first || String(first).startsWith('as:')) return null;
   if (String(first).startsWith('http')) return first;
-  if (String(first).startsWith('/')) return `https://test.ikeya.by${first}`;
+  if (String(first).startsWith('/')) return buildAssetUrl(first);
 
   return null;
 }
@@ -245,7 +245,7 @@ function parsePurchases(data) {
     const remoteImages = product.images?.images || [];
 
     const image =
-      (localImages[0] ? `https://test.ikeya.by${localImages[0]}` : null) ||
+      (localImages[0] ? buildAssetUrl(localImages[0]) : null) ||
       remoteImages[0] ||
       null;
 
@@ -292,7 +292,7 @@ export default function Orders() {
       setError(null);
 
       try {
-        const res = await fetch(`${API_BASE_URL}/account/orders?per_page=50&page=1`, {
+        const res = await fetch(buildApiUrl('/account/orders?per_page=50&page=1'), {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
@@ -323,7 +323,7 @@ export default function Orders() {
       setPurchasesLoading(true);
 
       try {
-        const res = await fetch(`${API_BASE_URL}/account/purchases?sort=newest&page=1`, {
+        const res = await fetch(buildApiUrl('/account/purchases?sort=newest&page=1'), {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,

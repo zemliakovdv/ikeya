@@ -3,7 +3,7 @@
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import TipsIdeasClient from '@/components/blog/TipsIdeasClient';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 const PER_PAGE = 20;
 
 const BREADCRUMBS = [
@@ -14,7 +14,7 @@ const BREADCRUMBS = [
 async function getInitialData() {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/content/articles?per_page=${PER_PAGE}&page=1`,
+      buildApiUrl(`/content/articles?per_page=${PER_PAGE}&page=1`),
       { next: { revalidate: 300 } }
     );
     if (!res.ok) return { articles: [], meta: {}, rubrics: [] };

@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-const IMAGE_BASE = process.env.NEXT_PUBLIC_IMAGE_URL || 'https://test.ikeya.by';
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://test.ikeya.by/api/v1';
+import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
 
 function parseImages(value) {
   if (Array.isArray(value)) return value;
@@ -16,7 +15,7 @@ function parseImages(value) {
 function getImageSrc(product) {
   const localImages = parseImages(product?.local_images);
   if (localImages.length > 0) {
-    return `${IMAGE_BASE}${localImages[0]}`;
+    return buildAssetUrl(localImages[0]);
   }
   const images = parseImages(product?.images);
   if (images.length > 0) {
@@ -128,13 +127,13 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
         formData.append('rating', rating);
         formData.append('body', body.trim());
         photos.forEach(photo => formData.append('photos[]', photo));
-        res = await fetch(`${API_BASE}/products/${product.sku}/reviews`, {
+        res = await fetch(buildApiUrl(`/products/${product.sku}/reviews`), {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
       } else {
-        res = await fetch(`${API_BASE}/products/${product.sku}/reviews`, {
+        res = await fetch(buildApiUrl(`/products/${product.sku}/reviews`), {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
