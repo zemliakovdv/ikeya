@@ -40,9 +40,26 @@ function resolveIcon(url) {
   return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`
 }
 
+function getCategoryImage(cat) {
+  const attrs = cat?.attributes || {}
+
+  return resolveIcon(
+    attrs.icon_url ||
+    attrs.pictogram_url ||
+    attrs.background_image_url ||
+    attrs.local_image_path ||
+    attrs.remote_image_url
+  )
+}
+
+function hasChildren(cat) {
+  return Array.isArray(cat?.children) && cat.children.length > 0
+}
+
 export default function MegaMenu({ isOpen, onClose }) {
   const [tree, setTree] = useState([])
   const [activeRootId, setActiveRootId] = useState(null)
+  const [mobileStack, setMobileStack] = useState([])
   const [hasLoaded, setHasLoaded] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const menuRef = useRef(null)
@@ -95,32 +112,28 @@ export default function MegaMenu({ isOpen, onClose }) {
     }
   }, [isOpen, hasLoaded])
 
-  // Закрытие по клику вне меню
+  // Закрытие по Escape. Клик вне меню не закрывает mobile-каталог,
+  // чтобы не конфликтовать с нижней навигацией и внутренними переходами по уровням.
   useEffect(() => {
     if (!isOpen) return
-
-    function onDocClick(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        onClose()
-      }
-    }
 
     function onEsc(e) {
       if (e.key === 'Escape') onClose()
     }
 
-    document.addEventListener('click', onDocClick)
     window.addEventListener('keydown', onEsc)
 
     return () => {
-      document.removeEventListener('click', onDocClick)
       window.removeEventListener('keydown', onEsc)
     }
   }, [isOpen, onClose])
 
   // Сбрасываем активную категорию при закрытии
   useEffect(() => {
-    if (!isOpen) setActiveRootId(null)
+    if (!isOpen) {
+      setActiveRootId(null)
+      setMobileStack([])
+    }
   }, [isOpen])
 
   // Блокируем скролл страницы при открытом меню
@@ -147,53 +160,181 @@ export default function MegaMenu({ isOpen, onClose }) {
   const MAX_VISIBLE = 5
   const showLoader = isLoading && tree.length === 0
 
-  const rootCategories = tree.map((cat) => {
-    const attrs = cat.attributes || {}
-    const iconUrl = resolveIcon(
-      attrs.icon_url ||
-      attrs.pictogram_url ||
-      attrs.background_image_url ||
-      attrs.local_image_path ||
-      attrs.remote_image_url
-    )
+  const currentMobileCategory = mobileStack[mobileStack.length - 1] || null
+  const currentMobileItems = currentMobileCategory?.children || tree
+  const isMobileRootLevel = mobileStack.length === 0
+  const isMobileFirstChildLevel = mobileStack.length === 1
 
-    return {
-      id: cat.id,
-      title: getCategoryName(cat),
-      href: buildPath(cat),
-      iconUrl,
+  const mobileBackTitle =
+    mobileStack.length === 1
+      ? 'Все категории'
+      : getCategoryName(mobileStack[mobileStack.length - 2])
+
+  function getMobileCategoryHref(cat) {
+    const ancestorSlugs = mobileStack.map((item) => getCategorySlug(item))
+    return buildPath(cat, ancestorSlugs)
+  }
+
+  function handleMobileCategoryClick(cat) {
+    if (hasChildren(cat)) {
+      setMobileStack((prev) => [...prev, cat])
     }
-  })
+  }
+
+  function handleMobileBack() {
+    setMobileStack((prev) => prev.slice(0, -1))
+  }
+
+  function handleMobileClose() {
+    setMobileStack([])
+    onClose()
+  }
 
   return (
-    <div className="mega-menu-overlay" ref={menuRef}>
+    <div
+      className="mega-menu-overlay"
+      ref={menuRef}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="container-menu">
-
         {showLoader ? (
-          <div className="mega-menu-loader" role="status" aria-live="polite" aria-label="Загрузка каталога">
+          <div
+            className="mega-menu-loader"
+            role="status"
+            aria-live="polite"
+            aria-label="Загрузка каталога"
+          >
             <div className="page-loader__spinner" />
           </div>
         ) : (
           <>
-            <div className="mega-menu-mobile-grid">
-              {rootCategories.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={cat.href}
-                  className="mega-menu-mobile-card"
-                  onClick={onClose}
+            <div className="mega-menu-mobile-nav">
+              {!isMobileRootLevel && (
+                <button
+                  type="button"
+                  className="mega-menu-mobile-back"
+                  onClick={handleMobileBack}
+                  aria-label="Назад"
                 >
-                  <span className="mega-menu-mobile-card__img">
-                    {cat.iconUrl && (
-                      <img src={cat.iconUrl} alt="" width={84} height={84} />
-                    )}
+                  <span className="mega-menu-mobile-back__icon">‹</span>
+                  <span className="mega-menu-mobile-back__text">
+                    {mobileBackTitle}
                   </span>
+                </button>
+              )}
 
-                  <span className="mega-menu-mobile-card__title">
-                    {cat.title}
-                  </span>
-                </Link>
-              ))}
+              {isMobileRootLevel ? (
+                <div className="mega-menu-mobile-grid">
+                  {tree.map((cat) => {
+                    const iconUrl = getCategoryImage(cat)
+                    const title = getCategoryName(cat)
+                    const href = buildPath(cat)
+
+                    if (hasChildren(cat)) {
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          className="mega-menu-mobile-card"
+                          onClick={() => handleMobileCategoryClick(cat)}
+                        >
+                          <span className="mega-menu-mobile-card__img">
+                            {iconUrl && (
+                              <img src={iconUrl} alt="" width={84} height={84} />
+                            )}
+                          </span>
+
+                          <span className="mega-menu-mobile-card__title">
+                            {title}
+                          </span>
+                        </button>
+                      )
+                    }
+
+                    return (
+                      <Link
+                        key={cat.id}
+                        href={href}
+                        className="mega-menu-mobile-card"
+                        onClick={handleMobileClose}
+                      >
+                        <span className="mega-menu-mobile-card__img">
+                          {iconUrl && (
+                            <img src={iconUrl} alt="" width={84} height={84} />
+                          )}
+                        </span>
+
+                        <span className="mega-menu-mobile-card__title">
+                          {title}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="mega-menu-mobile-list">
+                  {currentMobileItems.map((cat) => {
+                    const iconUrl = getCategoryImage(cat)
+                    const title = getCategoryName(cat)
+                    const href = getMobileCategoryHref(cat)
+                    const itemHasChildren = hasChildren(cat)
+                    const itemClassName = `mega-menu-mobile-list-item${!isMobileFirstChildLevel ? ' mega-menu-mobile-list-item--plain' : ''
+                      }`
+
+                    if (itemHasChildren) {
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          className={itemClassName}
+                          onClick={() => handleMobileCategoryClick(cat)}
+                        >
+                          {isMobileFirstChildLevel && (
+                            <span className="mega-menu-mobile-list-item__img">
+                              {iconUrl && (
+                                <img src={iconUrl} alt="" width={48} height={48} />
+                              )}
+                            </span>
+                          )}
+
+                          <span className="mega-menu-mobile-list-item__title">
+                            {title}
+                          </span>
+
+                          <span className="mega-menu-mobile-list-item__arrow">
+                            ›
+                          </span>
+                        </button>
+                      )
+                    }
+
+                    return (
+                      <Link
+                        key={cat.id}
+                        href={href}
+                        className={itemClassName}
+                        onClick={handleMobileClose}
+                      >
+                        {isMobileFirstChildLevel && (
+                          <span className="mega-menu-mobile-list-item__img">
+                            {iconUrl && (
+                              <img src={iconUrl} alt="" width={48} height={48} />
+                            )}
+                          </span>
+                        )}
+
+                        <span className="mega-menu-mobile-list-item__title">
+                          {title}
+                        </span>
+
+                        <span className="mega-menu-mobile-list-item__arrow">
+                          ›
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="sidebar">
@@ -325,7 +466,6 @@ export default function MegaMenu({ isOpen, onClose }) {
             </div>
           </>
         )}
-
       </div>
     </div>
   )

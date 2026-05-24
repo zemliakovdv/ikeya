@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 
 import { Suspense } from 'react';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
+import CatalogStickyOffset from '@/components/catalog/CatalogStickyOffset';
 import CategoriesGrid from '@/components/catalog/CategoriesGrid';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
@@ -76,23 +77,28 @@ export default async function CatalogPage({ searchParams }) {
             </Suspense>
 
             <div className="all-catalog-center">
-              <div className="catalog-toolbar">
-                <Suspense fallback={null}>
-                  <MobileCatalogFilters
-                    treeData={tree}
-                    slugChain={[]}
-                    showAllFilters={false}
-                    hasChildren={true}
-                    availableFilters={[]}
-                  />
-                </Suspense>
+              <CatalogStickyOffset />
+              <div className="catalog-toolbar-sticky">
+                <div className="catalog-toolbar">
+                  <Suspense fallback={null}>
+                    <MobileCatalogFilters
+                      treeData={tree}
+                      slugChain={[]}
+                      showAllFilters={false}
+                      hasChildren={true}
+                      availableFilters={[]}
+                    />
+                  </Suspense>
 
-                <Suspense fallback={null}>
-                  <ProductSort currentSort={sort} />
-                </Suspense>
+                  <Suspense fallback={null}>
+                    <ProductSort currentSort={sort} />
+                  </Suspense>
+                </div>
               </div>
 
-              <FilterChips filterLabels={{}} filterTitles={{}} />
+              <div className="catalog-page-filter-chips">
+                <FilterChips filterLabels={{}} filterTitles={{}} />
+              </div>
 
               <Suspense fallback={<div>Загрузка товаров...</div>}>
                 <ProductGridWithPagination

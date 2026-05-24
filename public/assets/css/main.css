@@ -114,6 +114,7 @@ h2 {
     width: 100%;
     background: #FFFFFF;
     animation: slideDown 0.3s ease;
+    border-bottom: none;
 }
 
 @keyframes slideDown {
@@ -4352,6 +4353,8 @@ transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
 .more-inner .products-slider .swiper-wrapper {
     gap: 0px 16px;
 }
+
+
 
 .more-inner .product-gallery-thumbs .swiper-slide {
     max-width: unset !important;

@@ -1,5 +1,6 @@
 // app/catalog/[...slug]/page.js
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
+import CatalogStickyOffset from '@/components/catalog/CatalogStickyOffset';
 import ChildCategoriesSlider from '@/components/catalog/ChildCategoriesSlider';
 import FilterAside from '@/components/catalog/sidebar/FilterAside';
 import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
@@ -155,16 +156,19 @@ export default async function CategoryPage({ params, searchParams }) {
               />
 
               <div className="all-catalog-center" style={initialProducts.length === 0 ? { width: '100%' } : {}}>
-                <div className="catalog-toolbar">
-                  <MobileCatalogFilters
-                    treeData={tree}
-                    slugChain={slug}
-                    showAllFilters={showAllFilters}
-                    availableFilters={availableFilters}
-                    hasChildren={childCategories.length > 0}
-                  />
+                <CatalogStickyOffset />
+                <div className="catalog-toolbar-sticky">
+                  <div className="catalog-toolbar">
+                    <MobileCatalogFilters
+                      treeData={tree}
+                      slugChain={slug}
+                      showAllFilters={showAllFilters}
+                      availableFilters={availableFilters}
+                      hasChildren={childCategories.length > 0}
+                    />
 
-                  <ProductSort currentSort={sort} />
+                    <ProductSort currentSort={sort} />
+                  </div>
                 </div>
 
                 <Suspense fallback={null}>

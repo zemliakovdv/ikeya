@@ -4,13 +4,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
+const SORT_CLOSE_DELAY = 180;
+
 export default function ProductSort({ currentSort = null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const sortRef = useRef(null);
+  const closeTimerRef = useRef(null);
+
   const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
 
   const sortOptions = useMemo(
     () => [
@@ -23,20 +29,60 @@ export default function ProductSort({ currentSort = null }) {
 
   const currentLabel =
     sortOptions.find((opt) => opt.value === currentSort)?.label ||
-    'Сортировка';
+    'По умолчанию';
+
+  const closeDropdown = useCallback(() => {
+    if (!isOpen || isClosing) return;
+
+    setIsClosing(true);
+    setIsOpen(false);
+
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+
+    closeTimerRef.current = setTimeout(() => {
+      setShouldRender(false);
+      setIsClosing(false);
+      closeTimerRef.current = null;
+    }, SORT_CLOSE_DELAY);
+  }, [isOpen, isClosing]);
+
+  const openDropdown = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+
+    setShouldRender(true);
+    setIsClosing(false);
+
+    requestAnimationFrame(() => {
+      setIsOpen(true);
+    });
+  }, []);
+
+  const toggleDropdown = useCallback(() => {
+    if (isOpen) {
+      closeDropdown();
+      return;
+    }
+
+    openDropdown();
+  }, [isOpen, openDropdown, closeDropdown]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!shouldRender) return;
 
     const handleDocumentClick = (event) => {
       if (!sortRef.current?.contains(event.target)) {
-        setIsOpen(false);
+        closeDropdown();
       }
     };
 
     const handleEscape = (event) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        closeDropdown();
       }
     };
 
@@ -47,10 +93,26 @@ export default function ProductSort({ currentSort = null }) {
       document.removeEventListener('mousedown', handleDocumentClick);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen]);
+  }, [shouldRender, closeDropdown]);
 
-  const toggleDropdown = useCallback(() => {
-    setIsOpen((prev) => !prev);
+  useEffect(() => {
+    if (!shouldRender) return;
+
+    document.body.classList.add('catalog-sort-open');
+
+    return () => {
+      document.body.classList.remove('catalog-sort-open');
+    };
+  }, [shouldRender]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+
+      document.body.classList.remove('catalog-sort-open');
+    };
   }, []);
 
   const handleSelectSort = useCallback(
@@ -68,14 +130,19 @@ export default function ProductSort({ currentSort = null }) {
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname);
 
-      setIsOpen(false);
+      closeDropdown();
     },
-    [router, pathname, searchParams]
+    [router, pathname, searchParams, closeDropdown]
   );
 
   return (
     <div className="all-catalog-sort">
-      <div className="catalog-sort" ref={sortRef}>
+      <div
+        className={`catalog-sort ${isOpen ? 'catalog-sort--open' : ''} ${
+          isClosing ? 'catalog-sort--closing' : ''
+        }`}
+        ref={sortRef}
+      >
         <button
           className="catalog-sort__selected"
           type="button"
@@ -92,28 +159,37 @@ export default function ProductSort({ currentSort = null }) {
           </svg>
         </button>
 
-        {isOpen && (
-          <ul className="catalog-sort__dropdown" role="listbox">
-            {sortOptions.map((option) => (
-              <li
-                key={String(option.value)}
-                className={`catalog-sort__option ${
-                  option.value === currentSort ? 'active' : ''
-                }`}
-                data-sort={option.value || ''}
-                role="option"
-                aria-selected={option.value === currentSort}
-              >
-                <button
-                  type="button"
-                  className="catalog-sort__option-button"
-                  onClick={() => handleSelectSort(option.value)}
+        {shouldRender && (
+          <>
+            <button
+              className="catalog-sort__overlay"
+              type="button"
+              aria-label="Закрыть сортировку"
+              onClick={closeDropdown}
+            />
+
+            <ul className="catalog-sort__dropdown" role="listbox">
+              {sortOptions.map((option) => (
+                <li
+                  key={String(option.value)}
+                  className={`catalog-sort__option ${
+                    option.value === currentSort ? 'active' : ''
+                  }`}
+                  data-sort={option.value || ''}
+                  role="option"
+                  aria-selected={option.value === currentSort}
                 >
-                  {option.label}
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <button
+                    type="button"
+                    className="catalog-sort__option-button"
+                    onClick={() => handleSelectSort(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     </div>
