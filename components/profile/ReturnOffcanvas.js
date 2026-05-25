@@ -65,8 +65,8 @@ function validateForm(form) {
 
   if (!form.orderNumber.trim()) {
     errors.orderNumber = 'Обязательное поле'; valid = false;
-  } else if (!/^\d{8}$/.test(form.orderNumber.trim())) {
-    errors.orderNumber = 'Номер заказа — 8 цифр'; valid = false;
+  } else if (!/^\d{7}$/.test(form.orderNumber.trim())) {
+    errors.orderNumber = 'Номер заказа — 7 цифр'; valid = false;
   }
 
   if (!form.phone.trim()) {
@@ -324,7 +324,7 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   value={form.orderNumber}
                   onChange={handleChange}
                   inputMode="numeric"
-                  maxLength={8}
+                  maxLength={7}
                 />
                 <label htmlFor="orderNumber">Номер заказа *</label>
                 {errors.orderNumber && <div className="invalid-feedback">{errors.orderNumber}</div>}
