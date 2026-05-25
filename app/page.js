@@ -22,11 +22,13 @@ export async function generateMetadata() {
       keywords: seo.keywords,
       robots: seo.robots,
       openGraph: { title: seo.title, description: seo.description },
+      alternates: { canonical: 'https://ikeya.by' },
     };
   } catch {
     return {
       title: 'IKEYA – интернет-магазин мебели и товаров для дома',
       description: 'Купить мебель в Минске с доставкой по Беларуси',
+      alternates: { canonical: 'https://ikeya.by' },
     };
   }
 }

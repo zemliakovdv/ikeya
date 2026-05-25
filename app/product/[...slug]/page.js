@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
 import ProductStickyBar from '@/components/product/ProductStickyBar';
 import ProductMobileHeader from '@/components/product/ProductMobileHeader';
@@ -11,18 +11,13 @@ import { getCachedCategoriesTree } from '@/lib/api/ikea';
 
 import { buildApiUrl, SITE_URL } from '@/lib/config/api';
 
-// Очистка артикулов — обрабатывает два формата:
-// 1. Нормальный: ["60489549", "00417621", ...] → возвращаем как есть
-// 2. Кривой:     ["[\"60489549,00417621\""]   → парсим через join+split
 function cleanSkuArray(rawArray) {
   if (!rawArray || !Array.isArray(rawArray)) return [];
 
-  // Если все элементы — чистые SKU (только буквы и цифры) → нормальный формат
   if (rawArray.every((s) => typeof s === 'string' && /^[a-zA-Z0-9]+$/.test(s.trim()))) {
     return rawArray.map((s) => s.trim()).filter(Boolean);
   }
 
-  // Кривой формат — склеиваем через запятую и разбиваем обратно
   const joined = rawArray.join(',');
   return joined
     .replace(/[\[\]\\"]/g, '')
@@ -41,9 +36,13 @@ function getProductTitle(attr = {}) {
   return attr.small_desc_name || attr.name_ru || attr.name || 'Товар';
 }
 
-// Строим хлебные крошки из дерева категорий по category_id
+function parsePrice(value) {
+  const normalized = String(value ?? 0).replace(/\s/g, '').replace(',', '.');
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function buildBreadcrumbs(tree, attr, product, productName) {
-  // Приоритет: готовые крошки от бэка
   const backCrumbs = Array.isArray(attr.breadcrumbs) && attr.breadcrumbs.length > 0
     ? attr.breadcrumbs
     : null;
@@ -59,7 +58,6 @@ function buildBreadcrumbs(tree, attr, product, productName) {
     ];
   }
 
-  // Рекурсивный поиск пути в дереве
   function findPath(nodes, targetId, path = []) {
     for (const node of nodes) {
       const a = node.attributes || {};
@@ -79,14 +77,12 @@ function buildBreadcrumbs(tree, attr, product, productName) {
     return null;
   }
 
-  // Собираем все возможные id категорий: основной + из relationships.categories
   const candidateIds = [
     product.relationships?.category?.data?.id,
     attr.category_id,
     ...((product.relationships?.categories?.data || []).map((c) => c.id)),
   ].filter(Boolean);
 
-  // Берём первый id для которого нашёлся путь в дереве
   let categoryPath = null;
   for (const id of candidateIds) {
     categoryPath = findPath(tree, id);
@@ -101,7 +97,6 @@ function buildBreadcrumbs(tree, attr, product, productName) {
   ];
 }
 
-// Загрузка одного товара по SKU
 async function getProduct(sku) {
   try {
     const res = await fetch(buildApiUrl(`/products/${sku}`), { next: { revalidate: 60 } });
@@ -111,8 +106,6 @@ async function getProduct(sku) {
   }
 }
 
-// Загрузка нескольких товаров по массиву SKU (параллельно)
-// Используется для related_products и included_products
 async function getFullProducts(skus = []) {
   if (!skus.length) return [];
 
@@ -128,7 +121,6 @@ async function getFullProducts(skus = []) {
     .map((r) => {
       const product = r.value.data;
 
-      // Бэк иногда отдаёт sku как массив — нормализуем до строки
       if (Array.isArray(product.attributes?.sku)) {
         product.attributes.sku = product.attributes.sku[0];
       }
@@ -137,9 +129,7 @@ async function getFullProducts(skus = []) {
     });
 }
 
-// Группируем included_products по category_id, название группы — из дерева категорий
 function groupIncludedProducts(products, tree) {
-  // Ищем название категории в дереве по id
   function findCategoryName(nodes, targetId) {
     for (const node of nodes) {
       if (node.id === targetId) {
@@ -155,7 +145,6 @@ function groupIncludedProducts(products, tree) {
     return null;
   }
 
-  // Группируем по category_id
   const groupMap = new Map();
 
   for (const product of products) {
@@ -173,7 +162,6 @@ function groupIncludedProducts(products, tree) {
   return Array.from(groupMap.values());
 }
 
-// Похожие товары: берём из той же категории, исключаем текущий товар
 async function getSimilarProducts(categoryId, excludeSku) {
   try {
     const res = await fetch(
@@ -191,11 +179,53 @@ async function getSimilarProducts(categoryId, excludeSku) {
   }
 }
 
-// Фильтруем local_images — убираем абсолютные пути файловой системы сервера
 function sanitizeLocalImages(images) {
   if (!Array.isArray(images)) return [];
 
   return images.filter((img) => img && (img.startsWith('/images/') || img.startsWith('http')));
+}
+
+function buildStructuredData(attr, sku) {
+  const productUrl = `https://ikeya.by/product/${attr.slug ? `${attr.slug}-${sku}` : sku}`;
+  const price = parsePrice(attr.price_byn);
+
+  const structuredData = attr.structured_data
+    ? { ...attr.structured_data }
+    : {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: getProductTitle(attr),
+        description: attr.seo?.description || getProductTitle(attr),
+        sku,
+        mpn: sku,
+        image: sanitizeLocalImages(attr.local_images).map(
+          (img) => img.startsWith('http') ? img : `https://ikeya.by${img}`
+        ),
+        url: productUrl,
+        offers: {
+          "@type": "Offer",
+          url: productUrl,
+          priceCurrency: "BYN",
+          price,
+          availability: "https://schema.org/InStock",
+          itemCondition: "https://schema.org/NewCondition",
+        },
+      };
+
+  const ratingCount = Number(attr.rating_count || 0);
+  const ratingAvg = parseFloat(attr.rating_weighted ?? attr.rating_avg ?? 0);
+
+  if (ratingCount > 0 && ratingAvg > 0) {
+    structuredData.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: ratingAvg.toFixed(1),
+      reviewCount: ratingCount,
+      bestRating: "5",
+      worstRating: "1",
+    };
+  }
+
+  return structuredData;
 }
 
 export async function generateMetadata({ params }) {
@@ -218,24 +248,37 @@ export async function generateMetadata({ params }) {
   const title = seo.title || `${productTitle} купить в Беларуси | IKEYA`;
   const description = seo.description || `Купить ${productTitle} в интернет-магазине IKEYA. Доставка по Беларуси.`;
 
-  const metadata = {
+  const metadata = { title, description };
+
+  if (seo.keywords) metadata.keywords = seo.keywords;
+  if (seo.robots) metadata.robots = seo.robots;
+
+  // Сначала объявляем canonicalPath
+  const canonicalPath = attr.url || `/product/${attr.slug ? `${attr.slug}-${attr.sku || sku}` : sku}`;
+  const canonicalUrl = canonicalPath.startsWith('http')
+    ? canonicalPath
+    : `${SITE_URL}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`;
+
+  const imageUrl = attr.local_images?.[0]
+    ? `https://ikeya.by${attr.local_images[0]}`
+    : 'https://ikeya.by/assets/img/og-default.jpg';
+
+  metadata.alternates = { canonical: canonicalUrl };
+
+  metadata.openGraph = {
     title,
     description,
+    url: canonicalUrl,
+    siteName: 'IKEYA',
+    images: [{ url: imageUrl, width: 1200, height: 630, alt: productTitle }],
+    type: 'website',
   };
 
-  if (seo.keywords) {
-    metadata.keywords = seo.keywords;
-  }
-
-  if (seo.robots) {
-    metadata.robots = seo.robots;
-  }
-
-  const canonicalPath = attr.url || `/product/${attr.slug ? `${attr.slug}-${attr.sku || sku}` : sku}`;
-  metadata.alternates = {
-    canonical: canonicalPath.startsWith('http')
-      ? canonicalPath
-      : `${SITE_URL}${canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`}`,
+  metadata.twitter = {
+    card: 'summary_large_image',
+    title,
+    description,
+    images: [imageUrl],
   };
 
   return metadata;
@@ -254,18 +297,21 @@ export default async function ProductPage({ params }) {
   const product = productData.data;
   const attr = product.attributes;
 
-  // Фильтруем текущий SKU из related — бэк иногда включает сам товар в список
+  const currentSlugStr = params.slug[params.slug.length - 1];
+  const expectedSlug = attr.slug ? `${attr.slug}-${sku}` : sku;
+
+  if (currentSlugStr !== expectedSlug) {
+    redirect(`/product/${expectedSlug}`);
+  }
+
   const relatedSkus = (Array.isArray(attr.related_products) ? attr.related_products : [])
     .filter((s) => s !== sku && s !== String(sku))
     .slice(0, 10);
 
-  // SKU для «Товары в комплекте» — иногда приходит в кривом формате
   const includedSkus = cleanSkuArray(attr.included_products).slice(0, 10);
 
-  // Похожие товары грузим только если есть category_id
   const categoryId = product.relationships?.category?.data?.id || attr.category_id || null;
 
-  // Параллельно грузим все три блока
   const [relatedProducts, includedProducts, similarProducts] = await Promise.all([
     getFullProducts(relatedSkus),
     getFullProducts(includedSkus),
@@ -273,19 +319,18 @@ export default async function ProductPage({ params }) {
   ]);
 
   const includedGroups = groupIncludedProducts(includedProducts, tree);
-
-  // Фильтруем local_images — убираем пути файловой системы сервера
   const localImages = sanitizeLocalImages(attr.local_images);
 
-  const breadcrumbs = buildBreadcrumbs(
-    tree,
-    attr,
-    product,
-    getProductTitle(attr)
-  );
+  const breadcrumbs = buildBreadcrumbs(tree, attr, product, getProductTitle(attr));
+  const structuredData = buildStructuredData(attr, sku);
 
   return (
     <main className="shop-card">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+
       <Breadcrumbs items={breadcrumbs} />
       <ProductStickyBar product={product} />
       <ProductMobileHeader product={product} />

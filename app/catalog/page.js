@@ -23,6 +23,17 @@ const catalogSeoText = `
   <p>Тестовый SEO-текст для корневого каталога. Здесь будет описание ассортимента мебели и товаров для дома, условий покупки, доставки по Беларуси и преимуществ интернет-магазина.</p>
 `;
 
+function buildPaginationUrl(basePath, queryParams, page) {
+  const params = new URLSearchParams(queryParams);
+  if (page > 1) {
+    params.set('page', String(page));
+  } else {
+    params.delete('page');
+  }
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
 export default async function CatalogPage({ searchParams }) {
   const sp = await searchParams;
 
@@ -46,6 +57,16 @@ export default async function CatalogPage({ searchParams }) {
   if (sp?.max_price) queryParams.set('max_price', sp.max_price);
   const productsQueryString = queryParams.toString();
 
+  const basePath = '/catalog';
+
+  const prevUrl = currentPage > 1
+    ? buildPaginationUrl(basePath, queryParams, currentPage - 1)
+    : null;
+
+  const nextUrl = currentPage < totalPages
+    ? buildPaginationUrl(basePath, queryParams, currentPage + 1)
+    : null;
+
   const breadcrumbs = [
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' }
@@ -53,6 +74,9 @@ export default async function CatalogPage({ searchParams }) {
 
   return (
     <main className="main catalog-inner">
+      {prevUrl && <link rel="prev" href={prevUrl} />}
+      {nextUrl && <link rel="next" href={nextUrl} />}
+
       <Breadcrumbs items={breadcrumbs} />
 
       <section className="all-catalog">
@@ -107,7 +131,7 @@ export default async function CatalogPage({ searchParams }) {
                   totalPages={totalPages}
                   queryString={productsQueryString}
                   initialPage={currentPage}
-                  basePath="/catalog"
+                  basePath={basePath}
                   currentPage={currentPage}
                   totalItems={meta.total || 0}
                 />

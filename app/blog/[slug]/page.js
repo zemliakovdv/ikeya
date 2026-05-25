@@ -72,6 +72,7 @@ export async function generateMetadata({ params }) {
     description: seo.description || article.attributes.excerpt,
     keywords: seo.keywords,
     robots: seo.robots,
+    alternates: { canonical: `https://ikeya.by/blog/${params.slug}` },
   };
 }
 

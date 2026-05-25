@@ -53,6 +53,17 @@ function toNonNegativeInt(value, fallback = 0) {
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
 }
 
+function buildPaginationUrl(basePath, queryParams, page) {
+  const params = new URLSearchParams(queryParams);
+  if (page > 1) {
+    params.set('page', String(page));
+  } else {
+    params.delete('page');
+  }
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
 export default async function CategoryPage({ params, searchParams }) {
   const { slug } = await params;
   const sp = await searchParams;
@@ -132,8 +143,19 @@ export default async function CategoryPage({ params, searchParams }) {
     const productsQueryString = queryParams.toString();
     const basePath = `/catalog/${categoryChain.map((c) => c.attributes.slug).join('/')}`;
 
+    const prevUrl = currentPage > 1
+      ? buildPaginationUrl(basePath, queryParams, currentPage - 1)
+      : null;
+
+    const nextUrl = currentPage < totalPages
+      ? buildPaginationUrl(basePath, queryParams, currentPage + 1)
+      : null;
+
     return (
       <main className="main catalog-inner">
+        {prevUrl && <link rel="prev" href={prevUrl} />}
+        {nextUrl && <link rel="next" href={nextUrl} />}
+
         <Breadcrumbs items={breadcrumbs} />
 
         <section className="all-catalog">

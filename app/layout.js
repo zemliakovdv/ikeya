@@ -39,6 +39,25 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="/assets/css/help.css" />
         <link rel="stylesheet" href="/assets/css/main.css" />
         <link rel="stylesheet" href="/assets/css/responsive.css" />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "IKEYA",
+              url: "https://ikeya.by",
+              logo: "https://ikeya.by/assets/img/logo.svg",
+              contactPoint: {
+                "@type": "ContactPoint",
+                contactType: "customer service",
+                availableLanguage: "Russian",
+              },
+              sameAs: [],
+            }),
+          }}
+        />
       </head>
       <body>
         <AuthProvider>
