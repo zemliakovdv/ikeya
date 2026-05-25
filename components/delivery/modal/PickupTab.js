@@ -140,7 +140,7 @@ export default function PickupTab({
       return;
     }
 
-    const q = search.toLowerCase();
+    const q = search.trim().toLowerCase();
 
     const result = allPoints.filter((point) =>
       point.city?.toLowerCase().includes(q) ||
