@@ -39,10 +39,11 @@
   min-width: 332px;
   background: #FFF;
   flex-shrink: 0;
-  overflow: hidden;
   position: sticky;
   top: 100px;
   padding: 16px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 
 .help-sidebar__section {
