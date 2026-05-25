@@ -254,32 +254,48 @@ export default function CartPageClient() {
   );
 
   const selectedDataFallback = useMemo(() => {
+    if (!selectedAvailableItems.length) {
+      return {
+        subtotal: 0,
+        finalTotal: 0,
+        promoDiscount: 0,
+        itemCount: 0,
+        totalWeight: 0,
+        customsDuty: 0,
+        deliveryToBelarus: 0,
+        logisticsDelivery: 0,
+        checkoutAllowed: false,
+        minOrderError: '',
+        delivery: null,
+      };
+    }
+  
     let subtotal = 0;
     let promoDiscount = 0;
     let itemCount = 0;
     let totalWeight = 0;
     let customsDuty = 0;
-
+  
     selectedAvailableItems.forEach((item) => {
       const qty = Number(item?.quantity || 1);
-
+  
       const lineTotal = toNumber(item?.pricing?.line_total_new_byn);
       const unitPrice = toNumber(item?.pricing?.unit_price_new_byn || item?.product?.price_byn);
       const lineDiscount = toNumber(item?.pricing?.line_discount_byn);
       const unitDiscount = toNumber(item?.pricing?.unit_discount_byn);
       const itemWeight = toNumber(item?.weight);
       const itemCustoms = toNumber(item?.pricing?.customs_total_byn);
-
+  
       subtotal += lineTotal > 0 ? lineTotal : unitPrice * qty;
       promoDiscount += lineDiscount > 0 ? lineDiscount : unitDiscount * qty;
       itemCount += qty;
       customsDuty += itemCustoms;
-
+  
       if (itemWeight > 0) {
         totalWeight += itemWeight * qty;
       }
     });
-
+  
     return {
       subtotal: toNumber(subtotal.toFixed(2)),
       finalTotal: null,
@@ -306,7 +322,19 @@ export default function CartPageClient() {
 
     async function loadSelectedSummary() {
       if (!selectedItemsPayload.length) {
-        setRemoteSummary(null);
+        setRemoteSummary({
+          subtotal: 0,
+          finalTotal: 0,
+          promoDiscount: 0,
+          itemCount: 0,
+          totalWeight: 0,
+          customsDuty: 0,
+          deliveryToBelarus: 0,
+          logisticsDelivery: 0,
+          checkoutAllowed: false,
+          minOrderError: '',
+          delivery: null,
+        });
         return;
       }
 
