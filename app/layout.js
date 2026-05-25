@@ -11,10 +11,17 @@ import CookieBanner from '@/components/cookie/CookieBanner';
 import './globals.css'
 import Script from 'next/script'
 
+export const viewport = {
+  width: 1200,
+  initialScale: 1,
+}
+
 export const metadata = {
   title: 'IKEYA - Интернет-магазин мебели',
   description: 'Интернет-магазин мебели и товаров для дома',
 }
+
+
 
 export default function RootLayout({ children }) {
   return (
