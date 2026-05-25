@@ -1312,6 +1312,16 @@
         margin-bottom: 12px;
     }
 
+    .file-upload-text-grey {
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 16px;
+        /* 133.333% */
+        letter-spacing: 0.4px;
+        color: #757575;
+    }
+
     .upload-btn {
         background: #0058a3;
         color: #fff;
@@ -2718,7 +2728,7 @@
         max-width: 428px;
     }
 
-    .passport-row--id .datepicker-dropdown{
+    .passport-row--id .datepicker-dropdown {
         top: calc(70% + 6px);
         left: 33%;
     }
