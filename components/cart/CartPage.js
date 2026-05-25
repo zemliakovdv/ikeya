@@ -128,14 +128,14 @@ export default function CartPage() {
 
   const handleQuantityChange = useCallback(async (sku, newQuantity) => {
     try { await updateQuantity(sku, newQuantity); }
-    catch { alert('Не удалось изменить количество товара'); }
+    catch { }
   }, [updateQuantity]);
 
   const handleDelete = useCallback(async (sku) => {
     try {
       await removeFromCart(sku);
       setSelectedItems(prev => prev.filter(s => s !== sku));
-    } catch { alert('Не удалось удалить товар'); }
+    } catch { }
   }, [removeFromCart]);
 
   const handleCheckChange = useCallback((sku, checked) => {
@@ -169,7 +169,7 @@ export default function CartPage() {
     try {
       await Promise.all(selectedUnavailable.map(sku => removeFromCart(sku)));
       setSelectedUnavailable([]);
-    } catch { alert('Не удалось удалить некоторые товары'); }
+    } catch { }
   }, [removeFromCart, selectedUnavailable]);
 
   const handleDeleteSelected = useCallback(async () => {
@@ -177,7 +177,7 @@ export default function CartPage() {
     try {
       await Promise.all(selectedItems.map(sku => removeFromCart(sku)));
       setSelectedItems([]);
-    } catch { alert('Не удалось удалить некоторые товары'); }
+    } catch { }
   }, [removeFromCart, selectedItems]);
 
   const handleCheckout = useCallback(() => {

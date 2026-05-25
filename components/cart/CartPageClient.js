@@ -453,7 +453,6 @@ export default function CartPageClient() {
         return;
       }
 
-      alert(err.message || 'Не удалось создать черновик заказа');
     } finally {
       setCheckoutLoading(false);
     }
@@ -463,12 +462,10 @@ export default function CartPageClient() {
 
   const handleCheckout = useCallback(() => {
     if (!selectedAvailableItems.length) {
-      alert('Выберите товары, чтобы перейти к оформлению заказа.');
       return;
     }
 
     if (!canCheckout) {
-      alert(checkoutErrorMessage);
       return;
     }
 
@@ -494,7 +491,6 @@ export default function CartPageClient() {
     try {
       await updateQuantity(sku, newQuantity);
     } catch {
-      alert('Не удалось изменить количество товара');
     }
   }, [updateQuantity]);
 
@@ -503,7 +499,6 @@ export default function CartPageClient() {
       await removeFromCart(sku);
       setSelectedItems((prev) => prev.filter((s) => s !== sku));
     } catch {
-      alert('Не удалось удалить товар');
     }
   }, [removeFromCart]);
 
@@ -554,7 +549,6 @@ export default function CartPageClient() {
       await removeManyFromCart({ skus: selectedUnavailable });
       setSelectedUnavailable([]);
     } catch {
-      alert('Не удалось удалить некоторые товары');
     }
   }, [removeManyFromCart, selectedUnavailable]);
 
@@ -565,7 +559,6 @@ export default function CartPageClient() {
       await removeManyFromCart({ skus: selectedItems });
       setSelectedItems([]);
     } catch {
-      alert('Не удалось удалить некоторые товары');
     }
   }, [removeManyFromCart, selectedItems]);
 

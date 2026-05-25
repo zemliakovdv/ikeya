@@ -16,9 +16,9 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
 
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
@@ -71,7 +71,7 @@ export default function PickupTab({
           setUserCoords(coords);
           setMapCenter({ coords, zoom: 12 });
         })
-        .catch(() => {});
+        .catch(() => { });
     });
   }, [ymapsReady]);
 
@@ -150,13 +150,12 @@ export default function PickupTab({
 
     setFiltered(result);
 
-    const firstWithCoords = result.find((point) => point.lat && point.lon);
+    const withCoords = result.filter((point) => point.lat && point.lon);
 
-    if (firstWithCoords) {
-      setMapCenter({
-        coords: [firstWithCoords.lat, firstWithCoords.lon],
-        zoom: 12,
-      });
+    if (withCoords.length > 0) {
+      const avgLat = withCoords.reduce((sum, p) => sum + p.lat, 0) / withCoords.length;
+      const avgLon = withCoords.reduce((sum, p) => sum + p.lon, 0) / withCoords.length;
+      setMapCenter({ coords: [avgLat, avgLon], zoom: 11 });
     }
   }, [search, allPoints]);
 
