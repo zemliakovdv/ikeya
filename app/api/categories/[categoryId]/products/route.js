@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextResponse } from 'next/server';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 export async function GET(request, { params }) {
   const { categoryId } = params;
@@ -23,7 +23,9 @@ export async function GET(request, { params }) {
     forwardParams.set('page', String(page));
     forwardParams.set('per_page', String(perPage));
 
-    const url = `${API_BASE_URL}/categories/${categoryId}/products?${forwardParams.toString()}`;
+    const url = buildApiUrl(
+      `/categories/${categoryId}/products?${forwardParams.toString()}`
+    );
 
     const response = await fetch(url, { cache: 'no-store' });
 

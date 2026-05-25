@@ -8,7 +8,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { getOrders, getPurchases, isActiveOrder } from '@/lib/api/account';
 import { openJivoChat } from '@/components/FloatingChatButton';
 
-const IMAGES_BASE = 'https://test.ikeya.by';
+import { buildAssetUrl } from '@/lib/config/api';
 
 function resolveImage(imageUrl) {
   if (!imageUrl) return '/assets/img/profile/active_1.png';
@@ -20,7 +20,7 @@ function resolveImage(imageUrl) {
   const first = urls[0];
   if (!first || first.startsWith('as:')) return '/assets/img/profile/active_1.png';
   if (first.startsWith('http')) return first;
-  if (first.startsWith('/')) return `${IMAGES_BASE}${first}`;
+  if (first.startsWith('/')) return buildAssetUrl(first);
   return '/assets/img/profile/active_1.png';
 }
 

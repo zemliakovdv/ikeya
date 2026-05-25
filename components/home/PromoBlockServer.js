@@ -2,7 +2,7 @@
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 import PromoBlock from './PromoBlock';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 function resolveImageUrl(url) {
     if (!url) return null;
@@ -16,7 +16,7 @@ function resolveImageUrl(url) {
 
 async function getCustomCategories() {
     try {
-        const res = await fetch(`${API_BASE_URL}/categories/custom`, {
+        const res = await fetch(buildApiUrl('/categories/custom'), {
             next: { revalidate: 300 },
         });
 
@@ -32,7 +32,7 @@ async function getCustomCategories() {
 
 async function getCategoryProducts(categoryId) {
     try {
-        const res = await fetch(`${API_BASE_URL}/categories/${categoryId}/products?per_page=100`, {
+        const res = await fetch(buildApiUrl(`/categories/${categoryId}/products?per_page=100`), {
             next: { revalidate: 60 },
         });
 

@@ -1,13 +1,11 @@
 // components/blog/blocks/ProductsGridBlock.js
 
 import ProductsGridSlider from '@/components/blog/blocks/ProductsGridSlider';
-import { IMAGES_BASE_URL } from '@/lib/api/ikea';
-
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
 
 async function getProductBySku(sku) {
   try {
-    const res = await fetch(`${API_BASE_URL}/products/${sku}`, {
+    const res = await fetch(buildApiUrl(`/products/${sku}`), {
       next: { revalidate: 60 },
     });
 
@@ -27,7 +25,7 @@ function normalizeLocalImages(images) {
     .filter(Boolean)
     .map((img) => {
       if (img.startsWith('http')) return img;
-      return `${IMAGES_BASE_URL}${img.startsWith('/') ? img : `/${img}`}`;
+      return buildAssetUrl(img);
     });
 }
 

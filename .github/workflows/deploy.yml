@@ -42,6 +42,12 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          NEXT_PUBLIC_SITE_URL: https://test.ikeya.by
+          NEXT_PUBLIC_BACKEND_ORIGIN: https://test.ikeya.by
+          NEXT_PUBLIC_API_BASE_URL: https://test.ikeya.by/api/v1
+          NEXT_PUBLIC_IMAGE_URL: https://test.ikeya.by
+          BACKEND_ORIGIN: http://host.docker.internal:3001
+          BACKEND_API_BASE_URL: http://host.docker.internal:3001/api/v1
 
   deploy-test:
     runs-on: ubuntu-latest
@@ -71,7 +77,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: 22
-          source: "Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,contexts,data,hooks,mockData,modals,scripts,styles,jsconfig.json"
+          source: "Dockerfile,docker-compose.yml,.env.example,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,contexts,data,hooks,mockData,modals,scripts,styles,jsconfig.json"
           target: /home/${{ secrets.DEPLOY_USER }}/apps/ikea_front
           overwrite: true
 
@@ -86,6 +92,15 @@ jobs:
             set -Eeuo pipefail
 
             cd /home/${{ secrets.DEPLOY_USER }}/apps/ikea_front
+
+            {
+              echo 'NEXT_PUBLIC_SITE_URL=https://test.ikeya.by'
+              echo 'NEXT_PUBLIC_BACKEND_ORIGIN=https://test.ikeya.by'
+              echo 'NEXT_PUBLIC_API_BASE_URL=https://test.ikeya.by/api/v1'
+              echo 'NEXT_PUBLIC_IMAGE_URL=https://test.ikeya.by'
+              echo 'BACKEND_ORIGIN=http://host.docker.internal:3001'
+              echo 'BACKEND_API_BASE_URL=http://host.docker.internal:3001/api/v1'
+            } > .env
 
             docker network create ikea-network 2>/dev/null || true
             docker compose down --remove-orphans || true
@@ -124,7 +139,7 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           port: ${{ secrets.PROD_PORT }}
-          source: "Dockerfile,docker-compose.yml,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,contexts,data,hooks,mockData,modals,scripts,styles,jsconfig.json"
+          source: "Dockerfile,docker-compose.yml,.env.example,package.json,package-lock.json,next.config.js,next.config.mjs,app,components,public,lib,contexts,data,hooks,mockData,modals,scripts,styles,jsconfig.json"
           target: /home/${{ secrets.PROD_USER }}/apps/ikea_front
           overwrite: true
 
@@ -139,6 +154,15 @@ jobs:
             set -Eeuo pipefail
 
             cd /home/${{ secrets.PROD_USER }}/apps/ikea_front
+
+            {
+              echo 'NEXT_PUBLIC_SITE_URL=https://ikeya.by'
+              echo 'NEXT_PUBLIC_BACKEND_ORIGIN=https://ikeya.by'
+              echo 'NEXT_PUBLIC_API_BASE_URL=https://ikeya.by/api/v1'
+              echo 'NEXT_PUBLIC_IMAGE_URL=https://ikeya.by'
+              echo 'BACKEND_ORIGIN=http://host.docker.internal:3001'
+              echo 'BACKEND_API_BASE_URL=http://host.docker.internal:3001/api/v1'
+            } > .env
 
             docker network create ikea-network 2>/dev/null || true
             docker compose down --remove-orphans || true

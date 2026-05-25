@@ -4,7 +4,7 @@ import BlockRenderer from '@/components/blog/BlockRenderer';
 import ArticleMoreSlider from '@/components/blog/ArticleMoreSlider';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 const CONTENT_TYPE_LABELS = {
   tips_ideas: 'Советы и идеи',
@@ -12,7 +12,7 @@ const CONTENT_TYPE_LABELS = {
 };
 
 async function getArticle(slug) {
-  const res = await fetch(`${API_BASE_URL}/content/articles/${slug}`, {
+  const res = await fetch(buildApiUrl(`/content/articles/${slug}`), {
     next: { revalidate: 60 }
   });
   if (!res.ok) return null;
@@ -21,7 +21,7 @@ async function getArticle(slug) {
 }
 
 async function getMoreArticles(slug) {
-  const res = await fetch(`${API_BASE_URL}/content/articles?per_page=9`, {
+  const res = await fetch(buildApiUrl('/content/articles?per_page=9'), {
     next: { revalidate: 60 }
   });
   if (!res.ok) return [];

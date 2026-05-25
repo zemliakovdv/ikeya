@@ -3,7 +3,7 @@
 import BlogSlider from '@/components/home/BlogSlider';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 const CONTENT_TYPE_LABELS = {
   tips_ideas: 'Советы и идеи',
@@ -13,7 +13,7 @@ const CONTENT_TYPE_LABELS = {
 async function getArticles() {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/content/articles?per_page=9`,
+      buildApiUrl('/content/articles?per_page=9'),
       { next: { revalidate: 60 } }
     );
 

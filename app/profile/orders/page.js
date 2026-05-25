@@ -10,6 +10,7 @@ import Purchases from '@/components/profile/Purchases';
 import { getOrders, getPurchases, isActiveOrder, reorder } from '@/lib/api/account';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { buildAssetUrl } from '@/lib/config/api';
 
 const breadcrumbs = [
   { label: 'Профиль', href: '/profile' },
@@ -26,7 +27,7 @@ function resolveImage(imageUrl) {
   const first = urls[0];
   if (!first) return null;
   if (first.startsWith('http')) return first;
-  if (first.startsWith('/')) return `https://test.ikeya.by${first}`;
+  if (first.startsWith('/')) return buildAssetUrl(first);
   return null;
 }
 

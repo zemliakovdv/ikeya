@@ -2,7 +2,7 @@
 import { getAllCategories, getCategory, IMAGES_BASE_URL } from '@/lib/api/ikea';
 import ProductTabsSection from '@/components/home/ProductTabsSection';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 async function getAllRecommended() {
   let allProducts = [];
@@ -12,7 +12,7 @@ async function getAllRecommended() {
   try {
     while (true) {
       const res = await fetch(
-        `${API_BASE_URL}/products/recommended?page=${page}&per_page=${perPage}`,
+        buildApiUrl(`/products/recommended?page=${page}&per_page=${perPage}`),
         { next: { revalidate: 60 } }
       );
       if (!res.ok) break;

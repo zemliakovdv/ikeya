@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { resolveImageUrl } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 const PER_PAGE = 20;
 
 function toNumber(value, fallback = 0) {
@@ -40,7 +40,7 @@ function buildReviewsUrl({ sku, page, rating, withPhoto }) {
     params.set('with_photo', '1');
   }
 
-  return `${API_BASE_URL}/products/${sku}/reviews?${params.toString()}`;
+  return buildApiUrl(`/products/${sku}/reviews?${params.toString()}`);
 }
 
 function Stars({ rating = 0, size = 16 }) {

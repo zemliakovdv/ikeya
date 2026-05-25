@@ -6,7 +6,7 @@ import { useFavorites } from '@/contexts/FavoritesContext';
 import { useCart } from '@/contexts/CartContext';
 import CartCounter from '@/components/cart/CartCounter';
 
-const API_BASE_URL = 'https://test.ikeya.by';
+import { buildAssetUrl } from '@/lib/config/api';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
 
 function formatPrice(price) {
@@ -26,7 +26,7 @@ function buildImages(rawImages) {
 
   return list.map(img => {
     const clean = img.startsWith('/') ? img.slice(1) : img;
-    return `${API_BASE_URL}/${clean}`;
+    return buildAssetUrl(clean);
   });
 }
 

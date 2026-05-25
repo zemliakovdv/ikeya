@@ -3,11 +3,11 @@
 import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl } from '@/lib/config/api';
 
 async function getRecommended() {
   try {
-    const res = await fetch(`${API_BASE_URL}/homepage/recommendations?per_page=10`, {
+    const res = await fetch(buildApiUrl('/homepage/recommendations?per_page=10'), {
       next: { revalidate: 300 },
     });
     if (!res.ok) return [];

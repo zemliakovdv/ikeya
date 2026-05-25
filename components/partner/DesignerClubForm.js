@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-const API_BASE = 'https://test.ikeya.by';
+import { buildApiUrl } from '@/lib/config/api';
 
 const CITIES = ['Минск', 'Брест', 'Витебск', 'Гомель', 'Гродно', 'Могилёв'];
 const DESIGNER_TYPES = ['Частный дизайнер', 'Юридическое лицо', 'Индивидуальный предприниматель'];
@@ -118,7 +118,7 @@ export default function DesignerClubForm() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/cooperation_requests`, {
+      const res = await fetch(buildApiUrl('/cooperation_requests'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

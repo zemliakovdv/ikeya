@@ -9,8 +9,7 @@ import RelatedProducts from '@/components/product/RelatedProducts';
 import SimilarProducts from '@/components/product/SimilarProducts';
 import { getCachedCategoriesTree } from '@/lib/api/ikea';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
-const SITE_URL = 'https://ikeya.by';
+import { buildApiUrl, SITE_URL } from '@/lib/config/api';
 
 // Очистка артикулов — обрабатывает два формата:
 // 1. Нормальный: ["60489549", "00417621", ...] → возвращаем как есть
@@ -105,7 +104,7 @@ function buildBreadcrumbs(tree, attr, product, productName) {
 // Загрузка одного товара по SKU
 async function getProduct(sku) {
   try {
-    const res = await fetch(`${API_BASE_URL}/products/${sku}`, { next: { revalidate: 60 } });
+    const res = await fetch(buildApiUrl(`/products/${sku}`), { next: { revalidate: 60 } });
     return res.ok ? await res.json() : null;
   } catch {
     return null;
@@ -119,7 +118,7 @@ async function getFullProducts(skus = []) {
 
   const results = await Promise.allSettled(
     skus.map((sku) =>
-      fetch(`${API_BASE_URL}/products/${sku}`, { next: { revalidate: 60 } })
+      fetch(buildApiUrl(`/products/${sku}`), { next: { revalidate: 60 } })
         .then((r) => (r.ok ? r.json() : null))
     )
   );
@@ -178,7 +177,7 @@ function groupIncludedProducts(products, tree) {
 async function getSimilarProducts(categoryId, excludeSku) {
   try {
     const res = await fetch(
-      `${API_BASE_URL}/categories/${categoryId}/products?per_page=10`,
+      buildApiUrl(`/categories/${categoryId}/products?per_page=10`),
       { next: { revalidate: 300 } }
     );
 

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { IMAGES_BASE_URL } from '@/lib/api/ikea'
 
-const API_BASE = 'https://test.ikeya.by'
+import { buildApiUrl } from '@/lib/config/api'
 
 // Модульный кеш — живёт пока открыта вкладка браузера
 let _cachedTree = null
@@ -81,7 +81,7 @@ export default function MegaMenu({ isOpen, onClose }) {
       setIsLoading(true)
 
       try {
-        const res = await fetch(`${API_BASE}/api/v1/categories/tree`, {
+        const res = await fetch(buildApiUrl('/categories/tree'), {
           cache: 'no-store',
           signal: controller.signal,
         })

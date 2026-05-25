@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { resolveImageUrl } from '@/lib/api/ikea';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 
-const API_BASE_URL = 'https://test.ikeya.by/api/v1';
+import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
 
 const PAYMENT_LABELS = {
   card: 'Оплата картой онлайн',
@@ -77,7 +77,7 @@ function resolveImage(imageUrl) {
 
   if (typeof imageUrl === 'string') {
     if (imageUrl.startsWith('http')) return imageUrl;
-    if (imageUrl.startsWith('/')) return `https://test.ikeya.by${imageUrl}`;
+    if (imageUrl.startsWith('/')) return buildAssetUrl(imageUrl);
 
     try {
       const parsed = JSON.parse(imageUrl);
@@ -93,7 +93,7 @@ function resolveImage(imageUrl) {
 
   if (!first || String(first).startsWith('as:')) return null;
   if (String(first).startsWith('http')) return first;
-  if (String(first).startsWith('/')) return `https://test.ikeya.by${first}`;
+  if (String(first).startsWith('/')) return buildAssetUrl(first);
 
   return null;
 }
@@ -248,7 +248,7 @@ export default function OrderSuccessPage() {
 
       if (!fromSession && orderId && token) {
         try {
-          const res = await fetch(`${API_BASE_URL}/account/orders/${orderId}`, {
+          const res = await fetch(buildApiUrl(`/account/orders/${orderId}`), {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
