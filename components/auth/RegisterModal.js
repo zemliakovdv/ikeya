@@ -151,7 +151,7 @@ export default function RegisterModal({
                 />
                 <label className="form-check-label" htmlFor="gridCheckPersonal">
                   Даю согласие на обработку персональных данных в соответствии с{' '}
-                  <a>Политикой обработки персональных данных</a> и <a>Договором-офертой</a>
+                  <a href="/help/privacy-policy-clients-ikeya-by/">Политикой обработки персональных данных</a> и <a href="/help/public-offer-commission-ikeya/">Договором-офертой</a>
                 </label>
               </div>
 
