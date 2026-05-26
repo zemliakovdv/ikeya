@@ -54,14 +54,24 @@ export default function RootLayout({ children }) {
               "@context": "https://schema.org",
               "@type": "Organization",
               name: "IKEYA",
+              description: "Интернет-магазин товаров для дома",
               url: "https://ikeya.by",
               logo: "https://ikeya.by/assets/img/logo.svg",
-              contactPoint: {
-                "@type": "ContactPoint",
-                contactType: "customer service",
-                availableLanguage: "Russian",
+              image: "https://ikeya.by/assets/img/logo.svg",
+              email: "support@ikeya.by",
+              telephone: "+375445794444",
+              sameAs: [
+                "https://www.instagram.com/shopbyshop_by?igsh=MWRoazFqbGE5ZHlibg%3D%3D",
+                "https://t.me/ShopByShopBelarus",
+              ],
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: "ул. Сухаревская, д.16, пом. 6",
+                addressLocality: "Минск",
+                addressRegion: "Минская область",
+                addressCountry: "BY",
+                postalCode: "220019",
               },
-              sameAs: [],
             }),
           }}
         />

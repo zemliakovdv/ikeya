@@ -16,6 +16,22 @@ import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
 export const metadata = {
   title: 'Каталог товаров — мебель и товары для дома | IKEYA',
   description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
+  alternates: { canonical: 'https://ikeya.by/catalog' },
+  openGraph: {
+    title: 'Каталог товаров — мебель и товары для дома | IKEYA',
+    description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
+    url: 'https://ikeya.by/catalog',
+    siteName: 'IKEYA',
+    images: [{ url: 'https://ikeya.by/assets/img/no-image.jpg', width: 1200, height: 630, alt: 'Каталог товаров IKEYA' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Каталог товаров — мебель и товары для дома | IKEYA',
+    description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
+    images: ['https://ikeya.by/assets/img/no-image.jpg'],
+    url: 'https://ikeya.by/catalog',
+  },
 };
 
 const catalogSeoText = `

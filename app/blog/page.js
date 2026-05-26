@@ -43,6 +43,22 @@ async function getInitialData() {
 export const metadata = {
   title: 'Советы и идеи | IKEYA',
   description: 'Советы по обустройству дома, идеи для интерьера и вдохновляющие проекты от IKEYA.',
+  alternates: { canonical: 'https://ikeya.by/blog' },
+  openGraph: {
+    title: 'Советы и идеи | IKEYA',
+    description: 'Советы по обустройству дома, идеи для интерьера и вдохновляющие проекты от IKEYA.',
+    url: 'https://ikeya.by/blog',
+    siteName: 'IKEYA',
+    images: [{ url: 'https://ikeya.by/assets/img/no-image.jpg', width: 1200, height: 630, alt: 'Советы и идеи | IKEYA' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Советы и идеи | IKEYA',
+    description: 'Советы по обустройству дома, идеи для интерьера и вдохновляющие проекты от IKEYA.',
+    images: ['https://ikeya.by/assets/img/no-image.jpg'],
+    url: 'https://ikeya.by/blog',
+  },
 };
 
 export default async function BlogPage() {

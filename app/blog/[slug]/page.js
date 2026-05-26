@@ -67,12 +67,32 @@ export async function generateMetadata({ params }) {
   const article = await getArticle(params.slug);
   if (!article) return {};
   const seo = article.attributes.seo || {};
+const title = seo.title || article.attributes.title;
+  const description = seo.description || article.attributes.excerpt;
+  const canonicalUrl = `https://ikeya.by/blog/${params.slug}`;
+  const imageUrl = extractImage(article) || 'https://ikeya.by/assets/img/no-image.jpg';
+
   return {
-    title: seo.title || article.attributes.title,
-    description: seo.description || article.attributes.excerpt,
+    title,
+    description,
     keywords: seo.keywords,
     robots: seo.robots,
-    alternates: { canonical: `https://ikeya.by/blog/${params.slug}` },
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      title,
+      description,
+      url: canonicalUrl,
+      siteName: 'IKEYA',
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [imageUrl],
+      url: canonicalUrl,
+    },
   };
 }
 

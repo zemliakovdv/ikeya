@@ -34,9 +34,34 @@ export async function generateMetadata({ params }) {
     const seo = attrs.seo || {};
     const name = attrs.translated_name || attrs.name || 'Каталог';
 
+const title = seo.title || `${name} — купить в Беларуси | IKEYA`;
+    const description = seo.description || `Купить ${name.toLowerCase()} в интернет-магазине IKEYA. Большой выбор, доступные цены, доставка по Беларуси. Заказывайте онлайн!`;
+    const canonicalUrl = `https://ikeya.by/catalog/${slug.join('/')}`;
+    const imageUrl = attrs.icon_url
+      ? `https://ikeya.by${attrs.icon_url.startsWith('/') ? attrs.icon_url : `/${attrs.icon_url}`}`
+      : (attrs.local_image_path
+        ? `https://ikeya.by${attrs.local_image_path.startsWith('/') ? attrs.local_image_path : `/${attrs.local_image_path}`}`
+        : 'https://ikeya.by/assets/img/no-image.jpg');
+
     return {
-      title: seo.title || `${name} — купить в Беларуси | IKEYA`,
-      description: seo.description || `Купить ${name.toLowerCase()} в интернет-магазине IKEYA. Большой выбор, доступные цены, доставка по Беларуси. Заказывайте онлайн!`,
+      title,
+      description,
+      alternates: { canonical: canonicalUrl },
+      openGraph: {
+        title,
+        description,
+        url: canonicalUrl,
+        siteName: 'IKEYA',
+        images: [{ url: imageUrl, width: 1200, height: 630, alt: name }],
+        type: 'website',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description,
+        images: [imageUrl],
+        url: canonicalUrl,
+      },
     };
   } catch {
     return {};
