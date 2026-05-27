@@ -3550,6 +3550,411 @@ main {
     position: relative;
 }
 
+.policy-inner .form-check .form-check-input {
+    width: 15px;
+    height: 15px;
+    border-radius: 2px;
+}
+
+@media (max-width: 576px) {
+    .modal-backdrop.show {
+        z-index: 1190;
+    }
+
+    .login-modal {
+        position: fixed;
+        inset: 0;
+        display: block;
+        padding: 0;
+        overflow: hidden;
+        pointer-events: auto;
+        z-index: 1200;
+    }
+
+    .login-modal .modal-dialog {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+        transform: none;
+        pointer-events: auto;
+    }
+
+    .login-modal .modal-content {
+        width: 100%;
+        border: 0;
+        border-radius: 16px 16px 0 0;
+        max-height: calc(100dvh - 16px);
+        height: auto;
+        overflow: visible;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.14);
+    }
+
+    .login-modal .modal-header {
+        height: 56px;
+        padding: 0 16px;
+        align-items: center;
+        border-bottom: 0;
+        justify-content: space-between;
+    }
+
+    .login-modal .modal-title {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .login-modal .btn-close {
+        width: 40px;
+        height: 40px;
+        margin: 0;
+        padding: 0;
+        flex-shrink: 0;
+    }
+
+    .login-modal .modal-body {
+        padding: 0 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .login-modal .login-modal-inner,
+    .login-modal .login-container,
+    .login-modal .login-card {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        min-height: 0;
+    }
+
+    .login-modal .login-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .login-modal .phone-input-group {
+        width: 100%;
+        margin: 8px 0 0;
+    }
+
+    .login-modal .phone-input-container {
+        width: 100%;
+        height: 56px;
+        display: flex;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .login-modal .country-code {
+        width: 25%;
+        flex: 0 0 100px;
+        margin-right: 0;
+    }
+
+    .login-modal .phone-input {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .login-modal .get-code-btn {
+        width: 100%;
+        height: 48px;
+        padding: 0 14px;
+        margin: 0;
+    }
+
+    .login-modal .register-link {
+        width: 100%;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .login-modal .register-link a {
+        width: 100%;
+        height: 48px;
+        min-height: 48px;
+        margin: 0;
+        padding: 0 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .login-modal .login-notice {
+        margin-bottom: 8px;
+        width: 100%;
+    }
+
+    .reg-start {
+        position: fixed;
+        inset: 0;
+        top: 0;
+        padding: 0;
+        z-index: 1200;
+    }
+
+    .reg-start .modal-dialog {
+        position: fixed;
+        inset: 0;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+        transform: none;
+    }
+
+    .reg-start .modal-content {
+        height: 100dvh;
+        width: 100%;
+        border-radius: 0;
+        border: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .reg-start .modal-header {
+        flex: 0 0 56px;
+        height: 56px;
+        padding: 0 16px;
+        align-items: center;
+        border-bottom: 0;
+        justify-content: space-between;
+    }
+
+    .reg-start .modal-title {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .reg-start .btn-close {
+        width: 40px;
+        height: 40px;
+        margin: 0;
+        padding: 0;
+        flex-shrink: 0;
+    }
+
+    .reg-start .modal-body {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+    }
+
+    .reg-start .form-floating.the-name,
+    .reg-start .form-floating.the-mail {
+        width: 100%;
+        margin: 0;
+    }
+
+    .reg-start .form-floating.the-name {
+        margin-bottom: 16px;
+    }
+
+    .reg-start .phone-input-container {
+        width: 100%;
+        height: 56px;
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .reg-start .country-code {
+        flex: 0 0 100px;
+        width: 25%;
+        height: 56px;
+        margin-right: 0;
+    }
+
+    .reg-start .phone-input {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 56px;
+    }
+
+    .reg-start .form-floating.the-name .form-control,
+    .reg-start .form-floating.the-mail .form-control {
+        height: 56px;
+        min-height: 56px;
+    }
+
+    .reg-start .the-mail {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .reg-start .policy-inner {
+        margin-top: 20px;
+        width: 100%;
+    }
+
+    .reg-start .form-check {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        min-height: 36px;
+        margin-bottom: 8px;
+        margin-right: 0;
+        padding-left: 0;
+    }
+
+    .reg-start .form-check:nth-child(2) {
+        margin-bottom: 8px;
+    }
+
+    .policy-inner .form-check .form-check-input {
+        width: 20px;
+        height: 20px;
+    }
+
+    .reg-start .form-check-input {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 20px;
+        margin: 0;
+    }
+
+    .reg-start .form-check-label {
+        font-size: 13px;
+        line-height: 18px;
+    }
+
+    .reg-start .get-code-btn {
+        width: 100%;
+        height: 48px;
+    }
+
+    .reg-start .register-link {
+        width: 100%;
+        min-height: 48px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .reg-start .register-link a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 48px;
+        padding: 0 16px;
+    }
+
+    .login-code {
+        position: fixed;
+        inset: 0;
+        padding: 0;
+        overflow: hidden;
+        z-index: 1200;
+    }
+
+    .login-code .modal-dialog {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        margin: 0;
+        width: 100%;
+        max-width: 100%;
+        transform: none;
+    }
+
+    .login-code .modal-content {
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+        border: 0;
+        height: auto;
+        max-height: calc(100dvh - 16px);
+        overflow: visible;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .login-code .modal-header {
+        height: 56px;
+        padding: 0 16px;
+        align-items: center;
+        border-bottom: 0;
+        justify-content: space-between;
+    }
+
+    .login-code .modal-title {
+        font-size: 17px;
+        line-height: 22px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .login-code .btn-close {
+        width: 40px;
+        height: 40px;
+        margin: 0;
+        padding: 0;
+        flex-shrink: 0;
+    }
+
+    .login-code .modal-body {
+        padding: 8px 16px 16px;
+    }
+
+    .login-code .code-modal-inner {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .login-code .code-modal-inner .note {
+        margin: 0 0 12px;
+        font-size: 13px;
+        line-height: 18px;
+    }
+
+    .login-code .aply-code {
+        width: 100%;
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .login-code .aply-code input.codes {
+        width: 56px;
+        height: 56px;
+        flex: 0 0 56px;
+        text-align: center;
+    }
+
+    .login-code .code-modal-inner a {
+        display: block;
+        width: 100%;
+        min-height: 18px;
+        margin-top: 8px;
+        text-align: center;
+        font-size: 13px;
+        line-height: 18px;
+    }
+
+    .login-code .code-count {
+        font-size: inherit;
+        line-height: inherit;
+    }
+}
+
 
 /* Конец логирования */
 
@@ -3706,24 +4111,24 @@ main {
     top: 0;
 }
 
-.form-floating > .form-control:not(:placeholder-shown) ~ label,
-.form-floating > .form-control:focus ~ label,
-.form-floating > .form-control-plaintext ~ label,
-.form-floating > .form-select ~ label {
-  transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
-  opacity: 1 !important;
+.form-floating>.form-control:not(:placeholder-shown)~label,
+.form-floating>.form-control:focus~label,
+.form-floating>.form-control-plaintext~label,
+.form-floating>.form-select~label {
+    transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
+    opacity: 1 !important;
 }
 
-.form-floating > .form-control.is-invalid ~ label {
-  opacity: 1 !important;
-transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
+.form-floating>.form-control.is-invalid~label {
+    opacity: 1 !important;
+    transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
 }
 
 
 .form-control.is-invalid,
 .form-select.is-invalid {
-  background-image: none !important;
-  padding-right: 16px !important;
+    background-image: none !important;
+    padding-right: 16px !important;
 }
 
 .form-control:focus {
@@ -3752,12 +4157,6 @@ transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
 
 .form-check:nth-child(2) {
     margin-bottom: 24px;
-}
-
-.policy-inner .form-check .form-check-input {
-    width: 15px;
-    height: 15px;
-    border-radius: 2px;
 }
 
 .policy-inner .form-check .form-check-label a {

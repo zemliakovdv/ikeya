@@ -3,11 +3,13 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProfileCounts } from './ProfileCountsContext';
 
 export default function ProfileSidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { activeOrdersCount } = useProfileCounts();
 
   const isActive = (path) => pathname.replace(/\/$/, '') === path;
 
@@ -18,6 +20,7 @@ export default function ProfileSidebar() {
 
   return (
     <aside className="sidebar">
+      <div className="profile-sidebar-top">
 
       {/* User Card */}
       <div
@@ -54,7 +57,9 @@ export default function ProfileSidebar() {
           </svg>
           Заказы
           {/* Бейдж — заглушка, подключим когда будет счётчик от API */}
-          {/* <span className="badge">3</span> */}
+          {activeOrdersCount > 0 && (
+            <span className="badge">{activeOrdersCount}</span>
+          )}
         </div>
 
         <div
@@ -79,10 +84,12 @@ export default function ProfileSidebar() {
           Отзывы
         </div>
       </nav>
+      </div>
 
       {/* Additional Links */}
-      <div className="sidebar-section">
-        <div
+      <div className="profile-sidebar-bottom">
+        <div className="sidebar-section">
+          <div
           className={`nav-item ${isActive('/profile/electronic-receipts') ? 'active' : ''}`}
           onClick={() => router.push('/profile/electronic-receipts')}
           style={{ cursor: 'pointer' }}
@@ -116,6 +123,7 @@ export default function ProfileSidebar() {
           style={{ cursor: 'pointer' }}
         >
           Выход
+        </div>
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { getOrders, getPurchases, isActiveOrder } from '@/lib/api/account';
 import { openJivoChat } from '@/components/FloatingChatButton';
+import { useProfileCounts } from './ProfileCountsContext';
 
 import { buildAssetUrl } from '@/lib/config/api';
 
@@ -69,6 +70,7 @@ export default function ProfileDashboard() {
   const router = useRouter();
   const { isAuth, isHydrated } = useAuth();
   const { items: favoriteItems } = useFavorites();
+  const { setActiveOrdersCount } = useProfileCounts();
 
   const [activeOrders, setActiveOrders] = useState([]);
   const [purchasesTotal, setPurchasesTotal] = useState(null);
@@ -94,9 +96,11 @@ export default function ProfileDashboard() {
             if (inc.type === 'order_item') itemsMap[inc.id] = inc.attributes;
           });
 
-          const active = all
-            .filter(o => isActiveOrder(o.attributes.status))
-            .slice(0, 6)
+          const activeAll = all.filter(o => isActiveOrder(o.attributes.status));
+          setActiveOrdersCount(activeAll.length);
+
+          const active = activeAll
+            .slice(0, 3)
             .map(order => {
               const a = order.attributes;
               // Берём картинку первого товара из included
@@ -117,6 +121,8 @@ export default function ProfileDashboard() {
             });
 
           setActiveOrders(active);
+        } else {
+          setActiveOrdersCount(0);
         }
 
         if (purchasesResp.status === 'fulfilled') {
@@ -124,6 +130,7 @@ export default function ProfileDashboard() {
         }
       } catch (e) {
         console.error('ProfileDashboard: ошибка загрузки', e);
+        setActiveOrdersCount(0);
       } finally {
         setLoading(false);
       }

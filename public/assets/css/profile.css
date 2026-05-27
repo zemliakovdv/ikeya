@@ -4164,3 +4164,370 @@
             transform: translateX(-50%) translateY(0);
         }
     }
+
+    /* =============================================
+   PROFILE 1400 LAYOUT (desktop down from 1920)
+   ============================================= */
+    @media (max-width: 1919px) {
+        .zakazi .orders-page>.container {
+            max-width: 1328px;
+            padding-left: 0;
+            padding-right: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .zakazi .profile-layout {
+            grid-template-columns: 332px minmax(0, 972px);
+            gap: 24px;
+            justify-content: space-between;
+        }
+
+        .zakazi .profile-content {
+            min-width: 0;
+            max-width: 972px;
+        }
+
+        .zakazi .summary {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .zakazi .orders {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .zakazi .help-links {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .zakazi .help-link-card {
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+        }
+    }
+
+    @media (min-width: 1200px) and (max-width: 1399px) {
+        .zakazi .orders-page>.container {
+            max-width: 1128px;
+            padding-left: 0;
+            padding-right: 0;
+        }
+
+        .zakazi .profile-layout {
+            grid-template-columns: 332px minmax(0, 772px);
+            gap: 24px;
+        }
+
+        .zakazi .profile-content {
+            max-width: 772px;
+        }
+
+        .zakazi .orders {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            align-items: start;
+        }
+    }
+
+    @media (min-width: 992px) and (max-width: 1199px) {
+        .zakazi {
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .zakazi .breadcumps {
+            display: none;
+        }
+
+        .zakazi .orders-page > .container {
+            max-width: 960px;
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .zakazi .profile-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        .zakazi .profile-layout > .sidebar,
+        .zakazi .profile-layout > .profile-content {
+            display: contents;
+        }
+
+        .zakazi .profile-layout > .profile-content > * {
+            order: 2;
+            width: 100%;
+        }
+
+        .zakazi .profile-sidebar-top {
+            order: 1;
+            width: 100%;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .zakazi .profile-sidebar-top .user-name {
+            font-size: 15px;
+            line-height: 20px;
+        }
+
+        .zakazi .profile-sidebar-top .nav-item,
+        .zakazi .profile-sidebar-bottom .nav-item {
+            font-size: 13px;
+            line-height: 18px;
+        }
+
+        .zakazi .profile-content > .summary {
+            display: none;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(2) {
+            display: none;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(3) {
+            order: 2;
+            width: 100%;
+            margin: 0;
+            padding: 12px 16px;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(3) .block-title {
+            font-size: 15px;
+            line-height: 20px;
+        }
+
+        .zakazi .help-links {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .zakazi .help-link-card {
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 18px;
+        }
+
+        .zakazi .profile-sidebar-bottom {
+            order: 3;
+            width: 100%;
+        }
+
+        .zakazi .profile-sidebar-bottom .sidebar-section {
+            border-top: none;
+            background: #fff;
+            border-radius: 8px;
+            padding: 0;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        .zakazi {
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .zakazi .breadcumps {
+            display: none;
+        }
+
+        .zakazi .orders-page > .container {
+            max-width: 736px;
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .zakazi .profile-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        .zakazi .profile-layout > .sidebar,
+        .zakazi .profile-layout > .profile-content {
+            display: contents;
+        }
+
+        .zakazi .profile-layout > .profile-content > * {
+            order: 2;
+            width: 100%;
+        }
+
+        .zakazi .profile-sidebar-top {
+            order: 1;
+            width: 100%;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .zakazi .profile-sidebar-top .user-name {
+            font-size: 15px;
+            line-height: 20px;
+        }
+
+        .zakazi .profile-sidebar-top .nav-item,
+        .zakazi .profile-sidebar-bottom .nav-item {
+            font-size: 13px;
+            line-height: 18px;
+        }
+
+        .zakazi .profile-content > .summary {
+            display: none;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(2) {
+            display: none;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(3) {
+            order: 2;
+            width: 100%;
+            margin: 0;
+            padding: 12px 16px;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(3) .block-title {
+            font-size: 15px;
+            line-height: 20px;
+        }
+
+        .zakazi .help-links {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .zakazi .help-link-card {
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 18px;
+        }
+
+        .zakazi .profile-sidebar-bottom {
+            order: 3;
+            width: 100%;
+        }
+
+        .zakazi .profile-sidebar-bottom .sidebar-section {
+            border-top: none;
+            background: #fff;
+            border-radius: 8px;
+            padding: 0;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .zakazi {
+            padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        }
+
+        .zakazi .breadcumps {
+            display: none;
+        }
+
+        .zakazi .orders-page > .container {
+            max-width: 544px;
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .zakazi .profile-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
+        .zakazi .profile-layout > .sidebar,
+        .zakazi .profile-layout > .profile-content {
+            display: contents;
+        }
+
+        .zakazi .profile-layout > .profile-content > * {
+            order: 2;
+            width: 100%;
+        }
+
+        .zakazi .profile-sidebar-top {
+            order: 1;
+            width: 100%;
+            background: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+        }
+
+        .zakazi .profile-sidebar-top .user-name {
+            font-size: 15px;
+            line-height: 20px;
+        }
+
+        .zakazi .profile-sidebar-top .nav-item,
+        .zakazi .profile-sidebar-bottom .nav-item {
+            font-size: 13px;
+            line-height: 18px;
+        }
+
+        .zakazi .profile-content > .summary {
+            display: none;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(2) {
+            display: none;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(3) {
+            order: 2;
+            width: 100%;
+            margin: 0;
+            padding: 12px 16px;
+        }
+
+        .zakazi .profile-content > .block:nth-of-type(3) .block-title {
+            font-size: 15px;
+            line-height: 20px;
+        }
+
+        .zakazi .help-links {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        .zakazi .help-link-card {
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 18px;
+        }
+
+        .zakazi .profile-sidebar-bottom {
+            order: 3;
+            width: 100%;
+        }
+
+        .zakazi .profile-sidebar-bottom .sidebar-section {
+            border-top: none;
+            background: #fff;
+            border-radius: 8px;
+            padding: 0;
+        }
+    }
