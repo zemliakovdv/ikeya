@@ -9,8 +9,8 @@ import { useEffect, useMemo, useState } from 'react';
  *
  * Props:
  *  - initialMode       {'pickup'|'delivery'}
- *  - pvzAddresses      {Array}  — сохранённые ПВЗ [{id, label, ...}]
- *  - deliveryAddresses {Array}  — сохранённые адреса доставки
+ *  - pvzAddresses      {Array} — сохранённые ПВЗ [{id, label, ...}]
+ *  - deliveryAddresses {Array} — сохранённые адреса доставки
  *  - activePvzId       {string}
  *  - activeDeliveryId  {string}
  *  - onSelectPvz       {fn(id)}
@@ -135,6 +135,60 @@ export default function SavedAddressesModal({
     }
   };
 
+  const renderAddressRows = (radioName) => (
+    <div className="saved-addresses-list">
+      {addresses.length === 0 && (
+        <div className="pvz-list__empty">
+          {isPvz ? 'Нет сохранённых пунктов выдачи' : 'Нет сохранённых адресов доставки'}
+        </div>
+      )}
+
+      {addresses.map((addr) => (
+        <div key={addr.id} className="saved-address-item">
+          <label className="saved-address-label">
+            <input
+              type="radio"
+              name={radioName}
+              checked={selectedId === addr.id}
+              onChange={() => handleSelect(addr.id)}
+            />
+
+            <span className="saved-address-text">
+              {addr.label || addr.address || 'Адрес без названия'}
+            </span>
+          </label>
+
+          <div className="saved-address-menu">
+            <button
+              type="button"
+              className="saved-address-menu-btn"
+              onClick={() => setOpenMenuId(openMenuId === addr.id ? null : addr.id)}
+              aria-label="Действия с адресом"
+            >
+              <svg width="4" height="16" viewBox="0 0 4 16" fill="none">
+                <circle cx="2" cy="2" r="2" fill="#757575" />
+                <circle cx="2" cy="8" r="2" fill="#757575" />
+                <circle cx="2" cy="14" r="2" fill="#757575" />
+              </svg>
+            </button>
+
+            {openMenuId === addr.id && (
+              <div className="saved-address-dropdown">
+                <button
+                  type="button"
+                  className="saved-address-dropdown-item"
+                  onClick={() => handleDelete(addr.id)}
+                >
+                  Удалить
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <>
       <div
@@ -145,7 +199,7 @@ export default function SavedAddressesModal({
         aria-labelledby="saved-addresses-modal-title"
       >
         <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: 560 }}>
-          <div className="modal-content saved-addresses-modal">
+          <div className="modal-content saved-addresses-modal saved-addresses-modal--desktop">
             <div className="pvz-modal__header">
               <h5 id="saved-addresses-modal-title" className="pvz-modal__title">
                 Адреса доставки
@@ -177,57 +231,7 @@ export default function SavedAddressesModal({
               </button>
             </div>
 
-            <div className="saved-addresses-list">
-              {addresses.length === 0 && (
-                <div className="pvz-list__empty">
-                  {isPvz ? 'Нет сохранённых пунктов выдачи' : 'Нет сохранённых адресов доставки'}
-                </div>
-              )}
-
-              {addresses.map((addr) => (
-                <div key={addr.id} className="saved-address-item">
-                  <label className="saved-address-label">
-                    <input
-                      type="radio"
-                      name="saved-address"
-                      checked={selectedId === addr.id}
-                      onChange={() => handleSelect(addr.id)}
-                    />
-
-                    <span className="saved-address-text">
-                      {addr.label || addr.address || 'Адрес без названия'}
-                    </span>
-                  </label>
-
-                  <div className="saved-address-menu">
-                    <button
-                      type="button"
-                      className="saved-address-menu-btn"
-                      onClick={() => setOpenMenuId(openMenuId === addr.id ? null : addr.id)}
-                      aria-label="Действия с адресом"
-                    >
-                      <svg width="4" height="16" viewBox="0 0 4 16" fill="none">
-                        <circle cx="2" cy="2" r="2" fill="#757575" />
-                        <circle cx="2" cy="8" r="2" fill="#757575" />
-                        <circle cx="2" cy="14" r="2" fill="#757575" />
-                      </svg>
-                    </button>
-
-                    {openMenuId === addr.id && (
-                      <div className="saved-address-dropdown">
-                        <button
-                          type="button"
-                          className="saved-address-dropdown-item"
-                          onClick={() => handleDelete(addr.id)}
-                        >
-                          Удалить
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {renderAddressRows('saved-address-desktop')}
 
             <div className="saved-addresses-footer">
               <button
@@ -257,6 +261,73 @@ export default function SavedAddressesModal({
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="saved-addresses-modal--mobile" role="dialog" aria-modal="true" aria-labelledby="saved-addresses-mobile-title">
+        <div className="saved-addresses-mobile-header">
+          <h5 id="saved-addresses-mobile-title" className="saved-addresses-mobile-title">
+            Адреса доставки
+          </h5>
+
+          <button
+            type="button"
+            className="btn-close"
+            onClick={onClose}
+            aria-label="Закрыть"
+          />
+        </div>
+
+        <div className="saved-addresses-mobile-tabs">
+          <div className="pvz-modal__tabs">
+            <button
+              type="button"
+              className={`pvz-modal__tab${mode === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
+              onClick={() => handleModeChange('pickup')}
+            >
+              Самовывоз
+            </button>
+
+            <button
+              type="button"
+              className={`pvz-modal__tab${mode === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
+              onClick={() => handleModeChange('delivery')}
+            >
+              Доставка
+            </button>
+          </div>
+        </div>
+
+        <div className="saved-addresses-mobile-content">
+          {renderAddressRows('saved-address-mobile')}
+        </div>
+
+        <div className="saved-addresses-mobile-footer">
+          <button
+            type="button"
+            className="saved-addresses-add-btn"
+            onClick={handleAdd}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path
+                d="M8 3.33334V12.6667M3.33334 8H12.6667"
+                stroke="#0058A3"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            {isPvz ? 'Добавить новый ПВЗ' : 'Добавить новый адрес'}
+          </button>
+
+          <button
+            type="button"
+            className="pvz-select-btn"
+            onClick={handleSave}
+            disabled={!selectedId}
+          >
+            Сохранить
+          </button>
         </div>
       </div>
 

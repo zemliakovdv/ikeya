@@ -1,7 +1,5 @@
 'use client';
 
-// components/delivery/modal/DeliveryModal.js
-
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import PickupTab from './PickupTab';
@@ -10,18 +8,6 @@ import DeliveryTab from './DeliveryTab';
 const YMAPS_API_KEY = 'ee57964a-5010-4536-9733-41c78d29d531';
 const YMAPS_SRC = `https://api-maps.yandex.ru/2.1/?apikey=${YMAPS_API_KEY}&lang=ru_RU`;
 
-/**
- * DeliveryModal
- *
- * Props:
- *  - initialTab   {'pickup'|'delivery'}  — активная вкладка при открытии
- *  - orderId      {string|number}         — id checkout draft для delivery/calculate на checkout
- *  - cartToken    {string}                — fallback-токен корзины для сценариев до draft
- *  - cartItems    {Array}                 — [{sku, quantity}]
- *  - onClose      {fn}
- *  - onSelectPvz  {fn(pvz, calcResult)}   — выбран ПВЗ самовывоза
- *  - onSelectAddr {fn(addr, calcResult)}  — выбран адрес доставки
- */
 export default function DeliveryModal({
   initialTab = 'pickup',
   orderId,
@@ -72,6 +58,8 @@ export default function DeliveryModal({
     onClose?.();
   };
 
+  const activeTabClass = activeTab === 'pickup' ? 'pickup-mode' : 'delivery-mode';
+
   return (
     <>
       {needScript && (
@@ -83,7 +71,7 @@ export default function DeliveryModal({
       )}
 
       <div
-        className="modal fade show d-block"
+        className={`modal fade show d-block checkout-pvz-modal ${activeTabClass}`}
         style={{ zIndex: 1055 }}
         role="dialog"
         aria-modal="true"

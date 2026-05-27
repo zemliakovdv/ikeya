@@ -1085,7 +1085,7 @@ function CheckoutPageInner() {
   }
 
   return (
-    <main className="korzina">
+    <main className="korzina checkout-page">
       <section className="zakaz">
         <div className="container">
           <div className="row">

@@ -40,6 +40,8 @@ export default function DeliveryTab({
   cartToken,
   cartItems = [],
   onSelect,
+  activeTab,
+  setActiveTab,
 }) {
   const [form, setForm] = useState({
     fullAddress: '',
@@ -317,9 +319,37 @@ export default function DeliveryTab({
     return parts.join(', ');
   })();
 
+  const resultDisplayAddress = (() => {
+    const parts = [];
+    if (form.city) parts.push(form.city);
+    if (form.street) parts.push(form.street);
+    if (form.house) parts.push(form.house);
+    if (form.apartment) parts.push(`кв.${form.apartment}`);
+    if (parts.length > 0) return parts.join(', ');
+    return form.fullAddress;
+  })();
+
   return (
-    <div className="pvz-layout">
+    <div className={`pvz-layout pvz-layout--delivery-${step}`}>
       <aside className="pvz-sidebar">
+        <div className="pvz-modal__tabs">
+          <button
+            type="button"
+            className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
+            onClick={() => setActiveTab?.('pickup')}
+          >
+            Самовывоз
+          </button>
+
+          <button
+            type="button"
+            className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
+            onClick={() => setActiveTab?.('delivery')}
+          >
+            Доставка
+          </button>
+        </div>
+
         {step === 'form' && (
           <>
             <div className="delivery-form-header">
@@ -458,7 +488,7 @@ export default function DeliveryTab({
           <>
             <div className="pvz-detail">
               <div className="pvz-detail__header">
-                <h5 className="pvz-detail__title">{displayAddress}</h5>
+                <h5 className="pvz-detail__title">{resultDisplayAddress}</h5>
 
                 <button
                   type="button"
@@ -511,13 +541,15 @@ export default function DeliveryTab({
         )}
       </aside>
 
-      <DeliveryMap
-        mapId="delivery-tab-map"
-        ymapsReady={ymapsReady}
-        pinType="delivery"
-        pinCoords={pinCoords}
-        onMapClick={handleMapClick}
-      />
+      <div className="pvz-desktop-map">
+        <DeliveryMap
+          mapId="delivery-tab-map"
+          ymapsReady={ymapsReady}
+          pinType="delivery"
+          pinCoords={pinCoords}
+          onMapClick={handleMapClick}
+        />
+      </div>
     </div>
   );
 }

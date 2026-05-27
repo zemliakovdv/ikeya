@@ -9,7 +9,7 @@ export default function EditPersonalDataModal({ profile, onClose, onSave }) {
     last_name:   profile?.last_name   || '',
     first_name:  profile?.first_name  || '',
     middle_name: profile?.middle_name || '',
-    gender:      profile?.gender      || 'male',
+    gender:      (profile?.gender || 'male').toLowerCase(),
     email:       profile?.email       || '',
   });
 

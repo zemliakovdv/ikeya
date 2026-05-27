@@ -1,7 +1,7 @@
 // components/profile/Orders.js
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import ActiveOrders from '@/components/profile/ActiveOrders';
 import OrderHistory from '@/components/profile/OrderHistory';
@@ -119,21 +119,24 @@ function isPaymentExpired(attr = {}, rawStatus) {
 
   if (!UNPAID_STATUSES.includes(rawStatus)) return false;
 
+  if (attr.payment_expires_at) {
+    return new Date(attr.payment_expires_at).getTime() <= Date.now();
+  }
+
   const createdAt = new Date(attr.created_at);
   if (Number.isNaN(createdAt.getTime())) return false;
-
   return createdAt.getTime() + PAYMENT_LIFETIME_MS <= Date.now();
 }
 
 function getPaymentSecondsLeft(attr = {}, rawStatus) {
   if (!UNPAID_STATUSES.includes(rawStatus)) return null;
 
-  const createdAt = new Date(attr.created_at);
-  if (Number.isNaN(createdAt.getTime())) return null;
+  const expiresAt = attr.payment_expires_at
+    ? new Date(attr.payment_expires_at).getTime()
+    : new Date(attr.created_at).getTime() + PAYMENT_LIFETIME_MS;
 
-  const expiresAt = createdAt.getTime() + PAYMENT_LIFETIME_MS;
+  if (Number.isNaN(expiresAt)) return null;
   const diff = Math.floor((expiresAt - Date.now()) / 1000);
-
   return diff > 0 ? diff : null;
 }
 
@@ -280,6 +283,7 @@ export default function Orders() {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [purchasesLoading, setPurchasesLoading] = useState(false);
   const [error, setError] = useState(null);
+  const refreshTimerRef = useRef(null);
 
   useEffect(() => {
     if (!token) {
@@ -313,8 +317,38 @@ export default function Orders() {
       }
     }
 
-    loadOrders();
+loadOrders();
   }, [token]);
+
+  // Автообновление когда истекает таймер оплаты
+  useEffect(() => {
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+
+    const unpaidOrders = allOrders.filter(o =>
+      !o.isDraft && !o.isExpiredUnpaid && UNPAID_STATUSES.includes(o.rawStatus) && o.paymentSecondsLeft > 0
+    );
+
+    if (unpaidOrders.length === 0) return;
+
+    const minSecondsLeft = Math.min(...unpaidOrders.map(o => o.paymentSecondsLeft));
+    const delay = (minSecondsLeft + 2) * 1000;
+
+    refreshTimerRef.current = setTimeout(async () => {
+      if (!token) return;
+      try {
+        const res = await fetch(buildApiUrl('/account/orders?per_page=50&page=1'), {
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAllOrders(parseOrders(data));
+        }
+      } catch {}
+    }, delay);
+
+    return () => clearTimeout(refreshTimerRef.current);
+  }, [allOrders, token]);
 
   useEffect(() => {
     if (activeTab !== 'purchases' || !token || purchases.length > 0) return;

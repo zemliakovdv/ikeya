@@ -136,11 +136,13 @@ export default function PersonalData() {
     return `${d}.${m}.${y}`;
   }
 
-  function formatGender(val) {
-    if (val === 'male') return 'Мужской';
-    if (val === 'female') return 'Женский';
-    return '—';
-  }
+function formatGender(val) {
+  if (!val) return '—';
+  const v = val.toLowerCase();
+  if (v === 'male') return 'Мужской';
+  if (v === 'female') return 'Женский';
+  return '—';
+}
 
   function formatFullName() {
     const parts = [profile?.last_name, profile?.first_name, profile?.middle_name].filter(Boolean);

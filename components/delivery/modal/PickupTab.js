@@ -42,6 +42,7 @@ export default function PickupTab({
   const [calcError, setCalcError] = useState(null);
   const [mapCenter, setMapCenter] = useState(null);
   const [userCoords, setUserCoords] = useState(null);
+  const [mobileView, setMobileView] = useState('list');
 
   const searchTimer = useRef(null);
 
@@ -232,72 +233,116 @@ export default function PickupTab({
   }, [selectedPoint, deliveryContext, cartItems, onSelect]);
 
   return (
-    <div className="pvz-layout">
-      <aside className="pvz-sidebar">
-        <div className="pvz-modal__tabs">
-          <button
-            type="button"
-            className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
-            onClick={() => setActiveTab?.('pickup')}
-          >
-            Самовывоз
-          </button>
+    <>
+      <div className={`pvz-layout pvz-layout--${mobileView} ${selectedPoint ? 'pvz-layout--pickup-detail' : 'pvz-layout--pickup-list'}`}>
+        <aside className={`pvz-sidebar ${mobileView === 'list' ? 'is-active' : ''}`}>
+          <div className="pvz-modal__tabs">
+            <button
+              type="button"
+              className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
+              onClick={() => setActiveTab?.('pickup')}
+            >
+              Самовывоз
+            </button>
 
-          <button
-            type="button"
-            className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
-            onClick={() => setActiveTab?.('delivery')}
-          >
-            Доставка
-          </button>
+            <button
+              type="button"
+              className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
+              onClick={() => setActiveTab?.('delivery')}
+            >
+              Доставка
+            </button>
+          </div>
+
+          <div className="pvz-sidebar__list-content">
+              <div className="pvz-search">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z"
+                    stroke="#9E9E9E"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                <input
+                  className="pvz-search__input"
+                  type="text"
+                  placeholder="Введите название населённого пункта"
+                  onChange={handleSearch}
+                />
+              </div>
+
+              <div className="pvz-list">
+                {loading && (
+                  <div className="pvz-list__empty">Загрузка пунктов выдачи...</div>
+                )}
+
+                {!loading && loadError && (
+                  <div className="pvz-list__empty">{loadError}</div>
+                )}
+
+                {!loading && !loadError && filtered.length === 0 && (
+                  <div className="pvz-list__empty">Пункты выдачи не найдены</div>
+                )}
+
+                {!loading && !loadError && filtered.map((point) => (
+                  <PvzCard
+                    key={point.id}
+                    point={point}
+                    onClick={() => handleCardClick(point)}
+                    onDetailClick={() => handleDetailOpen(point)}
+                  />
+                ))}
+              </div>
+          </div>
+
+          {selectedPoint && (
+            <div className="pvz-sidebar__detail">
+              <PvzDetail
+                point={selectedPoint}
+                calcLoading={calcLoading}
+                onBack={handleBack}
+                onSelect={handleSelect}
+              />
+
+              {calcError && (
+                <div className="delivery-geo-error" style={{ margin: '12px 16px' }}>
+                  {calcError}
+                </div>
+              )}
+            </div>
+          )}
+        </aside>
+
+        <div className={`pvz-mobile-map ${mobileView === 'map' ? 'is-active' : ''}`}>
+          <DeliveryMap
+            mapId="pickup-tab-mobile-map"
+            ymapsReady={ymapsReady}
+            points={filtered}
+            pinType="europost"
+            centerOverride={mapCenter}
+            onPinClick={handleDetailOpen}
+          />
         </div>
 
-        {!selectedPoint ? (
-          <>
-            <div className="pvz-search">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z"
-                  stroke="#9E9E9E"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+        <div className="pvz-desktop-map">
+          <DeliveryMap
+            mapId="pickup-tab-map"
+            ymapsReady={ymapsReady}
+            points={filtered}
+            pinType="europost"
+            centerOverride={mapCenter}
+            onPinClick={handleDetailOpen}
+          />
+        </div>
+      </div>
 
-              <input
-                className="pvz-search__input"
-                type="text"
-                placeholder="Введите название населённого пункта"
-                onChange={handleSearch}
-              />
-            </div>
-
-            <div className="pvz-list">
-              {loading && (
-                <div className="pvz-list__empty">Загрузка пунктов выдачи...</div>
-              )}
-
-              {!loading && loadError && (
-                <div className="pvz-list__empty">{loadError}</div>
-              )}
-
-              {!loading && !loadError && filtered.length === 0 && (
-                <div className="pvz-list__empty">Пункты выдачи не найдены</div>
-              )}
-
-              {!loading && !loadError && filtered.map((point) => (
-                <PvzCard
-                  key={point.id}
-                  point={point}
-                  onClick={() => handleCardClick(point)}
-                  onDetailClick={() => handleDetailOpen(point)}
-                />
-              ))}
-            </div>
-          </>
-        ) : (
-          <>
+      {selectedPoint && (
+        <>
+          <div className="pvz-detail-backdrop" />
+          <div className="pvz-detail-sheet">
             <PvzDetail
               point={selectedPoint}
               calcLoading={calcLoading}
@@ -310,18 +355,49 @@ export default function PickupTab({
                 {calcError}
               </div>
             )}
-          </>
-        )}
-      </aside>
+          </div>
+        </>
+      )}
 
-      <DeliveryMap
-        mapId="pickup-tab-map"
-        ymapsReady={ymapsReady}
-        points={filtered}
-        pinType="europost"
-        centerOverride={mapCenter}
-        onPinClick={handleDetailOpen}
-      />
-    </div>
+<div className="pvz-modal__footer">
+  <button
+    type="button"
+    className="pvz-modal__map-button"
+    onClick={() => setMobileView((view) => (view === 'list' ? 'map' : 'list'))}
+  >
+    {mobileView === 'list' ? (
+      <>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path
+            d="M3.333 4.167L7.5 2.5L12.5 4.167L16.667 2.5V15.833L12.5 17.5L7.5 15.833L3.333 17.5V4.167Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7.5 2.5V15.833M12.5 4.167V17.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span>Карта</span>
+      </>
+    ) : (
+      <>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path
+            d="M4.167 5H15.833M4.167 10H15.833M4.167 15H11.667"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span>Список</span>
+      </>
+    )}
+  </button>
+</div>
+    </>
   );
 }
