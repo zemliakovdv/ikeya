@@ -8488,29 +8488,42 @@ transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
     bottom: 16px;
     right: 16px;
     width: 362px;
+    min-height: 204px;
     padding: 16px;
     z-index: 9999;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    box-shadow: 4px 4px 16px 0 rgba(24, 24, 24, 0.24), -1px -1px 16px 0 rgba(24, 24, 24, 0.04);
+    box-shadow: -1px -1px 8px rgba(24, 24, 24, 0.04), 4px 4px 8px rgba(24, 24, 24, 0.24);
     background: #f5f5f5;
     border-radius: 8px;
+}
+
+@media (min-width: 1200px) {
+    .cookie-banner {
+        right: max(16px, calc((78vw - 1200px) / 2 + 16px));
+    }
+}
+
+.cookie-banner__body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .cookie-banner__title {
     font-weight: 600;
     font-size: 18px;
-    line-height: 133%;
+    line-height: 24px;
     color: #181818;
-    margin: 0 0 8px;
+    margin: 0;
 }
 
 .cookie-banner__text {
     font-weight: 400;
     font-size: 14px;
-    line-height: 143%;
-    letter-spacing: 0.02em;
+    line-height: 20px;
+    letter-spacing: 0.25px;
     color: #181818;
     margin: 0;
 }
@@ -8524,10 +8537,11 @@ transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
     display: inline-block;
     font-weight: 600;
     font-size: 14px;
-    line-height: 143%;
-    letter-spacing: 0.01em;
+    line-height: 20px;
+    letter-spacing: 0.1px;
     color: #0058a3;
     text-decoration: none;
+    text-align: left;
 }
 
 .cookie-banner__settings-link:hover {
@@ -8538,7 +8552,7 @@ transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
 .cookie-banner__actions {
     display: flex;
     gap: 16px;
-    justify-content: space-between;
+    width: 100%;
 }
 
 /* ─── Shared buttons ────────────────────────────────────────────────────────── */
@@ -8552,14 +8566,21 @@ transform: scale(0.85) translateY(-0.9rem) translateX(0.15rem) !important;
 }
 
 .cookie-banner__btn {
-    padding: 10px 40px;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 40px;
+    height: 40px;
+    padding: 8px 16px;
     cursor: pointer;
     white-space: nowrap;
-    line-height: 143%;
-    letter-spacing: 0.01em;
+    line-height: 20px;
+    letter-spacing: 0.1px;
     text-align: center;
     color: var(--color-brand-primary);
-    max-width: 157px;
+    max-width: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .cookie-banner__btn--outline {
