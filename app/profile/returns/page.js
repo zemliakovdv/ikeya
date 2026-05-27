@@ -14,7 +14,16 @@ export default function ReturnsPage() {
   const [isOffcanvasOpen, setIsOffcanvasOpen] = useState(false);
 
   return (
-    <ProfileLayout breadcrumbs={breadcrumbs} mainClassName="vozvrat">
+    <ProfileLayout breadcrumbs={breadcrumbs} mainClassName="vozvrat returns-profile">
+      <div className="profile-mobile-topbar">
+        <a className="profile-mobile-topbar__back" href="/profile" aria-label="Назад в профиль">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12.5 15L7.5 10L12.5 5" stroke="#181818" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
+        <span className="profile-mobile-topbar__title">Возвраты</span>
+      </div>
+
       <div className="content">
 
         <button
@@ -36,37 +45,61 @@ export default function ReturnsPage() {
             <div id="collapseOne" className="accordion-collapse collapse">
               <div className="accordion-body">
                 <div className="return-reasons">
-                  <div className="return-table">
-                    <div className="return-table_header">
-                      <div className="return-table_row">
-                        <div className="return-table_col"><p>Причина</p></div>
-                        <div className="return-table_col"><p>Описание</p></div>
-                        <div className="return-table_col"><p>Срок для оформления заявки</p></div>
+                  <div className="return-reasons__head" aria-hidden="true">
+                    <div className="return-reasons__cell return-reasons__cell--reason">Причина</div>
+                    <div className="return-reasons__cell return-reasons__cell--description">Описание</div>
+                    <div className="return-reasons__cell return-reasons__cell--deadline">Срок для оформления заявки</div>
+                  </div>
+
+                  <div className="return-reasons__row">
+                    <div className="return-reasons__cell return-reasons__cell--reason">
+                      <span className="return-reasons__label">Причина</span>
+                      <div className="return-reasons__value">Товар повреждён при доставке</div>
+                    </div>
+                    <div className="return-reasons__cell return-reasons__cell--description">
+                      <span className="return-reasons__label">Описание</span>
+                      <div className="return-reasons__value">Вы обнаружили повреждение или деформацию товара при вскрытии посылки.</div>
+                    </div>
+                    <div className="return-reasons__cell return-reasons__cell--deadline">
+                      <span className="return-reasons__label">Срок для оформления заявки</span>
+                      <div className="return-reasons__value">1–3 дня.</div>
+                    </div>
+                  </div>
+
+                  <div className="return-reasons__row">
+                    <div className="return-reasons__cell return-reasons__cell--reason">
+                      <span className="return-reasons__label">Причина</span>
+                      <div className="return-reasons__value">Привезли не тот товар</div>
+                    </div>
+                    <div className="return-reasons__cell return-reasons__cell--description">
+                      <span className="return-reasons__label">Описание</span>
+                      <div className="return-reasons__value">Привезли не тот товар, модель или цвет.</div>
+                    </div>
+                    <div className="return-reasons__cell return-reasons__cell--deadline">
+                      <span className="return-reasons__label">Срок для оформления заявки</span>
+                      <div className="return-reasons__value">1–3 дня.</div>
+                    </div>
+                  </div>
+
+                  <div className="return-reasons__row">
+                    <div className="return-reasons__cell return-reasons__cell--reason">
+                      <span className="return-reasons__label">Причина</span>
+                      <div className="return-reasons__value">Проблемы с качеством товара</div>
+                    </div>
+                    <div className="return-reasons__cell return-reasons__cell--description">
+                      <span className="return-reasons__label">Описание</span>
+                      <div className="return-reasons__value">
+                        <p>Есть претензии к качеству товара:</p>
+                        <ul>
+                          <li>видимые повреждения;</li>
+                          <li>нет части товара или комплекта;</li>
+                          <li>товар не работает или работает плохо;</li>
+                        </ul>
                       </div>
                     </div>
-                    <div className="return-table_boby">
-                      <div className="return-table_row">
-                        <div className="return-table_col"><p>Товар повреждён при доставке</p></div>
-                        <div className="return-table_col"><p>Вы обнаружили повреждение или деформацию товара при вскрытии посылки.</p></div>
-                        <div className="return-table_col"><p>1–3 дня.</p></div>
-                      </div>
-                      <div className="return-table_row">
-                        <div className="return-table_col"><p>Привезли не тот товар</p></div>
-                        <div className="return-table_col"><p>Привезли не тот товар, модель или цвет.</p></div>
-                        <div className="return-table_col"><p>1–3 дня.</p></div>
-                      </div>
-                      <div className="return-table_row">
-                        <div className="return-table_col"><p>Проблемы с качеством товара</p></div>
-                        <div className="return-table_col">
-                          <p>Есть претензии к качеству товара:</p>
-                          <ul>
-                            <li>видимые повреждения;</li>
-                            <li>нет части товара или комплекта;</li>
-                            <li>товар не работает или работает плохо;</li>
-                          </ul>
-                        </div>
-                        <div className="return-table_col"><p>От 7 до 21 дня.</p></div>
-                      </div>
+                    <div className="return-reasons__cell return-reasons__cell--deadline">
+                      <span className="return-reasons__label">Срок для оформления заявки</span>
+                      <div className="return-reasons__value">От 7 до 21 дня.</div>
                     </div>
                   </div>
                 </div>
