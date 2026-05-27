@@ -166,7 +166,15 @@ function formatGender(val) {
   );
 
   return (
-    <>
+    <div className="personal-data-page">
+      <div className="profile-mobile-topbar">
+        <a className="profile-mobile-topbar__back" href="/profile" aria-label="Назад в профиль">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12.5 15L7.5 10L12.5 5" stroke="#181818" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
+        <span className="profile-mobile-topbar__title">Личные данные</span>
+      </div>
       {/* Баннер-предупреждение — над основным блоком */}
       {showBanner && (
         <div className="profile-warning-banner">
@@ -519,6 +527,6 @@ function formatGender(val) {
         <EditPassportModal profile={profile} onClose={closeModal} onSave={handleSave} />
       )}
       {modal && <div className="modal-backdrop fade show" onClick={closeModal} />}
-    </>
+    </div>
   );
 }

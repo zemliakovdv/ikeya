@@ -12,7 +12,7 @@ const breadcrumbs = [
 
 export default function SettingsPage() {
   return (
-    <ProfileLayout breadcrumbs={breadcrumbs} mainClassName="persdata">
+    <ProfileLayout breadcrumbs={breadcrumbs} mainClassName="persdata settings-profile">
       <PersonalSettings />
     </ProfileLayout>
   );

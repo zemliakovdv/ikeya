@@ -8,7 +8,7 @@ export default function PersonalDataPage() {
   ];
 
   return (
-    <ProfileLayout breadcrumbs={breadcrumbs}>
+    <ProfileLayout breadcrumbs={breadcrumbs} mainClassName="zakazi personal-data-profile">
       <PersonalData />
     </ProfileLayout>
   );

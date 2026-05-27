@@ -67,7 +67,17 @@ export default function PersonalSettings() {
   }
 
   return (
-    <div className="content">
+    <div className="settings-page">
+      <div className="profile-mobile-topbar">
+        <a className="profile-mobile-topbar__back" href="/profile" aria-label="Назад в профиль">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M12.5 15L7.5 10L12.5 5" stroke="#181818" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </a>
+        <span className="profile-mobile-topbar__title">Настройки</span>
+      </div>
+
+      <div className="content">
 
       {/* Telegram */}
       <div className="setting">
@@ -113,6 +123,7 @@ export default function PersonalSettings() {
         </div>
       </div>
 
+      </div>
     </div>
   );
 }
