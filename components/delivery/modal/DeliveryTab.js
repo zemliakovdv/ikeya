@@ -139,16 +139,18 @@ export default function DeliveryTab({
   const geocodeAddress = useCallback((address) => {
     if (!ymapsReady || !address.trim()) return;
 
-    window.ymaps.geocode(address, { results: 1 }).then((res) => {
-      const obj = res.geoObjects.get(0);
+    window.ymaps.ready(() => {
+      window.ymaps.geocode(address, { results: 1 }).then((res) => {
+        const obj = res.geoObjects.get(0);
 
-      if (!obj) return;
+        if (!obj) return;
 
-      const pos = obj.geometry.getCoordinates();
+        const pos = obj.geometry.getCoordinates();
 
-      setCoords(pos);
-      setPinCoords(pos);
-      parseGeoAddress(obj);
+        setCoords(pos);
+        setPinCoords(pos);
+        parseGeoAddress(obj);
+      });
     });
   }, [ymapsReady]);
 
