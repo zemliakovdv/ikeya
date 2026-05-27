@@ -84,7 +84,7 @@ function normalizeSummaryResponse(response) {
 
   const meta = response?.meta || summary?.meta || response?.data?.meta || {};
 
-  const subtotal = toNumber(
+const subtotal = toNumber(
     summary.subtotal_new_byn ??
     summary.items_total_byn ??
     response?.subtotal_new_byn ??
@@ -174,13 +174,12 @@ export default function CartPageClient() {
     DEFAULT_MIN_ORDER_AMOUNT
   );
 
-  useEffect(() => {
+useEffect(() => {
     function onAuthDone() {
       const pending = sessionStorage.getItem('pendingCheckout');
-
       if (pending) {
-        sessionStorage.removeItem('pendingCheckout');
-        setTimeout(() => handleCheckoutAuthorizedRef.current?.(), 1500);
+        // Не удаляем pendingCheckout здесь — второй useEffect сработает
+        // когда availableItems обновятся после mergeGuestCart
       }
     }
 

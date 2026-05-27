@@ -52,7 +52,7 @@ export default function CartPage() {
       const added = skus.filter(sku => !prev.includes(sku));
       return [...filtered, ...added];
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [availableSkusKey]);
 
   // Пересчёт доставки при изменении выбранных товаров
@@ -76,6 +76,7 @@ export default function CartPage() {
 
   // Считаем данные только для выбранных товаров
   const selectedData = useMemo(() => {
+
     if (!selectedItems.length) return { subtotal: 0, promoDiscount: 0, itemCount: 0, totalWeight: 0 };
 
     const allItems = availableItems || [];

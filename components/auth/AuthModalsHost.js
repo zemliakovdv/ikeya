@@ -8,10 +8,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { getCartToken, getCart } from '@/lib/api/cart';
 
-import LoginModal    from '@/components/auth/LoginModal';
-import CodeModal     from '@/components/auth/CodeModal';
+import LoginModal from '@/components/auth/LoginModal';
+import CodeModal from '@/components/auth/CodeModal';
 import RegisterModal from '@/components/auth/RegisterModal';
-import SuccessModal  from '@/components/auth/SuccessModal';
+import SuccessModal from '@/components/auth/SuccessModal';
 
 const AuthModalsContext = createContext(null);
 
@@ -20,25 +20,25 @@ export function AuthModalsProvider({ children }) {
   const router = useRouter();
   const redirectAfterAuth = useRef(null);
   const { mergeGuestCart } = useCart();
-  const [active, setActive]   = useState(null); // null|'login'|'register'|'code'|'success'
-  const [flow,   setFlow]     = useState('login'); // 'login'|'register'
+  const [active, setActive] = useState(null); // null|'login'|'register'|'code'|'success'
+  const [flow, setFlow] = useState('login'); // 'login'|'register'
 
   // форма
-  const [phoneDigits,       setPhoneDigits]       = useState('');
-  const [username,          setUsername]           = useState('');
-  const [email,             setEmail]              = useState('');
-  const [consentPersonal,   setConsentPersonal]    = useState(true);
-  const [consentMarketing,  setConsentMarketing]   = useState(true);
+  const [phoneDigits, setPhoneDigits] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [consentPersonal, setConsentPersonal] = useState(true);
+  const [consentMarketing, setConsentMarketing] = useState(true);
 
   // code modal
-  const [codeDigits,    setCodeDigits]    = useState(['', '', '', '']);
-  const [sendMessage,   setSendMessage]   = useState(''); // { message } из phoneSend
+  const [codeDigits, setCodeDigits] = useState(['', '', '', '']);
+  const [sendMessage, setSendMessage] = useState(''); // { message } из phoneSend
 
   // UI
-  const [loading,           setLoading]           = useState(false);
-  const [errorText,         setErrorText]          = useState('');
-  const [showNotRegistered, setShowNotRegistered]  = useState(false);
-  const [showPhoneUsed,     setShowPhoneUsed]      = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState('');
+  const [showNotRegistered, setShowNotRegistered] = useState(false);
+  const [showPhoneUsed, setShowPhoneUsed] = useState(false);
 
   // ===== helpers =====
 
@@ -67,7 +67,7 @@ export function AuthModalsProvider({ children }) {
     setActive('register');
   }
 
-  function openCode()    { resetUi(); setActive('code');    }
+  function openCode() { resetUi(); setActive('code'); }
   function openSuccess() { resetUi(); setActive('success'); }
 
   function fullPhone() {
@@ -110,7 +110,6 @@ export function AuthModalsProvider({ children }) {
       }
 
       const resp = await phoneSend({ phone });
-      console.log('📞 phoneSend response:', resp);
       setSendMessage(resp.message || '');
       setCodeDigits(['', '', '', '']);
       openCode();
@@ -142,7 +141,6 @@ export function AuthModalsProvider({ children }) {
       // ✅ Сохраняем гостевые товары ДО логина
       const guestCartResp = await getCart();
       const guestItems = guestCartResp?.cart?.items || [];
-      console.log('🛒 guestItems:', guestItems, 'cart:', guestCartResp?.cart);
 
       const resp = await phoneVerify({
         phone,
@@ -150,21 +148,20 @@ export function AuthModalsProvider({ children }) {
         cart_token: getCartToken(),
         ...(flow === 'register' && {
           username: username.trim() || undefined,
-          email:    email.trim()    || undefined,
+          email: email.trim() || undefined,
         }),
       });
-
-      console.log('✅ phoneVerify response:', resp);
 
       // ✅ Пишем auth_token в localStorage — addToCart уже уйдёт авторизованным
       setAuth({ token: resp.token, user: resp.user || null });
 
-      // ✅ Переносим гостевые товары через CartContext — он знает актуальный токен и стейт
-      await mergeGuestCart(guestItems);
-
-      // ✅ Только теперь говорим CartContext перезагрузить корзину —
-      // все товары уже на сервере, получим актуальное состояние
+      // Бэк сливает корзины через cart_token в phoneVerify — просто перезагружаем
       window.dispatchEvent(new Event('auth-change-done'));
+      setTimeout(async () => {
+        if (guestItems.length > 0) {
+          await mergeGuestCart(guestItems);
+        }
+      }, 1000);
 
       if (resp.is_new || flow === 'register') {
         openSuccess();
@@ -174,7 +171,6 @@ export function AuthModalsProvider({ children }) {
       }
     } catch (e) {
       const msg = e.message || 'Ошибка подтверждения.';
-      console.error('❌ phoneVerify error:', e);
 
       if (flow === 'login') {
         if (e.status === 401) {

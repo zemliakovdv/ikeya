@@ -78,7 +78,6 @@ export function CartProvider({ children }) {
   const fetchCart = useCallback(async () => {
     try {
       setLoading(true);
-
       const response = await cartAPI.getCart();
       let nextCart = response.cart ? await enrichCartItems(response.cart) : null;
 
