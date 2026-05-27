@@ -411,7 +411,8 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .product-card-inner {
         width: calc((100% - 107px) / 4);
-        min-width: auto;
+        min-width: 258px;
+        max-width: 258px;
     }
 
     .more-inner .product-card-inner {
