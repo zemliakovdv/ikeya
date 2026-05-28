@@ -76,8 +76,7 @@ export default function StartSlider({ slides = [], type = 'single' }) {
 
       swiperRef.current = new window.Swiper(sliderEl, {
         loop: slideCount > 2,
-        slidesPerView: 1.06,
-        spaceBetween: 8,
+        slidesPerView: 1,
         speed: 600,
         watchOverflow: true,
         navigation: {
@@ -106,6 +105,14 @@ export default function StartSlider({ slides = [], type = 'single' }) {
             spaceBetween: 8,
           },
           992: {
+            slidesPerView: 1.02,
+            spaceBetween: 8,
+          },
+          1200: {
+            slidesPerView: 1,
+            spaceBetween: 0,
+          },
+          1400: {
             slidesPerView: 1,
             spaceBetween: 0,
           },

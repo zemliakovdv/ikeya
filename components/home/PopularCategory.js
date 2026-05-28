@@ -189,6 +189,7 @@ export default function PopularCategory({ categories = [] }) {
       mobileSwiperRef.current = new window.Swiper(sliderEl, {
         loop: false,
         slidesPerView: 3.45,
+        slidesPerGroup: 3,
         spaceBetween: 8,
         speed: 500,
         watchOverflow: true,
@@ -201,19 +202,33 @@ export default function PopularCategory({ categories = [] }) {
         breakpoints: {
           320: {
             slidesPerView: 3.45,
+            slidesPerGroup: 3,
             spaceBetween: 8,
           },
           360: {
             slidesPerView: 3.8,
+            slidesPerGroup: 3,
             spaceBetween: 8,
           },
           576: {
             slidesPerView: 5.5,
+            slidesPerGroup: 5,
             spaceBetween: 8,
           },
           768: {
-            slidesPerView: 6.6,
+            slidesPerView: 6,
+            slidesPerGroup: 6,
             spaceBetween: 12,
+          },
+          992: {
+            slidesPerView: 8,
+            slidesPerGroup: 8,
+            spaceBetween: 14,
+          },
+          1200: {
+            slidesPerView: 7,
+            slidesPerGroup: 7,
+            spaceBetween: 24,
           },
         },
       });

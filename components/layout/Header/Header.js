@@ -94,8 +94,18 @@ export default function Header() {
   useEffect(() => {
     if (!swiperElRef.current) return
 
+    const isHeaderBottomSliderRange = () =>
+      window.innerWidth >= 1200 && window.innerWidth <= 1399
+
+    const destroy = () => {
+      if (swiperInst.current) {
+        swiperInst.current.destroy(true, true)
+        swiperInst.current = null
+      }
+    }
+
     const init = () => {
-      if (!window.Swiper || swiperInst.current) return
+      if (!window.Swiper || swiperInst.current || !isHeaderBottomSliderRange()) return
 
       swiperInst.current = new window.Swiper(swiperElRef.current, {
         slidesPerView: 'auto',
@@ -110,19 +120,35 @@ export default function Header() {
       })
     }
 
-    if (window.Swiper) {
-      init()
-    } else {
-      window.addEventListener('swiper-ready', init, { once: true })
+    const syncSwiperByViewport = () => {
+      if (isHeaderBottomSliderRange()) {
+        init()
+      } else {
+        destroy()
+      }
     }
 
-    return () => {
-      window.removeEventListener('swiper-ready', init)
+    let resizeRaf = 0
+    const onResize = () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
+      resizeRaf = requestAnimationFrame(() => {
+        syncSwiperByViewport()
+      })
+    }
 
-      if (swiperInst.current) {
-        swiperInst.current.destroy(true, true)
-        swiperInst.current = null
-      }
+    if (window.Swiper) {
+      syncSwiperByViewport()
+    } else {
+      window.addEventListener('swiper-ready', syncSwiperByViewport)
+    }
+
+    window.addEventListener('resize', onResize)
+
+    return () => {
+      window.removeEventListener('swiper-ready', syncSwiperByViewport)
+      window.removeEventListener('resize', onResize)
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
+      destroy()
     }
   }, [])
 

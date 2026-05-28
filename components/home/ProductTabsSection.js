@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
 
 function toLocalImagePath(image) {
@@ -35,51 +35,6 @@ export default function ProductTabsSection({
   const retryTimerRef = useRef(0);
   const raf1Ref = useRef(0);
   const raf2Ref = useRef(0);
-
-  const [productsPerSlide, setProductsPerSlide] = useState(5);
-
-  useEffect(() => {
-    const updateProductsPerSlide = () => {
-      if (window.innerWidth <= 575) {
-        setProductsPerSlide(3);
-      } else if (window.innerWidth <= 767) {
-        setProductsPerSlide(3);
-      } else if (window.innerWidth <= 1399) {
-        setProductsPerSlide(4);
-      } else {
-        setProductsPerSlide(5);
-      }
-    };
-
-    updateProductsPerSlide();
-
-    window.addEventListener('resize', updateProductsPerSlide);
-
-    return () => {
-      window.removeEventListener('resize', updateProductsPerSlide);
-    };
-  }, []);
-
-  const chunkProducts = (products, size) => {
-    const chunks = [];
-
-    for (let i = 0; i < products.length; i += size) {
-      chunks.push(products.slice(i, i + size));
-    }
-
-    return chunks;
-  };
-
-  const slidesByTab = useMemo(() => {
-    const result = {};
-
-    tabs.forEach((tab) => {
-      const products = tabProducts[tab.id] || [];
-      result[tab.id] = chunkProducts(products, productsPerSlide);
-    });
-
-    return result;
-  }, [tabs, tabProducts, productsPerSlide]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -132,14 +87,49 @@ export default function ProductTabsSection({
         if (pagination) pagination.style.display = '';
 
         swipersRef.current[sliderId] = new window.Swiper(slider, {
-          slidesPerView: 1,
+          slidesPerView: 2,
           spaceBetween: 0,
+          breakpoints: {
+            0: {
+              slidesPerView: 2,
+              spaceBetween: 0,
+            },
+            360: {
+              slidesPerView: 2,
+              spaceBetween: 0,
+            },
+            576: {
+              slidesPerView: 3.25,
+              spaceBetween: 0,
+            },
+            768: {
+              slidesPerView: 3.5,
+              spaceBetween: 0,
+            },
+            992: {
+              slidesPerView: 4.5,
+              spaceBetween: 0,
+            },
+            1200: {
+              slidesPerView: 4,
+              spaceBetween: 0,
+            },
+            1400: {
+              slidesPerView: 5,
+              spaceBetween: 0,
+            },
+            1920: {
+              slidesPerView: 5,
+              spaceBetween: 0,
+            },
+          },
           loop: false,
           speed: 600,
           watchOverflow: true,
           pagination: {
             el: pagination,
             clickable: true,
+            dynamicBullets: true,
           },
           navigation: {
             nextEl: nextBtn,
@@ -186,7 +176,7 @@ export default function ProductTabsSection({
 
       destroySwipers();
     };
-  }, [tabs, tabProducts, productsPerSlide]);
+  }, [tabs, tabProducts]);
 
   if (tabs.length === 0 || Object.keys(tabProducts).length === 0) {
     return null;
@@ -219,7 +209,6 @@ export default function ProductTabsSection({
             <div className="tab-content products-tabs__content" id={`${sectionClass}-content`}>
               {tabs.map((tab, index) => {
                 const products = tabProducts[tab.id] || [];
-                const slides = slidesByTab[tab.id] || [];
 
                 return (
                   <div
@@ -239,49 +228,35 @@ export default function ProductTabsSection({
                           data-slider={`${sectionClass}-${tab.id}`}
                         >
                           <div className="swiper-wrapper">
-                            {slides.map((slideProducts, slideIndex) => (
-                              <div key={slideIndex} className="swiper-slide">
-                                <div className="row g-4 swiper-slide-inner">
-                                  {slideProducts.map((product, productIndex) => (
-                                    <ProductCard
-                                      key={product.id}
-                                      priority={index === 0 && slideIndex === 0 && productIndex < productsPerSlide}
-                                      product={{
-                                        id: product.id,
-                                        attributes: {
-                                          sku: product.sku,
-                                          small_desc_name: product.title,
-                                          name_ru: product.description,
-                                          price_byn: product.price,
-                                          local_images: (product.images || [])
-                                            .map(toLocalImagePath)
-                                            .filter(Boolean),
-                                          variants: product.variants || null,
-                                          is_bestseller: product.badges?.includes('hit'),
-                                          is_new: product.badges?.includes('new'),
-                                        },
-                                      }}
-                                    />
-                                  ))}
-
-                                  {slideProducts.length < productsPerSlide &&
-                                    Array.from({ length: productsPerSlide - slideProducts.length }).map((_, i) => (
-                                      <div
-                                        key={`empty-${i}`}
-                                        className="col product-card-inner"
-                                        style={{ visibility: 'hidden' }}
-                                      />
-                                    ))}
-                                </div>
+                            {products.map((product, productIndex) => (
+                              <div key={product.id} className="swiper-slide">
+                                <ProductCard
+                                  priority={index === 0 && productIndex < 5}
+                                  product={{
+                                    id: product.id,
+                                    attributes: {
+                                      sku: product.sku,
+                                      small_desc_name: product.title,
+                                      name_ru: product.description,
+                                      price_byn: product.price,
+                                      local_images: (product.images || [])
+                                        .map(toLocalImagePath)
+                                        .filter(Boolean),
+                                      variants: product.variants || null,
+                                      is_bestseller: product.badges?.includes('hit'),
+                                      is_new: product.badges?.includes('new'),
+                                    },
+                                  }}
+                                />
                               </div>
                             ))}
                           </div>
 
-                          {slides.length > 1 && (
+                          {products.length > 1 && (
                             <div className="products-slider__pagination" />
                           )}
 
-                          {slides.length > 1 && (
+                          {products.length > 1 && (
                             <>
                               <button
                                 className="products-slider__nav products-slider__nav-prev"

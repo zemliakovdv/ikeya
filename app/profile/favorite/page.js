@@ -6,6 +6,7 @@ import { useAuthModals } from '@/components/auth/AuthModalsHost';
 import Breadcrumbs from '@/components/profile/Breadcrumbs';
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
 import GuestFavoriteSidebar from '@/components/profile/GuestFavoriteSidebar';
+import { ProfileCountsProvider } from '@/components/profile/ProfileCountsContext';
 import Favorites from '@/components/profile/Favorites';
 
 export default function FavoritesPage() {
@@ -22,7 +23,7 @@ export default function FavoritesPage() {
   ];
 
   return (
-    <main className="zakazi">
+    <main className="zakazi favorite-profile">
       <Breadcrumbs items={breadcrumbs} />
 
       <section className="orders-page">
@@ -31,7 +32,15 @@ export default function FavoritesPage() {
             <div className="col-12">
               <div className="page">
                 <div className="profile-layout">
-                  {isHydrated && (isAuth ? <ProfileSidebar /> : <GuestFavoriteSidebar />)}
+                  {isHydrated && (
+                    isAuth ? (
+                      <ProfileCountsProvider>
+                        <ProfileSidebar />
+                      </ProfileCountsProvider>
+                    ) : (
+                      <GuestFavoriteSidebar />
+                    )
+                  )}
                   <div className="profile-content">
                     <Favorites />
                   </div>
