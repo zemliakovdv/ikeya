@@ -995,6 +995,10 @@ main {
     padding-bottom: 42px;
 }
 
+.grid-of-goods .swiper-slide-inner{
+    gap: 6px;
+}
+
 .product-card-inner {
     min-width: 290px;
     max-width: 290px;

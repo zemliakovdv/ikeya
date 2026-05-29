@@ -37,7 +37,7 @@ function mapApiProduct(product) {
     sku: attr.sku,
     title: attr.small_desc_name || attr.name_ru || attr.name || 'Без названия',
     description: attr.name_ru || attr.collection || '',
-    price: attr.price_byn ? `${parseFloat(attr.price_byn).toFixed(2)}` : '0.00',
+    price: attr.price_byn ? `${parseFloat(String(attr.price_byn).replace(/\s/g, '')).toFixed(2)}` : '0.00',
     images: normalizeLocalImages(attr.local_images),
     variants: attr.variants || null,
     badges: [
@@ -55,7 +55,7 @@ function mapGridProduct(product) {
     sku: product.sku,
     title: product.small_desc_name || product.name_ru || product.name || 'Без названия',
     description: product.name_ru || '',
-    price: product.price_byn ? `${parseFloat(product.price_byn).toFixed(2)}` : '0.00',
+    price: product.price_byn ? `${parseFloat(String(product.price_byn).replace(/\s/g, '')).toFixed(2)}` : '0.00',
     images: normalizeLocalImages(product.local_images),
     variants: product.variants || null,
     badges: [
@@ -70,6 +70,7 @@ function mapGridProduct(product) {
 export default async function ProductsGridBlock({ block }) {
   const gridProducts = Array.isArray(block.grid_products) ? block.grid_products : [];
 
+  console.log('grid_products raw:', JSON.stringify(gridProducts, null, 2));
   let mapped = gridProducts
     .filter(Boolean)
     .map(mapGridProduct)
