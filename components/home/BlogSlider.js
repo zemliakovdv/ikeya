@@ -222,7 +222,7 @@ export default function BlogSlider({ slides = [] }) {
       <div className="container">
         <div className="row">
           <div className="col-12">
-            <h2>Советы и лайфхаки</h2>
+            <h2>Советы и идеи</h2>
 
             <div className="blog-slider blog-slider--home blog-slider--desktop">
               <div ref={desktopSliderRef} className="blog-inner blog-inner--home swiper">
