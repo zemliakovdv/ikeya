@@ -4,37 +4,44 @@ import { useEffect, useRef } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
 import { stripBackendOrigin } from '@/lib/config/api';
 
-export default function ProductsGridSlider({ slides, blockId }) {
-  const swiperRef = useRef(null);
+const POLL_INTERVAL = 50;
+const POLL_TIMEOUT = 3000;
 
-  // ✅ отдельные инстансы галерей, чтобы корректно destroy()
+export default function ProductsGridSlider({ slides, blockId }) {
+  const containerRef = useRef(null);
+  const swiperRef = useRef(null);
   const galleryMainInstances = useRef({});
   const galleryThumbsInstances = useRef({});
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.Swiper) return;
+    let pollTimer = null;
+    let elapsed = 0;
 
-    let raf1 = 0;
-    let raf2 = 0;
-
-    const init = () => {
-      const el = document.querySelector(`.products-slider[data-slider="${blockId}"]`);
-      if (!el) return;
-
-      // ---- cleanup старых галерей (важно) ----
+    const destroy = () => {
+      if (swiperRef.current) {
+        swiperRef.current.destroy(true, true);
+        swiperRef.current = null;
+      }
       Object.values(galleryMainInstances.current).forEach((s) => s?.destroy?.(true, true));
       Object.values(galleryThumbsInstances.current).forEach((s) => s?.destroy?.(true, true));
       galleryMainInstances.current = {};
       galleryThumbsInstances.current = {};
+    };
 
-      // ✅ Инициализируем галереи ТОЛЬКО внутри текущего блока
+    const init = () => {
+      const el = containerRef.current;
+      if (!el) return;
+
+      destroy();
+
+      // Галереи внутри карточек
       el.querySelectorAll('.product-gallery-main').forEach((galleryEl) => {
         const galleryId = galleryEl.getAttribute('data-gallery');
         if (!galleryId) return;
 
         const thumbsEl = el.querySelector(`[data-gallery-thumbs="${galleryId}"]`);
-
         let thumbsSwiper = null;
+
         if (thumbsEl) {
           try {
             thumbsSwiper = new window.Swiper(thumbsEl, {
@@ -64,15 +71,9 @@ export default function ProductsGridSlider({ slides, blockId }) {
         }
       });
 
-      // ---- cleanup старого основного слайдера ----
-      if (swiperRef.current) {
-        swiperRef.current.destroy(true, true);
-        swiperRef.current = null;
-      }
-
-      // ✅ основной слайдер
+      // Основной слайдер
       try {
-        swiperRef.current = new window.Swiper(el, {
+        swiperRef.current = new window.Swiper(el.querySelector('.products-slider'), {
           slidesPerView: 1,
           spaceBetween: 0,
           loop: false,
@@ -90,37 +91,39 @@ export default function ProductsGridSlider({ slides, blockId }) {
       }
     };
 
-    // ✅ rAF x2 — даём DOM “устаканиться” после рендера карточек
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(init);
-    });
+    const poll = () => {
+      if (typeof window === 'undefined') return;
 
-    return () => {
-      if (raf1) cancelAnimationFrame(raf1);
-      if (raf2) cancelAnimationFrame(raf2);
-
-      // destroy основного
-      if (swiperRef.current) {
-        swiperRef.current.destroy(true, true);
-        swiperRef.current = null;
+      if (window.Swiper && containerRef.current) {
+        init();
+        return;
       }
 
-      // destroy галерей
-      Object.values(galleryMainInstances.current).forEach((s) => s?.destroy?.(true, true));
-      Object.values(galleryThumbsInstances.current).forEach((s) => s?.destroy?.(true, true));
-      galleryMainInstances.current = {};
-      galleryThumbsInstances.current = {};
+      elapsed += POLL_INTERVAL;
+      if (elapsed >= POLL_TIMEOUT) {
+        console.warn(`ProductsGridSlider [${blockId}]: Swiper не загружен за ${POLL_TIMEOUT}ms`);
+        return;
+      }
+
+      pollTimer = setTimeout(poll, POLL_INTERVAL);
+    };
+
+    poll();
+
+    return () => {
+      if (pollTimer) clearTimeout(pollTimer);
+      destroy();
     };
   }, [slides, blockId]);
 
   return (
-    <div className="products-card-slider">
+    <div className="products-card-slider" ref={containerRef}>
       <div className="products-slider swiper" data-slider={blockId}>
         <div className="swiper-wrapper">
           {slides.map((slideProducts, index) => (
             <div key={index} className="swiper-slide">
               <div className="row g-4 swiper-slide-inner">
-                {slideProducts.map(product => (
+                {slideProducts.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={{
@@ -130,13 +133,13 @@ export default function ProductsGridSlider({ slides, blockId }) {
                         small_desc_name: product.title,
                         name_ru: product.description,
                         price_byn: product.price,
-                        local_images: (product.images || []).map(img =>
+                        local_images: (product.images || []).map((img) =>
                           stripBackendOrigin(img)
                         ),
                         variants: product.variants || null,
                         is_bestseller: product.badges?.includes('hit'),
                         is_new: product.badges?.includes('new'),
-                      }
+                      },
                     }}
                   />
                 ))}
@@ -145,7 +148,7 @@ export default function ProductsGridSlider({ slides, blockId }) {
           ))}
         </div>
 
-        {slides.length > 1 && <div className="products-slider__pagination"></div>}
+        {slides.length > 1 && <div className="products-slider__pagination" />}
         {slides.length > 1 && (
           <>
             <button className="products-slider__nav products-slider__nav-prev" type="button">

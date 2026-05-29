@@ -70,7 +70,6 @@ function mapGridProduct(product) {
 export default async function ProductsGridBlock({ block }) {
   const gridProducts = Array.isArray(block.grid_products) ? block.grid_products : [];
 
-  console.log('grid_products raw:', JSON.stringify(gridProducts, null, 2));
   let mapped = gridProducts
     .filter(Boolean)
     .map(mapGridProduct)
