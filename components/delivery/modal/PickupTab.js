@@ -31,6 +31,7 @@ export default function PickupTab({
   onSelect,
   activeTab,
   setActiveTab,
+  hideTabs = false,
 }) {
   const [allPoints, setAllPoints] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -236,23 +237,25 @@ export default function PickupTab({
     <>
       <div className={`pvz-layout pvz-layout--${mobileView} ${selectedPoint ? 'pvz-layout--pickup-detail' : 'pvz-layout--pickup-list'}`}>
         <aside className={`pvz-sidebar ${mobileView === 'list' ? 'is-active' : ''}`}>
-          <div className="pvz-modal__tabs">
-            <button
-              type="button"
-              className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
-              onClick={() => setActiveTab?.('pickup')}
-            >
-              Самовывоз
-            </button>
+          {!hideTabs && (
+            <div className="pvz-modal__tabs">
+              <button
+                type="button"
+                className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
+                onClick={() => setActiveTab?.('pickup')}
+              >
+                Самовывоз
+              </button>
 
-            <button
-              type="button"
-              className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
-              onClick={() => setActiveTab?.('delivery')}
-            >
-              Доставка
-            </button>
-          </div>
+              <button
+                type="button"
+                className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
+                onClick={() => setActiveTab?.('delivery')}
+              >
+                Доставка
+              </button>
+            </div>
+          )}
 
           <div className="pvz-sidebar__list-content">
               <div className="pvz-search">

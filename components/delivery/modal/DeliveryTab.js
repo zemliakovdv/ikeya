@@ -42,6 +42,7 @@ export default function DeliveryTab({
   onSelect,
   activeTab,
   setActiveTab,
+  hideTabs = false,
 }) {
   const [form, setForm] = useState({
     fullAddress: '',
@@ -334,23 +335,25 @@ export default function DeliveryTab({
   return (
     <div className={`pvz-layout pvz-layout--delivery-${step}`}>
       <aside className="pvz-sidebar">
-        <div className="pvz-modal__tabs">
-          <button
-            type="button"
-            className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
-            onClick={() => setActiveTab?.('pickup')}
-          >
-            Самовывоз
-          </button>
+        {!hideTabs && (
+          <div className="pvz-modal__tabs">
+            <button
+              type="button"
+              className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
+              onClick={() => setActiveTab?.('pickup')}
+            >
+              Самовывоз
+            </button>
 
-          <button
-            type="button"
-            className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
-            onClick={() => setActiveTab?.('delivery')}
-          >
-            Доставка
-          </button>
-        </div>
+            <button
+              type="button"
+              className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
+              onClick={() => setActiveTab?.('delivery')}
+            >
+              Доставка
+            </button>
+          </div>
+        )}
 
         {step === 'form' && (
           <>

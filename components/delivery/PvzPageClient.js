@@ -25,13 +25,14 @@ export default function PvzPageClient() {
           onLoad={() => setYmapsReady(true)}
         />
       )}
-      <PickupTab
+<PickupTab
         ymapsReady={ymapsReady}
         cartToken={null}
         cartItems={[]}
         onSelect={null}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        hideTabs={true}
       />
     </>
   );

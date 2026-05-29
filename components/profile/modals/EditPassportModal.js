@@ -1,7 +1,7 @@
 // components/profile/modals/EditPassportModal.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { updateProfile, getProfile, requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import DatePicker from '@/components/ui/DatePicker';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
@@ -26,10 +26,12 @@ const RE_ALPHANUMERIC_LATIN = /^[A-Za-z0-9]+$/;
 const RE_HOUSE          = /^[0-9]+([/А-ЯЁа-яёA-Za-z])?$/;
 
 // Фильтры для блокировки ввода
-const LATIN_CHARS       = /^[A-Za-z]$/;
-const LATIN_DIGIT_CHARS = /^[A-Za-z0-9]$/;
-const DIGIT_CHARS       = /^[0-9]$/;
-const HOUSE_CHARS       = /^[0-9/А-ЯЁа-яёA-Za-z]$/;
+const LATIN_CHARS        = /^[A-Za-z]$/;
+const LATIN_DIGIT_CHARS  = /^[A-Za-z0-9]$/;
+const CYRILLIC_CHARS     = /^[а-яёА-ЯЁ]$/;
+const LATIN_IN_STRING    = /[A-Za-z]/;
+const DIGIT_CHARS        = /^[0-9]$/;
+const HOUSE_CHARS        = /^[0-9/А-ЯЁа-яёA-Za-z]$/;
 
 // ─── Валидатор одного поля ───────────────────────────────────────────────────
 function validateField(name, value) {
@@ -48,7 +50,7 @@ function validateField(name, value) {
       return '';
     case 'series':
       if (!value.trim()) return 'Введите серию паспорта';
-      if (!RE_LATIN_ONLY.test(value.trim()) || value.trim().length !== 2) return 'Только латиница';
+      if (!RE_LATIN_ONLY.test(value.trim()) || value.trim().length !== 2) return 'Только латиница, 2 буквы';
       return '';
     case 'number':
       if (!value.trim()) return 'Введите номер паспорта';
@@ -56,7 +58,7 @@ function validateField(name, value) {
       return '';
     case 'identification_number':
       if (!value.trim()) return 'Введите идентификационный номер';
-      if (!RE_ALPHANUMERIC_LATIN.test(value.trim()) || value.trim().length !== 14) return '14 символов';
+      if (!RE_ALPHANUMERIC_LATIN.test(value.trim()) || value.trim().length !== 14) return '14 символов латиница и цифры';
       return '';
     case 'dob': {
       if (!value) return 'Введите дату рождения';
@@ -85,6 +87,7 @@ function validateField(name, value) {
       return '';
     case 'issued_by':
       if (!value.trim()) return 'Введите кем выдан';
+      if (LATIN_IN_STRING.test(value)) return 'Только кириллица';
       return '';
     default:
       return '';
@@ -115,6 +118,16 @@ function FieldError({ error }) {
   );
 }
 
+// ─── Нотификейшн под полем ───────────────────────────────────────────────────
+function FieldWarning({ warning }) {
+  if (!warning) return null;
+  return (
+    <p style={{ color: '#e65100', fontSize: '12px', marginTop: '4px', marginBottom: 0 }}>
+      {warning}
+    </p>
+  );
+}
+
 export default function EditPassportModal({ profile, onClose, onSave }) {
   const passport = profile?.passport_data || {};
 
@@ -139,32 +152,62 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     apartment:             passport.apartment             || '',
   });
 
-  // touched — помечаем поле как "тронутое" после первого blur или submit
   const [touched,        setTouched]        = useState({});
   const [fieldErrors,    setFieldErrors]    = useState({});
+  const [inputWarnings,  setInputWarnings]  = useState({});
   const [verificationId,     setVerificationId]     = useState(null);
   const [callerNumberMasked, setCallerNumberMasked] = useState('');
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState('');
 
-  // Установить значение с блокировкой недопустимых символов
+  const warningTimers = useRef({});
+
+  function showWarning(key, message) {
+    setInputWarnings(prev => ({ ...prev, [key]: message }));
+    if (warningTimers.current[key]) clearTimeout(warningTimers.current[key]);
+    warningTimers.current[key] = setTimeout(() => {
+      setInputWarnings(prev => ({ ...prev, [key]: '' }));
+    }, 2000);
+  }
+
   function set(key, rawValue) {
     let value = rawValue;
+    let warned = false;
 
-    // Блокируем недопустимые символы на уровне ввода
     if (key === 'series') {
+      // Проверяем есть ли кириллица в новых символах
+      const hasCyrillic = rawValue.split('').some(c => CYRILLIC_CHARS.test(c));
+      if (hasCyrillic) {
+        showWarning('series', 'Только латиница');
+        warned = true;
+      }
       value = rawValue.split('').filter(c => LATIN_CHARS.test(c)).join('').toUpperCase();
+    } else if (key === 'identification_number') {
+      const hasCyrillic = rawValue.split('').some(c => CYRILLIC_CHARS.test(c));
+      if (hasCyrillic) {
+        showWarning('identification_number', 'Только латиница');
+        warned = true;
+      }
+      value = rawValue.split('').filter(c => LATIN_DIGIT_CHARS.test(c)).join('').toUpperCase();
+    } else if (key === 'issued_by') {
+      const hasLatin = LATIN_IN_STRING.test(rawValue);
+      if (hasLatin) {
+        showWarning('issued_by', 'Только кириллица');
+        warned = true;
+      }
+      value = rawValue.split('').filter(c => !LATIN_CHARS.test(c)).join('');
     } else if (key === 'number' || key === 'postcode') {
       value = rawValue.split('').filter(c => DIGIT_CHARS.test(c)).join('');
-    } else if (key === 'identification_number') {
-      value = rawValue.split('').filter(c => LATIN_DIGIT_CHARS.test(c)).join('').toUpperCase();
     } else if (key === 'house') {
       value = rawValue.split('').filter(c => HOUSE_CHARS.test(c)).join('');
     }
 
+    if (!warned && inputWarnings[key]) {
+      setInputWarnings(prev => ({ ...prev, [key]: '' }));
+    }
+
     setForm(prev => ({ ...prev, [key]: value }));
 
-    // Если поле уже тронуто — валидируем в реальном времени
     if (touched[key]) {
       setFieldErrors(prev => ({ ...prev, [key]: validateField(key, value) }));
     }
@@ -179,7 +222,6 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     e.preventDefault();
     setError('');
 
-    // Помечаем все поля как тронутые
     const allFields = [
       'first_name', 'last_name', 'middle_name',
       'series', 'number', 'identification_number',
@@ -205,11 +247,26 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
       const resp = await requestA1Verification(phone, 'passport_update');
       setVerificationId(resp.verification_id);
       setCallerNumberMasked(resp.caller_number_masked || '');
+      setLoading(false);
       setStep(STEPS.CODE);
     } catch (err) {
-      setError(err.message || 'Ошибка сохранения');
-    } finally {
+      if (err?.payload?.code === 'passport_verification_required') {
+        const phone = profile?.phone;
+        if (!phone) { setLoading(false); setError('Телефон не указан в профиле'); return; }
+        try {
+          const resp = await requestA1Verification(phone, 'passport_update');
+          setVerificationId(resp.verification_id);
+          setCallerNumberMasked(resp.caller_number_masked || '');
+          setLoading(false);
+          setStep(STEPS.CODE);
+        } catch (a1Err) {
+          setLoading(false);
+          setError(a1Err.message || 'Ошибка запроса верификации');
+        }
+        return;
+      }
       setLoading(false);
+      setError(err.message || 'Ошибка сохранения');
     }
   };
 
@@ -254,7 +311,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
         />
         <div
           className="modal-backdrop fade show"
-          style={{ zIndex: 1054, background: 'rgba(24, 24, 24, 0.36)' }}
+          style={{ zIndex: 1056, background: 'rgba(24, 24, 24, 0.36)' }}
         />
       </>
     );
@@ -340,6 +397,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           onBlur={() => handleBlur('series')}
                         />
                         <label>Серия паспорта <span className="req">*</span></label>
+                        <FieldWarning warning={inputWarnings.series} />
                         <FieldError error={fieldErrors.series} />
                       </div>
                       <div className="form-group form-floating">
@@ -373,6 +431,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                         onChange={e => set('issued_by', e.target.value)}
                         onBlur={() => handleBlur('issued_by')}
                       />
+                      <FieldWarning warning={inputWarnings.issued_by} />
                       <FieldError error={fieldErrors.issued_by} />
                     </div>
 
@@ -389,6 +448,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                           onBlur={() => handleBlur('identification_number')}
                         />
                         <label>Идентификационный номер <span className="req">*</span></label>
+                        <FieldWarning warning={inputWarnings.identification_number} />
                         <FieldError error={fieldErrors.identification_number} />
                       </div>
                       <div className="datepicker-wrap">

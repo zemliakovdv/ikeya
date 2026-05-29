@@ -4297,6 +4297,7 @@
     }
 
     @media (min-width: 1200px) and (max-width: 1399px) {
+
         .zakazi .orders-page>.container {
             max-width: 1128px;
             padding-left: 0;
@@ -4479,6 +4480,7 @@
     }
 
     @media (min-width: 1400px) and (max-width: 1919px) {
+
         .favorite-profile .all-catalog-items .product-card-inner {
             max-width: 215px;
             min-width: 215px;

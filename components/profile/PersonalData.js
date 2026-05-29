@@ -7,6 +7,8 @@ import { getProfile, updateProfile } from '@/lib/api/account';
 
 import EditPersonalDataModal from './modals/EditPersonalDataModal';
 import DeliveryModal from '@/components/delivery/modal/DeliveryModal';
+import DeliveryTab from '@/components/delivery/modal/DeliveryTab';
+import Script from 'next/script';
 import EditPhoneModal from './modals/EditPhoneModal';
 import EditEmailModal from './modals/EditEmailModal';
 import EditPassportModal from './modals/EditPassportModal';
@@ -31,6 +33,9 @@ export default function PersonalData() {
   const [loading, setLoading] = useState(true);
   const [showPassportData, setShowPassportData] = useState(false);
   const [modal, setModal] = useState(null);
+  const [ymapsReady, setYmapsReady] = useState(
+    typeof window !== 'undefined' && !!window.ymaps
+  );
 
   // Список адресов доставки из localStorage
   const [addresses, setAddresses] = useState(() => {
@@ -351,7 +356,7 @@ function formatGender(val) {
                 ) : (
                   <div className="data-item">
                     <p className="data-item__value data-item__value--empty">
-                      Добавьте адрес доставки, чтобы не заполнять его каждый раз при оформлении заказа.
+                      Добавьте адрес доставки курьером, чтобы не заполнять его каждый раз при оформлении заказа.
                     </p>
                   </div>
                 )}
@@ -515,13 +520,48 @@ function formatGender(val) {
           verifyOnly={true}
         />
       )}
-      {modal === 'address' && (
-        <DeliveryModal
-          initialTab="pickup"
-          onClose={closeModal}
-          onSelectPvz={(point) => { handleAddAddress(point); closeModal(); }}
-          onSelectAddr={(addr) => { handleAddAddress(addr); closeModal(); }}
-        />
+{modal === 'address' && (
+        <>
+          {typeof window !== 'undefined' && !window.ymaps && (
+            <Script
+              src="https://api-maps.yandex.ru/2.1/?apikey=ee57964a-5010-4536-9733-41c78d29d531&lang=ru_RU"
+              strategy="afterInteractive"
+              onLoad={() => setYmapsReady(true)}
+            />
+          )}
+          <div
+            className="modal fade show d-block checkout-pvz-modal delivery-mode"
+            style={{ zIndex: 1055 }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="modal-dialog modal-fullscreen">
+              <div className="modal-content pvz-modal">
+                <div className="pvz-modal__header">
+                  <h5 className="pvz-modal__title">Адрес доставки</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={closeModal}
+                    aria-label="Закрыть"
+                  />
+                </div>
+                <div className="pvz-modal__body">
+                  <DeliveryTab
+                    ymapsReady={ymapsReady}
+                    hideTabs={true}
+                    onSelect={(addr) => { handleAddAddress(addr); closeModal(); }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop fade show"
+            onClick={closeModal}
+            style={{ zIndex: 1054 }}
+          />
+        </>
       )}
       {modal === 'passport' && (
         <EditPassportModal profile={profile} onClose={closeModal} onSave={handleSave} />
