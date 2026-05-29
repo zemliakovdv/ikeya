@@ -1571,9 +1571,10 @@
     /* toggle */
     .toggle {
         position: relative;
-        width: 36px;
+        width: 39px;
         height: 24px;
         border-radius: 100px;
+        min-width: 39px;
     }
 
     .toggle input {
@@ -1594,7 +1595,7 @@
         position: absolute;
         width: 20px;
         height: 20px;
-        left: 1px;
+        left: 3px;
         top: 2px;
         background: #fff;
         border-radius: 50%;
@@ -4319,7 +4320,7 @@
     }
 
     @media (min-width: 1200px) and (max-width: 1919px) {
-        .vozvrat .orders-page > .container {
+        .vozvrat .orders-page>.container {
             max-width: 1400px;
             padding-left: 32px;
             padding-right: 32px;
@@ -4417,7 +4418,7 @@
             min-width: 0;
         }
 
-        .favorite-profile .orders-page > .container {
+        .favorite-profile .orders-page>.container {
             max-width: 1336px;
             padding-left: 0;
             padding-right: 0;
@@ -4518,7 +4519,7 @@
             display: none;
         }
 
-        .zakazi .orders-page > .container {
+        .zakazi .orders-page>.container {
             max-width: 960px;
             padding-left: 16px;
             padding-right: 16px;
@@ -4532,12 +4533,12 @@
             overflow-x: hidden;
         }
 
-        .zakazi .profile-layout > .sidebar,
-        .zakazi .profile-layout > .profile-content {
+        .zakazi .profile-layout>.sidebar,
+        .zakazi .profile-layout>.profile-content {
             display: contents;
         }
 
-        .zakazi .profile-layout > .profile-content > * {
+        .zakazi .profile-layout>.profile-content>* {
             order: 2;
             width: 100%;
         }
@@ -4561,22 +4562,22 @@
             line-height: 18px;
         }
 
-        .zakazi .profile-content > .summary {
+        .zakazi .profile-content>.summary {
             display: none;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(2) {
+        .zakazi .profile-content>.block:nth-of-type(2) {
             display: none;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(3) {
+        .zakazi .profile-content>.block:nth-of-type(3) {
             order: 2;
             width: 100%;
             margin: 0;
             padding: 12px 16px;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(3) .block-title {
+        .zakazi .profile-content>.block:nth-of-type(3) .block-title {
             font-size: 15px;
             line-height: 20px;
         }
@@ -4618,7 +4619,7 @@
             display: none;
         }
 
-        .zakazi .orders-page > .container {
+        .zakazi .orders-page>.container {
             max-width: 736px;
             padding-left: 16px;
             padding-right: 16px;
@@ -4632,12 +4633,12 @@
             overflow-x: hidden;
         }
 
-        .zakazi .profile-layout > .sidebar,
-        .zakazi .profile-layout > .profile-content {
+        .zakazi .profile-layout>.sidebar,
+        .zakazi .profile-layout>.profile-content {
             display: contents;
         }
 
-        .zakazi .profile-layout > .profile-content > * {
+        .zakazi .profile-layout>.profile-content>* {
             order: 2;
             width: 100%;
         }
@@ -4661,22 +4662,22 @@
             line-height: 18px;
         }
 
-        .zakazi .profile-content > .summary {
+        .zakazi .profile-content>.summary {
             display: none;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(2) {
+        .zakazi .profile-content>.block:nth-of-type(2) {
             display: none;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(3) {
+        .zakazi .profile-content>.block:nth-of-type(3) {
             order: 2;
             width: 100%;
             margin: 0;
             padding: 12px 16px;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(3) .block-title {
+        .zakazi .profile-content>.block:nth-of-type(3) .block-title {
             font-size: 15px;
             line-height: 20px;
         }
@@ -4718,7 +4719,7 @@
             display: none;
         }
 
-        .zakazi .orders-page > .container {
+        .zakazi .orders-page>.container {
             max-width: 544px;
             padding-left: 16px;
             padding-right: 16px;
@@ -4732,12 +4733,12 @@
             overflow-x: hidden;
         }
 
-        .zakazi .profile-layout > .sidebar,
-        .zakazi .profile-layout > .profile-content {
+        .zakazi .profile-layout>.sidebar,
+        .zakazi .profile-layout>.profile-content {
             display: contents;
         }
 
-        .zakazi .profile-layout > .profile-content > * {
+        .zakazi .profile-layout>.profile-content>* {
             order: 2;
             width: 100%;
         }
@@ -4761,22 +4762,22 @@
             line-height: 18px;
         }
 
-        .zakazi .profile-content > .summary {
+        .zakazi .profile-content>.summary {
             display: none;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(2) {
+        .zakazi .profile-content>.block:nth-of-type(2) {
             display: none;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(3) {
+        .zakazi .profile-content>.block:nth-of-type(3) {
             order: 2;
             width: 100%;
             margin: 0;
             padding: 12px 16px;
         }
 
-        .zakazi .profile-content > .block:nth-of-type(3) .block-title {
+        .zakazi .profile-content>.block:nth-of-type(3) .block-title {
             font-size: 15px;
             line-height: 20px;
         }
@@ -4814,7 +4815,7 @@
             display: none;
         }
 
-        .returns-profile .orders-page > .container {
+        .returns-profile .orders-page>.container {
             max-width: 960px;
             padding-left: 16px;
             padding-right: 16px;
@@ -4824,7 +4825,7 @@
             display: block;
         }
 
-        .returns-profile .profile-layout > .sidebar {
+        .returns-profile .profile-layout>.sidebar {
             display: none;
         }
 
@@ -4871,7 +4872,7 @@
             display: none;
         }
 
-        .personal-data-profile .orders-page > .container {
+        .personal-data-profile .orders-page>.container {
             max-width: 960px;
             padding-left: 16px;
             padding-right: 16px;
@@ -4882,7 +4883,7 @@
             display: block;
         }
 
-        .personal-data-profile .profile-layout > .sidebar {
+        .personal-data-profile .profile-layout>.sidebar {
             display: none;
         }
 
@@ -4953,7 +4954,7 @@
             display: none;
         }
 
-        .settings-profile .orders-page > .container {
+        .settings-profile .orders-page>.container {
             width: 100%;
             max-width: 100%;
             padding-left: 16px;
@@ -4965,7 +4966,7 @@
             display: block;
         }
 
-        .settings-profile .profile-layout > .sidebar {
+        .settings-profile .profile-layout>.sidebar {
             display: none;
         }
 
@@ -5033,6 +5034,7 @@
             word-break: break-word;
             overflow-wrap: anywhere;
         }
+
     }
 
     @media (max-width: 767px) {

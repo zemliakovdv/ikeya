@@ -211,8 +211,8 @@ export default function PopularCategory({ categories = [] }) {
             spaceBetween: 8,
           },
           576: {
-            slidesPerView: 5.5,
-            slidesPerGroup: 5,
+            slidesPerView: 6,
+            slidesPerGroup: 6,
             spaceBetween: 8,
           },
           768: {

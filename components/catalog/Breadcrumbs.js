@@ -1,10 +1,14 @@
 // components/catalog/Breadcrumbs.js
 import Link from 'next/link';
 
-export default function Breadcrumbs({ items }) {
+export default function Breadcrumbs({ items, mobileBackItem = null }) {
   if (!items || items.length === 0) {
     return null;
   }
+
+  const mobileBackLabel = mobileBackItem?.name || mobileBackItem?.label || 'Каталог';
+  const mobileBackHref = mobileBackItem?.href || '/catalog';
+  const breadcrumbsClassName = mobileBackItem ? 'breadcumps-inner d-none d-lg-block' : 'breadcumps-inner';
 
   return (
     <>
@@ -32,7 +36,15 @@ export default function Breadcrumbs({ items }) {
         <div className="container">
           <div className="row">
             <div className="col-12">
-              <div className="breadcumps-inner">
+              {mobileBackItem ? (
+                <div className="d-block d-lg-none">
+                  <Link href={mobileBackHref}>
+                    <span>‹ {mobileBackLabel}</span>
+                  </Link>
+                </div>
+              ) : null}
+
+              <div className={breadcrumbsClassName}>
                 {items.map((item, index) => (
                   <span key={index}>
                     {item.href ? (

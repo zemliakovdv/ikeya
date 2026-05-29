@@ -69,10 +69,13 @@ export default function RelatedProducts({ products }) {
                   }}
                   breakpoints={{
                     320: { slidesPerView: 2, spaceBetween: 10 },
-                    576: { slidesPerView: 2, spaceBetween: 15 },
-                    768: { slidesPerView: 3, spaceBetween: 15 },
-                    992: { slidesPerView: 4, spaceBetween: 20 },
+                    360: { slidesPerView: 2, spaceBetween: 10 },
+                    576: { slidesPerView: 3.25, spaceBetween: 12 },
+                    768: { slidesPerView: 3.75, spaceBetween: 14 },
+                    992: { slidesPerView: 4.75, spaceBetween: 16 },
                     1200: { slidesPerView: 5, spaceBetween: 20 },
+                    1400: { slidesPerView: 5, spaceBetween: 20 },
+                    1920: { slidesPerView: 5, spaceBetween: 20 },
                   }}
                   className="products-slider swiper"
                 >

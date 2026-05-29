@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
 const PLACEHOLDER = '/assets/img/no-image.jpg';
@@ -42,10 +42,35 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
   const retryTimerRef = useRef(0);
   const raf1Ref = useRef(0);
   const raf2Ref = useRef(0);
+  const resizeRafRef = useRef(0);
+  const [isDesktopSliderRange, setIsDesktopSliderRange] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const checkViewport = () => {
+      setIsDesktopSliderRange(window.innerWidth >= 1200);
+    };
+
+    checkViewport();
+
+    const handleResize = () => {
+      if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
+      resizeRafRef.current = requestAnimationFrame(checkViewport);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeRafRef.current) cancelAnimationFrame(resizeRafRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!categories.length) return;
+    if (!isDesktopSliderRange) return;
 
     if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     if (raf1Ref.current) cancelAnimationFrame(raf1Ref.current);
@@ -72,8 +97,8 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
       }
 
       swiperRef.current = new window.Swiper(sliderEl, {
-        slidesPerView: 8,
-        spaceBetween: 12,
+        slidesPerView: 7,
+        spaceBetween: 20,
         speed: 600,
         watchOverflow: true,
         navigation: {
@@ -81,21 +106,17 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
           prevEl: prevBtn,
         },
         breakpoints: {
-          0: {
-            slidesPerView: 3,
-            spaceBetween: 8,
+          1200: {
+            slidesPerView: 7,
+            spaceBetween: 20,
           },
-          576: {
-            slidesPerView: 4,
-            spaceBetween: 10,
-          },
-          768: {
-            slidesPerView: 6,
-            spaceBetween: 12,
-          },
-          992: {
+          1400: {
             slidesPerView: 8,
-            spaceBetween: 12,
+            spaceBetween: 20,
+          },
+          1920: {
+            slidesPerView: 8,
+            spaceBetween: 20,
           },
         },
         on: {
@@ -126,9 +147,9 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
         swiperRef.current = null;
       }
     };
-  }, [categories]);
+  }, [categories, isDesktopSliderRange]);
 
-  if (!categories.length) return null;
+  if (!categories.length || !isDesktopSliderRange) return null;
 
   const items = categories.map((cat) => {
     const attr = cat.attributes || {};

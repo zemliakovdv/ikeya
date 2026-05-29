@@ -26,7 +26,7 @@ export default function ImageRightTextLeftBlock({ block }) {
 
         {block.button_enabled && buttonCategory && (
           <Link
-            href={`/categories/${buttonCategory.ikea_id}`}
+            href={`/catalog/${buttonCategory.ikea_id}`}
             className="article-detail-button-transparent"
           >
             {block.button_text}

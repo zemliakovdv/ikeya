@@ -137,6 +137,10 @@ export default async function CategoryPage({ params, searchParams }) {
     const childCategories = currentNode?.children || [];
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbsFromTree(tree, slug);
+    const parentBreadcrumb = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2] : null;
+    const mobileBackItem = parentBreadcrumb?.href
+      ? { name: parentBreadcrumb.name || parentBreadcrumb.label, href: parentBreadcrumb.href }
+      : { name: 'Каталог', href: '/catalog' };
     const level = slug.length;
 
     const showCategoryGrid = level === 1 && childCategories.length > 0;
@@ -181,7 +185,7 @@ export default async function CategoryPage({ params, searchParams }) {
         {prevUrl && <link rel="prev" href={prevUrl} />}
         {nextUrl && <link rel="next" href={nextUrl} />}
 
-        <Breadcrumbs items={breadcrumbs} />
+        <Breadcrumbs items={breadcrumbs} mobileBackItem={mobileBackItem} />
 
         <section className="all-catalog">
           <div className="container">
