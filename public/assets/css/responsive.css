@@ -1670,8 +1670,9 @@ body.mobile-phone-open .mobile-phone-sheet {
 
 @media (min-width: 1400px) and (max-width: 1919px) {
     .mega-menu-overlay {
-        height: calc(100vh - 65px);
-        max-height: calc(100vh - 65px);
+        height: calc(100vh - 152px);
+        max-height: calc(100vh - 152px);
+        overflow: hidden;
     }
 
 
@@ -1681,14 +1682,20 @@ body.mobile-phone-open .mobile-phone-sheet {
         width: 100%;
         margin-left: auto;
         margin-right: auto;
-        height: calc(100vh - 65px);
-        max-height: calc(100vh - 65px);
+        height: calc(100vh - 152px);
+        max-height: calc(100vh - 152px);
+        min-height: 0;
+        overflow: hidden;
     }
 
     .mega-menu-overlay .mega-menu-desktop {
         width: 1336px;
         max-width: 1336px;
         min-width: 0;
+        height: 100%;
+        max-height: 100%;
+        min-height: 0;
+        overflow: hidden;
     }
 
 
@@ -1696,12 +1703,17 @@ body.mobile-phone-open .mobile-phone-sheet {
         width: 360px;
         min-width: 360px;
         max-width: 360px;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     .mega-menu-overlay .mega-menu-content {
         width: 976px;
         min-width: 976px;
         max-width: 976px;
+        min-height: 0;
+        max-height: 100%;
+        overflow-y: auto;
         padding: 16px 0 24px;
     }
 
@@ -1709,11 +1721,15 @@ body.mobile-phone-open .mobile-phone-sheet {
         width: 976px;
         grid-template-columns: repeat(3, 325.333px);
         gap: 0;
+        max-height: none;
+        overflow: visible;
     }
 
     .mega-menu-overlay .mega-menu-column {
         width: 325.333px;
         padding-right: 0;
+        max-height: none;
+        overflow: visible;
     }
 
     .korzina {
@@ -3087,8 +3103,9 @@ body.mobile-phone-open .mobile-phone-sheet {
 
 @media (min-width: 1200px) and (max-width: 1399px) {
     .mega-menu-overlay {
-        height: calc(100vh - 105px);
-        max-height: calc(100vh - 105px);
+        height: calc(100vh - 152px);
+        max-height: calc(100vh - 152px);
+        overflow: hidden;
     }
 
 
@@ -3097,26 +3114,37 @@ body.mobile-phone-open .mobile-phone-sheet {
         width: 100%;
         margin-left: auto;
         margin-right: auto;
-        height: calc(100vh - 105px);
-        max-height: calc(100vh - 105px);
+        height: calc(100vh - 152px);
+        max-height: calc(100vh - 152px);
+        min-height: 0;
+        overflow: hidden;
     }
 
     .mega-menu-overlay .mega-menu-desktop {
         width: 1136px;
         max-width: 1136px;
         min-width: 0;
+        height: 100%;
+        max-height: 100%;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .mega-menu-overlay .mega-menu-sidebar {
         width: 360px;
         min-width: 360px;
         max-width: 360px;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     .mega-menu-overlay .mega-menu-content {
         width: 776px;
         min-width: 776px;
         max-width: 776px;
+        min-height: 0;
+        max-height: 100%;
+        overflow-y: auto;
         padding: 16px 0 24px;
     }
 
@@ -3124,11 +3152,15 @@ body.mobile-phone-open .mobile-phone-sheet {
         width: 776px;
         grid-template-columns: repeat(3, 258.666px);
         gap: 0;
+        max-height: none;
+        overflow: visible;
     }
 
     .mega-menu-overlay .mega-menu-column {
         width: 258.666px;
         padding-right: 0;
+        max-height: none;
+        overflow: visible;
     }
 
     .korzina {

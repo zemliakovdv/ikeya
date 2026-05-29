@@ -8425,8 +8425,10 @@ main {
 .mega-menu-overlay .mega-menu-columns {
     width: 1140px;
     height: auto;
-    min-height: auto;
+    min-height: 0;
+    max-height: none;
     overflow: visible;
+    overflow-y: visible;
     display: grid;
     grid-template-columns: repeat(3, 380px);
     align-content: start;
@@ -8436,8 +8438,10 @@ main {
 .mega-menu-overlay .mega-menu-column {
     width: 380px;
     height: auto;
-    min-height: auto;
+    min-height: 0;
+    max-height: none;
     overflow: visible;
+    overflow-y: visible;
     padding: 0 16px 0 16px;
 }
 
@@ -8531,6 +8535,37 @@ main {
 
 .mega-menu-overlay .mega-menu-error {
     color: #b71c1c;
+}
+
+/* Sticky header has smaller height (header-bottom hidden), so MegaMenu shell
+   must use a shorter viewport subtraction to stay full-height under sticky bar. */
+.header.sticky .mega-menu-overlay,
+.header.sticky .mega-menu-overlay .container-menu {
+    height: calc(100vh - 65px);
+    max-height: calc(100vh - 65px);
+}
+
+.header.sticky .mega-menu-overlay {
+    overflow: hidden;
+}
+
+.header.sticky .mega-menu-overlay .container-menu {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.header.sticky .mega-menu-overlay .mega-menu-desktop {
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.header.sticky .mega-menu-overlay .mega-menu-sidebar,
+.header.sticky .mega-menu-overlay .mega-menu-content {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 /* Активное состояние кнопки каталога */
