@@ -6217,7 +6217,7 @@ main {
     border-radius: 8px;
     display: flex;
     align-items: center;
-    max-width: 102px;
+    max-width: fit-content;
 }
 
 .cart-item__qty button {
