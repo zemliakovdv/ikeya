@@ -1275,7 +1275,7 @@ main {
 
 .product-card__variant-btn img {
     width: 100%;
-    object-fit: cover;
+    object-fit: contain;
     max-width: 32px;
     max-height: 32px;
     min-width: 32px;
