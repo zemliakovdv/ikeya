@@ -114,6 +114,7 @@ export default function PersonalData() {
 
   // onSave вызывается из EditPersonalDataModal с (updatedProfile, firstName)
   function handleSave(updated, firstName) {
+    console.log('handleSave called', updated);
     if (updated) {
       setProfile(updated);
       // Сохраняем first_name в user — хедер и сайдбар читают user?.first_name
@@ -141,13 +142,13 @@ export default function PersonalData() {
     return `${d}.${m}.${y}`;
   }
 
-function formatGender(val) {
-  if (!val) return '—';
-  const v = val.toLowerCase();
-  if (v === 'male') return 'Мужской';
-  if (v === 'female') return 'Женский';
-  return '—';
-}
+  function formatGender(val) {
+    if (!val) return '—';
+    const v = val.toLowerCase();
+    if (v === 'male') return 'Мужской';
+    if (v === 'female') return 'Женский';
+    return '—';
+  }
 
   function formatFullName() {
     const parts = [profile?.last_name, profile?.first_name, profile?.middle_name].filter(Boolean);
@@ -520,7 +521,7 @@ function formatGender(val) {
           verifyOnly={true}
         />
       )}
-{modal === 'address' && (
+      {modal === 'address' && (
         <>
           {typeof window !== 'undefined' && !window.ymaps && (
             <Script
@@ -564,7 +565,14 @@ function formatGender(val) {
         </>
       )}
       {modal === 'passport' && (
-        <EditPassportModal profile={profile} onClose={closeModal} onSave={handleSave} />
+        <EditPassportModal
+          profile={profile}
+          onClose={closeModal}
+          onSave={(updated, firstName) => {
+            handleSave(updated, firstName);
+            closeModal();
+          }}
+        />
       )}
       {modal && <div className="modal-backdrop fade show" onClick={closeModal} />}
     </div>

@@ -1173,6 +1173,7 @@ main {
     border: none;
     padding: 12px 16px;
     min-height: 40px;
+    max-height: 40px;
     border-radius: 8px;
     background-color: #0058A3;
     color: #fff;
@@ -5640,6 +5641,7 @@ main {
     background-color: transparent;
     margin-bottom: 16px;
     transition: all .3s;
+    justify-content: space-between;
 }
 
 .nogki-item:hover {
@@ -5657,7 +5659,6 @@ main {
     height: 56px;
     object-fit: cover;
     border-radius: 4px;
-    margin-right: 16px;
     transition: all .3s;
 }
 
@@ -5667,7 +5668,7 @@ main {
     line-height: 20px;
     letter-spacing: 0.25px;
     margin-bottom: 0;
-    min-width: 300px;
+    max-width: 300px;
     text-align: left;
 }
 

@@ -39,7 +39,7 @@ function getProductImage(product) {
  * Получает массив групп: [{ groupName, products[] }]
  * Каждая группа — кнопка, по клику открывается offcanvas со списком товаров.
  */
-export default function IncludedProductsBlock({ groups = [], basePrice = 0 }) {
+export default function IncludedProductsBlock({ groups = [] }) {
   const router = useRouter();
   const [openGroup, setOpenGroup] = useState(null);
 
@@ -111,13 +111,9 @@ export default function IncludedProductsBlock({ groups = [], basePrice = 0 }) {
                     const pName = pAttr.small_desc_name || pAttr.name_ru || '—';
                     const pImg = getProductImage(product);
                     const pPrice = parsePrice(pAttr.price_byn);
-                    const diff = pPrice - parsePrice(basePrice);
-
-                    const diffStr = diff === 0
-                      ? ''
-                      : diff > 0
-                        ? `+${diff.toFixed(2).replace('.', ',')} р.`
-                        : `${diff.toFixed(2).replace('.', ',')} р.`;
+                    const diffStr = pPrice > 0
+                      ? `${pPrice.toFixed(2).replace('.', ',')} р.`
+                      : '';
 
                     return (
                       <button

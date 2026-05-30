@@ -31,7 +31,7 @@ function resolveVariantImage(image, fallbackImage) {
 
 export default function ProductSizes({ variants = [], currentSku, productImage }) {
   const sizeVariants = Array.isArray(variants)
-    ? variants.filter((variant) => variant.item?.sku)
+    ? variants.filter((variant) => variant.item?.sku && variant.item.sku !== currentSku)
     : [];
 
   if (sizeVariants.length === 0) return null;

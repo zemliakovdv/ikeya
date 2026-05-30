@@ -23,6 +23,33 @@ function getDistanceKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function normalizePvzSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replaceAll('ё', 'е')
+    .replace(/[.,;:()"'«»]+/g, ' ')
+    .replace(/\b(г|город|д|деревня|п|поселок|посёлок|аг|агрогородок)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function filterPvzOffices(offices, search) {
+  const query = normalizePvzSearch(search);
+  if (!query) return offices;
+
+  const exactCityMatches = offices.filter(
+    (office) => normalizePvzSearch(office.city) === query
+  );
+  if (exactCityMatches.length > 0) return exactCityMatches;
+
+  return offices.filter((office) => {
+    const city = normalizePvzSearch(office.city);
+    const address = normalizePvzSearch(office.address);
+    const name = normalizePvzSearch(office.name);
+    return city.includes(query) || address.includes(query) || name.includes(query);
+  });
+}
+
 export default function PickupTab({
   ymapsReady,
   orderId,
@@ -142,13 +169,7 @@ export default function PickupTab({
       return;
     }
 
-    const q = search.trim().toLowerCase();
-
-    const result = allPoints.filter((point) =>
-      point.city?.toLowerCase().includes(q) ||
-      point.address?.toLowerCase().includes(q) ||
-      point.name?.toLowerCase().includes(q)
-    );
+  const result = filterPvzOffices(allPoints, search);
 
     setFiltered(result);
 

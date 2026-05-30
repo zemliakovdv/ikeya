@@ -79,22 +79,7 @@ export default function ProductColors({ variants = [], currentSku, localImages =
     <div className="goods-color">
       <p>Цвет: <span>{activeColorName}</span></p>
 
-      <div className="goods-color__buttons">
-        <button
-          className={`goods-color__item ${isBaseActive ? 'active' : ''}`}
-          title={baseColorName}
-          onClick={() => handleNavigate(baseItem)}
-          type="button"
-        >
-          <img
-            src={baseImage}
-            alt={baseColorName}
-            onError={(event) => {
-              event.currentTarget.src = PLACEHOLDER_IMAGE;
-            }}
-          />
-        </button>
-
+     <div className="goods-color__buttons">
         {otherVariants.map((variant) => {
           const item = variant.item;
           const isActive = item.sku === selectedSku;

@@ -233,7 +233,6 @@ export default function ProductInfo({ product, includedGroups = [] }) {
         {includedGroups.length > 0 && (
           <IncludedProductsBlock
             groups={includedGroups}
-            basePrice={price}
           />
         )}
 
