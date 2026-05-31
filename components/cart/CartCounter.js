@@ -1,27 +1,37 @@
 // components/cart/CartCounter.js
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 
 export default function CartCounter({ sku, className = '' }) {
   const { items, updateQuantity } = useCart();
 
-  const quantity = useMemo(() => {
+  const serverQuantity = useMemo(() => {
     if (!sku) return 0;
     const found = (items || []).find((it) => it?.sku === sku);
     return Number(found?.quantity || 0);
   }, [items, sku]);
 
+  const [localQuantity, setLocalQuantity] = useState(serverQuantity);
+
+  useEffect(() => {
+    setLocalQuantity(serverQuantity);
+  }, [serverQuantity]);
+
   const handleMinus = useCallback(() => {
-    if (!sku || quantity <= 0) return;
-    updateQuantity(sku, Math.max(0, quantity - 1));
-  }, [quantity, sku, updateQuantity]);
+    if (!sku || localQuantity <= 0) return;
+    const next = Math.max(0, localQuantity - 1);
+    setLocalQuantity(next);
+    updateQuantity(sku, next);
+  }, [localQuantity, sku, updateQuantity]);
 
   const handlePlus = useCallback(() => {
     if (!sku) return;
-    updateQuantity(sku, quantity + 1);
-  }, [quantity, sku, updateQuantity]);
+    const next = localQuantity + 1;
+    setLocalQuantity(next);
+    updateQuantity(sku, next);
+  }, [localQuantity, sku, updateQuantity]);
 
   return (
     <div className={`goods-added ${className}`}>
@@ -41,7 +51,7 @@ export default function CartCounter({ sku, className = '' }) {
           </svg>
         </button>
 
-        <span className="counter-vlaue">{quantity}</span>
+        <span className="counter-vlaue">{localQuantity}</span>
 
         <button
           className="counter-button counter-button__plus"

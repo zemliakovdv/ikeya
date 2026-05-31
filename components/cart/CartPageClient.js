@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { createDraft, getCartSummary } from '@/lib/api/cart';
+import { createDraft, getCheckoutSummary } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -316,48 +316,6 @@ useEffect(() => {
     };
   }, [selectedAvailableItems, delivery, totals]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadSelectedSummary() {
-      if (!selectedItemsPayload.length) {
-        setRemoteSummary({
-          subtotal: 0,
-          finalTotal: 0,
-          promoDiscount: 0,
-          itemCount: 0,
-          totalWeight: 0,
-          customsDuty: 0,
-          deliveryToBelarus: 0,
-          logisticsDelivery: 0,
-          checkoutAllowed: false,
-          minOrderError: '',
-          delivery: null,
-        });
-        return;
-      }
-
-      try {
-        const response = await getCartSummary({ items: selectedItemsPayload });
-        const normalized = normalizeSummaryResponse(response);
-
-        if (!cancelled) {
-          setRemoteSummary(normalized);
-        }
-      } catch {
-        if (!cancelled) {
-          setRemoteSummary(null);
-        }
-      }
-    }
-
-    loadSelectedSummary();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedItemsPayloadKey]);
-
   const selectedData = remoteSummary || selectedDataFallback;
 
   const fallbackCanCheckout = Boolean(
@@ -400,6 +358,15 @@ useEffect(() => {
     setCheckoutLoading(true);
 
     try {
+      try {
+        const summaryResponse = await getCheckoutSummary();
+        const checkoutData = summaryResponse?.checkout || summaryResponse;
+        const normalized = normalizeSummaryResponse(checkoutData);
+        if (normalized) setRemoteSummary(normalized);
+      } catch {
+        // Если summary не доступен — используем fallback из корзины
+      }
+
       saveSummaryToSession();
 
       sessionStorage.setItem(

@@ -14,7 +14,14 @@ const RETURN_REASONS = [
 ];
 
 const MAX_FILES = 5;
-const ALLOWED_TYPES = ['image/avif', 'image/heic', 'image/webp', 'image/jpeg', 'image/png'];
+const ALLOWED_TYPES = [
+  'image/avif',
+  'image/heic',
+  'image/heif',
+  'image/webp',
+  'image/jpeg',
+  'image/png',
+];
 
 const EMPTY_FORM = {
   lastName: '',
@@ -25,7 +32,7 @@ const EMPTY_FORM = {
   email: '',
   reason: '',
   comment: '',
-  compensation: 'refund', // ← исправлено: 'return' → 'refund'
+  compensation: 'refund',
 };
 
 const EMPTY_ERRORS = {
@@ -39,9 +46,15 @@ const EMPTY_ERRORS = {
   general: '',
 };
 
-// Валидаторы
 const LETTERS_RE = /^[a-zA-Zа-яА-ЯёЁ\s-]+$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizePhone(phone) {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('375') && digits.length === 12) return `+${digits}`;
+  if (digits.length === 9) return `+375${digits}`;
+  return phone.trim();
+}
 
 function validateForm(form) {
   const errors = { ...EMPTY_ERRORS };
@@ -65,8 +78,8 @@ function validateForm(form) {
 
   if (!form.orderNumber.trim()) {
     errors.orderNumber = 'Обязательное поле'; valid = false;
-  } else if (!/^\d{8}$/.test(form.orderNumber.trim())) {
-    errors.orderNumber = 'Номер заказа — 8 цифр'; valid = false;
+  } else if (!/^\d{6,10}$/.test(form.orderNumber.trim())) {
+    errors.orderNumber = 'Некорректный номер заказа'; valid = false;
   }
 
   if (!form.phone.trim()) {
@@ -98,7 +111,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Загрузка профиля при открытии
   useEffect(() => {
     if (!isOpen || !isAuth) return;
 
@@ -164,11 +176,18 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
 
     try {
       const fd = new FormData();
+
       fd.append('order_id', form.orderNumber.trim());
+      fd.append('last_name', form.lastName.trim());
+      fd.append('first_name', form.firstName.trim());
+      fd.append('patronymic', form.middleName.trim());
+      fd.append('phone', normalizePhone(form.phone));
+      fd.append('email', form.email.trim());
       fd.append('reason', form.reason);
-      fd.append('compensation_type', form.compensation); // ← исправлено: отдельное поле
+      fd.append('compensation_type', form.compensation);
+
       if (form.comment.trim()) {
-        fd.append('comment', form.comment.trim()); // ← исправлено: только комментарий пользователя
+        fd.append('comment', form.comment.trim());
       }
 
       files.forEach(file => fd.append('attachments[]', file));
@@ -180,7 +199,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
       const payload = err.payload || {};
 
       if (status === 422) {
-        // ← исправлено: бэк возвращает { "error": "строка" }
         const message = payload.error || payload.message || 'Ошибка валидации. Проверьте данные.';
         setErrors(prev => ({ ...prev, general: message }));
       } else if (status === 404) {
@@ -238,7 +256,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
           ) : (
             <form className="returns-order_form" onSubmit={handleSubmit} noValidate>
 
-              {/* Фамилия */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
@@ -253,7 +270,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 {errors.lastName && <div className="invalid-feedback">{errors.lastName}</div>}
               </div>
 
-              {/* Имя */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
@@ -268,7 +284,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 {errors.firstName && <div className="invalid-feedback">{errors.firstName}</div>}
               </div>
 
-              {/* Отчество */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
@@ -283,7 +298,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 {errors.middleName && <div className="invalid-feedback">{errors.middleName}</div>}
               </div>
 
-              {/* Номер заказа */}
               <div className="form-floating mb-3">
                 <input
                   type="text"
@@ -294,13 +308,12 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   value={form.orderNumber}
                   onChange={handleChange}
                   inputMode="numeric"
-                  maxLength={8}
+                  maxLength={10}
                 />
                 <label htmlFor="orderNumber">Номер заказа *</label>
                 {errors.orderNumber && <div className="invalid-feedback">{errors.orderNumber}</div>}
               </div>
 
-              {/* Телефон */}
               <div className={`phone-input-container mb-1 ${errors.phone ? 'is-invalid-container' : ''}`}>
                 <div className="country-code">
                   <span className="flag-icon">
@@ -324,7 +337,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
               )}
               {!errors.phone && <div className="mb-3" />}
 
-              {/* Email */}
               <div className="form-floating mb-3">
                 <input
                   type="email"
@@ -339,7 +351,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 {errors.email && <div className="invalid-feedback">{errors.email}</div>}
               </div>
 
-              {/* Причина возврата */}
               <div className="mb-3">
                 <select
                   className={`form-select ${errors.reason ? 'is-invalid' : ''}`}
@@ -355,7 +366,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 {errors.reason && <div className="invalid-feedback">{errors.reason}</div>}
               </div>
 
-              {/* Комментарий */}
               <div className="mb-3">
                 <textarea
                   className="form-control"
@@ -367,7 +377,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 />
               </div>
 
-              {/* Загрузка файлов */}
               <div className="mb-3">
                 <label className="form-label">Загрузите до {MAX_FILES} фото</label>
                 <div
@@ -378,13 +387,13 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".avif,.heic,.webp,.jpeg,.jpg,.png"
+                    accept=".avif,.heic,.heif,.webp,.jpeg,.jpg,.png"
                     multiple
                     hidden
                     onChange={handleFileChange}
                   />
                   <p className="file-upload-text">
-                    Файл должен быть в формате .avif, .heic, .webp, .jpeg или .png (до 5 мб)
+                    Файл должен быть в формате .avif, .heic, .heif, .webp, .jpeg или .png (до 5 мб)
                   </p>
                   <div className="files-inners">
                     <button
@@ -394,10 +403,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                       disabled={files.length >= MAX_FILES}
                     >
                       Загрузите файл
-                      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 17 16" fill="none">
-                        <path d="M16.5167 4.93333C16.1584 3.75833 15.2417 2.83333 14.0584 2.475C13.5751 2.325 12.9917 2.31667 12.1417 2.31667L11.6834 1.63333C11.4667 1.30833 11.2751 1.025 11.1001 0.808333C10.9167 0.583333 10.7167 0.391667 10.4501 0.25C10.1834 0.108333 9.91674 0.05 9.62507 0.025C9.35007 -2.32831e-08 9.0084 0 8.61673 0H8.0584C7.66673 0 7.32507 -2.32831e-08 7.05007 0.025C6.7584 0.05 6.49174 0.108333 6.22507 0.25C5.9584 0.391667 5.76674 0.583333 5.57507 0.808333C5.40007 1.025 5.21674 1.30833 4.99174 1.63333L4.5334 2.31667C3.6834 2.31667 3.10007 2.325 2.61674 2.475C1.44174 2.83333 0.516736 3.75 0.158402 4.93333C-0.00826442 5.475 6.88695e-05 6.125 6.88695e-05 7.16667V8.71667C6.88695e-05 9.975 6.87813e-05 10.975 0.0917354 11.7583C0.183402 12.5583 0.383402 13.2167 0.833402 13.7667C0.983402 13.95 1.1584 14.125 1.34174 14.275C1.89174 14.725 2.55007 14.925 3.35007 15.0167C4.1334 15.1083 5.1334 15.1083 6.39174 15.1083H10.2667C11.5251 15.1083 12.5251 15.1083 13.3084 15.0167C14.1084 14.925 14.7667 14.725 15.3167 14.275C15.5001 14.125 15.6751 13.95 15.8251 13.7667C16.2751 13.2167 16.4751 12.5583 16.5667 11.7583C16.6584 10.975 16.6584 9.975 16.6584 8.71667V7.16667C16.6584 6.125 16.6584 5.475 16.5001 4.93333H16.5167ZM15.4251 11.625C15.3417 12.3167 15.1917 12.725 14.9334 13.0333C14.8251 13.1583 14.7084 13.275 14.5834 13.3833C14.2751 13.6333 13.8667 13.7917 13.1751 13.875C12.4751 13.9583 11.5584 13.9583 10.2667 13.9583H6.39174C5.10007 13.9583 4.19174 13.9583 3.4834 13.875C2.79174 13.7917 2.3834 13.6417 2.07507 13.3833C1.95007 13.275 1.8334 13.1583 1.72507 13.0333C1.47507 12.725 1.31674 12.3167 1.2334 11.625C1.15007 10.925 1.15007 10.0083 1.15007 8.71667V7.16667C1.15007 6.04167 1.15007 5.60833 1.2584 5.275C1.50007 4.46667 2.1334 3.84167 2.94174 3.59167C3.27507 3.49167 3.7084 3.48333 4.8334 3.48333C5.02507 3.48333 5.2084 3.38333 5.31674 3.225L5.95007 2.28333C6.1834 1.93333 6.3334 1.70833 6.46674 1.54167C6.59174 1.38333 6.67507 1.31667 6.7584 1.275C6.84174 1.23333 6.94174 1.2 7.14174 1.18333C7.3584 1.16667 7.62507 1.16667 8.04174 1.16667H8.60007C9.01674 1.16667 9.29174 1.16667 9.50007 1.18333C9.70007 1.2 9.8084 1.23333 9.8834 1.275C9.9584 1.31667 10.0501 1.38333 10.1751 1.54167C10.3084 1.70833 10.4584 1.93333 10.6917 2.28333L11.3251 3.225C11.4334 3.38333 11.6167 3.48333 11.8084 3.48333C12.9334 3.48333 13.3667 3.48333 13.7001 3.59167C14.5084 3.83333 15.1334 4.46667 15.3834 5.275C15.4834 5.60833 15.4917 6.04167 15.4917 7.16667V8.71667C15.4917 10.0083 15.4917 10.9167 15.4084 11.625H15.4251Z" fill="white" />
-                        <path d="M11.4417 7.74167H8.92507V5.225C8.92507 4.9 8.66673 4.64167 8.34173 4.64167C8.01674 4.64167 7.7584 4.9 7.7584 5.225V7.74167H5.24174C4.91674 7.74167 4.6584 8 4.6584 8.325C4.6584 8.65 4.91674 8.90833 5.24174 8.90833H7.7584V11.425C7.7584 11.75 8.01674 12.0083 8.34173 12.0083C8.66673 12.0083 8.92507 11.75 8.92507 11.425V8.90833H11.4417C11.7667 8.90833 12.0251 8.65 12.0251 8.325C12.0251 8 11.7667 7.74167 11.4417 7.74167Z" fill="white" />
-                      </svg>
                     </button>
                     <p className="file-upload-text-grey mb-0">или перетащите сюда</p>
                   </div>
@@ -421,7 +426,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 )}
               </div>
 
-              {/* Компенсация */}
               <div className="mb-4">
                 <p className="compensation-label">Предпочтительный способ компенсации</p>
                 <div className="compensation-tips">
@@ -452,7 +456,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                 </div>
               </div>
 
-              {/* Общая ошибка */}
               {errors.general && (
                 <p style={{ color: '#B71C1C', marginBottom: '12px', fontSize: '14px' }}>
                   {errors.general}

@@ -257,7 +257,7 @@ export function CartProvider({ children }) {
       } finally {
         updateTimeoutsRef.current.delete(sku);
       }
-    }, 400);
+    }, 200);
 
     updateTimeoutsRef.current.set(sku, timeoutId);
 
