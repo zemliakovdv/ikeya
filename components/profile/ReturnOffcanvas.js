@@ -25,7 +25,7 @@ const EMPTY_FORM = {
   email: '',
   reason: '',
   comment: '',
-  compensation: 'return',
+  compensation: 'refund', // ← исправлено: 'return' → 'refund'
 };
 
 const EMPTY_ERRORS = {
@@ -65,8 +65,8 @@ function validateForm(form) {
 
   if (!form.orderNumber.trim()) {
     errors.orderNumber = 'Обязательное поле'; valid = false;
-  } else if (!/^\d{7}$/.test(form.orderNumber.trim())) {
-    errors.orderNumber = 'Номер заказа — 7 цифр'; valid = false;
+  } else if (!/^\d{8}$/.test(form.orderNumber.trim())) {
+    errors.orderNumber = 'Номер заказа — 8 цифр'; valid = false;
   }
 
   if (!form.phone.trim()) {
@@ -88,13 +88,6 @@ function validateForm(form) {
   return { errors, valid };
 }
 
-// Маппинг полей бэка → полей формы
-const BACKEND_FIELD_MAP = {
-  order_id: 'orderNumber',
-  reason: 'reason',
-  comment: 'comment',
-};
-
 export default function ReturnOffcanvas({ isOpen, onClose }) {
   const { isAuth } = useAuth();
   const fileInputRef = useRef(null);
@@ -112,7 +105,6 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
     getProfile()
       .then(profile => {
         if (!profile) return;
-        // Телефон хранится как +375XXXXXXXXX — убираем +375
         const rawPhone = profile.phone ? profile.phone.replace(/^\+?375/, '') : '';
 
         setForm(prev => ({
@@ -124,21 +116,17 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
           email: profile.email || prev.email,
         }));
       })
-      .catch(() => {
-        // Не критично — пользователь заполнит сам
-      });
+      .catch(() => {});
   }, [isOpen, isAuth]);
 
   function handleChange(e) {
     const { name, value } = e.target;
 
-    // Только цифры для телефона и номера заказа
     if (name === 'phone' && value && !/^\d*$/.test(value)) return;
     if (name === 'orderNumber' && value && !/^\d*$/.test(value)) return;
 
     setForm(prev => ({ ...prev, [name]: value }));
 
-    // Сбрасываем ошибку поля при изменении
     if (name in errors) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -176,15 +164,12 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
 
     try {
       const fd = new FormData();
-      fd.append('order_id', parseInt(form.orderNumber.trim(), 10));
+      fd.append('order_id', form.orderNumber.trim());
       fd.append('reason', form.reason);
-      fd.append('comment', [
-        [form.lastName, form.firstName, form.middleName].filter(Boolean).join(' '),
-        form.phone ? `+375${form.phone}` : '',
-        form.email,
-        form.comment,
-        `Компенсация: ${form.compensation === 'return' ? 'возврат' : 'обмен'}`,
-      ].filter(Boolean).join('\n'));
+      fd.append('compensation_type', form.compensation); // ← исправлено: отдельное поле
+      if (form.comment.trim()) {
+        fd.append('comment', form.comment.trim()); // ← исправлено: только комментарий пользователя
+      }
 
       files.forEach(file => fd.append('attachments[]', file));
 
@@ -194,25 +179,10 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
       const status = err.status;
       const payload = err.payload || {};
 
-      if (status === 422 && payload && typeof payload === 'object') {
-        // Ошибки валидации с бэка — раскладываем по полям
-        const backendErrors = { ...EMPTY_ERRORS };
-        let hasFieldError = false;
-
-        Object.entries(payload).forEach(([backendField, messages]) => {
-          const formField = BACKEND_FIELD_MAP[backendField];
-          const message = Array.isArray(messages) ? messages[0] : String(messages);
-          if (formField) {
-            backendErrors[formField] = message;
-            hasFieldError = true;
-          }
-        });
-
-        if (!hasFieldError) {
-          backendErrors.general = 'Ошибка валидации. Проверьте данные и попробуйте снова.';
-        }
-
-        setErrors(backendErrors);
+      if (status === 422) {
+        // ← исправлено: бэк возвращает { "error": "строка" }
+        const message = payload.error || payload.message || 'Ошибка валидации. Проверьте данные.';
+        setErrors(prev => ({ ...prev, general: message }));
       } else if (status === 404) {
         setErrors(prev => ({ ...prev, orderNumber: 'Заказ не найден или не принадлежит вашему аккаунту' }));
       } else if (status === 401) {
@@ -324,7 +294,7 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   value={form.orderNumber}
                   onChange={handleChange}
                   inputMode="numeric"
-                  maxLength={7}
+                  maxLength={8}
                 />
                 <label htmlFor="orderNumber">Номер заказа *</label>
                 {errors.orderNumber && <div className="invalid-feedback">{errors.orderNumber}</div>}
@@ -461,8 +431,8 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                       type="radio"
                       name="compensation"
                       id="compensationReturn"
-                      value="return"
-                      checked={form.compensation === 'return'}
+                      value="refund"
+                      checked={form.compensation === 'refund'}
                       onChange={handleChange}
                     />
                     <label className="form-check-label" htmlFor="compensationReturn">возврат</label>

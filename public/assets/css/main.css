@@ -2569,6 +2569,7 @@ main {
     max-width: 256px;
     background-color: white;
     border-radius: 0;
+    padding-right: 4px;
 }
 
 .filter-header {
