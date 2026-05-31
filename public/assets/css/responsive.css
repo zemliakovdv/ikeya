@@ -5647,7 +5647,7 @@ body.mobile-phone-open .mobile-phone-sheet {
 @media (max-width: 992px) {
 
     .container {
-        max-width: 960px;
+        max-width: 768px;
     }
 
     .mega-menu-overlay {
@@ -14704,7 +14704,7 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .more-inner .products-slider .swiper-wrapper,
     .shop-card .products-card-slider .products-slider .swiper-wrapper {
-        gap: 8px !important;
+        gap: 9px !important;
     }
 
     .shop-card .products-card-slider .shop_button {
@@ -15459,7 +15459,7 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .products-card-slider .swiper-slide-inner,
     .shop-card .products-card-slider .product-card-inner {
-        width: 140px;
+        width: 140px !important;
         min-width: 140px;
         max-width: 140px;
         height: fit-content;
@@ -15490,7 +15490,7 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .more-inner .products-slider .swiper-wrapper,
     .shop-card .products-card-slider .products-slider .swiper-wrapper {
-        gap: 8px !important;
+        gap: 9px !important;
     }
 
     .shop-card .products-card-slider .shop_button {
