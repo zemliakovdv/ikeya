@@ -298,10 +298,6 @@ export default function SearchPageContent() {
       hasMoreRef.current = more;
       setHasMore(more);
       setCurrentPage(page);
-
-      const urlParams = new URLSearchParams(searchParams.toString());
-      urlParams.set('page', String(page));
-      window.history.replaceState(null, '', `${pathname}?${urlParams.toString()}`);
     } catch (error) {
       if (error.name === 'AbortError') return;
 
