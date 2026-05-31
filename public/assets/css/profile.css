@@ -4299,24 +4299,207 @@
     @media (min-width: 1200px) and (max-width: 1399px) {
 
         .zakazi .orders-page>.container {
-            max-width: 1128px;
-            padding-left: 0;
-            padding-right: 0;
+            max-width: 1200px;
+            padding-left: 32px;
+            padding-right: 32px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .zakazi .profile-layout {
-            grid-template-columns: 332px minmax(0, 772px);
+            grid-template-columns: 332px minmax(0, 780px);
             gap: 24px;
+            justify-content: space-between;
         }
 
         .zakazi .profile-content {
-            max-width: 772px;
+            max-width: 780px;
+            min-width: 0;
         }
 
         .zakazi .orders {
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 16px;
             align-items: start;
+        }
+
+        .zakazi .order-card {
+            margin-bottom: 24px;
+        }
+
+        .zakazi .order-header {
+            align-items: flex-start;
+            gap: 16px;
+            min-width: 0;
+            min-height: 84px;
+        }
+
+        .zakazi .odrer-header_inner {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .zakazi .order-header_top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-wrap: nowrap;
+        }
+
+        .zakazi .order-title {
+            min-width: 0;
+            flex: 1 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zakazi .btn-copy-order {
+            flex: 0 0 auto;
+        }
+
+        .zakazi .order-badge {
+            flex: 0 0 auto;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 16px;
+        }
+
+        .zakazi .order-price {
+            flex: 0 0 auto;
+            margin-left: auto;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .zakazi .order-status {
+            padding: 12px 16px;
+        }
+
+        .zakazi .order-status-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            min-width: 0;
+            min-height: 92px;
+        }
+
+        .zakazi .order-status-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .zakazi .status-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-actions {
+            flex: 0 0 auto;
+            border-top: none;
+        }
+
+        .zakazi .order-actions .btn,
+        .zakazi .order-actions .btn-danger {
+            min-height: 40px;
+            height: 40px;
+            padding: 10px 16px;
+            white-space: nowrap;
+        }
+
+        .zakazi .order-track {
+            padding: 12px 16px;
+            background: #fff;
+        }
+
+        .zakazi .order-track .order-address__inner {
+            width: 196px;
+            min-height: 48px;
+            padding: 12px 8px 12px 16px;
+            border-radius: 4px;
+            background: #fafafa;
+            max-width: 100%;
+        }
+
+        .zakazi .orders-statuses {
+            display: flex;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .zakazi .orders-statuses .order-address,
+        .zakazi .orders-statuses .status-info {
+            flex: 0 0 366px;
+            width: 366px;
+            min-width: 366px;
+            max-width: 366px;
+        }
+
+        .zakazi .status-info .status-text,
+        .zakazi .orders-statuses .order-address .address-text {
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-items {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .zakazi .order-item {
+            gap: 16px;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .zakazi .item-image {
+            width: 64px;
+            height: 64px;
+            flex: 0 0 64px;
+        }
+
+        .zakazi .order-item .flex-grow-1 {
+            min-width: 0;
+            gap: 16px;
+        }
+
+        .zakazi .item-infos {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .zakazi .item-desc {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zakazi .item-meta {
+            flex: 0 0 160px;
+            width: 160px;
+            min-width: 160px;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .zakazi .item-quantity {
+            flex: 0 0 56px;
+            width: 56px;
+            text-align: right;
+        }
+
+        .zakazi .item-price {
+            flex: 0 0 96px;
+            width: 96px;
+            text-align: right;
+            white-space: nowrap;
         }
     }
 
@@ -4485,6 +4668,188 @@
             max-width: 215px;
             min-width: 215px;
         }
+
+        .zakazi .orders-page>.container {
+            max-width: 1336px;
+        }
+
+        .zakazi .profile-layout {
+            grid-template-columns: 332px minmax(0, 980px);
+        }
+
+        .zakazi .profile-content {
+            max-width: 980px;
+            min-width: 0;
+        }
+
+        .zakazi .order-card {
+            margin-bottom: 24px;
+        }
+
+        .zakazi .order-header {
+            align-items: flex-start;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .zakazi .odrer-header_inner {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .zakazi .order-header_top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .zakazi .order-title {
+            min-width: 0;
+            flex: 1 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zakazi .btn-copy-order {
+            flex: 0 0 auto;
+        }
+
+        .zakazi .order-badge {
+            flex: 0 0 auto;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 16px;
+        }
+
+        .zakazi .order-price {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .zakazi .order-status {
+            padding: 12px 16px;
+        }
+
+        .zakazi .order-status-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .zakazi .order-status-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .zakazi .status-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-actions {
+            flex: 0 0 auto;
+            border-top: none;
+        }
+
+        .zakazi .order-actions .btn,
+        .zakazi .order-actions .btn-danger {
+            min-height: 40px;
+            height: 40px;
+            padding: 10px 16px;
+            white-space: nowrap;
+        }
+
+        .zakazi .order-track {
+            padding: 12px 16px;
+            background: #fff;
+        }
+
+        .zakazi .order-track .order-address__inner {
+            min-height: 48px;
+            padding: 12px 8px 12px 16px;
+            border-radius: 4px;
+            background: #fafafa;
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .zakazi .orders-statuses {
+            display: flex;
+            align-items: stretch;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .zakazi .orders-statuses .order-address,
+        .zakazi .orders-statuses .status-info {
+            min-width: 0;
+            max-width: none;
+            width: auto;
+            flex: 1 1 0;
+        }
+
+        .zakazi .order-items {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .zakazi .order-item {
+            gap: 16px;
+            align-items: center;
+        }
+
+        .zakazi .item-image {
+            width: 64px;
+            height: 64px;
+            flex: 0 0 64px;
+        }
+
+        .zakazi .order-item .flex-grow-1 {
+            min-width: 0;
+            gap: 16px;
+        }
+
+        .zakazi .item-infos {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .zakazi .item-desc {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zakazi .item-meta {
+            flex: 0 0 160px;
+            width: 160px;
+            min-width: 160px;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .zakazi .item-quantity {
+            flex: 0 0 56px;
+            width: 56px;
+            text-align: right;
+        }
+
+        .zakazi .item-price {
+            flex: 0 0 96px;
+            width: 96px;
+            text-align: right;
+            white-space: nowrap;
+        }
     }
 
     @media (max-width: 991px) {
@@ -4522,9 +4887,7 @@
         }
 
         .zakazi .orders-page>.container {
-            max-width: 960px;
-            padding-left: 16px;
-            padding-right: 16px;
+            max-width: 992px;
         }
 
         .zakazi .profile-layout {
@@ -4576,12 +4939,196 @@
             order: 2;
             width: 100%;
             margin: 0;
-            padding: 12px 16px;
+            padding: 0;
         }
 
         .zakazi .profile-content>.block:nth-of-type(3) .block-title {
             font-size: 15px;
             line-height: 20px;
+        }
+
+        .zakazi .orders-tabs {
+            width: 100%;
+            max-width: 960px;
+        }
+
+        .zakazi .order-card {
+            margin-bottom: 24px;
+        }
+
+        .zakazi .order-header {
+            align-items: flex-start;
+            gap: 16px;
+            min-width: 0;
+            min-height: 80px;
+        }
+
+        .zakazi .odrer-header_inner {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .zakazi .order-header_top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+            flex-wrap: nowrap;
+        }
+
+        .zakazi .order-title {
+            min-width: 0;
+            flex: 1 1 auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zakazi .btn-copy-order {
+            flex: 0 0 auto;
+        }
+
+        .zakazi .order-badge {
+            flex: 0 0 auto;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 16px;
+        }
+
+        .zakazi .order-price {
+            flex: 0 0 auto;
+            margin-left: auto;
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .zakazi .order-status {
+            padding: 12px 16px;
+        }
+
+        .zakazi .order-status-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            min-width: 0;
+            min-height: 72px;
+        }
+
+        .zakazi .order-status-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .zakazi .status-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-actions {
+            flex: 0 0 auto;
+            border-top: none;
+        }
+
+        .zakazi .order-actions .btn,
+        .zakazi .order-actions .btn-danger {
+            min-height: 40px;
+            height: 40px;
+            padding: 10px 16px;
+            white-space: nowrap;
+        }
+
+        .zakazi .order-track {
+            padding: 12px 16px;
+            background: #fff;
+        }
+
+        .zakazi .order-track .order-address__inner {
+            width: 189px;
+            min-height: 48px;
+            padding: 12px 8px 12px 16px;
+            border-radius: 4px;
+            background: #fafafa;
+            max-width: 100%;
+        }
+
+        .zakazi .orders-statuses {
+            display: flex;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .zakazi .orders-statuses .order-address,
+        .zakazi .orders-statuses .status-info {
+            flex: 0 0 456px;
+            width: 456px;
+            min-width: 456px;
+            max-width: 456px;
+        }
+
+        .zakazi .status-info .status-text,
+        .zakazi .orders-statuses .order-address .address-text {
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-items {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .zakazi .order-item {
+            gap: 16px;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .zakazi .item-image {
+            width: 64px;
+            height: 64px;
+            flex: 0 0 64px;
+        }
+
+        .zakazi .order-item .flex-grow-1 {
+            min-width: 0;
+            gap: 16px;
+        }
+
+        .zakazi .item-infos {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .zakazi .item-desc {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .zakazi .item-meta {
+            flex: 0 0 160px;
+            width: 160px;
+            min-width: 160px;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .zakazi .item-quantity {
+            flex: 0 0 56px;
+            width: 56px;
+            text-align: right;
+        }
+
+        .zakazi .item-price {
+            flex: 0 0 96px;
+            width: 96px;
+            text-align: right;
+            white-space: nowrap;
         }
 
         .zakazi .help-links {
@@ -4623,8 +5170,6 @@
 
         .zakazi .orders-page>.container {
             max-width: 736px;
-            padding-left: 16px;
-            padding-right: 16px;
         }
 
         .zakazi .profile-layout {
@@ -4722,9 +5267,9 @@
         }
 
         .zakazi .orders-page>.container {
+            width: 100%;
             max-width: 544px;
-            padding-left: 16px;
-            padding-right: 16px;
+            box-sizing: border-box;
         }
 
         .zakazi .profile-layout {
@@ -4776,12 +5321,228 @@
             order: 2;
             width: 100%;
             margin: 0;
-            padding: 12px 16px;
+            padding: 0;
         }
 
         .zakazi .profile-content>.block:nth-of-type(3) .block-title {
             font-size: 15px;
             line-height: 20px;
+        }
+
+        .zakazi .orders-tabs {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .zakazi .order-card {
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 24px;
+        }
+
+        .zakazi .order-header {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            min-width: 0;
+            min-height: 126px;
+            padding: 12px 16px;
+        }
+
+        .zakazi .odrer-header_inner {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            min-width: 0;
+            gap: 8px;
+        }
+
+        .zakazi .order-header_top {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .zakazi .order-badge {
+            order: 1;
+            flex: 0 0 auto;
+            max-width: 100%;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            line-height: 16px;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-title {
+            order: 2;
+            width: 100%;
+            min-width: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .btn-copy-order {
+            flex: 0 0 auto;
+        }
+
+        .zakazi .order-subtitle {
+            width: 100%;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-price {
+            order: 3;
+            margin-left: 0;
+            text-align: left;
+            white-space: nowrap;
+            align-self: flex-start;
+        }
+
+        .zakazi .order-status {
+            padding: 12px 16px;
+        }
+
+        .zakazi .order-status-content {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 12px;
+            min-width: 0;
+            min-height: 142px;
+        }
+
+        .zakazi .order-status-inner {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .zakazi .status-text {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-actions {
+            width: 100%;
+            border-top: none;
+        }
+
+        .zakazi .order-actions .btn,
+        .zakazi .order-actions .btn-danger {
+            width: 100%;
+            min-height: 40px;
+            height: 40px;
+            padding: 10px 16px;
+            white-space: nowrap;
+        }
+
+        .zakazi .order-track {
+            padding: 12px 16px;
+            background: #fff;
+        }
+
+        .zakazi .order-track .order-address__inner {
+            width: 100%;
+            min-height: 48px;
+            max-width: 100%;
+            padding: 12px 8px 12px 16px;
+            border-radius: 4px;
+            background: #fafafa;
+            box-sizing: border-box;
+        }
+
+        .zakazi .orders-statuses {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+            min-width: 0;
+        }
+
+        .zakazi .orders-statuses .order-address,
+        .zakazi .orders-statuses .status-info {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            min-height: 64px;
+        }
+
+        .zakazi .status-info {
+            min-height: 68px;
+        }
+
+        .zakazi .status-info .status-text,
+        .zakazi .orders-statuses .order-address .address-text {
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .order-items {
+            padding: 0 16px 8px;
+        }
+
+        .zakazi .order-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            min-height: 120px;
+            padding: 12px 0;
+        }
+
+        .zakazi .item-image {
+            width: 64px;
+            height: 64px;
+            flex: 0 0 64px;
+        }
+
+        .zakazi .order-item .flex-grow-1 {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .zakazi .item-infos {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .zakazi .item-desc {
+            margin-bottom: 0;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .zakazi .item-meta {
+            width: 100%;
+            min-width: 0;
+            justify-content: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .zakazi .item-quantity {
+            width: auto;
+            flex: 0 0 auto;
+            text-align: left;
+        }
+
+        .zakazi .item-price {
+            width: auto;
+            flex: 0 0 auto;
+            text-align: left;
+            white-space: nowrap;
         }
 
         .zakazi .help-links {
