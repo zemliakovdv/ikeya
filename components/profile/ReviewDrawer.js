@@ -124,9 +124,9 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
 
       if (photos.length > 0) {
         const formData = new FormData();
-        formData.append('rating', rating);
-        formData.append('body', body.trim());
-        photos.forEach(photo => formData.append('photos[]', photo));
+        formData.append('review[rating]', rating);
+        formData.append('review[body]', body.trim());
+        photos.forEach(photo => formData.append('review[photos][]', photo));
         res = await fetch(buildApiUrl(`/products/${product.sku}/reviews`), {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -139,7 +139,7 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ rating, body: body.trim() }),
+          body: JSON.stringify({ review: { rating, body: body.trim() } }),
         });
       }
 
