@@ -734,6 +734,14 @@ function CheckoutPageInner() {
     }
 
     if (token) {
+      const street = String(addr?.street || '').trim();
+      const house = String(addr?.house || '').trim();
+
+      if (!street || !house) {
+        setError('Не удалось сохранить адрес доставки: укажите улицу и номер дома.');
+        return;
+      }
+
       try {
         await createDeliveryAddress(parseAddressToFields(addr));
 
@@ -757,7 +765,28 @@ function CheckoutPageInner() {
           address: d.attributes.formatted_address || d.attributes.street,
         }));
         setSavedAddrList(addrs);
-      } catch { }
+      } catch (err) {
+        const payload = err?.payload || {};
+        const commonError =
+          payload?.error ||
+          payload?.message ||
+          'Не удалось сохранить адрес доставки';
+
+        const fieldErrors = Array.isArray(payload?.field_errors) ? payload.field_errors : [];
+        const fallbackErrors = Array.isArray(payload?.errors) ? payload.errors : [];
+
+        if (fieldErrors.length) {
+          const text = fieldErrors
+            .map((item) => item?.message)
+            .filter(Boolean)
+            .join(' ');
+          setError(text ? `${commonError}: ${text}` : commonError);
+        } else if (fallbackErrors.length) {
+          setError(`${commonError}: ${fallbackErrors.join(' ')}`);
+        } else {
+          setError(commonError);
+        }
+      }
     } else {
       const label = addr.apartment ? `${addr.address}, кв.${addr.apartment}` : addr.address;
       const entry = { id: genId(), label, ...addr };

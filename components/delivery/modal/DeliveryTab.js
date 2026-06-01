@@ -65,6 +65,7 @@ export default function DeliveryTab({
   const [coords, setCoords] = useState(null);
   const [geoError, setGeoError] = useState(null);
   const [pinCoords, setPinCoords] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const addressDebounce = useRef(null);
 
@@ -135,6 +136,17 @@ export default function DeliveryTab({
         house,
       }));
     } catch {}
+  }
+
+  function validateAddressForm() {
+    const nextErrors = {};
+
+    if (!String(form.city || '').trim()) nextErrors.city = 'Укажите город';
+    if (!String(form.street || '').trim()) nextErrors.street = 'Укажите улицу';
+    if (!String(form.house || '').trim()) nextErrors.house = 'Укажите номер дома';
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   }
 
   const geocodeAddress = useCallback((address) => {
@@ -210,6 +222,10 @@ export default function DeliveryTab({
 
   const handleSubmit = async () => {
     if (!form.fullAddress.trim()) return;
+    if (!validateAddressForm()) {
+      setCalcError('Заполните обязательные поля адреса');
+      return;
+    }
 
     setCalcLoading(true);
     setCalcResult(null);
@@ -281,6 +297,10 @@ export default function DeliveryTab({
 
   const handleSelect = () => {
     if (!calcResult) return;
+    if (!validateAddressForm()) {
+      setCalcError('Заполните обязательные поля адреса');
+      return;
+    }
 
     const parts = [form.fullAddress];
 
@@ -374,6 +394,61 @@ export default function DeliveryTab({
               />
             </div>
 
+            <div className="delivery-fields-row">
+              <input
+                type="text"
+                id="city"
+                name="city"
+                className={`delivery-field${fieldErrors.city ? ' is-invalid' : ''}`}
+                placeholder="City *"
+                value={form.city}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setForm((prev) => ({ ...prev, city: value }));
+                  setFieldErrors((prev) => ({ ...prev, city: undefined }));
+                }}
+              />
+              <input
+                type="text"
+                id="street"
+                name="street"
+                className={`delivery-field${fieldErrors.street ? ' is-invalid' : ''}`}
+                placeholder="Street *"
+                value={form.street}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setForm((prev) => ({ ...prev, street: value }));
+                  setFieldErrors((prev) => ({ ...prev, street: undefined }));
+                }}
+              />
+            </div>
+            {fieldErrors.city && <div className="delivery-geo-error">{fieldErrors.city}</div>}
+            {fieldErrors.street && <div className="delivery-geo-error">{fieldErrors.street}</div>}
+            <div className="delivery-fields-row">
+              <input
+                type="text"
+                id="house"
+                name="house"
+                className={`delivery-field${fieldErrors.house ? ' is-invalid' : ''}`}
+                placeholder="House *"
+                value={form.house}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setForm((prev) => ({ ...prev, house: value }));
+                  setFieldErrors((prev) => ({ ...prev, house: undefined }));
+                }}
+              />
+              <input
+                type="text"
+                className="delivery-field"
+                placeholder="Building"
+                value={form.building}
+                onChange={(event) => {
+                  setForm((prev) => ({ ...prev, building: event.target.value }));
+                }}
+              />
+            </div>
+            {fieldErrors.house && <div className="delivery-geo-error">{fieldErrors.house}</div>}
             <label className="delivery-checkbox">
               <input
                 type="checkbox"
@@ -481,7 +556,7 @@ export default function DeliveryTab({
                 type="button"
                 className="pvz-select-btn"
                 onClick={handleSubmit}
-                disabled={!form.fullAddress.trim() || calcLoading}
+                disabled={!form.fullAddress.trim() || !String(form.street || "").trim() || !String(form.house || "").trim() || calcLoading}
               >
                 {calcLoading ? 'Расчёт...' : 'Добавить'}
               </button>

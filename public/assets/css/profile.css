@@ -838,8 +838,8 @@
     /* Покупки */
 
     .zakazi .product-card-inner {
-        min-width: 280px;
-        max-width: 280px;
+        min-width: 239px;
+        max-width: 239px;
     }
 
     /* Конец покупок */
@@ -4501,6 +4501,62 @@
             text-align: right;
             white-space: nowrap;
         }
+
+        /* Purchases 1200 */
+        .zakazi .orders-shopping {
+            width: 100%;
+            max-width: 780px;
+            min-width: 0;
+        }
+
+        .zakazi .all-catalog-sort {
+            width: 100%;
+            margin-top: 16px;
+            margin-bottom: 16px;
+            min-height: 36px;
+        }
+
+        .zakazi .catalog-sort {
+            width: 208px;
+            min-width: 208px;
+            max-width: 208px;
+            min-height: 36px;
+        }
+
+        .zakazi .catalog-sort__selected {
+            width: 208px;
+            min-height: 36px;
+            height: 36px;
+            padding: 8px 16px;
+            box-sizing: border-box;
+        }
+
+        .zakazi .shopping-cards {
+            width: 100%;
+            max-width: 780px;
+            min-width: 0;
+        }
+
+        .zakazi .shopping-cards .all-catalog-items {
+            display: grid;
+            grid-template-columns: repeat(4, 189px);
+            gap: 8px;
+            width: 780px;
+            max-width: 780px;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
+        .zakazi .shopping-cards .all-catalog-items .product-card-inner {
+            width: 189px;
+            min-width: 189px;
+            max-width: 189px;
+            margin: 0;
+        }
+
+        .zakazi .shopping-cards .all-catalog-items .product-card {
+            min-height: 393px;
+        }
     }
 
     @media (min-width: 1200px) and (max-width: 1919px) {
@@ -4887,7 +4943,7 @@
         }
 
         .zakazi .orders-page>.container {
-            max-width: 992px;
+            max-width: 960px;
         }
 
         .zakazi .profile-layout {
@@ -5129,6 +5185,70 @@
             width: 96px;
             text-align: right;
             white-space: nowrap;
+        }
+
+        /* Purchases 992 */
+        .zakazi .orders-shopping {
+            width: 100%;
+            max-width: 960px;
+            min-width: 0;
+        }
+
+        .zakazi .all-catalog-sort {
+            width: 100%;
+            margin-top: 16px;
+            margin-bottom: 16px;
+            min-height: 36px;
+        }
+
+        .zakazi .catalog-sort {
+            width: 208px;
+            min-width: 208px;
+            max-width: 208px;
+            min-height: 36px;
+        }
+
+        .zakazi .catalog-sort__selected {
+            width: 208px;
+            min-height: 36px;
+            height: 36px;
+            padding: 8px 16px;
+            box-sizing: border-box;
+        }
+
+        .zakazi .shopping-cards {
+            width: 100%;
+            max-width: 960px;
+            min-width: 0;
+        }
+
+        .zakazi .shopping-cards .all-catalog-items {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            width: 960px;
+            max-width: 960px;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
+        .zakazi .shopping-cards .all-catalog-items .product-card-inner {
+            width: 100%;
+            min-width: 0;
+            max-width: none;
+            margin: 0;
+        }
+
+        .zakazi .shopping-cards .all-catalog-items .product-card {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .zakazi .shopping-cards .all-catalog-items .shop_button {
+            width: 100%;
+            max-width: 100%;
+            min-height: 40px;
+            max-height: 40px;
         }
 
         .zakazi .help-links {
