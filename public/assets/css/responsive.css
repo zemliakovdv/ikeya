@@ -1167,6 +1167,17 @@ body.mobile-phone-open .mobile-phone-sheet {
         padding-bottom: 24px;
     }
 
+    .korzina,
+    .checkout-page,
+    .korzina .zakaz-content,
+    .korzina .cart,
+    .korzina .cart-layout,
+    .checkout-page .zakaz-content,
+    .checkout-page .cart,
+    .checkout-page .cart-layout {
+        overflow: visible;
+    }
+
     .korzina .zakaz-inner h2 {
         width: 100%;
         max-width: 1368px;
@@ -1208,6 +1219,14 @@ body.mobile-phone-open .mobile-phone-sheet {
         top: 80px;
         align-self: start;
         overflow: visible;
+    }
+
+    .korzina .cart-summary,
+    .checkout-page .cart-summary {
+        position: sticky;
+        top: 80px;
+        align-self: flex-start;
+        height: fit-content;
     }
 
     .korzina .cart-main__top,
@@ -2596,6 +2615,17 @@ body.mobile-phone-open .mobile-phone-sheet {
         padding-bottom: 24px;
     }
 
+    .korzina,
+    .checkout-page,
+    .korzina .zakaz-content,
+    .korzina .cart,
+    .korzina .cart-layout,
+    .checkout-page .zakaz-content,
+    .checkout-page .cart,
+    .checkout-page .cart-layout {
+        overflow: visible;
+    }
+
     .korzina .zakaz-inner h2 {
         width: 100%;
         max-width: 1168px;
@@ -2638,6 +2668,15 @@ body.mobile-phone-open .mobile-phone-sheet {
         top: 80px;
         align-self: start;
         overflow: visible;
+    }
+
+    .korzina .cart-summary,
+    .checkout-page .cart-summary {
+        position: sticky;
+        top: 80px;
+        align-self: flex-start;
+        height: fit-content;
+        order: initial;
     }
 
     .korzina .cart-main__top,
@@ -2978,6 +3017,16 @@ body.mobile-phone-open .mobile-phone-sheet {
     .reki .products-slider__pagination {
         width: 100%;
         max-width: 1168px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .korzina .cart-summary,
+    .checkout-page .cart-summary {
+        position: sticky;
+        top: 80px;
+        align-self: flex-start;
+        height: fit-content;
     }
 }
 

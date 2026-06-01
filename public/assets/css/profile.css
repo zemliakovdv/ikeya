@@ -4297,6 +4297,12 @@
     }
 
     @media (min-width: 1200px) and (max-width: 1399px) {
+        .orders-page .profile-layout>.sidebar {
+            position: sticky;
+            top: 80px;
+            align-self: flex-start;
+            height: fit-content;
+        }
 
         .zakazi .orders-page>.container {
             max-width: 1200px;
@@ -4719,6 +4725,12 @@
     }
 
     @media (min-width: 1400px) and (max-width: 1919px) {
+        .orders-page .profile-layout>.sidebar {
+            position: sticky;
+            top: 80px;
+            align-self: flex-start;
+            height: fit-content;
+        }
 
         .favorite-profile .all-catalog-items .product-card-inner {
             max-width: 215px;
@@ -6008,6 +6020,15 @@
             max-width: 100%;
             min-height: 40px;
             max-height: 40px;
+        }
+    }
+
+    @media (min-width: 1920px) {
+        .orders-page .profile-layout>.sidebar {
+            position: sticky;
+            top: 80px;
+            align-self: flex-start;
+            height: fit-content;
         }
     }
 
