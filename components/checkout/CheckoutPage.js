@@ -163,6 +163,21 @@ function getAvailableMethodsFromError(error) {
   return found || [];
 }
 
+function extractCheckoutPayload(payload) {
+  if (!payload) return {};
+  return payload?.checkout || payload?.data?.checkout || payload?.data || payload;
+}
+
+function extractPricing(payload) {
+  const checkout = extractCheckoutPayload(payload);
+  return checkout?.pricing || payload?.pricing || null;
+}
+
+function extractDeliveryOptions(payload) {
+  const checkout = extractCheckoutPayload(payload);
+  return checkout?.delivery_options || payload?.delivery_options || null;
+}
+
 function parseAddressToFields(addr) {
   return {
     city: addr.city || '',
@@ -290,10 +305,15 @@ function CheckoutPageInner() {
   const [a1Error, setA1Error] = useState(null);
 
   const [checkoutSummary, setCheckoutSummary] = useState(() => readSessionJSON('checkoutSummary'));
+  const [checkoutPricing, setCheckoutPricing] = useState(null);
+  const [checkoutDeliveryOptions, setCheckoutDeliveryOptions] = useState(null);
 
   const cartToken = typeof window !== 'undefined' ? (localStorage.getItem('cart_token') || cart?.token || '') : '';
 
   const availableMethods = useMemo(() => {
+    const methodsFromDraft = checkoutDeliveryOptions?.methods;
+    if (Array.isArray(methodsFromDraft) && methodsFromDraft.length) return methodsFromDraft;
+
     const fromSummary = checkoutSummary?.availableMethods;
     const fromCart = cart?.delivery?.available_methods;
 
@@ -301,7 +321,11 @@ function CheckoutPageInner() {
     if (Array.isArray(fromCart) && fromCart.length) return fromCart;
 
     return [];
-  }, [checkoutSummary?.availableMethods, cart?.delivery?.available_methods]);
+  }, [checkoutSummary?.availableMethods, cart?.delivery?.available_methods, checkoutDeliveryOptions]);
+
+  const getMethodOption = useCallback((code) => {
+    return availableMethods.find((item) => item?.code === code) || null;
+  }, [availableMethods]);
 
   const methodIsAvailable = useCallback((code) => {
     if (!availableMethods.length) return true;
@@ -411,6 +435,16 @@ function CheckoutPageInner() {
           .map((id) => included.find((i) => i.id === id)?.attributes)
           .filter(Boolean);
 
+        const pricing = extractPricing(data);
+        if (pricing) {
+          setCheckoutPricing(pricing);
+        }
+
+        const deliveryOptions = extractDeliveryOptions(data);
+        if (deliveryOptions) {
+          setCheckoutDeliveryOptions(deliveryOptions);
+        }
+
         if (attr.payment_method) setPaymentMethod(attr.payment_method);
         if (attr.address?.services?.length) setSelectedServices(attr.address.services);
 
@@ -433,7 +467,7 @@ function CheckoutPageInner() {
           logisticsDelivery: previousSummary?.logisticsDelivery ?? 0,
           finalTotal: previousSummary?.finalTotal ?? null,
           europostEligible: previousSummary?.europostEligible ?? null,
-          availableMethods: previousSummary?.availableMethods ?? [],
+          availableMethods: deliveryOptions?.methods ?? previousSummary?.availableMethods ?? [],
         };
 
         sessionStorage.setItem('checkoutSummary', JSON.stringify(summary));
@@ -521,10 +555,15 @@ function CheckoutPageInner() {
     }
   }, [europostPickupAvailable, receiveMethod]);
 
+  const pricingTotals = checkoutPricing?.totals || {};
+  const pricingDelivery = checkoutPricing?.delivery || {};
+
   const subtotal = checkoutSummary?.subtotal ?? toNumber(totals?.subtotal_new_byn || totals?.subtotal);
   const promoDiscount = checkoutSummary?.promoDiscount ?? toNumber(totals?.discount_total_byn || totals?.discount);
 
   const deliveryCost = toNumber(
+    pricingTotals?.delivery_to_belarus_price_byn ??
+    pricingDelivery?.delivery_to_belarus_price_byn ??
     checkoutSummary?.delivery ??
     cart?.delivery?.delivery_to_belarus_byn ??
     cart?.totals?.delivery_to_belarus_byn
@@ -533,7 +572,11 @@ function CheckoutPageInner() {
   const totalWeight = checkoutSummary?.totalWeight ?? toNumber(totals?.total_weight_kg);
   const customsDuty = checkoutSummary?.customsDuty ?? 0;
   const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
-  const finalTotal = checkoutSummary?.finalTotal ?? null;
+  const finalTotal = toNumber(
+    pricingTotals?.final_total_byn ??
+    pricingTotals?.total_byn ??
+    checkoutSummary?.finalTotal
+  );
 
   const pvzDeliveryCost = getDeliveryPrice(pvzCalcResult);
 
@@ -547,14 +590,20 @@ function CheckoutPageInner() {
   const hasAddress = Boolean(passportAddress?.city || passportAddress?.street);
 
   const isPickup = receiveMethod === 'pickup';
+  const pickupOption = getMethodOption('europost_pickup');
+  const courierOption = getMethodOption('courier');
 
-  const hasValidDeliveryAddress = isPickup
-    ? !!selectedPvz
-    : !!(
-      selectedAddr?.city &&
-      selectedAddr?.street &&
-      selectedAddr?.house
-    );
+  const formatMethodEstimate = (method) => {
+    if (!method) return '';
+    const total = toNumber(method.total_delivery_price_byn);
+    const local = toNumber(method.delivery_price_byn);
+    const crossBorder = toNumber(method.delivery_to_belarus_price_byn);
+    if (total > 0) return `${total.toFixed(2)} р.`;
+    if (local > 0 || crossBorder > 0) return `${(local + crossBorder).toFixed(2)} р.`;
+    return '';
+  };
+
+  const hasValidDeliveryAddress = isPickup ? !!selectedPvz : true;
 
   const canCheckout = !!(
     fullName &&
@@ -567,6 +616,7 @@ function CheckoutPageInner() {
   const saveDeliveryToDraft = useCallback(async ({
     deliveryType,
     pickupPointId,
+    deliveryAddressId,
     address,
   } = {}) => {
     if (!draftId) return;
@@ -580,11 +630,24 @@ function CheckoutPageInner() {
       payload.pickup_point_id = pickupPointId;
     }
 
+    if (deliveryAddressId) {
+      payload.delivery_address_id = deliveryAddressId;
+    }
+
     if (address) {
       payload.address = address;
     }
 
-    await updateCheckoutDraft(draftId, payload);
+    const response = await updateCheckoutDraft(draftId, payload);
+    const pricing = extractPricing(response);
+    const deliveryOptions = extractDeliveryOptions(response);
+    if (pricing) {
+      setCheckoutPricing(pricing);
+    }
+    if (deliveryOptions) {
+      setCheckoutDeliveryOptions(deliveryOptions);
+    }
+    return response;
   }, [draftId, paymentMethod]);
 
   const handleSelectPvz = useCallback(async (pvz, calcResult) => {
@@ -657,10 +720,15 @@ function CheckoutPageInner() {
       'courier';
 
     try {
-      await saveDeliveryToDraft({
+      const response = await saveDeliveryToDraft({
         deliveryType: resolvedDeliveryType,
-        address: parseAddressToFields(addr),
+        ...(addr?.apiId
+          ? { deliveryAddressId: addr.apiId }
+          : { address: parseAddressToFields(addr) }),
       });
+
+      const pricing = extractPricing(response);
+      if (pricing) setCheckoutPricing(pricing);
     } catch {
       setError('Адрес выбран, но не удалось сохранить способ доставки в заказе.');
     }
@@ -755,10 +823,12 @@ function CheckoutPageInner() {
       writeLS(LS_PVZ_CALC, result);
 
       try {
-        await saveDeliveryToDraft({
+        const response = await saveDeliveryToDraft({
           deliveryType: 'europost_pickup',
           pickupPointId: found.pickup_point_id || found.external_id || found.id,
         });
+        const pricing = extractPricing(response);
+        if (pricing) setCheckoutPricing(pricing);
       } catch {
         setError('ПВЗ выбран, но не удалось сохранить способ доставки в заказе.');
       }
@@ -802,10 +872,14 @@ function CheckoutPageInner() {
         'courier';
 
       try {
-        await saveDeliveryToDraft({
+        const response = await saveDeliveryToDraft({
           deliveryType: resolvedDeliveryType,
-          address: parseAddressToFields(found),
+          ...(found?.apiId
+            ? { deliveryAddressId: found.apiId }
+            : { address: parseAddressToFields(found) }),
         });
+        const pricing = extractPricing(response);
+        if (pricing) setCheckoutPricing(pricing);
       } catch {
         setError('Адрес выбран, но не удалось сохранить способ доставки в заказе.');
       }
@@ -829,10 +903,14 @@ function CheckoutPageInner() {
         writeLS(LS_ADDR_CALC, fallback);
 
         try {
-          await saveDeliveryToDraft({
+          const response = await saveDeliveryToDraft({
             deliveryType: 'ikeya_delivery',
-            address: parseAddressToFields(found),
+            ...(found?.apiId
+              ? { deliveryAddressId: found.apiId }
+              : { address: parseAddressToFields(found) }),
           });
+          const pricing = extractPricing(response);
+          if (pricing) setCheckoutPricing(pricing);
         } catch {
           setError('Адрес выбран, но не удалось сохранить способ доставки в заказе.');
         }
@@ -887,11 +965,16 @@ function CheckoutPageInner() {
     setShowDeliveryModal(true);
   };
 
-  const handleDeliveryCardClick = () => {
-    if (selectedAddr) {
-      saveReceiveMethod('delivery');
-      return;
-    }
+  const handleDeliveryCardClick = async () => {
+    saveReceiveMethod('delivery');
+
+    try {
+      await saveDeliveryToDraft({
+        deliveryType: 'courier',
+      });
+    } catch {}
+
+    if (selectedAddr) return;
 
     setDeliveryModalTab('delivery');
     setShowDeliveryModal(true);
@@ -971,7 +1054,11 @@ function CheckoutPageInner() {
       }
 
       if (receiveMethod === 'delivery') {
-        finalizePayload.address = parseAddressToFields(selectedAddr);
+        if (selectedAddr?.apiId) {
+          finalizePayload.delivery_address_id = selectedAddr.apiId;
+        } else if (selectedAddr) {
+          finalizePayload.address = parseAddressToFields(selectedAddr);
+        }
       }
 
       const finalizeResponse = await finalizeDraft(draftId, finalizePayload);
