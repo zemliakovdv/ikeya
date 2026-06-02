@@ -42,12 +42,25 @@ export default function ProductStickyBar({ product }) {
   const [addToCartLoading, setAddToCartLoading] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setVisible(window.scrollY > 70);
+    const handleVisibility = () => {
+      const desktop = window.matchMedia('(min-width: 1200px)').matches;
 
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
+      if (desktop) {
+        setVisible(true);
+        return;
+      }
 
-    return () => window.removeEventListener('scroll', handleScroll);
+      setVisible(window.scrollY > 70);
+    };
+
+    handleVisibility();
+    window.addEventListener('scroll', handleVisibility, { passive: true });
+    window.addEventListener('resize', handleVisibility);
+
+    return () => {
+      window.removeEventListener('scroll', handleVisibility);
+      window.removeEventListener('resize', handleVisibility);
+    };
   }, []);
 
   const attr = product?.attributes || {};
