@@ -37,6 +37,12 @@ export default function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
   const [isSticky, setIsSticky] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+  const [isDesktopSlider, setIsDesktopSlider] = useState(false)
+
+  // Состояние навигационных кнопок слайдера
+  const [showPrev, setShowPrev] = useState(false)
+  const [showNext, setShowNext] = useState(false)
 
   const dropdownRef = useRef(null)
   const toggleRef = useRef(null)
@@ -44,11 +50,26 @@ export default function Header() {
   const swiperInst = useRef(null)
 
   useEffect(() => {
-    const handleScroll = () => setIsSticky(window.scrollY > 50)
+    setIsMounted(true)
 
+    const media = window.matchMedia('(min-width: 1200px)')
+    const syncDesktopState = () => setIsDesktopSlider(media.matches)
+
+    syncDesktopState()
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', syncDesktopState)
+      return () => media.removeEventListener('change', syncDesktopState)
+    }
+
+    media.addListener(syncDesktopState)
+    return () => media.removeListener(syncDesktopState)
+  }, [])
+
+  useEffect(() => {
+    const handleScroll = () => setIsSticky(window.scrollY > 50)
     handleScroll()
     window.addEventListener('scroll', handleScroll, { passive: true })
-
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -66,7 +87,6 @@ export default function Header() {
   useEffect(() => {
     function onDocClick(e) {
       if (!isProfileOpen) return
-
       if (
         dropdownRef.current && !dropdownRef.current.contains(e.target) &&
         toggleRef.current && !toggleRef.current.contains(e.target)
@@ -91,78 +111,114 @@ export default function Header() {
     }
   }, [isProfileOpen])
 
-  useEffect(() => {
-    if (!swiperElRef.current) return
+  // Обновляем состояние кнопок по текущей позиции слайдера
+  function syncNavButtons(swiper) {
+    if (!swiper) return
+    setShowPrev(!swiper.isBeginning)
+    setShowNext(!swiper.isEnd)
+  }
 
-    const isHeaderBottomSliderRange = () =>
-      window.innerWidth >= 1200 && window.innerWidth <= 1399
+  useEffect(() => {
+    if (!isMounted || !isDesktopSlider || !swiperElRef.current) return
 
     const destroy = () => {
       if (swiperInst.current) {
         swiperInst.current.destroy(true, true)
         swiperInst.current = null
+        setShowPrev(false)
+        setShowNext(false)
       }
     }
 
     const init = () => {
-      if (!window.Swiper || swiperInst.current || !isHeaderBottomSliderRange()) return
+      if (!window.Swiper || swiperInst.current || !swiperElRef.current) return false
 
       swiperInst.current = new window.Swiper(swiperElRef.current, {
         slidesPerView: 'auto',
-        spaceBetween: 8,
         speed: 300,
         freeMode: true,
         watchOverflow: true,
         grabCursor: true,
-        mousewheel: {
-          forceToAxis: true,
+        mousewheel: { forceToAxis: true },
+        breakpoints: {
+          1200: { spaceBetween: 8 },
+          1400: { spaceBetween: 16 },
+        },
+        on: {
+          init(swiper) { syncNavButtons(swiper) },
+          slideChange(swiper) { syncNavButtons(swiper) },
+          scroll(swiper) { syncNavButtons(swiper) },
+          reachBeginning(swiper) { syncNavButtons(swiper) },
+          reachEnd(swiper) { syncNavButtons(swiper) },
+          fromEdge(swiper) { syncNavButtons(swiper) },
+          setTranslate(swiper) { syncNavButtons(swiper) },
         },
       })
+
+      syncNavButtons(swiperInst.current)
+      return true
     }
 
-    const syncSwiperByViewport = () => {
-      if (isHeaderBottomSliderRange()) {
-        init()
-      } else {
-        destroy()
+    let raf = 0
+    let timeoutId = 0
+    let cancelled = false
+
+    const waitForSwiper = (attempt = 0) => {
+      if (cancelled) return
+
+      if (init()) return
+
+      if (attempt >= 50) {
+        setShowPrev(false)
+        setShowNext(false)
+        return
       }
+
+      timeoutId = window.setTimeout(() => {
+        waitForSwiper(attempt + 1)
+      }, 100)
     }
 
-    let resizeRaf = 0
     const onResize = () => {
-      if (resizeRaf) cancelAnimationFrame(resizeRaf)
-      resizeRaf = requestAnimationFrame(() => {
-        syncSwiperByViewport()
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        if (!swiperInst.current) return
+        swiperInst.current.update()
+        syncNavButtons(swiperInst.current)
       })
     }
 
-    if (window.Swiper) {
-      syncSwiperByViewport()
-    } else {
-      window.addEventListener('swiper-ready', syncSwiperByViewport)
-    }
-
+    waitForSwiper()
     window.addEventListener('resize', onResize)
 
     return () => {
-      window.removeEventListener('swiper-ready', syncSwiperByViewport)
+      cancelled = true
+      if (timeoutId) clearTimeout(timeoutId)
       window.removeEventListener('resize', onResize)
-      if (resizeRaf) cancelAnimationFrame(resizeRaf)
+      if (raf) cancelAnimationFrame(raf)
       destroy()
     }
-  }, [])
+  }, [isMounted, isDesktopSlider])
 
   useEffect(() => {
     if (menuCategories.length > 0 && swiperInst.current) {
       swiperInst.current.update()
+      syncNavButtons(swiperInst.current)
     }
   }, [menuCategories])
+
+  function handleSlideNext() {
+    swiperInst.current?.slideNext()
+  }
+
+  function handleSlidePrev() {
+    swiperInst.current?.slidePrev()
+  }
 
   const bottomItems = (
     menuCategories.length > 0
       ? menuCategories.map((cat) => {
         const a = cat.attributes || {}
-
         return {
           key: cat.id,
           href: `/catalog/${a.slug}`,
@@ -192,7 +248,6 @@ export default function Header() {
     logout()
     setIsProfileOpen(false)
     setIsMegaMenuOpen(false)
-
     if (pathname.startsWith('/profile')) {
       router.push('/')
     }
@@ -362,7 +417,7 @@ export default function Header() {
                 </Link>
                 <Link href="/profile/reviews/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M14.3916 18.3333C13.975 18.3333 13.45 18.2 12.7916 17.8083L10.475 16.425C10.2416 16.2833 9.77495 16.2833 9.53329 16.425L7.21662 17.8083C5.84995 18.625 5.04162 18.3083 4.68329 18.0417C4.31662 17.775 3.76662 17.1 4.12495 15.5333L4.67495 13.1333C4.73329 12.875 4.60829 12.45 4.42495 12.2583L2.49995 10.3167C1.79162 9.59999 1.52495 8.81666 1.74995 8.11666C1.88329 7.70833 2.29995 6.99999 3.63329 6.77499L6.10829 6.35833C6.33329 6.31666 6.67495 6.06666 6.77495 5.85833L8.14162 3.09999C8.76662 1.84166 9.58329 1.65833 10.0083 1.65833C10.4333 1.65833 11.25 1.84999 11.8666 3.09999L13.2333 5.84999C13.3416 6.06666 13.675 6.31666 13.9083 6.35833L16.3833 6.77499C17.375 6.94166 18.0416 7.41666 18.2666 8.12499C18.4 8.53333 18.475 9.35833 17.5083 10.325L15.5916 12.2583C15.4083 12.45 15.2833 12.875 15.3416 13.1417L15.8916 15.5333C16.25 17.1 15.7 17.775 15.3333 18.0417C15.15 18.175 14.8416 18.325 14.4 18.325L14.3916 18.3333ZM10.0083 15.1583C10.3916 15.1583 10.7666 15.25 11.0666 15.425L13.3833 16.8083C14.0583 17.2083 14.4833 17.2167 14.6416 17.1C14.8 16.9833 14.925 16.5667 14.75 15.7917L14.2 13.3917C14.0583 12.7417 14.2916 11.9 14.7583 11.4333L16.6833 9.49166C17.0666 9.10833 17.2416 8.73333 17.1583 8.46666C17.075 8.20833 16.7083 7.99999 16.1916 7.90833L13.7166 7.49166C13.1166 7.39166 12.4583 6.89999 12.1916 6.34999L10.8333 3.59999C10.5916 3.09999 10.2833 2.80833 10.0166 2.79999C9.74995 2.79999 9.44162 3.09999 9.19162 3.59999L7.82495 6.34999C7.55829 6.89166 6.90829 7.38333 6.30829 7.48333L3.83329 7.89999C3.30829 7.98333 2.94995 8.19166 2.86662 8.44999C2.78329 8.70833 2.95829 9.09999 3.33329 9.47499L5.25829 11.4167C5.71662 11.8833 5.95829 12.725 5.81662 13.3667L5.26662 15.7667C5.09162 16.5417 5.21662 16.95 5.37495 17.075C5.53329 17.1917 5.95829 17.1833 6.63329 16.7833L8.94995 15.4C9.25829 15.2167 9.64162 15.1333 10.0166 15.1333L10.0083 15.1583Z" fill="#181818" />
+                    <path d="M14.3916 18.3333C13.975 18.3333 13.45 18.2 12.7916 17.8083L10.475 16.425C10.2416 16.2833 9.77495 16.2833 9.53329 16.425L7.21662 17.8083C5.84995 18.625 5.04162 18.3083 4.68329 18.0417C4.31662 17.775 3.76662 17.1 4.12495 15.5333L4.67495 13.1333C4.73329 12.875 4.60829 12.45 4.42495 12.2583L2.49995 10.3167C1.79162 9.59999 1.52495 8.81666 1.74995 8.11666C1.88329 7.70833 2.29995 6.99999 3.63329 6.77499L6.10829 6.35833C6.33329 6.31666 6.67495 6.06666 6.77495 5.85833L8.14162 3.09999C8.76662 1.84166 9.58329 1.65833 10.0083 1.65833C10.4333 1.65833 11.25 1.84999 11.8666 3.09999L13.2333 5.84999C13.3416 6.06666 13.675 6.31666 13.9083 6.35833L16.3833 6.77499C17.375 6.94166 18.0416 7.41666 18.2666 8.12499C18.4 8.53333 18.475 9.35833 17.5083 10.325L15.5916 12.2583C15.4083 12.45 15.2833 12.875 15.3416 13.1417L15.8916 15.5333C16.25 17.1 15.7 17.775 15.3333 18.0417C15.15 18.175 14.8416 18.325 14.4 18.325L14.3916 18.3333Z" fill="#181818" />
                   </svg>
                   <span className="menu-item-text">Отзывы</span>
                 </Link>
@@ -397,11 +452,27 @@ export default function Header() {
 
       <MegaMenu isOpen={isMegaMenuOpen} onClose={() => setIsMegaMenuOpen(false)} />
 
-      <div className={`header-bottom${isSticky ? ' hidden' : ''}`}>
+      {isMounted && isDesktopSlider && (
+        <div className={`header-bottom${isSticky ? ' hidden' : ''}`}>
         <div className="container">
           <div className="row">
             <div className="col-12">
               <div className="header-bottom-inner">
+
+                {/* Кнопка назад */}
+                {showPrev && (
+                  <button
+                    type="button"
+                    className="header-bottom-nav header-bottom-nav--prev"
+                    onClick={handleSlidePrev}
+                    aria-label="Назад"
+                  >
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
+                      <path d="M7 1L1 7L7 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+
                 <div className="swiper header-bottom-swiper" ref={swiperElRef}>
                   <div className="swiper-wrapper">
                     {bottomItems.map((it) => (
@@ -411,11 +482,27 @@ export default function Header() {
                     ))}
                   </div>
                 </div>
+
+                {/* Кнопка вперёд */}
+                {showNext && (
+                  <button
+                    type="button"
+                    className="header-bottom-nav header-bottom-nav--next"
+                    onClick={handleSlideNext}
+                    aria-label="Вперёд"
+                  >
+                    <svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true">
+                      <path d="M1 1L7 7L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+
               </div>
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
     </header>
   )

@@ -2720,6 +2720,11 @@ body.mobile-phone-open .mobile-phone-sheet {
 }
 
 @media (min-width: 1200px) and (max-width: 1399px) {
+    .header-bottom-swiper .swiper-wrapper {
+        gap: 0;
+        justify-content: flex-start;
+    }
+
     .mega-menu-overlay {
         height: calc(100vh - 152px);
         max-height: calc(100vh - 152px);

@@ -589,7 +589,35 @@ h2 {
     display: flex;
     gap: 24.5px;
     overflow: hidden;
+    position: relative;
     /* чтобы свайпер не вылезал за края */
+}
+
+/* Кнопки навигации */
+.header-bottom-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #181818;
+  padding: 0;
+}
+
+.header-bottom-nav--prev {
+  left: 0;
+  background: linear-gradient(to right, #fff 60%, transparent);
+}
+
+.header-bottom-nav--next {
+  right: 0;
+  background: linear-gradient(to left, #fff 60%, transparent);
 }
 
 /* Убираем старый .header-bottom-links — он больше не нужен */
@@ -609,8 +637,7 @@ h2 {
 }
 
 .header-bottom-swiper .swiper-wrapper {
-    gap: 16px;
-    justify-content: space-between;
+    justify-content: flex-start;
 }
 
 .header-bottom-slide {
