@@ -1006,13 +1006,6 @@ main {
     margin-bottom: 16px;
 }
 
-.product-card__img-wrap img,
-.product-card__img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain;
-}
-
 .swiper-slide-inner {
     --bs-gutter-x: 0;
     --bs-gutter-y: 0;
