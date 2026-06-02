@@ -78,7 +78,7 @@ function validateForm(form) {
 
   if (!form.orderNumber.trim()) {
     errors.orderNumber = 'Обязательное поле'; valid = false;
-  } else if (!/^\d{6,10}$/.test(form.orderNumber.trim())) {
+  } else if (!/^\d{6}$/.test(form.orderNumber.trim())) {
     errors.orderNumber = 'Некорректный номер заказа'; valid = false;
   }
 
