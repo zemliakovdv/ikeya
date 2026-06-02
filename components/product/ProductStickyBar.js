@@ -42,15 +42,22 @@ export default function ProductStickyBar({ product }) {
   const [addToCartLoading, setAddToCartLoading] = useState(false);
 
   useEffect(() => {
+    const DESKTOP_SHOW_SCROLL = 50;
+    const DESKTOP_HIDE_SCROLL = 20;
+    const MOBILE_SHOW_SCROLL = 70;
+
     const handleVisibility = () => {
       const desktop = window.matchMedia('(min-width: 1200px)').matches;
 
-      if (desktop) {
-        setVisible(true);
-        return;
-      }
+      setVisible((current) => {
+        if (desktop) {
+          if (window.scrollY > DESKTOP_SHOW_SCROLL) return true;
+          if (window.scrollY <= DESKTOP_HIDE_SCROLL) return false;
+          return current;
+        }
 
-      setVisible(window.scrollY > 70);
+        return window.scrollY > MOBILE_SHOW_SCROLL;
+      });
     };
 
     handleVisibility();
@@ -125,17 +132,7 @@ export default function ProductStickyBar({ product }) {
   if (!visible) return null;
 
   return (
-    <section
-      className="verh"
-      style={{
-        position: 'sticky',
-        top: '65px',
-        zIndex: 998,
-        background: '#fff',
-        borderBottom: '1px solid #e0e0e0',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-      }}
-    >
+    <section className="verh" style={{ background: '#fff', borderTop: '1px solid #e0e0e0', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
       <div className="container">
         <div className="row">
           <div className="col-12">
@@ -172,7 +169,7 @@ export default function ProductStickyBar({ product }) {
 
                 <div className="verh-card__action">
                   <div className="goods-costs">
-                    <p>{priceInt}<span>.{priceDec}</span></p>
+                    <p>{priceInt}<span>.{priceDec} p.</span></p>
                   </div>
 
                   {currentQty > 0 ? (

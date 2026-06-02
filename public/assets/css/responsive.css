@@ -686,24 +686,27 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .verh {
         display: block;
-        position: sticky;
-        top: 65px;
+        position: fixed;
+        top: 64px;
         left: 0;
         right: 0;
         width: 100%;
         max-width: none;
-        z-index: 998;
+        margin: 0;
+        z-index: 999;
         background: #fff;
         box-shadow: 1px 1px 2px rgba(0, 10, 18, 0.02), 0 0 10px rgba(24, 24, 24, 0.08);
+        padding-top: 0;
+        padding-bottom: 0;
     }
 
     .shop-card .verh .container {
         width: 100%;
-        max-width: none;
-        padding-left: 32px;
-        padding-right: 32px;
-        margin-left: 0;
-        margin-right: 0;
+        max-width: 1336px;
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
         box-sizing: border-box;
     }
 
@@ -749,6 +752,8 @@ body.mobile-phone-open .mobile-phone-sheet {
         display: flex;
         align-items: baseline;
         margin-bottom: 0;
+        justify-content: end;
+        max-width: fit-content;
     }
 
     .shop-card .verh-card__action .goods-costs p {
@@ -941,8 +946,8 @@ body.mobile-phone-open .mobile-phone-sheet {
     .shop-card .goods-added,
     .shop-card .goods-added__counter,
     .shop-card .good-added__link {
-        width: 516px;
-        max-width: 516px;
+        width: 240px;
+        max-width: 240px;
         min-width: 0;
     }
 
@@ -2267,24 +2272,25 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .verh {
         display: block;
-        position: sticky;
-        top: 65px;
+        position: fixed;
+        top: 63px;
         left: 0;
         right: 0;
         width: 100%;
         max-width: none;
-        z-index: 998;
+        margin: 0;
+        z-index: 999;
         background: #fff;
         box-shadow: 1px 1px 2px rgba(0, 10, 18, 0.02), 0 0 10px rgba(24, 24, 24, 0.08);
     }
 
     .shop-card .verh .container {
         width: 100%;
-        max-width: none;
-        padding-left: 32px;
-        padding-right: 32px;
-        margin-left: 0;
-        margin-right: 0;
+        max-width: 1136px;
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
         box-sizing: border-box;
     }
 
@@ -2529,8 +2535,8 @@ body.mobile-phone-open .mobile-phone-sheet {
     .shop-card .goods-added,
     .shop-card .goods-added__counter,
     .shop-card .good-added__link {
-        width: 516px;
-        max-width: 516px;
+        width: 240px;
+        max-width: 240px;
         min-width: 0;
     }
 
@@ -3198,6 +3204,7 @@ body.mobile-phone-open .mobile-phone-sheet {
 }
 
 @media (min-width: 1920px) {
+
     .korzina .cart-summary,
     .checkout-page .cart-summary {
         position: sticky;
@@ -3208,24 +3215,25 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .verh {
         display: block;
-        position: sticky;
-        top: 65px;
+        position: fixed;
+        top: 64px;
         left: 0;
         right: 0;
         width: 100%;
         max-width: none;
-        z-index: 998;
+        margin: 0;
+        z-index: 999;
         background: #fff;
         box-shadow: 1px 1px 2px rgba(0, 10, 18, 0.02), 0 0 10px rgba(24, 24, 24, 0.08);
     }
 
     .shop-card .verh .container {
         width: 100%;
-        max-width: none;
-        padding-left: 32px;
-        padding-right: 32px;
-        margin-left: 0;
-        margin-right: 0;
+        max-width: 1500px;
+        padding-left: 0;
+        padding-right: 0;
+        margin-left: auto;
+        margin-right: auto;
         box-sizing: border-box;
     }
 

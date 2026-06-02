@@ -21,8 +21,7 @@ export async function generateMetadata() {
       description: seo.description || 'Купить мебель в Минске с доставкой по Беларуси',
       keywords: seo.keywords,
       robots: seo.robots,
-      openGraph: { title: seo.title, description: seo.description },
-  alternates: { canonical: 'https://ikeya.by' },
+      alternates: { canonical: 'https://ikeya.by' },
       openGraph: {
         title: seo.title || 'IKEYA – интернет-магазин мебели и товаров для дома',
         description: seo.description || 'Купить мебель в Минске с доставкой по Беларуси',
@@ -73,7 +72,7 @@ function SectionSkeleton({ title }) {
               <div style={{ width: 200, height: 32, background: '#f0f0f0', borderRadius: 6, marginBottom: 24 }} />
             )}
             <div style={{ display: 'flex', gap: 16 }}>
-              {[1,2,3,4,5].map(i => (
+              {[1, 2, 3, 4, 5].map(i => (
                 <div key={i} style={{ flex: 1, height: 280, background: '#f0f0f0', borderRadius: 8 }} />
               ))}
             </div>
@@ -89,7 +88,7 @@ export default async function Home() {
   try {
     const { meta } = await getMainSliderBanners();
     seoText = meta?.seo?.seo_text || null;
-  } catch {}
+  } catch { }
 
   return (
     <main className="main">
