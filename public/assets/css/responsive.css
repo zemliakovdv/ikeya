@@ -765,8 +765,8 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .verh-card__action .goods-add__cart,
     .shop-card .verh-card__action .goods-added {
-        flex: 0 0 auto;
-        min-width: 0;
+        flex: auto;
+        min-width: 240px;
         margin-bottom: 0;
     }
 
