@@ -946,8 +946,8 @@ body.mobile-phone-open .mobile-phone-sheet {
     .shop-card .goods-added,
     .shop-card .goods-added__counter,
     .shop-card .good-added__link {
-        width: 240px;
-        max-width: 240px;
+        width: 100%;
+        max-width: 100%;
         min-width: 0;
     }
 
