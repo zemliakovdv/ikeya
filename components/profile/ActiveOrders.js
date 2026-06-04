@@ -3,6 +3,7 @@
 // components/profile/ActiveOrders.js
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import TrackingModal from '@/components/profile/TrackingModal';
@@ -302,28 +303,57 @@ const OrderCard = ({ order }) => {
       <div className="order-items">
         {order.items?.length > 0 ? (
           order.items.map((item, idx) => (
-            <div key={`${item.desc || item.name || 'item'}-${idx}`} className="order-item">
-              <img
-                src={item.image || '/assets/img/profile/active_1.png'}
-                alt={item.name || 'Товар'}
-                className="item-image"
-                onError={(event) => {
-                  event.currentTarget.src = '/assets/img/profile/active_1.png';
-                }}
-              />
+            item.product_sku ? (
+              <Link
+                key={`${item.product_sku || item.desc || item.name || 'item'}-${idx}`}
+                href={`/product/${item.product_sku}`}
+                className="order-item"
+              >
+                <img
+                  src={item.image || '/assets/img/profile/active_1.png'}
+                  alt={item.name || 'Товар'}
+                  className="item-image"
+                  onError={(event) => {
+                    event.currentTarget.src = '/assets/img/profile/active_1.png';
+                  }}
+                />
 
-              <div className="flex-grow-1">
-                <div className="item-infos">
-                  <div className="item-name">{item.name}</div>
-                  {item.desc && <div className="item-desc">{item.desc}</div>}
+                <div className="flex-grow-1">
+                  <div className="item-infos">
+                    <div className="item-name">{item.name}</div>
+                    {item.desc && <div className="item-desc">{item.desc}</div>}
+                  </div>
+
+                  <div className="item-meta">
+                    <span className="item-quantity">{item.quantity} шт</span>
+                    <span className="item-price">{item.price} р.</span>
+                  </div>
                 </div>
+              </Link>
+            ) : (
+              <div key={`${item.desc || item.name || 'item'}-${idx}`} className="order-item">
+                <img
+                  src={item.image || '/assets/img/profile/active_1.png'}
+                  alt={item.name || 'Товар'}
+                  className="item-image"
+                  onError={(event) => {
+                    event.currentTarget.src = '/assets/img/profile/active_1.png';
+                  }}
+                />
 
-                <div className="item-meta">
-                  <span className="item-quantity">{item.quantity} шт</span>
-                  <span className="item-price">{item.price} р.</span>
+                <div className="flex-grow-1">
+                  <div className="item-infos">
+                    <div className="item-name">{item.name}</div>
+                    {item.desc && <div className="item-desc">{item.desc}</div>}
+                  </div>
+
+                  <div className="item-meta">
+                    <span className="item-quantity">{item.quantity} шт</span>
+                    <span className="item-price">{item.price} р.</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )
           ))
         ) : (
           <div className="order-item-empty" style={{ color: '#9e9e9e', padding: '8px 0' }}>

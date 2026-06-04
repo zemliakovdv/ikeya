@@ -50,7 +50,6 @@ export default function ProductTabs({ product, includedProducts = [] }) {
     const hasMaterials = Boolean(fa.materials?.materials || fa.materials?.desc);
     const hasItems = Boolean(attr.included_products && attr.included_products.length > 0);
     const hasInstructions = Boolean(fa.instructions?.files && fa.instructions.files.length > 0);
-    const hasReviews = Boolean(attr.rating_count && attr.rating_count > 0);
     const hasDelivery = true;
     const hasAdvices = tips.length > 0;
 
@@ -60,11 +59,11 @@ export default function ProductTabs({ product, includedProducts = [] }) {
       hasMaterials && 'materials',
       hasItems && 'items',
       hasInstructions && 'instructions',
-      hasReviews && 'reviews',
+      'reviews',
       hasDelivery && 'delivery',
       hasAdvices && 'advices',
     ].filter(Boolean);
-  }, [attr.included_products, attr.rating_count, fa, tips.length]);
+  }, [attr.included_products, fa, tips.length]);
 
   const [activeTab, setActiveTab] = useState(tabs[0] || 'delivery');
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);

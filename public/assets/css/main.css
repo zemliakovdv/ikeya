@@ -5119,10 +5119,14 @@ main {
 
 .tab-feedbacks__content {
     width: 100%;
+    display: flex;
 }
 
 .feedbacks-layout {
     display: grid;
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     grid-template-columns: minmax(0, 1fr) 428px;
     gap: 32px;
     align-items: flex-start;

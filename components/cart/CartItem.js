@@ -61,6 +61,16 @@ function formatPrice(price) {
   };
 }
 
+function DeleteIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M20.37 5.26H16.21L15.77 4.34C15.31 3.4 15.06 2.88 14.56 2.51C14.45 2.43 14.33 2.36 14.21 2.29C13.65 2 13.08 2 12.03 2C10.98 2 10.37 2 9.80999 2.3C9.67999 2.37 9.56999 2.44 9.44999 2.53C8.93999 2.92 8.69999 3.46 8.24999 4.43L7.86999 5.26H3.62999C3.23999 5.26 2.92999 5.57 2.92999 5.96C2.92999 6.35 3.23999 6.66 3.62999 6.66H4.36999L4.88999 15.32C5.03999 17.83 5.11999 19.09 5.82999 20.11C6.17999 20.62 6.62999 21.04 7.15999 21.36C8.21999 22.01 9.47999 22.01 12 22.01C14.52 22.01 15.78 22.01 16.84 21.36C17.37 21.04 17.81 20.62 18.17 20.11C18.88 19.09 18.96 17.83 19.11 15.32L19.65 6.65H20.39C20.78 6.65 21.09 6.34 21.09 5.95C21.09 5.56 20.78 5.25 20.39 5.25L20.37 5.26ZM9.51999 5.01C9.89999 4.18 10.07 3.81 10.29 3.64C10.34 3.6 10.39 3.57 10.45 3.54C10.7 3.41 11.11 3.4 12.02 3.4C12.93 3.4 13.31 3.4 13.55 3.53C13.61 3.56 13.66 3.59 13.71 3.63C13.93 3.79 14.11 4.15 14.5 4.95L14.65 5.26H9.39999L9.50999 5.01H9.51999ZM17.7 15.24C17.56 17.49 17.49 18.62 17.01 19.31C16.77 19.65 16.46 19.95 16.1 20.16C15.38 20.6 14.24 20.6 11.99 20.6C9.73999 20.6 8.59999 20.6 7.87999 20.16C7.51999 19.94 7.20999 19.65 6.96999 19.31C6.47999 18.61 6.41999 17.48 6.27999 15.23L5.75999 6.65H18.23L17.7 15.24Z" fill="#181818" />
+      <path d="M9.67 9.91C9.28 9.91 8.97 10.22 8.97 10.61V16.19C8.97 16.58 9.28 16.89 9.67 16.89C10.06 16.89 10.37 16.58 10.37 16.19V10.61C10.37 10.22 10.06 9.91 9.67 9.91Z" fill="#181818" />
+      <path d="M14.33 9.91C13.94 9.91 13.63 10.22 13.63 10.61V16.19C13.63 16.58 13.94 16.89 14.33 16.89C14.72 16.89 15.03 16.58 15.03 16.19V10.61C15.03 10.22 14.72 9.91 14.33 9.91Z" fill="#181818" />
+    </svg>
+  );
+}
+
 export default function CartItem({
   item,
   checked = false,
@@ -202,17 +212,30 @@ export default function CartItem({
       {!isUnavailable && (
         <>
           <div className="cart-item__qty">
-            <button
-              className="qty-btn qty-btn--minus"
-              onClick={handleMinus}
-              disabled={loading || quantity <= 1 || !sku}
-              type="button"
-              aria-label="Уменьшить количество"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21.3 12.7H2.7C2.31 12.7 2 12.39 2 12C2 11.61 2.31 11.3 2.7 11.3H21.3C21.69 11.3 22 11.61 22 12C22 12.39 21.69 12.7 21.3 12.7Z" fill="#BDBDBD" />
-              </svg>
-            </button>
+            {quantity > 1 ? (
+              <button
+                className="qty-btn qty-btn--minus"
+                onClick={handleMinus}
+                disabled={loading || !sku}
+                type="button"
+                aria-label="Уменьшить количество"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21.3 12.7H2.7C2.31 12.7 2 12.39 2 12C2 11.61 2.31 11.3 2.7 11.3H21.3C21.69 11.3 22 11.61 22 12C22 12.39 21.69 12.7 21.3 12.7Z" fill="#BDBDBD" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                className="qty-btn qty-btn--minus"
+                onClick={() => sku && onDelete?.(sku)}
+                disabled={loading || !sku}
+                type="button"
+                aria-label="Удалить товар из корзины"
+                title="Удалить товар"
+              >
+                <DeleteIcon />
+              </button>
+            )}
 
             <span className="qty-value">{quantity}</span>
 
@@ -228,7 +251,6 @@ export default function CartItem({
               </svg>
             </button>
           </div>
-
           <div className={`cart-item__price ${hasDiscount ? 'is_promocod' : 'no_promokod'}`}>
             {hasDiscount ? (
               <>

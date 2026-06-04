@@ -39,12 +39,34 @@ export default function AwaitingReviewItem({ product, onOpenDrawer }) {
 
   const imageSrc = getImageSrc(product);
 
+  function openDrawer(initialRating = 0) {
+    onOpenDrawer({ ...product, initialRating });
+  }
+
   function handleStarClick(rating) {
-    onOpenDrawer({ ...product, initialRating: rating });
+    openDrawer(rating);
+  }
+
+  function handleCardClick() {
+    openDrawer(0);
+  }
+
+  function handleKeyDown(event) {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    handleCardClick();
   }
 
   return (
-    <div className="awaiting-review-item">
+    <div
+      className="awaiting-review-item"
+      role="button"
+      tabIndex={0}
+      aria-label={`Открыть отзыв на товар ${product.name}`}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      style={{ cursor: 'pointer' }}
+    >
       <div className="awaiting-review-item__inner">
 
         {/* Фото */}
@@ -66,10 +88,14 @@ export default function AwaitingReviewItem({ product, onOpenDrawer }) {
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
+                type="button"
                 className={`awaiting-review-item__star ${hoveredStar >= star ? 'awaiting-review-item__star--active' : ''}`}
                 onMouseEnter={() => setHoveredStar(star)}
                 onMouseLeave={() => setHoveredStar(0)}
-                onClick={() => handleStarClick(star)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  handleStarClick(star);
+                }}
                 aria-label={`Оценить на ${star}`}
               >
                 <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">

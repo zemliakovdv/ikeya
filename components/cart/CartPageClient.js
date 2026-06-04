@@ -152,6 +152,7 @@ export default function CartPageClient() {
     updateQuantity,
     removeFromCart,
     removeManyFromCart,
+    refreshCart,
     availableItems,
     unavailableItems,
     totals,
@@ -166,21 +167,54 @@ export default function CartPageClient() {
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [remoteSummary, setRemoteSummary] = useState(null);
+  const [isCheckoutAuthFlowPending, setIsCheckoutAuthFlowPending] = useState(false);
+  const [isPreparingCheckout, setIsPreparingCheckout] = useState(false);
+  const [isGuestCartMergeDone, setIsGuestCartMergeDone] = useState(false);
 
   const handleCheckoutAuthorizedRef = useRef(null);
+  const checkoutRetryTimerRef = useRef(null);
+  const checkoutRetryCountRef = useRef(0);
+  const checkoutAutoContinueRef = useRef(false);
 
   const minOrderAmount = toNumber(
     cart?.rules?.min_order_amount_byn,
     DEFAULT_MIN_ORDER_AMOUNT
   );
 
-useEffect(() => {
+  const resetCheckoutAuthFlow = useCallback((options = {}) => {
+    const { removePending = true } = options;
+
+    if (checkoutRetryTimerRef.current) {
+      clearTimeout(checkoutRetryTimerRef.current);
+      checkoutRetryTimerRef.current = null;
+    }
+
+    checkoutRetryCountRef.current = 0;
+    checkoutAutoContinueRef.current = false;
+
+    if (removePending) {
+      sessionStorage.removeItem('pendingCheckout');
+    }
+
+    setIsCheckoutAuthFlowPending(false);
+    setIsPreparingCheckout(false);
+    setIsGuestCartMergeDone(false);
+  }, []);
+
+  useEffect(() => {
     function onAuthDone() {
       const pending = sessionStorage.getItem('pendingCheckout');
-      if (pending) {
-        // Не удаляем pendingCheckout здесь — второй useEffect сработает
-        // когда availableItems обновятся после mergeGuestCart
+      if (pending !== '1') return;
+
+      if (checkoutRetryTimerRef.current) {
+        clearTimeout(checkoutRetryTimerRef.current);
+        checkoutRetryTimerRef.current = null;
       }
+
+      checkoutRetryCountRef.current = 0;
+      setIsCheckoutAuthFlowPending(true);
+      setIsPreparingCheckout(true);
+      setIsGuestCartMergeDone(false);
     }
 
     window.addEventListener('auth-change-done', onAuthDone);
@@ -189,16 +223,32 @@ useEffect(() => {
   }, []);
 
   useEffect(() => {
-    if (!isAuth) return;
+    function onAuthModalClosed() {
+      if (sessionStorage.getItem('pendingCheckout') !== '1' && !isCheckoutAuthFlowPending) {
+        return;
+      }
 
-    const pending = sessionStorage.getItem('pendingCheckout');
+      resetCheckoutAuthFlow({ removePending: true });
+    }
 
-    if (!pending) return;
-    if (!availableItems?.length) return;
+    window.addEventListener('auth-modal-closed', onAuthModalClosed);
 
-    sessionStorage.removeItem('pendingCheckout');
-    handleCheckoutAuthorizedRef.current?.();
-  }, [isAuth, availableItems]);
+    return () => window.removeEventListener('auth-modal-closed', onAuthModalClosed);
+  }, [isCheckoutAuthFlowPending, resetCheckoutAuthFlow]);
+
+  useEffect(() => {
+    function onGuestCartMergeDone() {
+      if (sessionStorage.getItem('pendingCheckout') !== '1') {
+        return;
+      }
+
+      setIsGuestCartMergeDone(true);
+    }
+
+    window.addEventListener('guest-cart-merge-done', onGuestCartMergeDone);
+
+    return () => window.removeEventListener('guest-cart-merge-done', onGuestCartMergeDone);
+  }, []);
 
   const availableSkus = useMemo(
     () => (availableItems || [])
@@ -251,6 +301,101 @@ useEffect(() => {
     () => selectedItemsPayload.map((item) => `${item.sku}:${item.quantity}`).join('|'),
     [selectedItemsPayload]
   );
+
+  useEffect(() => {
+    if (!isCheckoutAuthFlowPending) return;
+    if (!isAuth) return;
+    if (checkoutAutoContinueRef.current) return;
+    if (!isGuestCartMergeDone) return;
+
+    const pending = sessionStorage.getItem('pendingCheckout');
+
+    if (pending !== '1') {
+      resetCheckoutAuthFlow({ removePending: false });
+      return;
+    }
+
+    if (loading) return;
+
+    if (!availableItems?.length) {
+      if (checkoutRetryTimerRef.current) return;
+
+      if (checkoutRetryCountRef.current >= 4) {
+        resetCheckoutAuthFlow({ removePending: true });
+        return;
+      }
+
+      checkoutRetryTimerRef.current = setTimeout(() => {
+        checkoutRetryTimerRef.current = null;
+        checkoutRetryCountRef.current += 1;
+
+        if (!sessionStorage.getItem('pendingCheckout')) {
+          resetCheckoutAuthFlow({ removePending: false });
+          return;
+        }
+
+        refreshCart?.();
+      }, checkoutRetryCountRef.current === 0 ? 600 : 500);
+
+      return;
+    }
+
+    if (checkoutRetryTimerRef.current) {
+      clearTimeout(checkoutRetryTimerRef.current);
+      checkoutRetryTimerRef.current = null;
+    }
+
+    const fallbackPayload = buildItemsPayload(availableItems || []);
+
+    if (!selectedAvailableItems.length || !selectedItemsPayload.length) {
+      if (fallbackPayload.length > 0) {
+        const fallbackSkus = fallbackPayload.map((item) => item.sku);
+        setSelectedItems((prev) => {
+          const current = (prev || []).map((sku) => String(sku));
+
+          if (
+            current.length === fallbackSkus.length &&
+            current.every((sku, idx) => sku === fallbackSkus[idx])
+          ) {
+            return prev;
+          }
+
+          return fallbackSkus;
+        });
+
+        return;
+      }
+
+      resetCheckoutAuthFlow({ removePending: true });
+      return;
+    }
+
+    checkoutAutoContinueRef.current = true;
+
+    (async () => {
+      const success = await handleCheckoutAuthorizedRef.current?.();
+
+      if (success) {
+        sessionStorage.removeItem('pendingCheckout');
+        setIsCheckoutAuthFlowPending(false);
+        setIsPreparingCheckout(false);
+      } else {
+        resetCheckoutAuthFlow({ removePending: true });
+      }
+    })().finally(() => {
+      checkoutAutoContinueRef.current = false;
+    });
+  }, [
+    isAuth,
+    isCheckoutAuthFlowPending,
+    isGuestCartMergeDone,
+    loading,
+    availableItems,
+    selectedAvailableItems.length,
+    selectedItemsPayloadKey,
+    refreshCart,
+    resetCheckoutAuthFlow,
+  ]);
 
   const selectedDataFallback = useMemo(() => {
     if (!selectedAvailableItems.length) {
@@ -353,7 +498,7 @@ useEffect(() => {
   }, [selectedData, delivery]);
 
   const handleCheckoutAuthorized = useCallback(async () => {
-    if (!canCheckout) return;
+    if (!canCheckout) return false;
 
     setCheckoutLoading(true);
 
@@ -402,6 +547,7 @@ useEffect(() => {
       sessionStorage.setItem('checkoutDraftId', String(draftId));
 
       router.push(`/checkout?draft_id=${draftId}`);
+      return true;
     } catch (err) {
       const conflictDraftId =
         err?.payload?.draft_order_id ||
@@ -416,9 +562,10 @@ useEffect(() => {
       if (isDraftConflict && conflictDraftId) {
         sessionStorage.setItem('checkoutDraftId', String(conflictDraftId));
         router.push(`/checkout?draft_id=${conflictDraftId}`);
-        return;
+        return true;
       }
 
+      return false;
     } finally {
       setCheckoutLoading(false);
     }
@@ -431,11 +578,22 @@ useEffect(() => {
       return;
     }
 
+    if (isPreparingCheckout || checkoutLoading) {
+      return;
+    }
+
     if (!canCheckout) {
       return;
     }
 
     if (!isAuth) {
+      if (checkoutRetryTimerRef.current) {
+        clearTimeout(checkoutRetryTimerRef.current);
+        checkoutRetryTimerRef.current = null;
+      }
+
+      checkoutRetryCountRef.current = 0;
+      checkoutAutoContinueRef.current = false;
       saveSummaryToSession();
       sessionStorage.setItem('pendingCheckout', '1');
       openLogin();
@@ -448,6 +606,8 @@ useEffect(() => {
     canCheckout,
     checkoutErrorMessage,
     isAuth,
+    isPreparingCheckout,
+    checkoutLoading,
     openLogin,
     saveSummaryToSession,
     handleCheckoutAuthorized,
@@ -531,7 +691,9 @@ useEffect(() => {
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
 
-  if (isInitialLoading || checkoutLoading) return <PageLoader />;
+  if (isInitialLoading || checkoutLoading || isPreparingCheckout) {
+    return <PageLoader />;
+  }
 
   return (
     <main className="korzina">

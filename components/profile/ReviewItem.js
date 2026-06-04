@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 
 import { buildAssetUrl } from '@/lib/config/api';
 
@@ -85,6 +86,8 @@ export default function ReviewItem({ review, onDelete }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
+  const isPublished = a.status === 'published';
+  const sku = a.product?.sku || review.product_sku || review.sku || null;
   const imageSrc = getImageSrc(a.product);
   const date = formatDate(a.created_at);
 
@@ -106,51 +109,69 @@ export default function ReviewItem({ review, onDelete }) {
     onDelete(id);
   }
 
+  const mainContent = (
+    <>
+      {/* Фото товара */}
+      <div className="review-item__image">
+        <img
+          src={imageSrc}
+          alt={a.product?.name || ''}
+          width={64}
+          height={64}
+        />
+      </div>
+
+      {/* Основной контент */}
+      <div className="review-item__content">
+
+        {/* Бейдж статуса */}
+        <StatusBadge status={a.status} adminNote={a.admin_note} />
+
+        {/* Название товара */}
+        <div className="review-item__name">{a.product?.name}</div>
+
+        {/* Атрибуты (цвет и т.д.) — если есть */}
+        {a.product?.sku && (
+          <div className="review-item__attr">арт. {a.product.sku}</div>
+        )}
+
+        {/* Текст отзыва */}
+        {a.body && (
+          <div className="review-item__body">{a.body}</div>
+        )}
+
+        {/* Фото отзыва */}
+        {a.photos?.length > 0 && (
+          <div className="review-item__photos">
+            {a.photos.map((photo, idx) => (
+              <div key={idx} className="review-item__photo">
+                <img src={photo} alt={`Фото ${idx + 1}`} />
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
+    </>
+  );
+
   return (
     <div className="review-item">
       <div className="review-item__inner">
-
-        {/* Фото товара */}
-        <div className="review-item__image">
-          <img
-            src={imageSrc}
-            alt={a.product?.name || ''}
-            width={64}
-            height={64}
-          />
-        </div>
-
-        {/* Основной контент */}
-        <div className="review-item__content">
-
-          {/* Бейдж статуса */}
-          <StatusBadge status={a.status} adminNote={a.admin_note} />
-
-          {/* Название товара */}
-          <div className="review-item__name">{a.product?.name}</div>
-
-          {/* Атрибуты (цвет и т.д.) — если есть */}
-          {a.product?.sku && (
-            <div className="review-item__attr">арт. {a.product.sku}</div>
-          )}
-
-          {/* Текст отзыва */}
-          {a.body && (
-            <div className="review-item__body">{a.body}</div>
-          )}
-
-          {/* Фото отзыва */}
-          {a.photos?.length > 0 && (
-            <div className="review-item__photos">
-              {a.photos.map((photo, idx) => (
-                <div key={idx} className="review-item__photo">
-                  <img src={photo} alt={`Фото ${idx + 1}`} />
-                </div>
-              ))}
-            </div>
-          )}
-
-        </div>
+        {isPublished && sku ? (
+          <Link
+            href={`/product/${sku}`}
+            className="review-item__main"
+            aria-label={`Открыть товар ${a.product?.name || ''}`}
+            style={{ display: 'flex', flex: 1, color: 'inherit', textDecoration: 'none' }}
+          >
+            {mainContent}
+          </Link>
+        ) : (
+          <div className="review-item__main" style={{ display: 'flex', flex: 1 }}>
+            {mainContent}
+          </div>
+        )}
 
         {/* Правая колонка: звёзды, дата, меню */}
         <div className="review-item__right">

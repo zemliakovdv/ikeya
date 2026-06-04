@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import RangeDatePicker from '@/components/ui/RangeDatePicker';
 
 export default function OrderHistory({ orders, onReorder }) {
@@ -89,24 +90,45 @@ export default function OrderHistory({ orders, onReorder }) {
                 <div className="order-items">
                   {items.length > 0 ? (
                     items.map((item, idx) => (
-                      <div key={item.desc || idx} className="order-item">
-                        <img
-                          src={item.image || '/assets/img/profile/active_1.png'}
-                          alt={item.name}
-                          className="item-image"
-                          onError={(e) => { e.target.src = '/assets/img/profile/active_1.png'; }}
-                        />
-                        <div className="flex-grow-1">
-                          <div className="item-infos">
-                            <div className="item-name">{item.name}</div>
-                            {item.desc && <div className="item-desc">{item.desc}</div>}
+                      item.product_sku ? (
+                        <Link key={item.product_sku || item.desc || idx} href={`/product/${item.product_sku}`} className="order-item">
+                          <img
+                            src={item.image || '/assets/img/profile/active_1.png'}
+                            alt={item.name}
+                            className="item-image"
+                            onError={(e) => { e.target.src = '/assets/img/profile/active_1.png'; }}
+                          />
+                          <div className="flex-grow-1">
+                            <div className="item-infos">
+                              <div className="item-name">{item.name}</div>
+                              {item.desc && <div className="item-desc">{item.desc}</div>}
+                            </div>
+                            <div className="item-meta">
+                              <span className="item-quantity">{item.quantity} шт</span>
+                              <span className="item-price">{item.price} р.</span>
+                            </div>
                           </div>
-                          <div className="item-meta">
-                            <span className="item-quantity">{item.quantity} шт</span>
-                            <span className="item-price">{item.price} р.</span>
+                        </Link>
+                      ) : (
+                        <div key={item.desc || idx} className="order-item">
+                          <img
+                            src={item.image || '/assets/img/profile/active_1.png'}
+                            alt={item.name}
+                            className="item-image"
+                            onError={(e) => { e.target.src = '/assets/img/profile/active_1.png'; }}
+                          />
+                          <div className="flex-grow-1">
+                            <div className="item-infos">
+                              <div className="item-name">{item.name}</div>
+                              {item.desc && <div className="item-desc">{item.desc}</div>}
+                            </div>
+                            <div className="item-meta">
+                              <span className="item-quantity">{item.quantity} шт</span>
+                              <span className="item-price">{item.price} р.</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )
                     ))
                   ) : (
                     <div style={{ color: '#9e9e9e', padding: '8px 0' }}>

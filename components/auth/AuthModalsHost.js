@@ -48,9 +48,15 @@ export function AuthModalsProvider({ children }) {
     setShowPhoneUsed(false);
   }
 
-  function closeAll() {
+  function closeAll(reason = 'user') {
     setActive(null);
     resetUi();
+
+    if (reason === 'user' && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('auth-modal-closed', {
+        detail: { reason },
+      }));
+    }
   }
 
   function openLogin(redirectTo = null) {
@@ -158,15 +164,26 @@ export function AuthModalsProvider({ children }) {
       // Бэк сливает корзины через cart_token в phoneVerify — просто перезагружаем
       window.dispatchEvent(new Event('auth-change-done'));
       setTimeout(async () => {
-        if (guestItems.length > 0) {
-          await mergeGuestCart(guestItems);
+        try {
+          if (guestItems.length > 0) {
+            await mergeGuestCart(guestItems);
+          }
+        } finally {
+          window.dispatchEvent(new Event('guest-cart-merge-done'));
         }
       }, 1000);
+
+      const hasPendingCheckout = sessionStorage.getItem('pendingCheckout') === '1';
+
+      if (hasPendingCheckout) {
+        closeAll('checkout-success');
+        return;
+      }
 
       if (resp.is_new || flow === 'register') {
         openSuccess();
       } else {
-        closeAll();
+        closeAll('success');
         if (redirectAfterAuth.current) { router.push(redirectAfterAuth.current); redirectAfterAuth.current = null; }
       }
     } catch (e) {

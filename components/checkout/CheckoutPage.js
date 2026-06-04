@@ -214,6 +214,26 @@ function normalizeCheckoutItem(item) {
   };
 }
 
+function getDraftItemLineTotal(item = {}) {
+  const candidates = [
+    item.line_total_new_byn,
+    item.line_total_byn,
+    item.price_total_byn,
+    item.total_byn,
+  ];
+
+  for (const value of candidates) {
+    if (value !== null && value !== undefined && value !== '') {
+      return toNumber(value);
+    }
+  }
+
+  const quantity = Number(item.quantity || 1);
+  const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+
+  return toNumber(item.price_byn) * safeQuantity;
+}
+
 function EuropostIcon({ size = 32 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
@@ -449,7 +469,7 @@ function CheckoutPageInner() {
         if (attr.address?.services?.length) setSelectedServices(attr.address.services);
 
         const subtotal = loadedDraftItems.reduce(
-          (acc, item) => acc + parseFloat(item.price_byn || 0) * (item.quantity || 1),
+          (acc, item) => acc + getDraftItemLineTotal(item),
           0
         );
         const itemCount = loadedDraftItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
@@ -558,7 +578,15 @@ function CheckoutPageInner() {
   const pricingTotals = checkoutPricing?.totals || {};
   const pricingDelivery = checkoutPricing?.delivery || {};
 
-  const subtotal = checkoutSummary?.subtotal ?? toNumber(totals?.subtotal_new_byn || totals?.subtotal);
+  const subtotal = toNumber(
+    pricingTotals?.subtotal_new_byn ??
+    pricingTotals?.subtotal_byn ??
+    pricingTotals?.subtotal ??
+    totals?.subtotal_new_byn ??
+    totals?.subtotal_byn ??
+    totals?.subtotal ??
+    checkoutSummary?.subtotal
+  );
   const promoDiscount = checkoutSummary?.promoDiscount ?? toNumber(totals?.discount_total_byn || totals?.discount);
 
   const deliveryCost = toNumber(

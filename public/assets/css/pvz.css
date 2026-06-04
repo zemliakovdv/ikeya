@@ -873,7 +873,530 @@
   background: #0058a3;
 }
 
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .pvz .pvz-map {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pvz .pvz-layout {
+    grid-template-columns: 444px minmax(0, 1fr);
+    gap: 0;
+    height: 600px;
+    min-height: 600px;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-sidebar__list-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-sidebar__list-content {
+    display: none;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-sidebar__detail {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-detail {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-select-btn {
+    height: 48px;
+  }
+
+  .pvz .pvz-desktop-map {
+    display: block;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-desktop-map > .pvz-map-wrap {
+    height: 100%;
+  }
+
+  .pvz .pvz-desktop-map > .pvz-map-wrap > div,
+  .pvz .pvz-desktop-map > .pvz-map-wrap > iframe,
+  .pvz .pvz-desktop-map > .pvz-map-wrap > img,
+  .pvz .pvz-desktop-map > .pvz-map-wrap > ymaps {
+    width: 100%;
+    height: 100%;
+  }
+
+  .pvz .pvz-mobile-map,
+  .pvz .pvz-modal__footer,
+  .pvz .pvz-modal__map-button,
+  .pvz .pvz-detail-backdrop,
+  .pvz .pvz-detail-sheet {
+    display: none;
+  }
+
+  .pvz .pvz-card {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .pvz .pvz-card__header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pvz .pvz-card__title {
+    display: block;
+    min-width: 0;
+  }
+
+  .pvz .pvz-card__info {
+    min-width: 0;
+  }
+
+  .pvz .pvz-card__info--schedule {
+    align-items: flex-start;
+  }
+
+  .pvz .pvz-card__schedule {
+    min-width: 0;
+  }
+
+  .pvz .pvz-card__schedule-row {
+    font-size: 14px;
+    line-height: 20px;
+    color: #181818;
+  }
+
+  .pvz .pvz-card__schedule-days {
+    font-weight: 600;
+  }
+
+  .pvz .pvz-card__schedule-lunch {
+    color: #757575;
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1919px) {
+  .pvz .pvz-map {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pvz .pvz-layout {
+    grid-template-columns: 444px minmax(0, 1fr);
+    gap: 16px;
+    height: 720px;
+    min-height: 720px;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-sidebar__list-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-sidebar__list-content {
+    display: none;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-sidebar__detail {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-detail {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-select-btn {
+    height: 48px;
+  }
+
+  .pvz .pvz-desktop-map {
+    display: block;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-desktop-map > .pvz-map-wrap {
+    height: 100%;
+  }
+
+  .pvz .pvz-desktop-map > .pvz-map-wrap > div,
+  .pvz .pvz-desktop-map > .pvz-map-wrap > iframe,
+  .pvz .pvz-desktop-map > .pvz-map-wrap > img,
+  .pvz .pvz-desktop-map > .pvz-map-wrap > ymaps {
+    width: 100%;
+    height: 100%;
+  }
+
+  .pvz .pvz-mobile-map,
+  .pvz .pvz-modal__footer,
+  .pvz .pvz-modal__map-button,
+  .pvz .pvz-detail-backdrop,
+  .pvz .pvz-detail-sheet {
+    display: none;
+  }
+
+  .pvz .pvz-card {
+    padding: 16px;
+    border-radius: 8px;
+  }
+
+  .pvz .pvz-card__header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pvz .pvz-card__title {
+    display: block;
+    min-width: 0;
+  }
+
+  .pvz .pvz-card__info {
+    min-width: 0;
+  }
+
+  .pvz .pvz-card__info--schedule {
+    align-items: flex-start;
+  }
+
+  .pvz .pvz-card__schedule {
+    min-width: 0;
+  }
+
+  .pvz .pvz-card__schedule-row {
+    font-size: 14px;
+    line-height: 20px;
+    color: #181818;
+  }
+
+  .pvz .pvz-card__schedule-days {
+    font-weight: 600;
+  }
+
+  .pvz .pvz-card__schedule-lunch {
+    color: #757575;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+  .pvz .pvz-map {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pvz .pvz-search {
+    height: 48px;
+    margin-bottom: 16px;
+    padding: 0 16px 0 12px;
+    gap: 8px;
+  }
+
+  .pvz .pvz-search__input {
+    height: 46px;
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .pvz .pvz-search__input::placeholder {
+    font-size: 13px;
+    line-height: 18px;
+  }
+
+  .pvz .pvz-mobile-map {
+    min-height: 1080px;
+    height: 1080px;
+  }
+
+  .pvz .pvz-modal__footer {
+    max-width: 960px;
+  }
+
+  .pvz .pvz-card {
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+    border-radius: 8px;
+    box-sizing: border-box;
+  }
+
+  .pvz .pvz-card__header {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pvz .pvz-card__icon {
+    flex: 0 0 auto;
+  }
+
+  .pvz .pvz-card__title,
+  .pvz .pvz-card__info,
+  .pvz .pvz-card__schedule {
+    min-width: 0;
+  }
+
+  .pvz .pvz-card__info--schedule {
+    align-items: flex-start;
+  }
+
+  .pvz .pvz-card__schedule-row {
+    font-size: 14px;
+    line-height: 20px;
+    color: #181818;
+    word-break: break-word;
+  }
+}
+
 @media (max-width: 1199px) {
+  .pvz .pvz-layout {
+    display: block;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    position: relative;
+  }
+
+  .pvz .pvz-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+    gap: 0;
+    overflow: visible;
+  }
+
+  .pvz .pvz-sidebar__list-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .pvz .pvz-list {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+    padding-bottom: 144px;
+  }
+
+  .pvz .pvz-desktop-map {
+    display: none;
+  }
+
+  .pvz .pvz-mobile-map {
+    display: none;
+    width: 100%;
+    min-width: 0;
+    padding-bottom: 144px;
+  }
+
+  .pvz .pvz-mobile-map .pvz-map-wrap {
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-layout--list .pvz-sidebar {
+    display: flex;
+  }
+
+  .pvz .pvz-layout--list .pvz-mobile-map {
+    display: none;
+  }
+
+  .pvz .pvz-layout--map {
+    display: block;
+  }
+
+  .pvz .pvz-layout--map .pvz-sidebar {
+    display: none;
+  }
+
+  .pvz .pvz-layout--map .pvz-mobile-map {
+    display: block;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-sidebar__list-content {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-sidebar__detail {
+    display: none;
+  }
+
+  .pvz .pvz-layout--pickup-detail .pvz-mobile-map {
+    display: none;
+  }
+
+  .pvz .pvz-detail-backdrop {
+    display: none;
+  }
+
+  .pvz .pvz-detail-sheet {
+    display: none;
+  }
+
+  .pvz .pvz-layout--pickup-detail + .pvz-detail-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(24, 24, 24, 0.36);
+    z-index: 20;
+  }
+
+  .pvz .pvz-layout--pickup-detail + .pvz-detail-backdrop + .pvz-detail-sheet {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 0;
+    z-index: 21;
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    max-height: calc(100dvh - 120px);
+    overflow: hidden;
+  }
+
+  .pvz .pvz-layout--pickup-detail + .pvz-detail-backdrop + .pvz-detail-sheet .pvz-detail {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 16px;
+    padding: 0 16px 16px;
+  }
+
+  .pvz .pvz-layout--pickup-detail + .pvz-detail-backdrop + .pvz-detail-sheet .pvz-detail__header {
+    min-height: 56px;
+    margin: 0 -16px;
+    padding: 8px 16px;
+    align-items: center;
+  }
+
+  .pvz .pvz-layout--pickup-detail + .pvz-detail-backdrop + .pvz-detail-sheet .pvz-detail__header .btn-close {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 8px;
+    margin: 0;
+    background-position: center;
+  }
+
+  .pvz .pvz-layout--pickup-detail + .pvz-detail-backdrop + .pvz-detail-sheet .pvz-detail__footer {
+    margin-top: auto;
+    padding-top: 8px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-bottom: 8px;
+  }
+
+  .pvz .pvz-layout--pickup-detail + .pvz-detail-backdrop + .pvz-detail-sheet .pvz-select-btn {
+    height: 40px;
+  }
+
+  .pvz .pvz-modal__footer {
+    display: flex;
+    position: fixed;
+    left: 50%;
+    bottom: 72px;
+    transform: translateX(-50%);
+    z-index: 1001;
+    width: calc(100% - 32px);
+    padding: 0;
+    background: transparent;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0;
+    box-sizing: border-box;
+    border-top: 0;
+  }
+
+  .pvz .pvz-modal__map-button {
+    display: inline-flex;
+    width: 100%;
+    height: 40px;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+    border-radius: 8px;
+    background: #0058A3;
+    color: #fff;
+    font: 600 13px/18px Inter, sans-serif;
+  }
+
+  .pvz .pvz-modal__map-button svg {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+  }
+
   .saved-addresses-modal--desktop {
     display: none;
   }
@@ -1112,6 +1635,14 @@
     overflow: hidden;
   }
 
+  .checkout-pvz-modal.pickup-mode .pvz-sidebar__list-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .checkout-pvz-modal.pickup-mode>.pvz-map-wrap,
   .checkout-pvz-modal.pickup-mode .pvz-layout>.pvz-map-wrap {
     display: none;
@@ -1183,6 +1714,7 @@
     flex: 1 1 auto;
     min-height: 0;
     max-height: none;
+    overflow-x: hidden;
     overflow-y: auto;
     gap: 8px;
     padding: 0 16px 16px;
@@ -1998,9 +2530,18 @@
     box-sizing: border-box;
   }
 
+  .checkout-pvz-modal.pickup-mode .pvz-sidebar__list-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .checkout-pvz-modal.pickup-mode .pvz-list {
     flex: 1 1 auto;
     min-height: 0;
+    overflow-x: hidden;
     overflow-y: auto;
   }
 

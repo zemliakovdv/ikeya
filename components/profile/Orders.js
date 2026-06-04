@@ -177,6 +177,7 @@ function parseOrders(data) {
       .map((item) => ({
         name: item.name || '—',
         desc: item.product_sku || '',
+        product_sku: item.product_sku || null,
         quantity: item.quantity || 1,
         price: Number.parseFloat(item.price_byn || 0).toFixed(2),
         image: resolveImage(item.image_url),
@@ -225,27 +226,41 @@ function parseOrders(data) {
 function parsePurchases(data) {
   return (data?.purchases || []).map((purchase) => {
     const product = purchase.product || {};
-    const localImages = product.images?.local_images || [];
-    const remoteImages = product.images?.images || [];
+    const productSku = purchase.product_sku || purchase.sku || product.sku || null;
+    const purchasedAt = purchase.purchased_at || purchase.purchasedAt || purchase.created_at || null;
+    const quantity = purchase.quantity ?? product.quantity ?? 1;
+    const priceByn = purchase.price_byn ?? product.price_byn ?? '0';
+    const productImages = product.images || {};
+    const localImages = productImages.local_images || [];
+    const remoteImages = productImages.images || [];
     const image =
       (localImages[0] ? buildAssetUrl(localImages[0]) : null) ||
       remoteImages[0] ||
       null;
-    const price = Number.parseFloat(purchase.price_byn || 0);
+    const price = Number.parseFloat(priceByn || 0);
+    const normalizedProduct = {
+      ...product,
+      sku: product.sku || productSku,
+      name: product.name || '—',
+      price_byn: product.price_byn ?? priceByn,
+      quantity: product.quantity ?? quantity,
+      category_id: product.category_id ?? null,
+      collection: product.collection ?? null,
+      images: productImages,
+    };
 
     return {
-      id: purchase.product_sku,
-      orderId: purchase.order_id,
-      purchasedAt: formatDate(purchase.purchased_at),
-      quantity: purchase.quantity || 1,
+      order_id: purchase.order_id,
+      status: purchase.status || null,
+      purchased_at: purchasedAt,
+      product_sku: productSku,
+      quantity,
       price_byn: price.toFixed(2),
-      product: {
-        sku: product.sku,
-        name: product.name || '—',
-        price_byn: product.price_byn,
-        images: product.images,
-      },
-      title: product.name || '—',
+      product: normalizedProduct,
+      id: productSku,
+      orderId: purchase.order_id,
+      purchasedAt: formatDate(purchasedAt),
+      title: normalizedProduct.name,
       priceWhole: String(Math.floor(price)),
       priceCents: (price % 1).toFixed(2).split('.')[1],
       images: image ? [image] : [],
@@ -259,6 +274,7 @@ function usePurchasesInfinite(token, enabled) {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [loadedOnce, setLoadedOnce] = useState(false);
 
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
@@ -266,6 +282,18 @@ function usePurchasesInfinite(token, enabled) {
   const triggerRef = useRef(null);
   const observerRef = useRef(null);
   const abortRef = useRef(null);
+
+  useEffect(() => {
+    setPurchases([]);
+    setLoading(false);
+    setHasMore(true);
+    setLoadedOnce(false);
+    loadingRef.current = false;
+    hasMoreRef.current = true;
+    pageRef.current = 1;
+    observerRef.current?.disconnect();
+    abortRef.current?.abort();
+  }, [token]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current || !token) return;
@@ -307,11 +335,20 @@ function usePurchasesInfinite(token, enabled) {
       setHasMore(false);
     } finally {
       if (!abortRef.current?.signal.aborted) {
+        setLoadedOnce(true);
         loadingRef.current = false;
         setLoading(false);
       }
     }
   }, [token]);
+
+  useEffect(() => {
+    if (!enabled || !token) return;
+    if (loadedOnce) return;
+    if (loadingRef.current || !hasMoreRef.current) return;
+    if (pageRef.current !== 1) return;
+    loadMore();
+  }, [enabled, token, loadedOnce, loadMore]);
 
   // IntersectionObserver — запуск при появлении триггера в зоне видимости
   useEffect(() => {
@@ -341,7 +378,7 @@ function usePurchasesInfinite(token, enabled) {
     observerRef.current.observe(node);
   }, []);
 
-  return { purchases, loading, hasMore, setTrigger };
+  return { purchases, loading, hasMore, loadedOnce, setTrigger };
 }
 
 // ─── Основной компонент ───────────────────────────────────────────────────────
@@ -426,8 +463,13 @@ export default function Orders() {
   // ── Бесконечная прокрутка покупок ──────────────────────────────────────────
 
   const purchasesEnabled = activeTab === 'purchases';
-  const { purchases, loading: purchasesLoading, hasMore: purchasesHasMore, setTrigger } =
-    usePurchasesInfinite(token, purchasesEnabled);
+  const {
+    purchases,
+    loading: purchasesLoading,
+    hasMore: purchasesHasMore,
+    loadedOnce: purchasesLoadedOnce,
+    setTrigger,
+  } = usePurchasesInfinite(token, purchasesEnabled);
 
   // ── Фильтрация заказов ──────────────────────────────────────────────────────
 
@@ -540,7 +582,7 @@ export default function Orders() {
 
           {activeTab === 'purchases' && (
             <div>
-              {purchases.length === 0 && !purchasesLoading ? (
+              {purchasesLoadedOnce && purchases.length === 0 && !purchasesLoading ? (
                 <div className="empty" style={{ padding: '32px 0', textAlign: 'center' }}>
                   <div className="empty-illustration">
                     <img src="/assets/img/profile/empty-buys.svg" alt="" />
@@ -553,9 +595,9 @@ export default function Orders() {
                 </div>
               ) : (
                 <>
-                  <Purchases products={purchases} />
+                  {purchases.length > 0 && <Purchases products={purchases} />}
 
-                  {purchasesHasMore && (
+                  {(purchasesHasMore || purchasesLoading) && (
                     <div
                       ref={setTrigger}
                       className="loading-trigger"
