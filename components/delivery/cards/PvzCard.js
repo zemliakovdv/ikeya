@@ -28,47 +28,65 @@ const EuropostIcon = () => (
   </svg>
 );
 
+const ChevronRightIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M6 3.33334L10.6667 8.00001L6 12.6667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const DAY_NAMES = ['', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
-/**
- * Группирует расписание: дни с одинаковым временем → одна строка.
- * Возвращает массив { days: 'Пн-Пт', time: '09:00-21:00', lunch: '14:00-15:00' }
- */
 function groupSchedules(schedules) {
   if (!schedules?.length) return [];
 
   const groups = [];
   let current = null;
 
-  for (const s of schedules) {
-    const dayName = DAY_NAMES[s.iso_day_of_week] || '';
-    const time = s.is_working ? s.work_time : 'выходной';
-    const lunch = s.is_working && s.lunch_time ? s.lunch_time : null;
+  for (const schedule of schedules) {
+    const dayName = DAY_NAMES[schedule.iso_day_of_week] || '';
+    const time = schedule.is_working ? schedule.work_time : 'выходной';
+    const lunch = schedule.is_working && schedule.lunch_time ? schedule.lunch_time : null;
     const key = `${time}__${lunch}`;
 
     if (current && current.key === key) {
       current.lastDay = dayName;
-      current.lastIso = s.iso_day_of_week;
+      current.lastIso = schedule.iso_day_of_week;
     } else {
       if (current) groups.push(current);
-      current = { key, firstDay: dayName, lastDay: dayName, firstIso: s.iso_day_of_week, lastIso: s.iso_day_of_week, time, lunch };
+      current = {
+        key,
+        firstDay: dayName,
+        lastDay: dayName,
+        firstIso: schedule.iso_day_of_week,
+        lastIso: schedule.iso_day_of_week,
+        time,
+        lunch,
+      };
     }
   }
+
   if (current) groups.push(current);
 
-  return groups.map(g => ({
-    days: g.firstDay === g.lastDay ? g.firstDay : `${g.firstDay}-${g.lastDay}`,
-    time: g.time,
-    lunch: g.lunch,
+  return groups.map((group) => ({
+    days: group.firstDay === group.lastDay ? group.firstDay : `${group.firstDay}-${group.lastDay}`,
+    time: group.time,
+    lunch: group.lunch,
   }));
 }
 
 export default function PvzCard({ point, onClick, onDetailClick }) {
   const groups = groupSchedules(point.schedules);
   const showSchedule = groups.length > 0;
+  const lunchTime = groups.find((group) => group.lunch)?.lunch || point.break_hours || null;
 
   return (
-    <div className="pvz-card" onClick={() => { onClick?.(); onDetailClick?.(); }}>
+    <div
+      className="pvz-card"
+      onClick={() => {
+        onClick?.();
+        onDetailClick?.();
+      }}
+    >
       <div className="pvz-card__header">
         <span className="pvz-card__icon"><EuropostIcon /></span>
         <span className="pvz-card__title">{getCardTitle(point)}</span>
@@ -77,7 +95,7 @@ export default function PvzCard({ point, onClick, onDetailClick }) {
       {point.phone && (
         <div className="pvz-card__info">
           <PhoneIcon />
-          <a href={`tel:${point.phone}`} onClick={e => e.stopPropagation()}>
+          <a href={`tel:${point.phone}`} onClick={(event) => event.stopPropagation()}>
             {point.phone}
           </a>
         </div>
@@ -87,24 +105,46 @@ export default function PvzCard({ point, onClick, onDetailClick }) {
         <div className="pvz-card__info pvz-card__info--schedule">
           <ClockIcon />
           <div className="pvz-card__schedule">
-            {groups.map((g, i) => (
-              <div key={i} className="pvz-card__schedule-row">
-                <span className="pvz-card__schedule-days">{g.days}:</span>
-                {' '}
-                <span className="pvz-card__schedule-time">{g.time}</span>
-                {g.lunch && (
-                  <span className="pvz-card__schedule-lunch">, обед: {g.lunch}</span>
-                )}
+            {groups.map((group, index) => (
+              <div key={index} className="pvz-card__schedule-row">
+                <span className="pvz-card__schedule-days">{group.days}:</span>{' '}
+                <span className="pvz-card__schedule-time">{group.time}</span>
               </div>
             ))}
+            {lunchTime && (
+              <div className="pvz-card__schedule-lunch">Обед: {lunchTime}</div>
+            )}
           </div>
         </div>
       ) : point.working_hours ? (
-        <div className="pvz-card__info">
+        <div className="pvz-card__info pvz-card__info--schedule">
           <ClockIcon />
-          <span>{point.working_hours}</span>
+          <div className="pvz-card__schedule">
+            <div className="pvz-card__schedule-row">
+              <span className="pvz-card__schedule-time">{point.working_hours}</span>
+            </div>
+            {lunchTime && (
+              <div className="pvz-card__schedule-lunch">Обед: {lunchTime}</div>
+            )}
+          </div>
         </div>
+      ) : lunchTime ? (
+        <div className="pvz-card__schedule-lunch">Обед: {lunchTime}</div>
       ) : null}
+
+      <button
+        type="button"
+        className="pvz-card__more"
+        onClick={(event) => {
+          event.stopPropagation();
+          onDetailClick?.(point);
+        }}
+      >
+        <span>Подробнее</span>
+        <span className="pvz-card__more-icon">
+          <ChevronRightIcon />
+        </span>
+      </button>
     </div>
   );
 }
