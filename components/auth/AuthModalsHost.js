@@ -5,7 +5,6 @@ import { createContext, useContext, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { phoneSend, phoneVerify, phoneCheck } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
 import { getCartToken, getCart } from '@/lib/api/cart';
 
 import LoginModal from '@/components/auth/LoginModal';
@@ -19,7 +18,6 @@ export function AuthModalsProvider({ children }) {
   const { setAuth } = useAuth();
   const router = useRouter();
   const redirectAfterAuth = useRef(null);
-  const { mergeGuestCart } = useCart();
   const [active, setActive] = useState(null); // null|'login'|'register'|'code'|'success'
   const [flow, setFlow] = useState('login'); // 'login'|'register'
 
@@ -144,9 +142,9 @@ export function AuthModalsProvider({ children }) {
 
     setLoading(true);
     try {
-      // ✅ Сохраняем гостевые товары ДО логина
-      const guestCartResp = await getCart();
-      const guestItems = guestCartResp?.cart?.items || [];
+      // Читаем гостевую корзину до логина только чтобы сохранить текущий порядок flow.
+      // Повторно переносить эти товары после phoneVerify нельзя: бэк уже мержит корзину по cart_token.
+      await getCart();
 
       const resp = await phoneVerify({
         phone,
@@ -163,14 +161,8 @@ export function AuthModalsProvider({ children }) {
 
       // Бэк сливает корзины через cart_token в phoneVerify — просто перезагружаем
       window.dispatchEvent(new Event('auth-change-done'));
-      setTimeout(async () => {
-        try {
-          if (guestItems.length > 0) {
-            await mergeGuestCart(guestItems);
-          }
-        } finally {
-          window.dispatchEvent(new Event('guest-cart-merge-done'));
-        }
+      setTimeout(() => {
+        window.dispatchEvent(new Event('guest-cart-merge-done'));
       }, 1000);
 
       const hasPendingCheckout = sessionStorage.getItem('pendingCheckout') === '1';
