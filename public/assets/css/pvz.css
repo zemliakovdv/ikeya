@@ -112,8 +112,8 @@
 
 .pvz-card__header {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 12px;
 }
 
@@ -1232,8 +1232,8 @@
   }
 
   .pvz .pvz-card__header {
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
+    gap: 8px;
   }
 
   .pvz .pvz-card__icon {
@@ -1796,9 +1796,9 @@
 
   .checkout-pvz-modal.pickup-mode .pvz-card__header {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    margin: 0;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
   }
 
   .checkout-pvz-modal.pickup-mode .pvz-card__icon {
