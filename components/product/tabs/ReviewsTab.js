@@ -26,11 +26,12 @@ function formatDate(value) {
   });
 }
 
-function buildReviewsUrl({ sku, page, rating, withPhoto }) {
+function buildReviewsUrl({ sku, page, rating, withPhoto, sort = 'newest' }) {
   const params = new URLSearchParams();
 
   params.set('page', String(page));
   params.set('per_page', String(PER_PAGE));
+  params.set('sort', sort);
 
   if (rating) {
     params.set('rating', String(rating));
@@ -234,6 +235,7 @@ export default function ReviewsTab({ product }) {
 
   const [ratingFilter, setRatingFilter] = useState(null);
   const [withPhoto, setWithPhoto] = useState(false);
+  const [sort, setSort] = useState('newest');
   const [loading, setLoading] = useState(Boolean(sku));
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
@@ -275,6 +277,7 @@ export default function ReviewsTab({ product }) {
           page,
           rating: ratingFilter,
           withPhoto,
+          sort,
         }),
         { cache: 'no-store' }
       );
@@ -308,7 +311,7 @@ export default function ReviewsTab({ product }) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [sku, ratingFilter, withPhoto]);
+  }, [sku, ratingFilter, withPhoto, sort]);
 
   useEffect(() => {
     loadReviews({ page: 1, append: false });
@@ -340,7 +343,8 @@ export default function ReviewsTab({ product }) {
     setIsDropdownOpen(false);
   };
 
-  const handleSelectNewest = () => {
+  const handleSelectSort = (nextSort) => {
+    setSort(nextSort);
     setIsDropdownOpen(false);
   };
 
@@ -348,6 +352,8 @@ export default function ReviewsTab({ product }) {
     if (loadingMore || !hasMore) return;
     loadReviews({ page: Number(meta.page || 1) + 1, append: true });
   };
+
+  const sortLabel = sort === 'oldest' ? 'Сначала старые' : 'Сначала новые';
 
   return (
     <div className="tab-pane fade show active">
@@ -415,7 +421,7 @@ export default function ReviewsTab({ product }) {
                     onClick={() => setIsDropdownOpen((value) => !value)}
                     aria-expanded={isDropdownOpen}
                   >
-                    Сначала новые
+                    {sortLabel}
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                       <path
                         d="M4 6L8 10L12 6"
@@ -439,10 +445,18 @@ export default function ReviewsTab({ product }) {
 
                       <button
                         type="button"
-                        className="feedbacks-sort-dropdown__item active"
-                        onClick={handleSelectNewest}
+                        className={`feedbacks-sort-dropdown__item ${sort === 'newest' ? 'active' : ''}`}
+                        onClick={() => handleSelectSort('newest')}
                       >
                         Сначала новые
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`feedbacks-sort-dropdown__item ${sort === 'oldest' ? 'active' : ''}`}
+                        onClick={() => handleSelectSort('oldest')}
+                      >
+                        Сначала старые
                       </button>
                     </div>
                   )}

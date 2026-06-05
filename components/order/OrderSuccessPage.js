@@ -375,6 +375,7 @@ export default function OrderSuccessPage() {
 
   const isIkeya = deliveryType === 'ikeya_delivery';
   const deliveryTypeLabel = DELIVERY_TYPE_LABELS[deliveryType] || deliveryType || '';
+  const trackNumber = attrs.track_number || null;
 
   const pvzAddress = pvz
     ? (pvz.city ? `${pvz.city}, ${pvz.address}` : pvz.address)
@@ -455,6 +456,12 @@ export default function OrderSuccessPage() {
                   <p className="order-tracking">
                     Отслеживайте статус <a href="/profile/orders" className="tracking-link">в личном кабинете</a>
                   </p>
+
+                  {trackNumber && (
+                    <p className="order-tracking">
+                      Трек-номер: <strong>{trackNumber}</strong>
+                    </p>
+                  )}
                 </div>
 
                 <div className="order-detail-item">

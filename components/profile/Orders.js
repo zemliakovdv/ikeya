@@ -192,6 +192,7 @@ function parseOrders(data) {
       date: formatDate(attr.created_at),
       rawDate: attr.created_at,
       rawStatus,
+      deliveryType: attr.delivery_type || null,
       status: mappedStatus,
       statusDescription: isExpiredUnpaid
         ? 'Истёк срок оплаты'

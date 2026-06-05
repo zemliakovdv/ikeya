@@ -609,8 +609,25 @@ function CheckoutPageInner() {
   const pvzDeliveryCost = getDeliveryPrice(pvzCalcResult);
 
   const addrDeliveryCost = getDeliveryPrice(addrCalcResult);
-  const addrDeliveryType = addrCalcResult?.delivery?.normalized_delivery_type || 'courier';
+  const addrDeliveryType =
+    addrCalcResult?.delivery?.normalized_delivery_type ||
+    addrCalcResult?.delivery?.delivery_type ||
+    addrCalcResult?.delivery?.type ||
+    (courierAvailable ? 'courier' : ikeyaDeliveryAvailable ? 'ikeya_delivery' : null);
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
+  const selectedPickupPointId =
+    selectedPvz?.pickup_point_id ||
+    selectedPvz?.external_id ||
+    selectedPvz?.id ||
+    null;
+  const hasSelectedDeliveryAddressPayload = Boolean(
+    selectedAddr?.apiId ||
+    (
+      selectedAddr?.city &&
+      selectedAddr?.street &&
+      selectedAddr?.house
+    )
+  );
 
   const fullName = profile ? [profile.last_name, profile.first_name, profile.middle_name].filter(Boolean).join(' ') : '';
   const hasPassport = Boolean(profile?.passport_data?.number && profile?.passport_data?.series);
@@ -649,6 +666,22 @@ function CheckoutPageInner() {
   } = {}) => {
     if (!draftId) return;
 
+    if (!['europost_pickup', 'courier', 'ikeya_delivery'].includes(deliveryType)) {
+      throw new Error('Некорректный способ доставки');
+    }
+
+    if (!methodIsAvailable(deliveryType)) {
+      throw new Error('Выбранный способ доставки недоступен');
+    }
+
+    if (deliveryType === 'europost_pickup' && !pickupPointId) {
+      throw new Error('Не выбран пункт самовывоза Европочты');
+    }
+
+    if ((deliveryType === 'courier' || deliveryType === 'ikeya_delivery') && !deliveryAddressId && !address) {
+      throw new Error('Не указан адрес доставки');
+    }
+
     const payload = {
       delivery_type: deliveryType,
       payment_method: paymentMethod,
@@ -676,9 +709,14 @@ function CheckoutPageInner() {
       setCheckoutDeliveryOptions(deliveryOptions);
     }
     return response;
-  }, [draftId, paymentMethod]);
+  }, [draftId, paymentMethod, methodIsAvailable]);
 
   const handleSelectPvz = useCallback(async (pvz, calcResult) => {
+    if (!europostPickupAvailable) {
+      setError('Самовывоз Европочтой недоступен для текущего заказа.');
+      return;
+    }
+
     setSelectedPvz(pvz);
     setPvzCalcResult(calcResult);
     writeLS(LS_SELECTED_PVZ, pvz);
@@ -732,7 +770,7 @@ function CheckoutPageInner() {
       setSavedPvzList(updated);
       writeLS(LS_SAVED_PVZ, updated);
     }
-  }, [token, savedPvzList, saveDeliveryToDraft]);
+  }, [token, savedPvzList, saveDeliveryToDraft, europostPickupAvailable]);
 
   const handleSelectAddr = useCallback(async (addr, calcResult) => {
     setSelectedAddr(addr);
@@ -746,6 +784,11 @@ function CheckoutPageInner() {
       calcResult?.delivery?.delivery_type ||
       calcResult?.delivery?.type ||
       'courier';
+
+    if (!methodIsAvailable(resolvedDeliveryType)) {
+      setError('Выбранный способ доставки недоступен для текущего заказа.');
+      return;
+    }
 
     try {
       const response = await saveDeliveryToDraft({
@@ -822,7 +865,7 @@ function CheckoutPageInner() {
       setSavedAddrList(updated);
       writeLS(LS_SAVED_ADDR, updated);
     }
-  }, [token, savedAddrList, saveDeliveryToDraft]);
+  }, [token, savedAddrList, saveDeliveryToDraft, methodIsAvailable]);
 
   const handleChangePvz = () => {
     if (!pickupEligible || !europostPickupAvailable) {
@@ -928,6 +971,11 @@ function CheckoutPageInner() {
         result?.delivery?.type ||
         'courier';
 
+      if (!methodIsAvailable(resolvedDeliveryType)) {
+        setError('Выбранный способ доставки недоступен для текущего заказа.');
+        return;
+      }
+
       try {
         const response = await saveDeliveryToDraft({
           deliveryType: resolvedDeliveryType,
@@ -1025,9 +1073,14 @@ function CheckoutPageInner() {
   const handleDeliveryCardClick = async () => {
     saveReceiveMethod('delivery');
 
+    if (!courierAvailable && !ikeyaDeliveryAvailable) {
+      setError('Доставка по адресу недоступна для текущего заказа.');
+      return;
+    }
+
     try {
       await saveDeliveryToDraft({
-        deliveryType: 'courier',
+        deliveryType: courierAvailable ? 'courier' : 'ikeya_delivery',
       });
     } catch {}
 
@@ -1049,6 +1102,30 @@ function CheckoutPageInner() {
         setError('Укажите номер дома для доставки.');
       }
       return;
+    }
+
+    if (receiveMethod === 'pickup') {
+      if (!europostPickupAvailable) {
+        setError('Самовывоз Европочтой недоступен для текущего заказа.');
+        return;
+      }
+
+      if (!selectedPickupPointId) {
+        setError('Выберите пункт самовывоза Европочты.');
+        return;
+      }
+    }
+
+    if (receiveMethod === 'delivery') {
+      if (!methodIsAvailable(addrDeliveryType)) {
+        setError('Выбранный способ доставки недоступен для текущего заказа.');
+        return;
+      }
+
+      if (!hasSelectedDeliveryAddressPayload) {
+        setError('Укажите адрес доставки.');
+        return;
+      }
     }
 
     setError(null);
@@ -1093,6 +1170,14 @@ function CheckoutPageInner() {
         ? 'europost_pickup'
         : addrDeliveryType;
 
+      if (!['europost_pickup', 'courier', 'ikeya_delivery'].includes(deliveryType)) {
+        throw new Error('Некорректный способ доставки');
+      }
+
+      if (!methodIsAvailable(deliveryType)) {
+        throw new Error('Выбранный способ доставки недоступен');
+      }
+
       const finalizePayload = {
         full_name: fullName,
         phone: profile.phone,
@@ -1104,10 +1189,11 @@ function CheckoutPageInner() {
       };
 
       if (receiveMethod === 'pickup') {
-        finalizePayload.pickup_point_id =
-          selectedPvz?.pickup_point_id ||
-          selectedPvz?.external_id ||
-          selectedPvz?.id;
+        if (!selectedPickupPointId) {
+          throw new Error('Не выбран пункт самовывоза Европочты');
+        }
+
+        finalizePayload.pickup_point_id = selectedPickupPointId;
       }
 
       if (receiveMethod === 'delivery') {
@@ -1115,6 +1201,8 @@ function CheckoutPageInner() {
           finalizePayload.delivery_address_id = selectedAddr.apiId;
         } else if (selectedAddr) {
           finalizePayload.address = parseAddressToFields(selectedAddr);
+        } else {
+          throw new Error('Не указан адрес доставки');
         }
       }
 

@@ -11,33 +11,37 @@ import ProductSort from '@/components/catalog/ProductSort';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
 import SeoSection from '@/components/home/SeoSection';
-import { getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
+import { getCachedCatalogSeo, getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
 
-export const metadata = {
-  title: 'Каталог товаров — мебель и товары для дома | IKEYA',
-  description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
-  alternates: { canonical: 'https://ikeya.by/catalog' },
-  openGraph: {
-    title: 'Каталог товаров — мебель и товары для дома | IKEYA',
-    description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
-    url: 'https://ikeya.by/catalog',
-    siteName: 'IKEYA',
-    images: [{ url: 'https://ikeya.by/assets/img/no-image.jpg', width: 1200, height: 630, alt: 'Каталог товаров IKEYA' }],
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Каталог товаров — мебель и товары для дома | IKEYA',
-    description: 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.',
-    images: ['https://ikeya.by/assets/img/no-image.jpg'],
-    url: 'https://ikeya.by/catalog',
-  },
-};
+const FALLBACK_METADATA_TITLE = 'Каталог товаров — мебель и товары для дома | IKEYA';
+const FALLBACK_METADATA_DESCRIPTION = 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.';
 
-const catalogSeoText = `
-  <h2>Каталог товаров IKEYA</h2>
-  <p>Тестовый SEO-текст для корневого каталога. Здесь будет описание ассортимента мебели и товаров для дома, условий покупки, доставки по Беларуси и преимуществ интернет-магазина.</p>
-`;
+export async function generateMetadata() {
+  const catalogSeo = await getCachedCatalogSeo();
+  const title = catalogSeo?.meta_title || FALLBACK_METADATA_TITLE;
+  const description = catalogSeo?.meta_description || FALLBACK_METADATA_DESCRIPTION;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: 'https://ikeya.by/catalog' },
+    openGraph: {
+      title,
+      description,
+      url: 'https://ikeya.by/catalog',
+      siteName: 'IKEYA',
+      images: [{ url: 'https://ikeya.by/assets/img/no-image.jpg', width: 1200, height: 630, alt: 'Каталог товаров IKEYA' }],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['https://ikeya.by/assets/img/no-image.jpg'],
+      url: 'https://ikeya.by/catalog',
+    },
+  };
+}
 
 function buildPaginationUrl(basePath, queryParams, page) {
   const params = new URLSearchParams(queryParams);
@@ -58,8 +62,9 @@ export default async function CatalogPage({ searchParams }) {
 
   const currentPage = Math.max(1, Number(sp?.page) || 1);
 
-  const [tree, productsResponse] = await Promise.all([
+  const [tree, catalogSeo, productsResponse] = await Promise.all([
     getCachedCategoriesTree(),
+    getCachedCatalogSeo(),
     getProducts({ page: currentPage, per_page: 20, sort })
   ]);
 
@@ -87,6 +92,8 @@ export default async function CatalogPage({ searchParams }) {
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' }
   ];
+
+  const seoText = typeof catalogSeo?.seo_text === 'string' ? catalogSeo.seo_text.trim() : '';
 
   return (
     <main className="main catalog-inner">
@@ -157,7 +164,7 @@ export default async function CatalogPage({ searchParams }) {
         </div>
       </section>
 
-      <SeoSection seoText={catalogSeoText} />
+      {seoText ? <SeoSection seoText={seoText} /> : null}
     </main>
   );
 }

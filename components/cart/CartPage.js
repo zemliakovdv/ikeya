@@ -65,7 +65,7 @@ export default function CartPage() {
     });
 
     setDeliveryLoading(true);
-    calculateDelivery({ delivery_type: 'pickup', items })
+    calculateDelivery({ delivery_type: 'europost_pickup', items })
       .then(data => {
         const cost = parseFloat(data?.delivery?.base_cost_byn || 0);
         setDelivery(cost);
