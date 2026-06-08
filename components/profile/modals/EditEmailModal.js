@@ -2,26 +2,31 @@
 'use client';
 
 import { useState } from 'react';
-import { updateProfile, verifyEmailChange } from '@/lib/api/account';
+import { updateProfile } from '@/lib/api/account';
 
-const STEPS = { EMAIL: 'email', CODE: 'code', SUCCESS: 'success' };
+const STEPS = { EMAIL: 'email', SENT: 'sent' };
 
 export default function EditEmailModal({ profile, onClose, onSave, verifyOnly = false }) {
-  const [step,    setStep]    = useState(verifyOnly ? STEPS.CODE : STEPS.EMAIL);
-  const [email,   setEmail]   = useState(verifyOnly ? (profile?.email || '') : '');
-  const [code,    setCode]    = useState('');
+  const [step, setStep] = useState(verifyOnly ? STEPS.SENT : STEPS.EMAIL);
+  const [email, setEmail] = useState(profile?.email || '');
   const [consent, setConsent] = useState(profile?.email_marketing || false);
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState('');
+  const [error, setError] = useState('');
 
-  // Шаг 1 — сохраняем email, бэк шлёт письмо с кодом
+  const emailText = email || profile?.email || '';
+  const sentMessage = emailText
+    ? <>На <strong>{emailText}</strong> отправлено письмо для подтверждения</>
+    : <>На вашу почту отправлено письмо для подтверждения</>;
+
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
     try {
-      await updateProfile({ email, email_marketing: consent });
-      setStep(STEPS.CODE);
+      const updated = await updateProfile({ email, email_marketing: consent });
+      onSave?.(updated);
+      setStep(STEPS.SENT);
     } catch (err) {
       setError(err.message || 'Ошибка сохранения');
     } finally {
@@ -29,41 +34,27 @@ export default function EditEmailModal({ profile, onClose, onSave, verifyOnly = 
     }
   };
 
-  // Шаг 2 — вводим код из письма
-  const handleVerifyCode = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const updated = await verifyEmailChange(email, code);
-      onSave?.(updated);
-      setStep(STEPS.SUCCESS);
-    } catch (err) {
-      setError(err.message || 'Неверный код');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="modal fade show d-block" onClick={onClose} id="editEmailModal">
-      <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
+      <div className="modal-dialog modal-dialog-centered" onClick={(e) => e.stopPropagation()}>
         <div className="modal-content">
 
-          {/* Шаг 1 — ввод email */}
           {step === STEPS.EMAIL && (
             <>
               <div className="modal-header">
-                <h5 className="modal-title">Почта</h5>
+                <h5 className="modal-title">Изменить почту</h5>
                 <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
               </div>
               <div className="modal-body">
                 <form onSubmit={handleSave}>
                   <div className="form-group form-floating">
                     <input
-                      type="email" className="form-control" id="email"
+                      type="email"
+                      className="form-control"
+                      id="email"
                       placeholder="Электронная почта"
-                      value={email} onChange={e => setEmail(e.target.value)}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       required
                     />
                     <label htmlFor="email">Электронная почта</label>
@@ -80,7 +71,7 @@ export default function EditEmailModal({ profile, onClose, onSave, verifyOnly = 
                       <input
                         type="checkbox"
                         checked={consent}
-                        onChange={e => setConsent(e.target.checked)}
+                        onChange={(e) => setConsent(e.target.checked)}
                       />
                       <span className="checkbox-label">
                         Получение рекламно-информационных рассылок через email
@@ -103,69 +94,17 @@ export default function EditEmailModal({ profile, onClose, onSave, verifyOnly = 
             </>
           )}
 
-          {/* Шаг 2 — ввод кода из письма */}
-          {step === STEPS.CODE && (
+          {step === STEPS.SENT && (
             <>
               <div className="modal-header">
-                <h5 className="modal-title">Подтверждение почты</h5>
+                <h5 className="modal-title">Изменить почту</h5>
                 <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
               </div>
               <div className="modal-body">
-                <p className="confirmation-text" style={{ marginBottom: '16px' }}>
-                  На <strong>{email}</strong> отправлен код подтверждения
-                </p>
-                <form onSubmit={handleVerifyCode}>
-                  <div className="form-group form-floating">
-                    <input
-                      type="text" className="form-control" id="code"
-                      placeholder="Код из письма"
-                      value={code} onChange={e => setCode(e.target.value)}
-                      maxLength={6} required autoFocus
-                    />
-                    <label htmlFor="code">Код из письма</label>
-                  </div>
-
-                  {error && <p style={{ color: '#b71c1c', marginBottom: '12px' }}>{error}</p>}
-
-                  <div className="modal-footer-buttons">
-                    <button
-                      type="button" className="btn btn-outline"
-                      onClick={() => {
-                        if (verifyOnly) { onClose(); }
-                        else { setStep(STEPS.EMAIL); setError(''); }
-                      }}
-                      disabled={loading}
-                    >
-                      {verifyOnly ? 'Отмена' : 'Назад'}
-                    </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading || !code}>
-                      {loading ? 'Проверяем…' : 'Подтвердить'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </>
-          )}
-
-          {/* Шаг 3 — успех */}
-          {step === STEPS.SUCCESS && (
-            <>
-              <div className="modal-header">
-                <h5 className="modal-title">
-                  {verifyOnly ? 'Почта подтверждена' : 'Почта сохранена'}
-                </h5>
-                <button type="button" className="btn-close" onClick={onClose} aria-label="Закрыть" />
-              </div>
-              <div className="modal-body">
-                <p className="confirmation-text">
-                  {verifyOnly
-                    ? `Почта ${email} успешно подтверждена`
-                    : `Ваша почта ${email} сохранена и подтверждена`
-                  }
-                </p>
+                <p className="confirmation-text">{sentMessage}</p>
                 <div className="modal-footer-single">
                   <button type="button" className="btn btn-primary btn-full" onClick={onClose}>
-                    Закрыть
+                    Хорошо
                   </button>
                 </div>
               </div>

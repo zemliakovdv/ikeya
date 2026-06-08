@@ -3162,6 +3162,10 @@
         margin: 0;
     }
 
+    .confirmation-text strong{
+        color: #0058A3;
+    }
+
     .email-link {
         color: #0058A3;
         text-decoration: none;
@@ -3180,7 +3184,6 @@
         display: flex;
         justify-content: flex-end;
         padding-top: 20px;
-        border-top: 1px solid #e0e0e0;
     }
 
     .btn {
