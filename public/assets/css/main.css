@@ -2393,6 +2393,10 @@ main {
     min-width: 240px;
 }
 
+.catalog-sort__overlay{
+    display: none;
+}
+
 .catalog-sort__selected {
     display: flex;
     align-items: center;

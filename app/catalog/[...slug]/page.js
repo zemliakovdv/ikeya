@@ -143,7 +143,7 @@ export default async function CategoryPage({ params, searchParams }) {
       : { name: 'Каталог', href: '/catalog' };
     const level = slug.length;
 
-    const showCategoryGrid = level === 1 && childCategories.length > 0;
+    const showChildCategoriesSlider = level === 1 && childCategories.length > 0;
     const showAllFilters = level >= 2 || childCategories.length === 0;
 
     const initialProducts = productsResponse.data || [];
@@ -191,7 +191,7 @@ export default async function CategoryPage({ params, searchParams }) {
           <div className="container">
             <h1>{currentCategory.attributes.translated_name}</h1>
 
-            {showCategoryGrid && (
+            {showChildCategoriesSlider && (
               <div className="catalog-categories">
                 <ChildCategoriesSlider categories={childCategories} basePath={basePath} />
               </div>
