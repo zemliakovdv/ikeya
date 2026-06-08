@@ -8,6 +8,11 @@ import ProductTabs from '@/components/product/ProductTabs';
 import RelatedProducts from '@/components/product/RelatedProducts';
 import SimilarProducts from '@/components/product/SimilarProducts';
 import { getCachedCategoriesTree } from '@/lib/api/ikea';
+import {
+  findCategoryPathByIkeaId,
+  buildProductBreadcrumbs,
+  normalizeFallbackBreadcrumbs,
+} from '@/lib/utils/categoryHelpers';
 
 import { buildApiUrl, SITE_URL } from '@/lib/config/api';
 
@@ -320,8 +325,25 @@ export default async function ProductPage({ params }) {
 
   const includedGroups = groupIncludedProducts(includedProducts, tree);
   const localImages = sanitizeLocalImages(attr.local_images);
+  const productName = getProductTitle(attr);
+  const candidateCategoryIds = [
+    product.relationships?.category?.data?.id,
+    attr.category_id,
+    ...((product.relationships?.categories?.data || []).map((c) => c.id)),
+  ].filter(Boolean);
 
-  const breadcrumbs = buildBreadcrumbs(tree, attr, product, getProductTitle(attr));
+  let categoryChain = [];
+  for (const id of candidateCategoryIds) {
+    const categoryPath = findCategoryPathByIkeaId(tree, id);
+    if (categoryPath.length > 0) {
+      categoryChain = categoryPath;
+      break;
+    }
+  }
+
+  const breadcrumbs = categoryChain.length > 0
+    ? buildProductBreadcrumbs(categoryChain, productName)
+    : normalizeFallbackBreadcrumbs(attr.breadcrumbs, productName);
   const structuredData = buildStructuredData(attr, sku);
 
   return (
