@@ -42,7 +42,7 @@ export default function EditPersonalDataModal({ profile, onClose, onSave }) {
 
   return (
     <>
-      <div className="modal fade show d-block" style={{ zIndex: 1055 }}>
+      <div id="editPersonalDataModalRoot" className="modal fade show d-block" style={{ zIndex: 1055 }}>
         <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
           <div className="modal-content" id="editPersonalDataModal">
             <div className="modal-header">

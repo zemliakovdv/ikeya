@@ -94,7 +94,7 @@ export default function SmsVerifyModal({
   const isFilled = digits.join('').length === 4;
 
   return (
-   <div className="modal fade show d-block" style={{ zIndex: 1057 }} onClick={onClose}>
+   <div id="smsVerify" className="modal fade show d-block" style={{ zIndex: 1057 }} onClick={onClose}>
       <div className="modal-dialog modal-dialog-centered" onClick={e => e.stopPropagation()}>
         <div className="modal-content">
 

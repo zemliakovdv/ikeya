@@ -6045,6 +6045,7 @@ body.mobile-phone-open .mobile-phone-sheet {
     .footer-mobile .footer-payment {
         max-width: 50%;
         text-align: left;
+        flex: inherit;
     }
 
     /* Выпадающий телефон */
@@ -8175,8 +8176,8 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .korzina .cart-select-all__input[type="checkbox"]:checked::after,
     .korzina .cart-item__select input[type="checkbox"]:checked::after {
-        left: 7px;
-        top: 2px;
+        left: 9px;
+        top: 4px;
     }
 
     .korzina .cart-select-all label,
@@ -9939,21 +9940,23 @@ body.mobile-phone-open .mobile-phone-sheet {
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 0;
+        bottom: calc(64px + env(safe-area-inset-bottom, 0px));
         top: auto;
         z-index: 1300;
         display: flex;
         flex-direction: column;
         width: 100%;
         min-width: 0;
-        max-height: 70vh;
+        max-height: calc(100vh - 64px - env(safe-area-inset-bottom, 0px) - 16px);
         margin: 0;
-        padding: 0 0 calc(18px + env(safe-area-inset-bottom, 0px));
+        padding: 0 0 18px;
         border: none;
         border-radius: 12px 12px 0 0;
         background: #FFFFFF;
         box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
         transform: translateY(100%);
         transition: transform 180ms ease;
     }

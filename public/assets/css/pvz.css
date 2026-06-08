@@ -429,6 +429,16 @@
   display: none;
 }
 
+.pvz .pvz-mobile-map {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .pvz .pvz-modal__footer {
+    display: none;
+  }
+}
+
 /* =============================================================
    ФОРМА ДОСТАВКИ (DeliveryTab)
    ============================================================= */
@@ -2506,6 +2516,73 @@
   text-decoration: underline;
   cursor: pointer;
   margin-top: 4px;
+}
+
+@media (max-width: 992px) {
+  .pvz .pvz-layout--map {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .pvz .pvz-layout--map .pvz-mobile-map {
+    display: block;
+    width: 100%;
+    height: calc(100dvh - 140px);
+    min-height: 420px;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-layout--map .pvz-mobile-map .pvz-map-wrap {
+    height: 100%;
+    min-height: 420px;
+  }
+
+  .pvz .pvz-layout--pickup-detail+.pvz-detail-backdrop {
+    z-index: 1290;
+  }
+
+  .pvz .pvz-layout--pickup-detail+.pvz-detail-backdrop+.pvz-detail-sheet {
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    max-height: calc(100dvh - 16px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1300;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pvz .pvz-layout--pickup-detail+.pvz-detail-backdrop+.pvz-detail-sheet .pvz-detail {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pvz .pvz-layout--pickup-detail+.pvz-detail-backdrop+.pvz-detail-sheet .pvz-detail__footer {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pvz .pvz-layout--pickup-detail~.pvz-modal__footer {
+    display: none;
+  }
+
+  .checkout-pvz-modal.pickup-mode .pvz-layout--pickup-detail+.pvz-detail-backdrop+.pvz-detail-sheet {
+    max-height: calc(100% - 56px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .checkout-pvz-modal.pickup-mode .pvz-layout--pickup-detail+.pvz-detail-backdrop+.pvz-detail-sheet .pvz-detail {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .checkout-pvz-modal.pickup-mode .pvz-layout--pickup-detail+.pvz-detail-backdrop+.pvz-detail-sheet .pvz-detail__footer {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 

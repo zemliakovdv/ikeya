@@ -2573,26 +2573,6 @@
         text-decoration: underline;
     }
 
-    .data-toggle::after {
-        content: '';
-        width: 16px;
-        height: 16px;
-        background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.3867 8.00001C10.3867 8.44668 9.08002 9.46001 7.86002 10.2C7.70669 10.2933 7.51335 10.28 7.37335 10.1667C7.23335 10.0533 7.17335 9.87334 7.22002 9.70001L7.68669 8.00668L6.28669 6.82668C6.16002 6.71334 6.11335 6.53334 6.17335 6.37334C6.23335 6.21334 6.38002 6.10668 6.55335 6.09334L8.32669 5.99334L9.00002 4.40001C9.06669 4.24668 9.21335 4.14668 9.38002 4.14668C9.54669 4.14668 9.69335 4.24668 9.76002 4.40001L10.4334 5.99334L12.2067 6.09334C12.38 6.10668 12.5267 6.21334 12.5867 6.37334C12.6467 6.53334 12.6 6.71334 12.4734 6.82668L11.0734 8.00668L11.54 9.70001C11.5867 9.87334 11.5267 10.0533 11.3867 10.1667C11.2467 10.28 11.0534 10.2933 10.9 10.2C9.68002 9.46001 8.37335 8.44668 8.37335 8.00001C8.37335 7.55334 9.68002 6.54001 10.9 5.80001C11.0534 5.70668 11.2467 5.72001 11.3867 5.83334C11.5267 5.94668 11.5867 6.12668 11.54 6.30001L11.0734 7.99334L12.4734 9.17334C12.6 9.28668 12.6467 9.46668 12.5867 9.62668C12.5267 9.78668 12.38 9.89334 12.2067 9.90668L10.4334 10.0067L9.76002 11.6C9.69335 11.7533 9.54669 11.8533 9.38002 11.8533C9.21335 11.8533 9.06669 11.7533 9.00002 11.6L8.32669 10.0067L6.55335 9.90668C6.38002 9.89334 6.23335 9.78668 6.17335 9.62668C6.11335 9.46668 6.16002 9.28668 6.28669 9.17334L7.68669 7.99334L7.22002 6.30001C7.17335 6.12668 7.23335 5.94668 7.37335 5.83334C7.51335 5.72001 7.70669 5.70668 7.86002 5.80001C9.08002 6.54001 10.3867 7.55334 10.3867 8.00001Z' fill='%230058A3'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: center;
-        background-size: contain;
-        transition: all 0.2s;
-    }
-
-    .data-toggle:hover::after {
-        transform: scale(1.1);
-    }
-
-    /* Когда данные показаны */
-    .data-toggle.active::after {
-        transform: rotate(180deg);
-    }
-
     .data-border {
         height: 1px;
         width: 532px;
@@ -3413,6 +3393,207 @@
         display: flex;
         align-items: center;
         flex-shrink: 0;
+    }
+
+    @media (max-width: 576px) {
+        .personal-data-page .modal-backdrop.show {
+            z-index: 1190 !important;
+        }
+
+        #editPersonalDataModalRoot,
+        #editPassportModal,
+        #editEmailModal,
+        #editPhoneModal,
+        #smsVerify {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            max-width: none;
+            height: 100dvh;
+            padding: 0;
+            overflow: hidden;
+            z-index: 1200 !important;
+        }
+
+        #editPersonalDataModalRoot .modal-dialog,
+        #editPassportModal .modal-dialog,
+        #editEmailModal .modal-dialog,
+        #editPhoneModal .modal-dialog,
+        #smsVerify .modal-dialog {
+            width: 100%;
+            max-width: none;
+            height: 100%;
+            max-height: none;
+            margin: 0;
+            transform: none;
+        }
+
+        #editPassportModal .modal-dialog {
+            display: flex;
+        }
+
+        #editPersonalDataModal,
+        #editPassportModal .modal-content,
+        #editEmailModal .modal-content,
+        #editPhoneModal .modal-content,
+        #smsVerify .modal-content {
+            width: 100%;
+            height: 100%;
+            max-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            border-radius: 0;
+            border: none;
+            overflow: hidden;
+            box-shadow: none;
+        }
+
+        #editPersonalDataModal .modal-header,
+        #editPassportModal .modal-header,
+        #editEmailModal .modal-header,
+        #editPhoneModal .modal-header,
+        #smsVerify .modal-header {
+            flex: 0 0 auto;
+            min-height: 56px;
+            padding: 8px 16px;
+            align-items: center;
+            border-bottom: none;
+            justify-content: space-between;
+        }
+
+        #editPersonalDataModal .modal-title,
+        #editPassportModal .modal-title,
+        #editEmailModal .modal-title,
+        #editPhoneModal .modal-title,
+        #smsVerify .modal-title {
+            font-size: 17px;
+            line-height: 22px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        #editPersonalDataModal .btn-close,
+        #editPassportModal .btn-close,
+        #editEmailModal .btn-close,
+        #editPhoneModal .btn-close,
+        #smsVerify .btn-close {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            margin: 0;
+            padding: 0;
+            flex-shrink: 0;
+            background-position: center;
+            background-size: 16px;
+        }
+
+        #editPersonalDataModal .modal-body,
+        #editPassportModal .modal-body,
+        #editEmailModal .modal-body,
+        #editPhoneModal .modal-body,
+        #smsVerify .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: 8px 16px calc(24px + 64px + env(safe-area-inset-bottom, 0px));
+        }
+
+        #editPersonalDataModal .modal-footer-buttons,
+        #editPassportModal .modal-footer-buttons,
+        #editEmailModal .modal-footer-buttons,
+        #editPhoneModal .modal-footer-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 0;
+        }
+
+        #editPersonalDataModal .modal-footer-buttons > button,
+        #editPassportModal .modal-footer-buttons > button,
+        #editEmailModal .modal-footer-buttons > button,
+        #editPhoneModal .modal-footer-buttons > button {
+            width: 100%;
+            justify-content: center;
+        }
+
+        #editEmailModal .modal-footer-single,
+        #editPhoneModal .modal-footer-single {
+            padding-top: 24px;
+            border-top: none;
+        }
+
+        #editEmailModal .modal-footer-single .btn,
+        #editPhoneModal .modal-footer-single .btn {
+            width: 100%;
+        }
+
+        #editPersonalDataModal .modal-body .radio-group {
+            flex-wrap: wrap;
+            gap: 12px 24px;
+        }
+
+        #editPassportModal .modal-body {
+            padding-top: 8px;
+        }
+
+        #editPassportModal .form-row,
+        #editPassportModal .country-selector {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #editPassportModal .fio-row .form-group,
+        #editPassportModal .passport-row--id .form-group,
+        #editPassportModal .passport-row--id .datepicker-wrap,
+        #editPassportModal .passport-row--address1 .form-group,
+        #editPassportModal .passport-row--address2 .form-group,
+        #editPassportModal .form-group.col-md-2,
+        #editPassportModal .form-group.col-md-3,
+        #editPassportModal .form-group.col-md-4,
+        #editPassportModal .form-group.col-md-5,
+        #editPassportModal .form-group.col-md-6,
+        #editPassportModal .passport-row--series .datepicker-wrap {
+            width: 100%;
+            max-width: none;
+        }
+
+        #editPassportModal .passport-row--series .datepicker-dropdown,
+        #editPassportModal .passport-row--id .datepicker-dropdown {
+            top: calc(100% + 6px);
+            left: 0;
+            right: auto;
+        }
+
+        #smsVerify .modal-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 8px;
+        }
+
+        #smsVerify .sms-verify__text,
+        #smsVerify .sms-verify__resend,
+        #smsVerify .sms-verify__error {
+            width: 100%;
+            max-width: 416px;
+        }
+
+        #smsVerify .sms-verify__inputs {
+            width: 100%;
+            max-width: 416px;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        #smsVerify .sms-verify__input {
+            flex: 1 1 0;
+            width: auto;
+            max-width: 64px;
+        }
     }
 
     .delivery-address-item__delete:hover svg path {
@@ -5929,6 +6110,20 @@
             max-height: 40px;
         }
 
+        .order-canceled_inner {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .canceled-inner-why {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .order-repeit {
+            width: 100%;
+        }
+
 
     }
 
@@ -6023,6 +6218,20 @@
             max-width: 100%;
             min-height: 40px;
             max-height: 40px;
+        }
+
+        .order-canceled_inner {
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .canceled-inner-why {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .order-repeit {
+            width: 100%;
         }
     }
 
@@ -6263,6 +6472,33 @@
     }
 
     @media (max-width: 767px) {
+        .offcanvas-backdrop.fade.show {
+            z-index: 1190;
+        }
+
+        #offcanvasVozvrat {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            max-width: none;
+            height: 100dvh;
+            z-index: 1200;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #offcanvasVozvrat .offcanvas-header {
+            flex: 0 0 auto;
+        }
+
+        #offcanvasVozvrat .offcanvas-body {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: calc(16px + 64px + env(safe-area-inset-bottom, 0px));
+        }
+
         .returns-profile .return-order {
             width: 100%;
         }
