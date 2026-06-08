@@ -2585,6 +2585,23 @@
   }
 }
 
+@media (min-width: 1920px) {
+  .pvz .pvz-sidebar__list-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .pvz .pvz-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
 
 
 /* =============================================================
