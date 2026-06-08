@@ -8,6 +8,7 @@ import { AuthModalsProvider } from '@/components/auth/AuthModalsHost'
 import FloatingChatButton from '@/components/FloatingChatButton'
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import CookieBanner from '@/components/cookie/CookieBanner';
+import CatalogRouteLoader from '@/components/ui/CatalogRouteLoader';
 import './globals.css'
 import Script from 'next/script'
 
@@ -82,6 +83,7 @@ export default function RootLayout({ children }) {
             <AuthModalsProvider>
               <FavoritesProvider>
                 <Header />
+                <CatalogRouteLoader />
                 {children}
                 <Footer />
                 <MobileBottomNav />

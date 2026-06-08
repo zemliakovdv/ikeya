@@ -106,6 +106,7 @@ export default async function ArticlePage({ params }) {
 
   const attr = article.attributes;
   const categoryLabel = CONTENT_TYPE_LABELS[attr.content_type] || attr.content_type;
+  const badgeLabel = attr.rubric || categoryLabel;
   const date = attr.published_at
     ? new Date(attr.published_at).toLocaleDateString('ru-RU')
     : null;
@@ -145,7 +146,7 @@ export default async function ArticlePage({ params }) {
           <section className="detail-content__head">
             <h1>{attr.title}</h1>
             <div className="the-detail__cheaps">
-              <span className="detail-cheaps__item">{categoryLabel}</span>
+              <span className="detail-cheaps__item">{badgeLabel}</span>
               {date && <span className="deatil-cheaps__date">{date}</span>}
             </div>
           </section>

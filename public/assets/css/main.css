@@ -9340,6 +9340,10 @@ main {
     z-index: 9990;
 }
 
+.route-page-loader .page-loader {
+    z-index: 10050;
+}
+
 .page-loader__spinner {
     width: 48px;
     height: 48px;
