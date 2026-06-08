@@ -118,7 +118,7 @@ export default function ProductsGridSlider({ slides, blockId }) {
 
   return (
     <div className="products-card-slider" ref={containerRef}>
-      <div className="products-slider swiper" data-slider={blockId}>
+      <div className="products-slider article-products-card-slider swiper" data-slider={blockId}>
         <div className="swiper-wrapper">
           {slides.map((slideProducts, index) => (
             <div key={index} className="swiper-slide">

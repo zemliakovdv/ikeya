@@ -134,6 +134,16 @@
     padding-bottom: 26px;
 }
 
+.the-detail__content .article-products-card-slider .swiper-slide {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-shrink: 0;
+}
+
+.the-detail__content .article-products-card-slider .swiper-slide-inner {
+    width: 100%;
+}
+
 .the-detail__content .swiper-slide-inner {
     justify-content: unset;
     padding: 0;
