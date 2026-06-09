@@ -9,8 +9,8 @@ export function openJivoChat() {
 export default function FloatingChatButton() {
   return (
     <Script
-      src="//code.jivo.ru/widget/MEodDsqt9w"
-      strategy="afterInteractive"
+      src="https://code.jivo.ru/widget/MEodDsqt9w"
+      strategy="lazyOnload"
     />
   );
 }
