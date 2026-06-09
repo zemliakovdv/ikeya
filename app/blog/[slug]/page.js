@@ -126,6 +126,17 @@ export default async function ArticlePage({ params }) {
   return (
     <main className="the-detail">
       <div className="the-detail__wrapper">
+        <div className="article-mobile-topbar">
+          <Link href="/blog" className="article-mobile-topbar__back">
+            <span className="article-mobile-topbar__icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="article-mobile-topbar__title">{categoryLabel}</span>
+          </Link>
+        </div>
+
         <section className="breadcumps">
           <div className="container">
             <div className="row">

@@ -3,6 +3,7 @@
 }
 
 .the-detail__content {
+    width: 100%;
     max-width: 1136px;
     margin: 0 auto;
     margin-bottom: 40px;
@@ -69,10 +70,18 @@
     color: #616161;
 }
 
-.text-with-big-image img {
+.text-with-big-image,
+.grid-of-goods,
+.text-button-two-image,
+.text-button-wide-image {
     width: 100%;
-    min-height: 600px;
-    max-height: 600px;
+}
+
+.text-with-big-image img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1136 / 600;
     border-radius: 8px;
     margin-bottom: 32px;
     object-fit: cover;
@@ -81,23 +90,29 @@
 .right-text-left-image,
 .left-text-right-image {
     display: flex;
+    align-items: flex-start;
     gap: 32px;
+    width: 100%;
     margin-bottom: 32px;
 }
 
 .right-text-left-image img,
 .left-text-right-image img {
-    width: 552px;
+    display: block;
+    flex: 0 1 calc((100% - 32px) / 2);
+    width: 100%;
     max-width: 552px;
-    height: 735px;
-    max-height: 735px;
+    height: auto;
+    aspect-ratio: 552 / 735;
     object-fit: cover;
     border-radius: 8px;
 }
 
 .text-container {
-    width: 552px;
+    flex: 0 1 calc((100% - 32px) / 2);
+    width: 100%;
     max-width: 552px;
+    min-width: 0;
 }
 
 .text-container h5 {
@@ -117,6 +132,7 @@
     border-radius: 8px;
     padding: 14px 16px;
     display: inline-block;
+    max-width: 100%;
     font-weight: 600;
     font-size: 14px;
     line-height: 143%;
@@ -150,20 +166,24 @@
 }
 
 .the-detail__content .product-card-inner {
-    min-width: 278px;
+    width: 100%;
     max-width: 278px;
     margin-top: 0;
     max-height: fit-content;
+    min-width: 0;
 }
 
 .the-detail__content .product-card-inner .product-gallery-main {
-    height: 254px;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
 }
 
 .the-detail__content .product-card-inner .product-gallery-main img {
     width: 100%;
-    max-width: 254px;
-    max-height: 254px;
+    max-width: none;
+    height: 100%;
+    max-height: none;
     object-fit: cover;
 }
 
@@ -212,6 +232,7 @@
 
 .grid-of-goods {
     margin-bottom: 32px;
+    overflow-x: hidden;
 }
 
 .text-button-two-image h5 {
@@ -233,14 +254,17 @@
 .two-image-inner {
     display: flex;
     gap: 32px;
+    width: 100%;
     margin-bottom: 32px;
 }
 
 .two-image-inner img {
-    width: 552px;
+    display: block;
+    flex: 0 1 calc((100% - 32px) / 2);
+    width: 100%;
     max-width: 552px;
-    height: 735px;
-    max-height: 735px;
+    height: auto;
+    aspect-ratio: 552 / 735;
     object-fit: cover;
     border-radius: 8px;
 }
@@ -289,9 +313,10 @@
 }
 
 .text-button-wide-image img {
+    display: block;
     width: 100%;
-    min-height: 600px;
-    max-height: 600px;
+    height: auto;
+    aspect-ratio: 1136 / 600;
     border-radius: 8px;
     object-fit: cover;
 }

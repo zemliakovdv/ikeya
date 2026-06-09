@@ -3564,6 +3564,14 @@
             max-width: none;
         }
 
+        .datepicker-input{
+            margin-bottom: 16px;
+        }
+
+        .passport-address-title{
+            margin-top: 1px;
+        }
+
         #editPassportModal .passport-row--series .datepicker-dropdown,
         #editPassportModal .passport-row--id .datepicker-dropdown {
             top: calc(100% + 6px);
