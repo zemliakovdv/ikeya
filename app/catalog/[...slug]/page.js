@@ -133,7 +133,7 @@ export default async function CategoryPage({ params, searchParams }) {
       });
     });
 
-    const { node: currentNode } = findNodeInTree(tree, slug);
+    const { node: currentNode, ancestors: currentNodeAncestors } = findNodeInTree(tree, slug);
     const childCategories = currentNode?.children || [];
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbsFromTree(tree, slug);
@@ -141,10 +141,10 @@ export default async function CategoryPage({ params, searchParams }) {
     const mobileBackItem = parentBreadcrumb?.href
       ? { name: parentBreadcrumb.name || parentBreadcrumb.label, href: parentBreadcrumb.href }
       : { name: 'Каталог', href: '/catalog' };
-    const level = slug.length;
+    const isRootLevelCategory = currentNodeAncestors.length === 0;
 
-    const showChildCategoriesSlider = level === 1 && childCategories.length > 0;
-    const showAllFilters = level >= 2 || childCategories.length === 0;
+    const showChildCategoriesSlider = isRootLevelCategory && childCategories.length > 0;
+    const showAllFilters = !isRootLevelCategory || childCategories.length === 0;
 
     const initialProducts = productsResponse.data || [];
     const meta = productsResponse.meta || {};

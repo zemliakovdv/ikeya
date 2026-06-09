@@ -50,6 +50,7 @@ export default function ProductTabs({ product, includedProducts = [] }) {
     const hasMaterials = Boolean(fa.materials?.materials || fa.materials?.desc);
     const hasItems = Boolean(attr.included_products && attr.included_products.length > 0);
     const hasInstructions = Boolean(fa.instructions?.files && fa.instructions.files.length > 0);
+    const hasReviews = Number(attr.rating_count || 0) > 0;
     const hasDelivery = true;
     const hasAdvices = tips.length > 0;
 
@@ -59,7 +60,7 @@ export default function ProductTabs({ product, includedProducts = [] }) {
       hasMaterials && 'materials',
       hasItems && 'items',
       hasInstructions && 'instructions',
-      'reviews',
+      hasReviews && 'reviews',
       hasDelivery && 'delivery',
       hasAdvices && 'advices',
     ].filter(Boolean);
