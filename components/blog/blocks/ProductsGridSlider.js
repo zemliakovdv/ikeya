@@ -73,17 +73,23 @@ export default function ProductsGridSlider({ slides, blockId }) {
 
       // Основной слайдер
       try {
-        swiperRef.current = new window.Swiper(el.querySelector('.products-slider'), {
-          slidesPerView: 1,
-          spaceBetween: 0,
+        swiperRef.current = new window.Swiper(el.querySelector('.article-products-slider'), {
+          slidesPerView: 'auto',
+          slidesPerGroup: 1,
+          spaceBetween: 8,
           loop: false,
+          watchOverflow: true,
+          observer: true,
+          observeParents: true,
           pagination: {
-            el: el.querySelector('.products-slider__pagination'),
+            el: el.querySelector('.article-products-slider__pagination'),
             clickable: true,
+            dynamicBullets: true,
+            dynamicMainBullets: 1,
           },
           navigation: {
-            nextEl: el.querySelector('.products-slider__nav-next'),
-            prevEl: el.querySelector('.products-slider__nav-prev'),
+            nextEl: el.querySelector('.article-products-slider__nav-next'),
+            prevEl: el.querySelector('.article-products-slider__nav-prev'),
           },
         });
       } catch (e) {
@@ -117,53 +123,48 @@ export default function ProductsGridSlider({ slides, blockId }) {
   }, [slides, blockId]);
 
   return (
-    <div className="products-card-slider" ref={containerRef}>
-      <div className="products-slider article-products-card-slider swiper" data-slider={blockId}>
+    <div className="article-products-card-slider-root" ref={containerRef}>
+      <div className="article-products-slider swiper" data-slider={blockId}>
         <div className="swiper-wrapper">
-          {slides.map((slideProducts, index) => (
-            <div key={index} className="swiper-slide">
-              <div className="row g-4 swiper-slide-inner">
-                {slideProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={{
-                      id: product.id,
-                      attributes: {
-                        sku: product.sku,
-                        small_desc_name: product.title,
-                        name_ru: product.description,
-                        price_byn: product.price,
-                        local_images: (product.images || []).map((img) =>
-                          stripBackendOrigin(img)
-                        ),
-                        variants: product.variants || null,
-                        is_bestseller: product.badges?.includes('hit'),
-                        is_new: product.badges?.includes('new'),
-                      },
-                    }}
-                  />
-                ))}
-              </div>
+          {slides.map((product) => (
+            <div key={product.id || product.sku} className="swiper-slide article-products-slider__slide">
+              <ProductCard
+                product={{
+                  id: product.id,
+                  attributes: {
+                    sku: product.sku,
+                    small_desc_name: product.title,
+                    name_ru: product.description,
+                    price_byn: product.price,
+                    local_images: (product.images || []).map((img) =>
+                      stripBackendOrigin(img)
+                    ),
+                    variants: product.variants || null,
+                    is_bestseller: product.badges?.includes('hit'),
+                    is_new: product.badges?.includes('new'),
+                  },
+                }}
+              />
             </div>
           ))}
         </div>
-
-        {slides.length > 1 && <div className="products-slider__pagination" />}
-        {slides.length > 1 && (
-          <>
-            <button className="products-slider__nav products-slider__nav-prev" type="button">
-              <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-            <button className="products-slider__nav products-slider__nav-next" type="button">
-              <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
-                <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </>
-        )}
       </div>
+
+      {slides.length > 1 && <div className="article-products-slider__pagination" />}
+      {slides.length > 1 && (
+        <>
+          <button className="article-products-slider__nav article-products-slider__nav-prev" type="button" aria-label="Назад">
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+              <path d="M6 1L1 6L6 11" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <button className="article-products-slider__nav article-products-slider__nav-next" type="button" aria-label="Вперёд">
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none">
+              <path d="M1 11L6 6L1 1" stroke="#181818" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </>
+      )}
     </div>
   );
 }

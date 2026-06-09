@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { cache, Suspense } from 'react';
 import BlockRenderer from '@/components/blog/BlockRenderer';
 import ArticleMoreSlider from '@/components/blog/ArticleMoreSlider';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
@@ -19,6 +20,8 @@ async function getArticle(slug) {
   const data = await res.json();
   return data.data || null;
 }
+
+const getCachedArticle = cache(async (slug) => getArticle(slug));
 
 async function getMoreArticles(slug) {
   const res = await fetch(buildApiUrl('/content/articles?per_page=9'), {
@@ -64,10 +67,10 @@ function extractImage(article) {
 }
 
 export async function generateMetadata({ params }) {
-  const article = await getArticle(params.slug);
+  const article = await getCachedArticle(params.slug);
   if (!article) return {};
   const seo = article.attributes.seo || {};
-const title = seo.title || article.attributes.title;
+  const title = seo.title || article.attributes.title;
   const description = seo.description || article.attributes.excerpt;
   const canonicalUrl = `https://ikeya.by/blog/${params.slug}`;
   const imageUrl = extractImage(article) || 'https://ikeya.by/assets/img/no-image.jpg';
@@ -96,20 +99,8 @@ const title = seo.title || article.attributes.title;
   };
 }
 
-export default async function ArticlePage({ params }) {
-  const [article, moreArticles] = await Promise.all([
-    getArticle(params.slug),
-    getMoreArticles(params.slug),
-  ]);
-
-  if (!article) return <div>Статья не найдена</div>;
-
-  const attr = article.attributes;
-  const categoryLabel = CONTENT_TYPE_LABELS[attr.content_type] || attr.content_type;
-  const badgeLabel = attr.rubric || categoryLabel;
-  const date = attr.published_at
-    ? new Date(attr.published_at).toLocaleDateString('ru-RU')
-    : null;
+async function MoreArticlesSection({ slug }) {
+  const moreArticles = await getMoreArticles(slug);
 
   const moreSlides = [];
   for (let i = 0; i < moreArticles.length; i += 3) {
@@ -122,6 +113,34 @@ export default async function ArticlePage({ params }) {
       link: `/blog/${a.attributes.slug}`,
     })));
   }
+
+  if (moreSlides.length === 0) return null;
+
+  return (
+    <div className="the-detail-more">
+      <div className="container">
+        <div className="row">
+          <div className="col-12">
+            <h4>Больше вдохновений</h4>
+            <ArticleMoreSlider slides={moreSlides} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default async function ArticlePage({ params }) {
+  const article = await getCachedArticle(params.slug);
+
+  if (!article) return <div>Статья не найдена</div>;
+
+  const attr = article.attributes;
+  const categoryLabel = CONTENT_TYPE_LABELS[attr.content_type] || attr.content_type;
+  const badgeLabel = attr.rubric || categoryLabel;
+  const date = attr.published_at
+    ? new Date(attr.published_at).toLocaleDateString('ru-RU')
+    : null;
 
   return (
     <main className="the-detail">
@@ -167,18 +186,9 @@ export default async function ArticlePage({ params }) {
           ))}
         </div>
 
-        {moreSlides.length > 0 && (
-          <div className="the-detail-more">
-            <div className="container">
-              <div className="row">
-                <div className="col-12">
-                  <h4>Больше вдохновений</h4>
-                  <ArticleMoreSlider slides={moreSlides} />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <Suspense fallback={null}>
+          <MoreArticlesSection slug={params.slug} />
+        </Suspense>
       </div>
     </main>
   );

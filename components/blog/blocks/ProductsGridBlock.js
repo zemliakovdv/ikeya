@@ -89,16 +89,11 @@ export default async function ProductsGridBlock({ block }) {
 
   if (!mapped.length) return null;
 
-  const slides = [];
-  for (let i = 0; i < mapped.length; i += 4) {
-    slides.push(mapped.slice(i, i + 4));
-  }
-
   const blockId = `grid-${block.position ?? mapped.map((product) => product.sku).join('-')}`;
 
   return (
     <section className="grid-of-goods">
-      <ProductsGridSlider slides={slides} blockId={blockId} />
+      <ProductsGridSlider slides={mapped} blockId={blockId} />
     </section>
   );
 }

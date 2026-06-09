@@ -6,12 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { createDraft, getCheckoutSummary } from '@/lib/api/cart';
+import { addToCart, createDraft, getCartSummary } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
 
 const DEFAULT_MIN_ORDER_AMOUNT = 150; // BYN
+const CART_SELECTED_ITEMS_STORAGE_KEY = 'cartSelectedItems';
 
 function toNumber(value, fallback = 0) {
   const normalized = String(value ?? '')
@@ -57,6 +58,76 @@ function buildItemsPayload(sourceItems = []) {
 
 function sumItemsQuantity(items = []) {
   return items.reduce((acc, item) => acc + Number(item?.quantity || 0), 0);
+}
+
+function readSessionJson(key, fallback) {
+  if (typeof window === 'undefined') return fallback;
+
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function isGuestCartRestoreError(err) {
+  const errorMessage = String(
+    err?.payload?.error ||
+    err?.payload?.message ||
+    err?.message ||
+    ''
+  ).toLowerCase();
+
+  return (
+    err?.status === 422 && (
+      errorMessage.includes('корзина пуста') ||
+      errorMessage.includes('отсутствует в корзине') ||
+      err?.payload?.code === 'item_not_in_cart'
+    )
+  );
+}
+
+function getRestorePayloadFromError(err, checkoutPayload = []) {
+  const errorMessage = String(
+    err?.payload?.error ||
+    err?.payload?.message ||
+    err?.message ||
+    ''
+  ).toLowerCase();
+  const missingSku = err?.payload?.sku ? String(err.payload.sku) : '';
+
+  if (errorMessage.includes('корзина пуста')) {
+    return checkoutPayload;
+  }
+
+  if (missingSku) {
+    return checkoutPayload.filter((item) => String(item?.sku) === missingSku);
+  }
+
+  if (
+    err?.payload?.code === 'item_not_in_cart' ||
+    errorMessage.includes('отсутствует в корзине')
+  ) {
+    return checkoutPayload;
+  }
+
+  return [];
+}
+
+function resolveDraftId(response) {
+  return (
+    response?.order_id ||
+    response?.draft_order_id ||
+    response?.id ||
+    response?.data?.order_id ||
+    response?.data?.id ||
+    response?.data?.attributes?.id ||
+    response?.order?.id ||
+    response?.order?.order_id ||
+    response?.order?.data?.id ||
+    response?.order?.data?.attributes?.id
+  );
 }
 
 function normalizeSummaryResponse(response) {
@@ -163,7 +234,34 @@ export default function CartPageClient() {
 
   const isInitialLoading = loading && (items || []).length === 0;
 
-  const [selectedItems, setSelectedItems] = useState([]);
+  const storedSelectedItemsState = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return { hasStoredSelection: false, items: [] };
+    }
+
+    try {
+      const raw = sessionStorage.getItem(CART_SELECTED_ITEMS_STORAGE_KEY);
+
+      if (raw === null) {
+        return { hasStoredSelection: false, items: [] };
+      }
+
+      const parsed = JSON.parse(raw);
+
+      if (!Array.isArray(parsed)) {
+        return { hasStoredSelection: false, items: [] };
+      }
+
+      return {
+        hasStoredSelection: true,
+        items: parsed.map((sku) => String(sku)),
+      };
+    } catch {
+      return { hasStoredSelection: false, items: [] };
+    }
+  }, []);
+
+  const [selectedItems, setSelectedItems] = useState(storedSelectedItemsState.items);
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [remoteSummary, setRemoteSummary] = useState(null);
@@ -175,6 +273,9 @@ export default function CartPageClient() {
   const checkoutRetryTimerRef = useRef(null);
   const checkoutRetryCountRef = useRef(0);
   const checkoutAutoContinueRef = useRef(false);
+  const hasStoredSelectionRef = useRef(storedSelectedItemsState.hasStoredSelection);
+  const previousAvailableSkusRef = useRef([]);
+  const hasHydratedAvailableSkusRef = useRef(false);
 
   const minOrderAmount = toNumber(
     cart?.rules?.min_order_amount_byn,
@@ -224,6 +325,10 @@ export default function CartPageClient() {
 
   useEffect(() => {
     function onAuthModalClosed() {
+      if (isAuth || isCheckoutAuthFlowPending) {
+        return;
+      }
+
       if (sessionStorage.getItem('pendingCheckout') !== '1' && !isCheckoutAuthFlowPending) {
         return;
       }
@@ -234,7 +339,7 @@ export default function CartPageClient() {
     window.addEventListener('auth-modal-closed', onAuthModalClosed);
 
     return () => window.removeEventListener('auth-modal-closed', onAuthModalClosed);
-  }, [isCheckoutAuthFlowPending, resetCheckoutAuthFlow]);
+  }, [isAuth, isCheckoutAuthFlowPending, resetCheckoutAuthFlow]);
 
   useEffect(() => {
     function onGuestCartMergeDone() {
@@ -270,18 +375,80 @@ export default function CartPageClient() {
 
   useEffect(() => {
     setSelectedItems((prev) => {
+      if (!availableSkusKey || isInitialLoading) {
+        return prev;
+      }
+
       const skus = availableSkusKey ? availableSkusKey.split(',') : [];
+      const currentSet = new Set(skus);
+      const isFirstAvailableHydration = !hasHydratedAvailableSkusRef.current;
 
-      if (prev.length === 0) return skus;
+      if (isFirstAvailableHydration) {
+        hasHydratedAvailableSkusRef.current = true;
+        previousAvailableSkusRef.current = skus;
 
-      const skuSet = new Set(skus);
-      const filtered = prev.filter((sku) => skuSet.has(sku));
-      const added = skus.filter((sku) => !prev.includes(sku));
+        if (hasStoredSelectionRef.current) {
+          return prev.filter((sku) => currentSet.has(sku));
+        }
+
+        return skus;
+      }
+
+      const previousSkus = previousAvailableSkusRef.current;
+      const previousSet = new Set(previousSkus);
+      const newlyAddedSkus = skus.filter((sku) => !previousSet.has(sku));
+
+      if (hasStoredSelectionRef.current) {
+        const filtered = prev.filter((sku) => currentSet.has(sku));
+        const added = newlyAddedSkus.filter((sku) => !filtered.includes(sku));
+
+        previousAvailableSkusRef.current = skus;
+
+        return [...filtered, ...added];
+      }
+
+      if (prev.length === 0) {
+        previousAvailableSkusRef.current = skus;
+        return skus;
+      }
+
+      const filtered = prev.filter((sku) => currentSet.has(sku));
+      const added = newlyAddedSkus.filter((sku) => !filtered.includes(sku));
+
+      previousAvailableSkusRef.current = skus;
 
       return [...filtered, ...added];
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [availableSkusKey]);
+  }, [availableSkusKey, isInitialLoading]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (
+      !storedSelectedItemsState.hasStoredSelection &&
+      selectedItems.length === 0 &&
+      (!availableSkusKey || isInitialLoading)
+    ) {
+      return;
+    }
+
+    try {
+      sessionStorage.setItem(
+        CART_SELECTED_ITEMS_STORAGE_KEY,
+        JSON.stringify(selectedItems)
+      );
+      hasStoredSelectionRef.current = true;
+    } catch {
+    }
+  }, [
+    availableSkusKey,
+    isInitialLoading,
+    selectedItems,
+    storedSelectedItemsState.hasStoredSelection,
+  ]);
 
   const selectedAvailableItems = useMemo(() => {
     const selectedSet = new Set(selectedItems);
@@ -306,15 +473,44 @@ export default function CartPageClient() {
     if (!isCheckoutAuthFlowPending) return;
     if (!isAuth) return;
     if (checkoutAutoContinueRef.current) return;
-    if (!isGuestCartMergeDone) return;
 
-    const pending = sessionStorage.getItem('pendingCheckout');
+    const pending = typeof window !== 'undefined'
+      ? sessionStorage.getItem('pendingCheckout')
+      : null;
 
     if (pending !== '1') {
       resetCheckoutAuthFlow({ removePending: false });
       return;
     }
 
+    const storedCheckoutItems = readSessionJson('checkoutItemsPayload', []);
+    const hasStoredCheckoutItems = Array.isArray(storedCheckoutItems) && storedCheckoutItems.length > 0;
+
+    if (hasStoredCheckoutItems) {
+      if (checkoutRetryTimerRef.current) {
+        clearTimeout(checkoutRetryTimerRef.current);
+        checkoutRetryTimerRef.current = null;
+      }
+
+      checkoutAutoContinueRef.current = true;
+
+      (async () => {
+        const success = await handleCheckoutAuthorizedRef.current?.(storedCheckoutItems);
+
+        if (success) {
+          setIsCheckoutAuthFlowPending(false);
+          setIsPreparingCheckout(false);
+        } else {
+          resetCheckoutAuthFlow({ removePending: true });
+        }
+      })().finally(() => {
+        checkoutAutoContinueRef.current = false;
+      });
+
+      return;
+    }
+
+    if (!isGuestCartMergeDone) return;
     if (loading) return;
 
     if (!availableItems?.length) {
@@ -376,7 +572,6 @@ export default function CartPageClient() {
       const success = await handleCheckoutAuthorizedRef.current?.();
 
       if (success) {
-        sessionStorage.removeItem('pendingCheckout');
         setIsCheckoutAuthFlowPending(false);
         setIsPreparingCheckout(false);
       } else {
@@ -480,71 +675,149 @@ export default function CartPageClient() {
   const checkoutErrorMessage = selectedData.minOrderError ||
     `Оформление заказа доступно от ${formatAmount(minOrderAmount)} р. стоимости товаров`;
 
-  const saveSummaryToSession = useCallback(() => {
-    const summaryDelivery = selectedData.delivery || delivery;
+  const saveSummaryToSession = useCallback((summaryOverride = null) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    sessionStorage.setItem('checkoutSummary', JSON.stringify({
-      subtotal: selectedData.subtotal,
-      finalTotal: selectedData.finalTotal,
-      promoDiscount: selectedData.promoDiscount,
-      itemCount: selectedData.itemCount,
-      totalWeight: selectedData.totalWeight,
-      customsDuty: selectedData.customsDuty,
-      delivery: selectedData.deliveryToBelarus,
-      logisticsDelivery: selectedData.logisticsDelivery,
-      europostEligible: summaryDelivery?.europost_eligible ?? null,
-      availableMethods: summaryDelivery?.available_methods || [],
-    }));
+    const summarySource = summaryOverride || selectedData;
+    const summaryDelivery = summarySource?.delivery || delivery;
+
+    try {
+      sessionStorage.setItem('checkoutSummary', JSON.stringify({
+        subtotal: summarySource?.subtotal ?? 0,
+        finalTotal: summarySource?.finalTotal ?? 0,
+        promoDiscount: summarySource?.promoDiscount ?? 0,
+        itemCount: summarySource?.itemCount ?? 0,
+        totalWeight: summarySource?.totalWeight ?? 0,
+        customsDuty: summarySource?.customsDuty ?? 0,
+        delivery: summarySource?.deliveryToBelarus ?? 0,
+        logisticsDelivery: summarySource?.logisticsDelivery ?? 0,
+        europostEligible: summaryDelivery?.europost_eligible ?? null,
+        availableMethods: summaryDelivery?.available_methods || [],
+      }));
+    } catch {
+    }
   }, [selectedData, delivery]);
 
-  const handleCheckoutAuthorized = useCallback(async () => {
-    if (!canCheckout) return false;
+  const persistPendingCheckoutData = useCallback((payload, summaryOverride = null) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      sessionStorage.setItem('pendingCheckout', '1');
+      sessionStorage.setItem(
+        'selectedSkus',
+        JSON.stringify(payload.map((item) => String(item.sku)))
+      );
+      sessionStorage.setItem('checkoutItemsPayload', JSON.stringify(payload));
+      sessionStorage.setItem(
+        CART_SELECTED_ITEMS_STORAGE_KEY,
+        JSON.stringify(payload.map((item) => String(item.sku)))
+      );
+    } catch {
+    }
+
+    saveSummaryToSession(summaryOverride);
+  }, [saveSummaryToSession]);
+
+  const restoreCheckoutPayloadToCart = useCallback(async (payload = []) => {
+    for (const item of payload) {
+      const sku = item?.sku ? String(item.sku) : '';
+      const quantity = Number(item?.quantity || 0);
+
+      if (!sku || quantity <= 0) {
+        continue;
+      }
+
+      await addToCart(sku, quantity);
+    }
+
+    await refreshCart?.();
+  }, [refreshCart]);
+
+  const handleCheckoutAuthorized = useCallback(async (payloadOverride = null) => {
+    const checkoutPayload = Array.isArray(payloadOverride) && payloadOverride.length > 0
+      ? payloadOverride
+      : selectedItemsPayload;
+    const isPendingGuestContinuation = Boolean(
+      payloadOverride &&
+      checkoutPayload.length > 0 &&
+      isCheckoutAuthFlowPending
+    );
+
+    if (!checkoutPayload.length) return false;
+    if (!payloadOverride && !canCheckout) return false;
 
     setCheckoutLoading(true);
 
     try {
+      let normalizedSummary = null;
+
       try {
-        const summaryResponse = await getCheckoutSummary();
-        const checkoutData = summaryResponse?.checkout || summaryResponse;
-        const normalized = normalizeSummaryResponse(checkoutData);
-        if (normalized) setRemoteSummary(normalized);
+        const summaryResponse = await getCartSummary({
+          items: checkoutPayload,
+        });
+        normalizedSummary = normalizeSummaryResponse(summaryResponse);
+        if (normalizedSummary) {
+          setRemoteSummary(normalizedSummary);
+          saveSummaryToSession(normalizedSummary);
+        } else {
+          saveSummaryToSession();
+        }
       } catch {
         // Если summary не доступен — используем fallback из корзины
       }
 
-      saveSummaryToSession();
+      persistPendingCheckoutData(checkoutPayload, normalizedSummary);
 
       sessionStorage.setItem(
         'selectedSkus',
-        JSON.stringify(selectedItemsPayload.map((item) => item.sku))
+        JSON.stringify(checkoutPayload.map((item) => item.sku))
       );
 
       sessionStorage.setItem(
         'checkoutItemsPayload',
-        JSON.stringify(selectedItemsPayload)
+        JSON.stringify(checkoutPayload)
       );
 
-      const response = await createDraft({
-        items: selectedItemsPayload,
-      });
+      let response;
 
-      const draftId =
-        response?.order_id ||
-        response?.draft_order_id ||
-        response?.id ||
-        response?.data?.order_id ||
-        response?.data?.id ||
-        response?.data?.attributes?.id ||
-        response?.order?.id ||
-        response?.order?.order_id ||
-        response?.order?.data?.id ||
-        response?.order?.data?.attributes?.id;
+      try {
+        response = await createDraft({
+          items: checkoutPayload,
+        });
+      } catch (err) {
+        const shouldRetryRestore =
+          isPendingGuestContinuation &&
+          isGuestCartRestoreError(err);
+
+        if (!shouldRetryRestore) {
+          throw err;
+        }
+
+        const restorePayload = getRestorePayloadFromError(err, checkoutPayload);
+
+        if (!restorePayload.length) {
+          throw err;
+        }
+
+        await restoreCheckoutPayloadToCart(restorePayload);
+
+        response = await createDraft({
+          items: checkoutPayload,
+        });
+      }
+
+      const draftId = resolveDraftId(response);
 
       if (!draftId) {
         throw new Error('Бэк не вернул order_id черновика');
       }
 
       sessionStorage.setItem('checkoutDraftId', String(draftId));
+      sessionStorage.removeItem('pendingCheckout');
 
       router.push(`/checkout?draft_id=${draftId}`);
       return true;
@@ -561,6 +834,7 @@ export default function CartPageClient() {
 
       if (isDraftConflict && conflictDraftId) {
         sessionStorage.setItem('checkoutDraftId', String(conflictDraftId));
+        sessionStorage.removeItem('pendingCheckout');
         router.push(`/checkout?draft_id=${conflictDraftId}`);
         return true;
       }
@@ -569,7 +843,15 @@ export default function CartPageClient() {
     } finally {
       setCheckoutLoading(false);
     }
-  }, [canCheckout, saveSummaryToSession, router, selectedItemsPayload]);
+  }, [
+    canCheckout,
+    isCheckoutAuthFlowPending,
+    persistPendingCheckoutData,
+    restoreCheckoutPayloadToCart,
+    router,
+    saveSummaryToSession,
+    selectedItemsPayload,
+  ]);
 
   handleCheckoutAuthorizedRef.current = handleCheckoutAuthorized;
 
@@ -587,6 +869,10 @@ export default function CartPageClient() {
     }
 
     if (!isAuth) {
+      if (!selectedItemsPayload.length) {
+        return;
+      }
+
       if (checkoutRetryTimerRef.current) {
         clearTimeout(checkoutRetryTimerRef.current);
         checkoutRetryTimerRef.current = null;
@@ -594,8 +880,7 @@ export default function CartPageClient() {
 
       checkoutRetryCountRef.current = 0;
       checkoutAutoContinueRef.current = false;
-      saveSummaryToSession();
-      sessionStorage.setItem('pendingCheckout', '1');
+      persistPendingCheckoutData(selectedItemsPayload);
       openLogin();
       return;
     }
@@ -609,8 +894,9 @@ export default function CartPageClient() {
     isPreparingCheckout,
     checkoutLoading,
     openLogin,
-    saveSummaryToSession,
+    persistPendingCheckoutData,
     handleCheckoutAuthorized,
+    selectedItemsPayload,
   ]);
 
   const handleQuantityChange = useCallback(async (sku, newQuantity) => {
@@ -704,7 +990,7 @@ export default function CartPageClient() {
               <div className="zakaz-inner">
                 <h2>Корзина</h2>
 
-                {selectedItems.length > 0 && !canCheckout && (
+                {hasAvailableItems && selectedItems.length > 0 && !canCheckout && (
                   <div className="order-toast_choose">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />

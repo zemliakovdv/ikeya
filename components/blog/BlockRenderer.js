@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import TextWithImageBlock from './blocks/TextWithImageBlock';
 import ImageLeftTextRightBlock from './blocks/ImageLeftTextRightBlock';
 import ImageRightTextLeftBlock from './blocks/ImageRightTextLeftBlock';
@@ -21,7 +22,11 @@ export default function BlockRenderer({ block }) {
       return <TextImagesRowBlock block={block} />;
 
     case 'products_grid':
-      return <ProductsGridBlock block={block} />;
+      return (
+        <Suspense fallback={null}>
+          <ProductsGridBlock block={block} />
+        </Suspense>
+      );
 
     case 'categories_grid':
       return <CategoriesGridBlock block={block} />;

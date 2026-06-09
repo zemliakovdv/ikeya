@@ -69,6 +69,32 @@ function PackageIcon() {
   );
 }
 
+function firstImageFromValue(value) {
+  if (Array.isArray(value)) {
+    return value[0] || null;
+  }
+
+  return value || null;
+}
+
+function getOrderItemImage(item = {}) {
+  return (
+    item.image ||
+    item.image_url ||
+    item.local_image ||
+    firstImageFromValue(item.local_images) ||
+    firstImageFromValue(item.images?.local_images) ||
+    firstImageFromValue(item.images?.images) ||
+    item.attributes?.image_url ||
+    item.product?.image ||
+    item.product?.image_url ||
+    firstImageFromValue(item.product?.local_images) ||
+    firstImageFromValue(item.product?.images?.local_images) ||
+    firstImageFromValue(item.product?.images?.images) ||
+    null
+  );
+}
+
 function ArrowIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -81,7 +107,9 @@ function ArrowIcon() {
 }
 
 const isEuropostOrder = (order) =>
-  order?.deliveryType === 'europost_pickup' || order?.deliveryType === 'courier';
+  order?.deliveryType === 'europost_pickup' ||
+  order?.deliveryType === 'courier' ||
+  order?.deliveryType === 'ikeya_delivery';
 
 const OrderCard = ({ order }) => {
   const router = useRouter();
@@ -352,7 +380,7 @@ const OrderCard = ({ order }) => {
                 className="order-item"
               >
                 <img
-                  src={item.image || '/assets/img/profile/active_1.png'}
+                  src={getOrderItemImage(item) || '/assets/img/profile/active_1.png'}
                   alt={item.name || 'Товар'}
                   className="item-image"
                   onError={(event) => {
@@ -375,7 +403,7 @@ const OrderCard = ({ order }) => {
             ) : (
               <div key={`${item.desc || item.name || 'item'}-${idx}`} className="order-item">
                 <img
-                  src={item.image || '/assets/img/profile/active_1.png'}
+                  src={getOrderItemImage(item) || '/assets/img/profile/active_1.png'}
                   alt={item.name || 'Товар'}
                   className="item-image"
                   onError={(event) => {

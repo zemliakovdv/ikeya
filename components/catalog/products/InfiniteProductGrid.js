@@ -39,6 +39,7 @@ export default function InfiniteProductGrid({
   const loadMoreRef = useRef(null);
   const abortRef = useRef(null);
   const requestKeyRef = useRef('');
+  const hasUserScrolledRef = useRef(false);
 
   const requestKey = useMemo(() => {
     return `${categoryId || 'all'}-${initialPage}-${totalPages || 1}-${queryString}`;
@@ -46,6 +47,7 @@ export default function InfiniteProductGrid({
 
   useEffect(() => {
     requestKeyRef.current = requestKey;
+    hasUserScrolledRef.current = false;
 
     abortRef.current?.abort();
 
@@ -142,9 +144,30 @@ export default function InfiniteProductGrid({
   }, [loadMore]);
 
   useEffect(() => {
+    const handleFirstScroll = () => {
+      hasUserScrolledRef.current = true;
+      window.removeEventListener('scroll', handleFirstScroll);
+
+      const trigger = triggerRef.current;
+      if (!trigger) return;
+
+      const rect = trigger.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 200) {
+        loadMoreRef.current?.();
+      }
+    };
+
+    window.addEventListener('scroll', handleFirstScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', handleFirstScroll);
+    };
+  }, [requestKey]);
+
+  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && hasUserScrolledRef.current) {
           loadMoreRef.current?.();
         }
       },

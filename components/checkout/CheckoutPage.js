@@ -283,6 +283,8 @@ function CheckoutPageInner() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftItems, setDraftItems] = useState([]);
+  const [draftResolved, setDraftResolved] = useState(false);
+  const [draftLoadFailed, setDraftLoadFailed] = useState(false);
 
   const [receiveMethod, setReceiveMethod] = useState(() => readLS(LS_RECEIVE_METHOD));
 
@@ -396,7 +398,7 @@ function CheckoutPageInner() {
     const sessionSource = filterUsableItems(storedCheckoutItems);
     const cartSource = filterUsableItems(items);
 
-    if (draftSource.length) {
+    if (draftId) {
       return draftSource;
     }
 
@@ -405,12 +407,24 @@ function CheckoutPageInner() {
     }
 
     if (!selectedSkus?.length) {
-      return cartSource;
+      return [];
     }
 
     const selectedSet = new Set(selectedSkus.map((sku) => String(sku)));
     return cartSource.filter((item) => selectedSet.has(String(item.sku)));
-  }, [draftItems, items, selectedSkus, storedCheckoutItems]);
+  }, [draftId, draftItems, items, selectedSkus, storedCheckoutItems]);
+
+  const hasCheckoutSelectionContext = useMemo(() => {
+    if (draftId) {
+      return draftItems.length > 0;
+    }
+
+    return Boolean(
+      draftItems.length ||
+      storedCheckoutItems.length ||
+      selectedSkus.length
+    );
+  }, [draftId, draftItems.length, selectedSkus.length, storedCheckoutItems.length]);
 
   const cartItems = useMemo(() => {
     return checkoutItemsSource
@@ -429,6 +443,27 @@ function CheckoutPageInner() {
   }, []);
 
   useEffect(() => {
+    if (draftLoading) {
+      return;
+    }
+
+    if (draftId) {
+      if (!draftLoadFailed && draftResolved && draftItems.length > 0) {
+        return;
+      }
+
+      setError('Не удалось восстановить черновик заказа. Вернитесь в корзину и начните оформление заново.');
+      return;
+    }
+
+    if (hasCheckoutSelectionContext) {
+      return;
+    }
+
+    setError('Не удалось восстановить выбранные товары для оформления. Вернитесь в корзину и начните оформление заново.');
+  }, [draftId, draftItems.length, draftLoadFailed, draftLoading, draftResolved, hasCheckoutSelectionContext]);
+
+  useEffect(() => {
     if (!token) {
       setLoadingProfile(false);
       return;
@@ -442,9 +477,15 @@ function CheckoutPageInner() {
 
   useEffect(() => {
     if (!draftId) {
+      setDraftResolved(false);
+      setDraftLoadFailed(false);
       setDraftLoading(false);
       return;
     }
+
+    setDraftLoading(true);
+    setDraftResolved(false);
+    setDraftLoadFailed(false);
 
     getDraft(draftId)
       .then((data) => {
@@ -494,10 +535,12 @@ function CheckoutPageInner() {
 
         setDraftItems(loadedDraftItems);
         setCheckoutSummary(summary);
+        setDraftResolved(true);
       })
       .catch(() => {
         sessionStorage.removeItem('checkoutDraftId');
         setDraftItems([]);
+        setDraftLoadFailed(true);
         setError('Не удалось загрузить черновик заказа. Вернитесь в корзину и начните оформление заново.');
       })
       .finally(() => setDraftLoading(false));
@@ -648,13 +691,16 @@ function CheckoutPageInner() {
     return '';
   };
 
-  const hasValidDeliveryAddress = isPickup ? !!selectedPvz : true;
+  const hasValidDeliveryAddress = isPickup
+    ? Boolean(selectedPickupPointId || selectedPvz)
+    : hasSelectedDeliveryAddressPayload;
 
   const canCheckout = !!(
     fullName &&
     profile?.phone &&
     hasValidDeliveryAddress &&
     itemCount > 0 &&
+    (!draftId || (draftResolved && !draftLoadFailed && draftItems.length > 0)) &&
     !submitting
   );
 

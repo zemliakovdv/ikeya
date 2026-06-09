@@ -1271,7 +1271,7 @@ body.mobile-phone-open .mobile-phone-sheet {
     .korzina .zakaz-inner h2 {
         width: 100%;
         max-width: 1368px;
-        margin-bottom: 0;
+        margin-bottom: 24px;
         font-size: 21px;
         line-height: 28px;
         font-weight: 600;
@@ -2348,7 +2348,7 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .shop-card .verh-card__action .goods-add__cart,
     .shop-card .verh-card__action .goods-added {
-        flex: 0 0 auto;
+        flex: initial;
         min-width: 0;
         margin-bottom: 0;
     }
@@ -2535,8 +2535,8 @@ body.mobile-phone-open .mobile-phone-sheet {
     .shop-card .goods-added,
     .shop-card .goods-added__counter,
     .shop-card .good-added__link {
-        width: 240px;
-        max-width: 240px;
+        width: 100%;
+        max-width: 100%;
         min-width: 0;
     }
 
@@ -8541,7 +8541,8 @@ body.mobile-phone-open .mobile-phone-sheet {
         max-width: 960px;
     }
 
-    .shop-card .goods-parametrs__item, .shop-card .goods-dostavka .goods-add__item{
+    .shop-card .goods-parametrs__item,
+    .shop-card .goods-dostavka .goods-add__item {
         width: 960px;
         max-width: 960px;
     }

@@ -98,6 +98,33 @@ function resolveImage(imageUrl) {
   return null;
 }
 
+function getOrderItemImage(item = {}) {
+  const candidates = [
+    item.image_url,
+    item.image,
+    item.local_image,
+    item.local_images,
+    item.images,
+    item.images?.local_images,
+    item.images?.images,
+    item.product?.image_url,
+    item.product?.image,
+    item.product?.local_images,
+    item.product?.images,
+    item.product?.images?.local_images,
+    item.product?.images?.images,
+    item.product?.attr?.local_images,
+    item.product?.attributes?.local_images,
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = resolveImage(candidate);
+    if (resolved) return resolved;
+  }
+
+  return null;
+}
+
 function getOrderDeliveryCost(attrs = {}) {
   const delivery = attrs.delivery || attrs.address?.delivery || {};
 
@@ -124,6 +151,19 @@ function getOrderDeliveryCost(attrs = {}) {
   const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
 
   return found ?? null;
+}
+
+function getPaymentUrl(attr = {}) {
+  return (
+    attr.payment_url ||
+    attr.payment_link ||
+    attr.payment?.url ||
+    attr.payment?.payment_url ||
+    attr.payment?.payment_link ||
+    attr.payment?.link ||
+    attr.payment_url_full ||
+    null
+  );
 }
 
 function getItemPrice(item = {}) {
@@ -368,7 +408,13 @@ export default function OrderSuccessPage() {
   const attrs = order?.attributes || order || {};
   const deliveryType = attrs.delivery_type || '';
   const paymentLabel = PAYMENT_LABELS[attrs.payment_method] || attrs.payment_method || 'Оплата картой онлайн';
-  const paymentUrl = resolvePaymentUrl(attrs.payment_url) || null;
+  const paymentUrl = resolvePaymentUrl(
+    getPaymentUrl({
+      ...order,
+      ...attrs,
+      payment: attrs.payment || order?.payment,
+    })
+  ) || null;
   const paymentExpired = attrs.payment_expired === true;
   const timerStr = timeLeft ? `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}` : null;
   const showPaymentAlert = !loading && !paymentExpired && (timerStr || paymentUrl);
@@ -599,7 +645,7 @@ export default function OrderSuccessPage() {
                     <div className="order-items">
                       {items.map((item, index) => {
                         const attributes = item.attributes || item;
-                        const imgSrc = resolveImage(attributes.image_url) || resolveImageUrl(attributes.image_url) || '/assets/img/no-image.jpg';
+                        const imgSrc = getOrderItemImage(attributes) || resolveImageUrl(attributes.image_url) || '/assets/img/no-image.jpg';
                         const itemPrice = getItemPrice(attributes);
 
                         return (
