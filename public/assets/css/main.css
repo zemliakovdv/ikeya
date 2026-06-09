@@ -864,7 +864,7 @@ main {
 /* Кнопки навигации */
 .popular-categories__nav {
     position: absolute;
-    top: 35%;
+    top: 40%;
     transform: translateY(-50%);
     width: 32px;
     height: 32px;

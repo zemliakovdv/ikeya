@@ -21,7 +21,7 @@ export default function PvzPageClient() {
       {needScript && (
         <Script
           src={YMAPS_SRC}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           onLoad={() => setYmapsReady(true)}
         />
       )}

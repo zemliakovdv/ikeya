@@ -172,6 +172,8 @@ export default function PopularCategory({ categories = [] }) {
       if (!wrapper) return;
 
       const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
+      const prevBtn = wrapper.querySelector('.popular-categories__nav-prev');
+      const nextBtn = wrapper.querySelector('.popular-categories__nav-next');
       const pagination = wrapper.querySelector('.popular-categories__pagination');
 
       if (mobileSwiperRef.current) {
@@ -180,10 +182,14 @@ export default function PopularCategory({ categories = [] }) {
       }
 
       if (slideCount <= 1) {
+        if (prevBtn) prevBtn.style.display = 'none';
+        if (nextBtn) nextBtn.style.display = 'none';
         if (pagination) pagination.style.display = 'none';
         return;
       }
 
+      if (prevBtn) prevBtn.style.display = '';
+      if (nextBtn) nextBtn.style.display = '';
       if (pagination) pagination.style.display = '';
 
       mobileSwiperRef.current = new window.Swiper(sliderEl, {
@@ -193,6 +199,10 @@ export default function PopularCategory({ categories = [] }) {
         spaceBetween: 8,
         speed: 500,
         watchOverflow: true,
+        navigation: {
+          nextEl: nextBtn,
+          prevEl: prevBtn,
+        },
         pagination: {
           el: pagination,
           clickable: true,
@@ -332,7 +342,41 @@ export default function PopularCategory({ categories = [] }) {
               </div>
 
               {displayCategories.length > 1 && (
-                <div className="popular-categories__pagination" />
+                <>
+                  <button
+                    className="popular-categories__nav popular-categories__nav-prev"
+                    type="button"
+                    aria-label="Предыдущий слайд"
+                  >
+                    <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
+                      <path
+                        d="M6 1L1 6L6 11"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+
+                  <button
+                    className="popular-categories__nav popular-categories__nav-next"
+                    type="button"
+                    aria-label="Следующий слайд"
+                  >
+                    <svg width="6.67" height="12" viewBox="0 0 7 12" fill="none">
+                      <path
+                        d="M1 11L6 6L1 1"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+
+                  <div className="popular-categories__pagination" />
+                </>
               )}
             </div>
           </div>

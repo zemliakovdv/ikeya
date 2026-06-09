@@ -65,7 +65,7 @@ export default function DeliveryModal({
       {needScript && (
         <Script
           src={YMAPS_SRC}
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           onLoad={() => setYmapsReady(true)}
         />
       )}

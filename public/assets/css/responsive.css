@@ -3648,10 +3648,6 @@ body.mobile-phone-open .mobile-phone-sheet {
         border-radius: 8px;
     }
 
-    .popular-categories__nav {
-        display: none !important;
-    }
-
     .start-slider__nav-prev,
     .start-slider__nav-next {
         display: none !important;
@@ -18857,6 +18853,10 @@ body.mobile-phone-open .mobile-phone-sheet {
 }
 
 @media (max-width: 991px) {
+    .popular-categories__nav {
+        display: none !important;
+    }
+
     .mega-menu-overlay {
         overflow-y: auto;
         overflow-x: hidden;

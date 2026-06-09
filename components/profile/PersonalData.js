@@ -526,7 +526,7 @@ export default function PersonalData() {
           {typeof window !== 'undefined' && !window.ymaps && (
             <Script
               src="https://api-maps.yandex.ru/2.1/?apikey=ee57964a-5010-4536-9733-41c78d29d531&lang=ru_RU"
-              strategy="afterInteractive"
+              strategy="lazyOnload"
               onLoad={() => setYmapsReady(true)}
             />
           )}
