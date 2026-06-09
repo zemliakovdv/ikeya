@@ -9,6 +9,7 @@ import FloatingChatButton from '@/components/FloatingChatButton'
 import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import CookieBanner from '@/components/cookie/CookieBanner';
 import CatalogRouteLoader from '@/components/ui/CatalogRouteLoader';
+import BootstrapClient from '@/components/BootstrapClient'
 import { Suspense } from 'react'
 import './globals.css'
 import Script from 'next/script'
@@ -29,10 +30,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ru">
       <head>
-        <link
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-          rel="stylesheet"
-        />
+        <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
           rel="stylesheet"
@@ -98,14 +96,9 @@ export default function RootLayout({ children }) {
 
         <CookieBanner />
 
-        <Script
-          src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-          strategy="lazyOnload"
-        />
-        <Script
-          src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.min.js"
-          strategy="lazyOnload"
-        />
+        {/* Bootstrap JS (bundle с Popper) через npm */}
+        <BootstrapClient />
+
         <Script
           src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"
           strategy="lazyOnload"
