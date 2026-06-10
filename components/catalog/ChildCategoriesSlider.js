@@ -43,7 +43,7 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
   const raf1Ref = useRef(0);
   const raf2Ref = useRef(0);
   const resizeRafRef = useRef(0);
-  const [isDesktopSliderRange, setIsDesktopSliderRange] = useState(false);
+  const [isDesktopSliderRange, setIsDesktopSliderRange] = useState(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -149,7 +149,8 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
     };
   }, [categories, isDesktopSliderRange]);
 
-  if (!categories.length || !isDesktopSliderRange) return null;
+  if (!categories.length) return null;
+  if (isDesktopSliderRange === null) return null;
 
   const items = categories.map((cat) => {
     const attr = cat.attributes || {};
@@ -162,6 +163,35 @@ export default function ChildCategoriesSlider({ categories = [], basePath = '' }
       url: basePath ? `${basePath}/${slug}` : `/catalog/${slug}`,
     };
   });
+
+  if (!isDesktopSliderRange) {
+    return (
+      <div className="child-categories-mobile" aria-label="Дочерние категории">
+        <div className="child-categories-mobile__track">
+          {items.map((item, index) => (
+            <div key={item.id} className="child-categories-mobile__item">
+              <Link href={item.url} className="child-categories-mobile__card">
+                <div className="child-categories-mobile__image">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    width={120}
+                    height={120}
+                    priority={index < 3}
+                    onError={(e) => {
+                      e.currentTarget.src = PLACEHOLDER;
+                    }}
+                    style={{ width: '100%', height: 'auto' }}
+                  />
+                </div>
+                <p className="child-categories-mobile__title">{item.name}</p>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="popular-categories" ref={containerRef}>

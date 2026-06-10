@@ -1867,6 +1867,69 @@ body.mobile-phone-open .mobile-phone-sheet {
         right: -12px;
     }
 
+    .child-categories-mobile {
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 56px;
+        overflow: hidden;
+    }
+
+    .child-categories-mobile__track {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        width: 100%;
+        max-width: 100%;
+        padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        overscroll-behavior-x: contain;
+    }
+
+    .child-categories-mobile__item {
+        flex: 0 0 auto;
+        width: 141px;
+        min-width: 141px;
+    }
+
+    .child-categories-mobile__card {
+        display: block;
+        width: 100%;
+        text-align: center;
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .child-categories-mobile__image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 141px;
+        height: 141px;
+        padding: 14px;
+        margin-bottom: 8px;
+        border-radius: var(--radius-md);
+        background: var(--color-surface-muted);
+    }
+
+    .child-categories-mobile__image img {
+        display: block;
+        width: 100%;
+        max-width: 102px;
+        max-height: 102px;
+        object-fit: contain;
+    }
+
+    .child-categories-mobile__title {
+        margin-bottom: 0;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 18px;
+        letter-spacing: 0.1px;
+        overflow-wrap: anywhere;
+    }
+
     /* Табы с карточками */
 
     .products-tabs,
@@ -3708,6 +3771,35 @@ body.mobile-phone-open .mobile-phone-sheet {
 
     .popular-categories__nav-next {
         right: -10px;
+    }
+
+    .child-categories-mobile {
+        margin-bottom: 52px;
+    }
+
+    .child-categories-mobile__track {
+        gap: 10px;
+    }
+
+    .child-categories-mobile__item {
+        width: 108px;
+        min-width: 108px;
+    }
+
+    .child-categories-mobile__image {
+        width: 108px;
+        height: 108px;
+        padding: 12px;
+    }
+
+    .child-categories-mobile__image img {
+        max-width: 84px;
+        max-height: 84px;
+    }
+
+    .child-categories-mobile__title {
+        font-size: 12px;
+        line-height: 16px;
     }
 
     /* Табы с карточками */
@@ -12962,6 +13054,36 @@ body.mobile-phone-open .mobile-phone-sheet {
         line-height: 16px;
     }
 
+    .child-categories-mobile {
+        margin-bottom: 64px;
+    }
+
+    .child-categories-mobile__track {
+        gap: 8px;
+        padding-bottom: 6px;
+    }
+
+    .child-categories-mobile__item {
+        width: 96px;
+        min-width: 96px;
+    }
+
+    .child-categories-mobile__image {
+        width: 96px;
+        height: 96px;
+        padding: 10px;
+    }
+
+    .child-categories-mobile__image img {
+        max-width: 70px;
+        max-height: 70px;
+    }
+
+    .child-categories-mobile__title {
+        font-size: 12px;
+        line-height: 16px;
+    }
+
     .popular-categories-mobile .popular-categories__pagination {
         bottom: -30px !important;
     }
@@ -18012,6 +18134,27 @@ body.mobile-phone-open .mobile-phone-sheet {
     }
 
     .popular-categories-mobile .categories-item-card p {
+        font-size: 11px;
+        line-height: 15px;
+    }
+
+    .child-categories-mobile__item {
+        width: 88px;
+        min-width: 88px;
+    }
+
+    .child-categories-mobile__image {
+        width: 88px;
+        height: 88px;
+        padding: 8px;
+    }
+
+    .child-categories-mobile__image img {
+        max-width: 56px;
+        max-height: 56px;
+    }
+
+    .child-categories-mobile__title {
         font-size: 11px;
         line-height: 15px;
     }

@@ -1,40 +1,85 @@
 'use client';
 
-// components/delivery/modal/DeliveryTab.js
+// components/delivery/modal/PickupTab.js
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { normalizePoint } from '@/hooks/usePvzData';
+import PvzCard from '@/components/delivery/cards/PvzCard';
+import PvzDetail from '@/components/delivery/cards/PvzDetail';
 import DeliveryMap from '@/components/delivery/map/DeliveryMap';
-import DeliveryResult from '@/components/delivery/cards/DeliveryResult';
-import { calculateDelivery } from '@/lib/api/delivery';
+import { getEuropostOffices, calculateDelivery } from '@/lib/api/delivery';
 
-/**
- * DeliveryTab
- *
- * Props:
- *  - ymapsReady  {boolean}
- *  - orderId     {string|number}
- *  - cartToken   {string}
- *  - cartItems   {Array}  [{sku, quantity}]
- *  - onSelect    {fn(addr, calcResult)}
- */
+const MOBILE_VIEWPORT_QUERY = '(max-width: 767px)';
 
-function getAvailableMethodsFromError(error) {
-  const payload = error?.payload || {};
+function getDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
 
-  const candidates = [
-    payload.available_methods,
-    payload.delivery?.available_methods,
-    payload.cart?.delivery?.available_methods,
-    payload.data?.available_methods,
-    payload.data?.delivery?.available_methods,
-  ];
-
-  const found = candidates.find((item) => Array.isArray(item));
-
-  return found || [];
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function DeliveryTab({
+function normalizePvzSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replaceAll('ё', 'е')
+    .replace(/[.,;:()"'«»]+/g, ' ')
+    .replace(/\b(г|город|д|деревня|п|поселок|посёлок|аг|агрогородок)\b/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function filterPvzOffices(offices, search) {
+  const query = normalizePvzSearch(search);
+  if (!query) return offices;
+
+  const exactCityMatches = offices.filter(
+    (office) => normalizePvzSearch(office.city) === query
+  );
+  if (exactCityMatches.length > 0) return exactCityMatches;
+
+  return offices.filter((office) => {
+    const city = normalizePvzSearch(office.city);
+    const address = normalizePvzSearch(office.address);
+    const name = normalizePvzSearch(office.name);
+    return city.includes(query) || address.includes(query) || name.includes(query);
+  });
+}
+
+function useIsMobileViewport() {
+  const [isMobileViewport, setIsMobileViewport] = useState(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+    const updateViewport = (event) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    setIsMobileViewport(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', updateViewport);
+      return () => mediaQuery.removeEventListener('change', updateViewport);
+    }
+
+    mediaQuery.addListener(updateViewport);
+    return () => mediaQuery.removeListener(updateViewport);
+  }, []);
+
+  return isMobileViewport;
+}
+
+export default function PickupTab({
   ymapsReady,
   orderId,
   cartToken,
@@ -44,30 +89,20 @@ export default function DeliveryTab({
   setActiveTab,
   hideTabs = false,
 }) {
-  const [form, setForm] = useState({
-    fullAddress: '',
-    city: '',
-    street: '',
-    house: '',
-    building: '',
-    apartment: '',
-    entrance: '',
-    floor: '',
-    intercom: '',
-    lift: 'none', // 'none' | 'freight' | 'passenger'
-    isPrivateHouse: false,
-  });
-
-  const [step, setStep] = useState('form'); // 'form' | 'result'
-  const [calcResult, setCalcResult] = useState(null);
+  const [allPoints, setAllPoints] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [selectedPoint, setSelectedPoint] = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
   const [calcError, setCalcError] = useState(null);
-  const [coords, setCoords] = useState(null);
-  const [geoError, setGeoError] = useState(null);
-  const [pinCoords, setPinCoords] = useState(null);
-  const [fieldErrors, setFieldErrors] = useState({});
+  const [mapCenter, setMapCenter] = useState(null);
+  const [userCoords, setUserCoords] = useState(null);
+  const [mobileView, setMobileView] = useState('list');
 
-  const addressDebounce = useRef(null);
+  const searchTimer = useRef(null);
+  const isMobileViewport = useIsMobileViewport();
 
   const deliveryContext = useMemo(() => {
     if (orderId) {
@@ -86,505 +121,378 @@ export default function DeliveryTab({
 
     window.ymaps.ready(() => {
       window.ymaps.geolocation
-        .get({
-          provider: 'browser',
-          autoReverseGeocode: true,
-        })
+        .get({ provider: 'browser', autoReverseGeocode: false })
         .then((geo) => {
           const position = geo.geoObjects.get(0);
-
           if (!position) return;
 
-          const pos = position.geometry.getCoordinates();
-
-          setCoords(pos);
-          setPinCoords(pos);
-
-          const addressLine = position.properties.get('text');
-
-          if (addressLine) {
-            setForm((prev) => ({
-              ...prev,
-              fullAddress: addressLine,
-            }));
-            parseGeoAddress(position);
-          }
+          const coords = position.geometry.getCoordinates();
+          setUserCoords(coords);
         })
-        .catch(() => setGeoError('Не удалось определить местоположение'));
+        .catch((error) => {
+          // Не критично для работы страницы, но причина должна быть видна
+          console.warn('Геолокация недоступна:', error?.message || error);
+        });
     });
   }, [ymapsReady]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const data = await getEuropostOffices({
+          orderId,
+          cartToken,
+        });
+
+        if (cancelled) return;
+
+        const points = (data.offices || []).map((office) => normalizePoint(office, 'europost'));
+
+        setAllPoints(points);
+        setFiltered(points);
+      } catch {
+        if (cancelled) return;
+
+        setLoadError('Не удалось загрузить пункты выдачи');
+        setAllPoints([]);
+        setFiltered([]);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    load();
+
     return () => {
-      if (addressDebounce.current) {
-        clearTimeout(addressDebounce.current);
+      cancelled = true;
+    };
+  }, [orderId, cartToken]);
+
+  // Сортировка по близости: зависит и от userCoords, и от факта загрузки точек,
+  // чтобы сработать независимо от того, что пришло раньше — координаты или список.
+  // setAllPoints(sorted) не меняет length, поэтому эффект не зацикливается.
+  useEffect(() => {
+    if (!userCoords || !allPoints.length) return;
+
+    const sorted = [...allPoints].sort((a, b) => {
+      if (!a.lat || !a.lon) return 1;
+      if (!b.lat || !b.lon) return -1;
+
+      const dA = getDistanceKm(userCoords[0], userCoords[1], a.lat, a.lon);
+      const dB = getDistanceKm(userCoords[0], userCoords[1], b.lat, b.lon);
+
+      return dA - dB;
+    });
+
+    setAllPoints(sorted);
+
+    if (!search.trim()) {
+      setFiltered(sorted);
+    }
+  }, [userCoords, allPoints.length]);
+
+  useEffect(() => {
+    if (!userCoords) return;
+
+    const nearestPoint = allPoints.reduce((nearest, point) => {
+      if (!point.lat || !point.lon) return nearest;
+
+      const distance = getDistanceKm(userCoords[0], userCoords[1], point.lat, point.lon);
+
+      if (!nearest || distance < nearest.distance) {
+        return {
+          point,
+          distance,
+        };
+      }
+
+      return nearest;
+    }, null);
+
+    if (nearestPoint?.point) {
+      setMapCenter({
+        coords: [nearestPoint.point.lat, nearestPoint.point.lon],
+        zoom: 15,
+      });
+      return;
+    }
+
+    setMapCenter({
+      coords: userCoords,
+      zoom: 12,
+    });
+  }, [userCoords, allPoints]);
+
+  useEffect(() => {
+    if (!search.trim()) {
+      setFiltered(allPoints);
+      return;
+    }
+
+  const result = filterPvzOffices(allPoints, search);
+
+    setFiltered(result);
+
+    const withCoords = result.filter((point) => point.lat && point.lon);
+
+    if (withCoords.length > 0) {
+      const avgLat = withCoords.reduce((sum, p) => sum + p.lat, 0) / withCoords.length;
+      const avgLon = withCoords.reduce((sum, p) => sum + p.lon, 0) / withCoords.length;
+      setMapCenter({ coords: [avgLat, avgLon], zoom: 11 });
+    }
+  }, [search, allPoints]);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) {
+        clearTimeout(searchTimer.current);
       }
     };
   }, []);
 
-  function parseGeoAddress(geoObj) {
-    try {
-      const components = geoObj.properties.get('metaDataProperty.GeocoderMetaData.Address.Components') || [];
-      const locality = components.find((component) => component.kind === 'locality')?.name || '';
-      const street = components.find((component) => component.kind === 'street')?.name || '';
-      const house = components.find((component) => component.kind === 'house')?.name || '';
+  const handleSearch = (event) => {
+    clearTimeout(searchTimer.current);
 
-      setForm((prev) => ({
-        ...prev,
-        city: locality,
-        street,
-        house,
-      }));
-    } catch {}
-  }
-
-  function validateAddressForm() {
-    const nextErrors = {};
-
-    if (!String(form.fullAddress || '').trim()) {
-      nextErrors.fullAddress = 'Укажите адрес доставки';
-    } else if (
-      !String(form.city || '').trim() ||
-      !String(form.street || '').trim() ||
-      !String(form.house || '').trim()
-    ) {
-      nextErrors.fullAddress = 'Не удалось определить адрес. Уточните город, улицу и дом';
-    }
-
-    setFieldErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  }
-
-  const geocodeAddress = useCallback((address) => {
-    if (!ymapsReady || !address.trim()) return;
-
-    window.ymaps.ready(() => {
-      window.ymaps.geocode(address, { results: 1 }).then((res) => {
-        const obj = res.geoObjects.get(0);
-
-        if (!obj) return;
-
-        const pos = obj.geometry.getCoordinates();
-
-        setCoords(pos);
-        setPinCoords(pos);
-        parseGeoAddress(obj);
-      });
-    });
-  }, [ymapsReady]);
-
-  const handleAddressChange = (event) => {
     const value = event.target.value;
 
-    setForm((prev) => ({
-      ...prev,
-      fullAddress: value,
-    }));
-    setFieldErrors((prev) => ({
-      ...prev,
-      fullAddress: undefined,
-    }));
-
-    clearTimeout(addressDebounce.current);
-
-    addressDebounce.current = setTimeout(() => {
-      geocodeAddress(value);
-    }, 700);
+    searchTimer.current = setTimeout(() => setSearch(value), 300);
   };
 
-  const handleMapClick = useCallback((pos) => {
-    setCoords(pos);
-    setPinCoords(pos);
+  const handleCardClick = (point) => {
+    if (point.lat && point.lon) {
+      setMapCenter({ coords: [point.lat, point.lon], zoom: 17 });
+    }
+  };
 
-    if (!ymapsReady) return;
+  const handleDetailOpen = useCallback((point) => {
+    setSelectedPoint(point);
+    setCalcError(null);
 
-    window.ymaps.geocode(pos, { results: 1 }).then((res) => {
-      const obj = res.geoObjects.get(0);
+    if (point.lat && point.lon) {
+      setMapCenter({ coords: [point.lat, point.lon], zoom: 17 });
+    }
+  }, []);
 
-      if (!obj) return;
+  const handleBack = () => {
+    setSelectedPoint(null);
+    setCalcError(null);
+  };
 
-      setForm((prev) => ({
-        ...prev,
-        fullAddress: obj.getAddressLine(),
-      }));
+  const handleSelect = useCallback(async () => {
+    if (!selectedPoint) return;
 
-      parseGeoAddress(obj);
-    });
-  }, [ymapsReady]);
+    if (!deliveryContext) {
+      setCalcError('Не удалось рассчитать доставку: нет данных заказа');
+      return;
+    }
 
-  function buildAddressPayload() {
-    return {
-      city: form.city || '',
-      street: form.street || '',
-      house: form.house || '',
-      building: form.building || '',
-      apartment: form.apartment || '',
-      entrance: form.entrance || '',
-      floor: form.floor || '',
-      has_elevator: form.lift !== 'none',
-      intercom: form.intercom || '',
-      is_private_house: form.isPrivateHouse,
-      lat: coords?.[0] ?? null,
-      lng: coords?.[1] ?? null,
-      full_address: form.fullAddress || '',
-    };
-  }
-
-  const handleSubmit = async () => {
-    if (!form.fullAddress.trim()) return;
-    if (!validateAddressForm()) {
-      setCalcError('Заполните обязательные поля адреса');
+    if (!cartItems?.length) {
+      setCalcError('Не удалось рассчитать доставку: нет товаров для расчёта');
       return;
     }
 
     setCalcLoading(true);
-    setCalcResult(null);
     setCalcError(null);
 
-    if (!deliveryContext || !cartItems?.length) {
-      setCalcError('Не удалось рассчитать доставку: нет данных заказа');
-      setCalcLoading(false);
-      setStep('result');
-      return;
-    }
-
-    const addressPayload = buildAddressPayload();
-
-    const payload = {
-      ...deliveryContext,
-      delivery_type: 'courier',
-      items: cartItems,
-      address: addressPayload,
-    };
-
     try {
-      const result = await calculateDelivery(payload);
-      setCalcResult(result);
-    } catch (err) {
-      if (err.status === 422) {
-        const available = getAvailableMethodsFromError(err);
-        const hasIkeyaDelivery = available.some(
-          (method) => method?.code === 'ikeya_delivery' && method?.available
-        );
+      const result = await calculateDelivery({
+        ...deliveryContext,
+        delivery_type: 'europost_pickup',
+        pickup_point_id: selectedPoint.id,
+        items: cartItems,
+      });
 
-        if (hasIkeyaDelivery) {
-          try {
-            const fallback = await calculateDelivery({
-              ...payload,
-              delivery_type: 'ikeya_delivery',
-            });
-
-            setCalcResult(fallback);
-          } catch (fallbackError) {
-            setCalcError(
-              fallbackError?.message ||
-              fallbackError?.payload?.error ||
-              fallbackError?.payload?.message ||
-              'Не удалось рассчитать доставку IKEYA'
-            );
-          }
-        } else {
-          setCalcError(
-            err.payload?.error ||
-            err.payload?.message ||
-            'Доставка по этому адресу недоступна'
-          );
-        }
+      onSelect?.(selectedPoint, result);
+    } catch (error) {
+      if (error?.status === 422) {
+        setCalcError('Самовывоз Европочтой недоступен для выбранных товаров. Выберите доставку.');
       } else {
-        setCalcError(err?.message || 'Ошибка расчёта доставки');
+        setCalcError(error?.message || 'Не удалось рассчитать доставку в выбранный ПВЗ');
       }
     } finally {
       setCalcLoading(false);
-      setStep('result');
     }
-  };
-
-  const handleBack = () => {
-    setStep('form');
-    setCalcResult(null);
-    setCalcError(null);
-  };
-
-  const handleSelect = () => {
-    if (!calcResult) return;
-    if (!validateAddressForm()) {
-      setCalcError('Заполните обязательные поля адреса');
-      return;
-    }
-
-    const parts = [form.fullAddress];
-
-    if (form.apartment) parts.push(`кв.${form.apartment}`);
-    if (form.entrance) parts.push(`подъезд ${form.entrance}`);
-    if (form.floor) parts.push(`этаж ${form.floor}`);
-    if (form.intercom) parts.push(`домофон ${form.intercom}`);
-
-    const label = parts.join(', ');
-
-    const addr = {
-      city: form.city,
-      street: form.street,
-      house: form.house,
-      building: form.building,
-      apartment: form.apartment,
-      entrance: form.entrance,
-      floor: form.floor,
-      has_elevator: form.lift !== 'none',
-      intercom: form.intercom,
-      is_private_house: form.isPrivateHouse,
-      address: form.fullAddress,
-      label,
-      coords,
-      lat: coords?.[0] ?? null,
-      lng: coords?.[1] ?? null,
-    };
-
-    onSelect?.(addr, calcResult);
-  };
-
-  const displayAddress = (() => {
-    const parts = [form.fullAddress];
-
-    if (form.apartment) parts.push(`кв.${form.apartment}`);
-    if (form.entrance) parts.push(`подъезд ${form.entrance}`);
-    if (form.floor) parts.push(`этаж ${form.floor}`);
-
-    return parts.join(', ');
-  })();
-
-  const resultDisplayAddress = (() => {
-    const parts = [];
-    if (form.city) parts.push(form.city);
-    if (form.street) parts.push(form.street);
-    if (form.house) parts.push(form.house);
-    if (form.apartment) parts.push(`кв.${form.apartment}`);
-    if (parts.length > 0) return parts.join(', ');
-    return form.fullAddress;
-  })();
+  }, [selectedPoint, deliveryContext, cartItems, onSelect]);
 
   return (
-    <div className={`pvz-layout pvz-layout--delivery-${step}`}>
-      <aside className="pvz-sidebar">
-        {!hideTabs && (
-          <div className="pvz-modal__tabs">
-            <button
-              type="button"
-              className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
-              onClick={() => setActiveTab?.('pickup')}
-            >
-              Самовывоз
-            </button>
-
-            <button
-              type="button"
-              className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
-              onClick={() => setActiveTab?.('delivery')}
-            >
-              Доставка
-            </button>
-          </div>
-        )}
-
-        {step === 'form' && (
-          <>
-            <div className="delivery-form-header">
-              <h5 className="delivery-form-title">Куда доставить заказ?</h5>
-              <p className="delivery-form-hint">Укажите адрес на карте или используйте поиск</p>
-            </div>
-
-            {geoError && <div className="delivery-geo-error">{geoError}</div>}
-
-            <div className="delivery-address-input">
-              <input
-                type="text"
-                className={`delivery-address-field${fieldErrors.fullAddress ? ' is-invalid' : ''}`}
-                placeholder="Город, улица и дом"
-                value={form.fullAddress}
-                onChange={handleAddressChange}
-              />
-            </div>
-            {fieldErrors.fullAddress && <div className="delivery-geo-error">{fieldErrors.fullAddress}</div>}
-            <label className="delivery-checkbox">
-              <input
-                type="checkbox"
-                checked={form.isPrivateHouse}
-                onChange={(event) => {
-                  setForm((prev) => ({
-                    ...prev,
-                    isPrivateHouse: event.target.checked,
-                  }));
-                }}
-              />
-              <span>Частный дом</span>
-            </label>
-
-            {!form.isPrivateHouse && (
-              <>
-                <div className="delivery-fields-row">
-                  <input
-                    type="text"
-                    className="delivery-field"
-                    placeholder="Квартира"
-                    value={form.apartment}
-                    onChange={(event) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        apartment: event.target.value,
-                      }));
-                    }}
-                  />
-
-                  <input
-                    type="text"
-                    className="delivery-field"
-                    placeholder="Подъезд"
-                    value={form.entrance}
-                    onChange={(event) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        entrance: event.target.value,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div className="delivery-fields-row">
-                  <input
-                    type="text"
-                    className="delivery-field"
-                    placeholder="Этаж"
-                    value={form.floor}
-                    onChange={(event) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        floor: event.target.value,
-                      }));
-                    }}
-                  />
-
-                  <input
-                    type="text"
-                    className="delivery-field"
-                    placeholder="Домофон"
-                    value={form.intercom}
-                    onChange={(event) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        intercom: event.target.value,
-                      }));
-                    }}
-                  />
-                </div>
-
-                <div className="delivery-lift">
-                  <span className="delivery-lift-label">Лифт</span>
-
-                  <div className="delivery-lift-options">
-                    {[
-                      { value: 'none', label: 'Нет' },
-                      { value: 'freight', label: 'грузовой' },
-                      { value: 'passenger', label: 'пассажирский' },
-                    ].map((option) => (
-                      <label key={option.value} className="delivery-lift-option">
-                        <input
-                          type="radio"
-                          name="lift"
-                          value={option.value}
-                          checked={form.lift === option.value}
-                          onChange={() => {
-                            setForm((prev) => ({
-                              ...prev,
-                              lift: option.value,
-                            }));
-                          }}
-                        />
-                        <span>{option.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="pvz-detail__footer">
+    <>
+      <div className={`pvz-layout pvz-layout--${mobileView} ${selectedPoint ? 'pvz-layout--pickup-detail' : 'pvz-layout--pickup-list'}`}>
+        <aside className={`pvz-sidebar ${mobileView === 'list' ? 'is-active' : ''}`}>
+          {!hideTabs && (
+            <div className="pvz-modal__tabs">
               <button
                 type="button"
-                className="pvz-select-btn"
-                onClick={handleSubmit}
-                disabled={!form.fullAddress.trim() || calcLoading}
+                className={`pvz-modal__tab${activeTab === 'pickup' ? ' pvz-modal__tab--active' : ''}`}
+                onClick={() => setActiveTab?.('pickup')}
               >
-                {calcLoading ? 'Расчёт...' : 'Добавить'}
+                Самовывоз
+              </button>
+
+              <button
+                type="button"
+                className={`pvz-modal__tab${activeTab === 'delivery' ? ' pvz-modal__tab--active' : ''}`}
+                onClick={() => setActiveTab?.('delivery')}
+              >
+                Доставка
               </button>
             </div>
-          </>
-        )}
+          )}
 
-        {step === 'result' && (
-          <>
-            <div className="pvz-detail">
-              <div className="pvz-detail__header">
-                <h5 className="pvz-detail__title">{resultDisplayAddress}</h5>
+          <div className="pvz-sidebar__list-content">
+              <div className="pvz-search">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M17.5 17.5L13.875 13.875M15.8333 9.16667C15.8333 12.8486 12.8486 15.8333 9.16667 15.8333C5.48477 15.8333 2.5 12.8486 2.5 9.16667C2.5 5.48477 5.48477 2.5 9.16667 2.5C12.8486 2.5 15.8333 5.48477 15.8333 9.16667Z"
+                    stroke="#9E9E9E"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
 
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleBack}
-                  aria-label="Назад"
+                <input
+                  className="pvz-search__input"
+                  type="text"
+                  placeholder="Введите название населённого пункта"
+                  onChange={handleSearch}
                 />
               </div>
 
-              {calcError && <div className="delivery-geo-error">{calcError}</div>}
+              <div className="pvz-list">
+                {loading && (
+                  <div className="pvz-list__empty">Загрузка пунктов выдачи...</div>
+                )}
 
-              {!calcError && (
-                <DeliveryResult
-                  calcResult={calcResult}
-                  onSelect={handleSelect}
-                />
+                {!loading && loadError && (
+                  <div className="pvz-list__empty">{loadError}</div>
+                )}
+
+                {!loading && !loadError && filtered.length === 0 && (
+                  <div className="pvz-list__empty">Пункты выдачи не найдены</div>
+                )}
+
+                {!loading && !loadError && filtered.map((point) => (
+                  <PvzCard
+                    key={point.id}
+                    point={point}
+                    onClick={() => handleCardClick(point)}
+                    onDetailClick={() => handleDetailOpen(point)}
+                  />
+                ))}
+              </div>
+          </div>
+
+          {selectedPoint && (
+            <div className="pvz-sidebar__detail">
+              <PvzDetail
+                point={selectedPoint}
+                calcLoading={calcLoading}
+                onBack={handleBack}
+                onSelect={handleSelect}
+              />
+
+              {calcError && (
+                <div className="delivery-geo-error" style={{ margin: '12px 16px' }}>
+                  {calcError}
+                </div>
               )}
             </div>
+          )}
+        </aside>
 
-            {!calcError && calcResult && (
-              <div className="pvz-detail__footer">
-                <button
-                  type="button"
-                  className="pvz-select-btn"
-                  onClick={handleSelect}
-                >
-                  Выбрать
-                </button>
-              </div>
-            )}
+        {isMobileViewport === true && mobileView === 'map' ? (
+          <div className={`pvz-mobile-map ${mobileView === 'map' ? 'is-active' : ''}`}>
+            <DeliveryMap
+              mapId="pickup-tab-mobile-map"
+              ymapsReady={ymapsReady}
+              points={filtered}
+              pinType="europost"
+              centerOverride={mapCenter}
+              onPinClick={handleDetailOpen}
+            />
+          </div>
+        ) : null}
 
-            {!calcError && !calcResult && (
-              <div className="delivery-geo-error" style={{ margin: '12px 16px' }}>
-                Расчёт доставки недоступен
-              </div>
-            )}
+        {isMobileViewport === false ? (
+          <div className="pvz-desktop-map">
+            <DeliveryMap
+              mapId="pickup-tab-map"
+              ymapsReady={ymapsReady}
+              points={filtered}
+              pinType="europost"
+              centerOverride={mapCenter}
+              onPinClick={handleDetailOpen}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      {selectedPoint && (
+        <>
+          <div className="pvz-detail-backdrop" />
+          <div className="pvz-detail-sheet">
+            <PvzDetail
+              point={selectedPoint}
+              calcLoading={calcLoading}
+              onBack={handleBack}
+              onSelect={handleSelect}
+            />
 
             {calcError && (
-              <div className="pvz-detail__footer">
-                <button
-                  type="button"
-                  className="pvz-select-btn"
-                  onClick={handleBack}
-                >
-                  Изменить адрес
-                </button>
+              <div className="delivery-geo-error" style={{ margin: '12px 16px' }}>
+                {calcError}
               </div>
             )}
-          </>
-        )}
-      </aside>
+          </div>
+        </>
+      )}
 
-      <div className="pvz-desktop-map">
-        <DeliveryMap
-          mapId="delivery-tab-map"
-          ymapsReady={ymapsReady}
-          pinType="delivery"
-          pinCoords={pinCoords}
-          onMapClick={handleMapClick}
-        />
-      </div>
-    </div>
+<div className="pvz-modal__footer">
+  <button
+    type="button"
+    className="pvz-modal__map-button"
+    onClick={() => setMobileView((view) => (view === 'list' ? 'map' : 'list'))}
+  >
+    {mobileView === 'list' ? (
+      <>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path
+            d="M3.333 4.167L7.5 2.5L12.5 4.167L16.667 2.5V15.833L12.5 17.5L7.5 15.833L3.333 17.5V4.167Z"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7.5 2.5V15.833M12.5 4.167V17.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span>Карта</span>
+      </>
+    ) : (
+      <>
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path
+            d="M4.167 5H15.833M4.167 10H15.833M4.167 15H11.667"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span>Список</span>
+      </>
+    )}
+  </button>
+</div>
+    </>
   );
 }
