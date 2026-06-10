@@ -12,17 +12,23 @@ import { useProfileCounts } from './ProfileCountsContext';
 import { buildAssetUrl } from '@/lib/config/api';
 
 function resolveImage(imageUrl) {
-  if (!imageUrl) return '/assets/img/profile/active_1.png';
-  let urls = imageUrl;
-  if (typeof urls === 'string') {
-    try { urls = JSON.parse(urls); } catch { return '/assets/img/profile/active_1.png'; }
+  const FALLBACK = '/assets/img/profile/active_1.png';
+  if (!imageUrl) return FALLBACK;
+
+  let first = imageUrl;
+
+  // image_url может быть строкой-путём, JSON-строкой с массивом или массивом
+  if (typeof first === 'string' && first.trim().startsWith('[')) {
+    try { first = JSON.parse(first); } catch { return FALLBACK; }
   }
-  if (!Array.isArray(urls) || urls.length === 0) return '/assets/img/profile/active_1.png';
-  const first = urls[0];
-  if (!first || first.startsWith('as:')) return '/assets/img/profile/active_1.png';
+  if (Array.isArray(first)) {
+    first = first[0];
+  }
+
+  if (!first || typeof first !== 'string' || first.startsWith('as:')) return FALLBACK;
   if (first.startsWith('http')) return first;
   if (first.startsWith('/')) return buildAssetUrl(first);
-  return '/assets/img/profile/active_1.png';
+  return FALLBACK;
 }
 
 function pluralize(n) {
