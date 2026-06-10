@@ -2789,6 +2789,105 @@ body.mobile-phone-open .mobile-phone-sheet {
 }
 
 @media (min-width: 1200px) and (max-width: 1399px) {
+    .partner .container {
+        max-width: 1136px;
+        padding-left: 32px;
+        padding-right: 32px;
+    }
+
+    .partner .partner-start {
+        min-height: 640px;
+    }
+
+    .partner .partner-start_inner {
+        padding-top: 180px;
+        padding-bottom: 0;
+    }
+
+    .partner .partner-start h1,
+    .partner .bridge-text .the_blues {
+        font-size: 64px;
+        line-height: 76px;
+    }
+
+    .partner .partner-start_inner p,
+    .partner .bridge-text p {
+        font-size: 18px;
+        line-height: 24px;
+    }
+
+    .partner .unic-inner {
+        max-width: 1136px;
+    }
+
+    .partner .unic-banner img {
+        width: 100%;
+        aspect-ratio: 1136 / 448;
+        object-fit: cover;
+    }
+
+    .partner .mission {
+        min-height: 640px;
+        padding-bottom: 0;
+    }
+
+    .partner .about-categories-slider {
+        max-width: 1136px;
+        margin-bottom: 30px;
+    }
+
+    .partner .about-categories-slider__card {
+        max-width: 169px;
+        min-width: 169px;
+    }
+
+    .partner .about-categories-slider__image {
+        width: 169px;
+        max-width: 169px;
+    }
+
+    .partner .about-categories-slider__image img {
+        max-width: 145px;
+        max-height: 145px;
+        object-fit: contain;
+    }
+
+    .partner .belka-item {
+        width: calc((100% - 64px) / 3);
+        max-width: 357px;
+    }
+
+    .partner .belka-banner {
+        min-height: 680px;
+    }
+
+    .partner .shag-list-card {
+        width: calc((100% - 48px) / 3);
+        max-width: 363px;
+    }
+
+    .partner .carries-text {
+        width: 364px;
+        max-width: 364px;
+    }
+
+    .partner .carries-banner {
+        width: 676px;
+        max-width: 676px;
+    }
+
+    .partner .carries-banner img {
+        width: 100%;
+        min-height: 575px;
+        max-height: 575px;
+        object-fit: cover;
+    }
+
+    .partner .bridge {
+        min-height: 780px;
+        padding-bottom: 0;
+    }
+
     .blog-list .container {
         max-width: 1400px;
         padding-left: 32px;
@@ -3466,6 +3565,222 @@ body.mobile-phone-open .mobile-phone-sheet {
 }
 
 @media (max-width: 1199px) {
+    .partner .container {
+        max-width: 960px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .partner {
+        overflow-x: hidden;
+    }
+
+    .partner .partner-start {
+        min-height: 812px;
+        background-position: center;
+    }
+
+    .partner .partner-start_inner,
+    .partner .about-start .partner-start_inner {
+        max-width: 100%;
+        padding-top: 72px;
+        padding-bottom: 0;
+    }
+
+    .partner .partner-start h1 {
+        font-size: 48px;
+        line-height: 58px;
+        margin-bottom: 24px;
+    }
+
+    .partner .partner-start_inner p,
+    .partner .bridge-text p {
+        font-size: 17px;
+        line-height: 22px;
+    }
+
+    .partner .unic-inner {
+        max-width: 960px;
+        padding-top: 84px;
+        padding-bottom: 84px;
+    }
+
+    .partner .unic-text,
+    .partner .bridge-text {
+        max-width: 100%;
+    }
+
+    .partner .the_blues,
+    .partner .bridge-text .the_blues {
+        font-size: 44px;
+        line-height: 52px;
+    }
+
+    .partner .unic-text p,
+    .partner .goclub-inner p,
+    .partner .allinone-description,
+    .partner .belka-description,
+    .partner .belka-item-desc,
+    .partner .shag-list-card p,
+    .partner .carries-text p {
+        font-size: 15px;
+        line-height: 20px;
+    }
+
+    .partner .unic-banner img {
+        width: 100%;
+        max-width: 100%;
+        aspect-ratio: 960 / 379;
+        object-fit: cover;
+    }
+
+    .partner .mission {
+        min-height: 516px;
+        padding-top: 56px;
+        padding-bottom: 0;
+        background-position: center;
+    }
+
+    .partner .goclub-inner {
+        max-width: 100%;
+        padding: 40px 24px;
+    }
+
+    .partner .goclub-inner .the_blues {
+        max-width: 100%;
+    }
+
+    .partner .allinone {
+        padding-top: 84px;
+        padding-bottom: 84px;
+    }
+
+    .partner .allinone-description {
+        max-width: 100%;
+        margin-bottom: 32px;
+    }
+
+    .partner .about-categories-slider {
+        width: 100%;
+        max-width: 960px;
+        margin-bottom: 24px;
+    }
+
+    .partner .about-categories-slider__slide {
+        height: auto;
+    }
+
+    .partner .about-categories-slider__card {
+        max-width: 132px;
+        min-width: 132px;
+    }
+
+    .partner .about-categories-slider__image {
+        width: 132px;
+        max-width: 132px;
+        height: 132px;
+        padding: 12px;
+    }
+
+    .partner .about-categories-slider__image img {
+        max-width: 108px;
+        max-height: 108px;
+        object-fit: contain;
+    }
+
+    .partner .belka {
+        padding-top: 84px;
+    }
+
+    .partner .belka-characters {
+        gap: 16px;
+    }
+
+    .partner .belka-item {
+        width: calc((100% - 32px) / 3);
+        max-width: 309px;
+        min-width: 0;
+        padding: 16px;
+    }
+
+    .partner .belka-item-title {
+        font-size: 40px;
+        line-height: 46px;
+    }
+
+    .partner .belka-item-title span {
+        font-size: 20px;
+        line-height: 26px;
+    }
+
+    .partner .belka-banner {
+        min-height: 516px;
+        background-position: center;
+    }
+
+    .partner .shag {
+        padding-top: 84px;
+        padding-bottom: 42px;
+    }
+
+    .partner .shag-list {
+        gap: 24px;
+        align-items: stretch;
+    }
+
+    .partner .shag-list-card {
+        width: calc((100% - 48px) / 3);
+        max-width: 304px;
+        min-width: 0;
+    }
+
+    .partner .shag-list-card p,
+    .partner .secures .shag-list-card p {
+        min-height: 0;
+    }
+
+    .partner .carries {
+        padding-top: 42px;
+        padding-bottom: 84px;
+    }
+
+    .partner .carries-inner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        overflow: hidden;
+    }
+
+    .partner .carries-text {
+        width: 100%;
+        max-width: 100%;
+        padding: 42px 24px;
+    }
+
+    .partner .carries-text .the_blues,
+    .partner .carries-text p {
+        max-width: 100%;
+    }
+
+    .partner .carries-banner {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .partner .carries-banner img {
+        width: 100%;
+        min-height: 516px;
+        max-height: 516px;
+        object-fit: cover;
+    }
+
+    .partner .bridge {
+        min-height: 812px;
+        padding-top: 56px;
+        padding-bottom: 0;
+        background-position: center;
+    }
+
 
     .container {
         max-width: 960px;
@@ -9605,6 +9920,86 @@ body.mobile-phone-open .mobile-phone-sheet {
 
 /* Large Mobile (576px - 767px) */
 @media (max-width: 767px) {
+    .partner .container {
+        max-width: 736px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .partner .partner-start {
+        min-height: 812px;
+    }
+
+    .partner .partner-start h1,
+    .partner .bridge-text .the_blues {
+        font-size: 48px;
+        line-height: 58px;
+    }
+
+    .partner .partner-start_inner p,
+    .partner .bridge-text p {
+        font-size: 17px;
+        line-height: 22px;
+    }
+
+    .partner .the_blues {
+        font-size: 44px;
+        line-height: 52px;
+    }
+
+    .partner .mission {
+        min-height: 516px;
+    }
+
+    .partner .belka-characters,
+    .partner .shag-list {
+        flex-direction: column;
+    }
+
+    .partner .belka-item,
+    .partner .shag-list-card {
+        width: 100%;
+        max-width: none;
+    }
+
+    .partner .belka-banner {
+        min-height: 516px;
+    }
+
+    .partner .shag-list-card {
+        display: flex;
+        align-items: stretch;
+    }
+
+    .partner .shag-list-card img {
+        width: 50%;
+        max-width: 50%;
+    }
+
+    .partner .shag-list-card p {
+        width: 50%;
+        padding: 24px 20px;
+    }
+
+    .partner .about-categories-slider {
+        max-width: 736px;
+    }
+
+    .partner .about-categories-slider__card {
+        max-width: 132px;
+        min-width: 132px;
+    }
+
+    .partner .about-categories-slider__image {
+        width: 132px;
+        max-width: 132px;
+        height: 132px;
+    }
+
+    .partner .about-categories-slider__image img {
+        max-width: 108px;
+        max-height: 108px;
+    }
 
     .blog-list .container {
         padding-left: 24px;
@@ -16695,7 +17090,158 @@ body.mobile-phone-open .mobile-phone-sheet {
 }
 
 /* Small Mobile (320px - 359px) */
+@media (max-width: 575px) {
+    .partner .container {
+        max-width: 544px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .partner .the_blues {
+        font-size: 32px;
+        line-height: 38px;
+    }
+
+    .partner .partner-start {
+        min-height: 720px;
+    }
+
+    .partner .unic-inner,
+    .partner .allinone,
+    .partner .belka,
+    .partner .shag {
+        padding-top: 64px;
+    }
+
+    .partner .unic-inner,
+    .partner .allinone {
+        padding-bottom: 64px;
+    }
+
+    .partner .carries {
+        padding-top: 32px;
+        padding-bottom: 64px;
+    }
+
+    .partner .mission {
+        min-height: 396px;
+    }
+
+    .partner .goclub-inner {
+        padding: 32px 20px;
+    }
+
+    .partner .about-categories-slider__card {
+        max-width: 120px;
+        min-width: 120px;
+    }
+
+    .partner .about-categories-slider__image {
+        width: 120px;
+        max-width: 120px;
+        height: 120px;
+        padding: 10px;
+    }
+
+    .partner .about-categories-slider__image img {
+        max-width: 96px;
+        max-height: 96px;
+    }
+
+    .partner .belka-item-title {
+        font-size: 36px;
+        line-height: 42px;
+    }
+
+    .partner .belka-item-title span {
+        font-size: 18px;
+        line-height: 24px;
+    }
+
+    .partner .belka-banner {
+        min-height: 396px;
+    }
+
+    .partner .shag {
+        padding-bottom: 32px;
+    }
+
+    .partner .shag-list-card {
+        flex-direction: column;
+    }
+
+    .partner .shag-list-card img,
+    .partner .shag-list-card p {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .partner .carries-text {
+        padding: 32px 16px;
+    }
+
+    .partner .carries-banner img {
+        min-height: 396px;
+        max-height: 396px;
+    }
+
+    .partner .bridge {
+        min-height: 600px;
+        padding-top: 32px;
+    }
+
+    .partner .bridge-text .the_blues {
+        font-size: 36px;
+        line-height: 42px;
+    }
+}
+
 @media (max-width: 359px) {
+    .partner .container {
+        max-width: 288px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .partner .partner-start h1 {
+        font-size: 36px;
+        line-height: 42px;
+    }
+
+    .partner .partner-start_inner p,
+    .partner .unic-text p,
+    .partner .goclub-inner p,
+    .partner .allinone-description,
+    .partner .belka-description,
+    .partner .belka-item-desc,
+    .partner .shag-list-card p,
+    .partner .carries-text p,
+    .partner .bridge-text p {
+        font-size: 15px;
+        line-height: 20px;
+    }
+
+    .partner .about-categories-slider__card {
+        max-width: 120px;
+        min-width: 120px;
+    }
+
+    .partner .about-categories-slider__image {
+        width: 120px;
+        max-width: 120px;
+        height: 120px;
+    }
+
+    .partner .about-categories-slider__image img {
+        max-width: 96px;
+        max-height: 96px;
+    }
+
+    .partner .carries-banner img {
+        min-height: 330px;
+        max-height: 330px;
+    }
+
 
     .blog-list .container {
         padding-left: 12px;
@@ -18996,7 +19542,9 @@ body.mobile-phone-open .mobile-phone-sheet {
 }
 
 @media (max-width: 991px) {
-    .popular-categories__nav {
+    .popular-categories__nav,
+    .partner .about-categories-slider__nav-prev,
+    .partner .about-categories-slider__nav-next {
         display: none !important;
     }
 

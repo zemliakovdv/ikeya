@@ -813,6 +813,123 @@
     margin: 0 auto;
 }
 
+.about-categories-slider {
+    position: relative;
+    max-width: 1500px;
+    margin: 0 auto 70px;
+}
+
+.about-categories-slider__swiper {
+    overflow: hidden;
+}
+
+.about-categories-slider__slide {
+    display: flex;
+    justify-content: center;
+    height: auto;
+}
+
+.about-categories-slider__card {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+    max-width: 230px;
+    min-width: 230px;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease;
+}
+
+.about-categories-slider__card:hover {
+    transform: translateY(-5px);
+}
+
+.about-categories-slider__image {
+    padding: 16px;
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    background: var(--color-surface-muted);
+}
+
+.about-categories-slider__image img {
+    max-width: 198px;
+    transition: transform 0.4s ease;
+}
+
+.about-categories-slider__card:hover .about-categories-slider__image img {
+    transform: scale(1.1);
+}
+
+.about-categories-slider__title {
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    letter-spacing: 0.1px;
+}
+
+.about-categories-slider__nav-prev,
+.about-categories-slider__nav-next {
+    position: absolute;
+    top: 40%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: #fff;
+    color: inherit;
+    cursor: pointer;
+    z-index: 10;
+    transition: opacity 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 4px 4px 16px 0 rgba(0, 10, 18, 0.24), -1px -1px 16px 0 rgba(0, 10, 18, 0.04);
+}
+
+.about-categories-slider__nav-prev {
+    left: -17px;
+}
+
+.about-categories-slider__nav-next {
+    right: -17px;
+}
+
+.about-categories-slider__nav-prev:hover,
+.about-categories-slider__nav-next:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.about-categories-slider__pagination {
+    position: absolute;
+    bottom: -26px !important;
+    left: 50% !important;
+    transform: translateX(-50%);
+    display: flex !important;
+    align-items: center;
+    gap: 0;
+    z-index: 10;
+    width: auto !important;
+    text-align: center;
+}
+
+.about-categories-slider__pagination .swiper-pagination-bullet {
+    width: 10px;
+    height: 10px;
+    margin: 0 5px;
+    background: #ddd;
+    opacity: 1;
+}
+
+.about-categories-slider__pagination .swiper-pagination-bullet-active {
+    width: 32px !important;
+    height: 8px !important;
+    background: #181818 !important;
+    border-radius: 4px !important;
+}
+
 .allinone .categories-item-card {
     max-width: 230px;
     min-width: 230px;

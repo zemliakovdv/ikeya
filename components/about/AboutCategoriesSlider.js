@@ -1,4 +1,3 @@
-// components/about/AboutCategoriesSlider.js
 'use client';
 
 import { useEffect, useRef } from 'react';
@@ -31,13 +30,13 @@ export default function AboutCategoriesSlider({ categories = [] }) {
       const root = rootRef.current;
       if (!root) return;
 
-      const sliderEl = root.querySelector('.about-categories-inner');
+      const sliderEl = root.querySelector('.about-categories-slider__swiper');
       if (!sliderEl) return;
 
-      const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
-      const prevBtn = root.querySelector('.popular-categories__nav-prev');
-      const nextBtn = root.querySelector('.popular-categories__nav-next');
-      const paginationEl = root.querySelector('.popular-categories__pagination');
+      const slideCount = sliderEl.querySelectorAll('.about-categories-slider__slide').length;
+      const prevBtn = root.querySelector('.about-categories-slider__nav-prev');
+      const nextBtn = root.querySelector('.about-categories-slider__nav-next');
+      const paginationEl = root.querySelector('.about-categories-slider__pagination');
 
       if (slideCount <= 1) {
         if (prevBtn) prevBtn.style.display = 'none';
@@ -52,10 +51,34 @@ export default function AboutCategoriesSlider({ categories = [] }) {
       }
 
       swiperRef.current = new window.Swiper(sliderEl, {
-        loop: slideCount > 1,
-        slidesPerView: 1,
-        spaceBetween: 0,
+        loop: false,
+        slidesPerView: 2,
+        slidesPerGroup: 2,
+        spaceBetween: 8,
         speed: 600,
+        watchOverflow: true,
+        breakpoints: {
+          576: {
+            slidesPerView: 4,
+            slidesPerGroup: 4,
+            spaceBetween: 12,
+          },
+          768: {
+            slidesPerView: 5,
+            slidesPerGroup: 5,
+            spaceBetween: 16,
+          },
+          992: {
+            slidesPerView: 6,
+            slidesPerGroup: 6,
+            spaceBetween: 16,
+          },
+          1200: {
+            slidesPerView: 6,
+            slidesPerGroup: 6,
+            spaceBetween: 24,
+          },
+        },
         navigation: {
           nextEl: nextBtn,
           prevEl: prevBtn,
@@ -87,41 +110,30 @@ export default function AboutCategoriesSlider({ categories = [] }) {
 
   if (!categories.length) return null;
 
-  const slides = [];
-  for (let i = 0; i < categories.length; i += 6) {
-    slides.push(categories.slice(i, i + 6));
-  }
-
-  const hasMultipleSlides = slides.length > 1;
+  const hasMultipleSlides = categories.length > 1;
 
   return (
-    <div className="popular-categories" ref={rootRef}>
-      <div className="about-categories-inner swiper">
+    <div className="about-categories-slider" ref={rootRef}>
+      <div className="about-categories-slider__swiper swiper">
         <div className="swiper-wrapper">
-          {slides.map((slideCategories, slideIndex) => (
-            <div key={slideIndex} className="swiper-slide popular-categories-item">
-              {slideCategories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={category.url || '#'}
-                  className="categories-item-card"
-                >
-                  <div className="categories-card-img">
-                    <Image
-                      src={category.image || PLACEHOLDER_IMAGE}
-                      alt={category.name || 'Категория'}
-                      width={120}
-                      height={120}
-                      priority={slideIndex === 0}
-                      onError={(e) => {
-                        e.currentTarget.src = PLACEHOLDER_IMAGE;
-                      }}
-                      style={{ width: '100%', height: 'auto' }}
-                    />
-                  </div>
-                  <p>{category.name}</p>
-                </Link>
-              ))}
+          {categories.map((category, index) => (
+            <div key={category.id} className="swiper-slide about-categories-slider__slide">
+              <Link href={category.url || '#'} className="about-categories-slider__card">
+                <div className="about-categories-slider__image">
+                  <Image
+                    src={category.image || PLACEHOLDER_IMAGE}
+                    alt={category.name || 'Категория'}
+                    width={120}
+                    height={120}
+                    priority={index === 0}
+                    onError={(e) => {
+                      e.currentTarget.src = PLACEHOLDER_IMAGE;
+                    }}
+                    style={{ width: '100%', height: 'auto' }}
+                  />
+                </div>
+                <p className="about-categories-slider__title">{category.name}</p>
+              </Link>
             </div>
           ))}
         </div>
@@ -130,7 +142,7 @@ export default function AboutCategoriesSlider({ categories = [] }) {
       {hasMultipleSlides && (
         <>
           <button
-            className="popular-categories__nav popular-categories__nav-prev"
+            className="about-categories-slider__nav-prev"
             type="button"
             aria-label="Предыдущие категории"
           >
@@ -140,7 +152,7 @@ export default function AboutCategoriesSlider({ categories = [] }) {
           </button>
 
           <button
-            className="popular-categories__nav popular-categories__nav-next"
+            className="about-categories-slider__nav-next"
             type="button"
             aria-label="Следующие категории"
           >
@@ -149,7 +161,7 @@ export default function AboutCategoriesSlider({ categories = [] }) {
             </svg>
           </button>
 
-          <div className="popular-categories__pagination" />
+          <div className="about-categories-slider__pagination swiper-pagination" />
         </>
       )}
     </div>
