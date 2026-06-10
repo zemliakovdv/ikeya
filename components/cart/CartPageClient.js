@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { addToCart, createDraft, getCartSummary } from '@/lib/api/cart';
+import { addToCart, createDraft, getCartSummary, normalizeCheckoutItems } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -44,16 +44,7 @@ function getCartItemSku(item) {
 }
 
 function buildItemsPayload(sourceItems = []) {
-  return sourceItems
-    .map((item) => ({
-      sku: getCartItemSku(item),
-      quantity: item?.quantity || 1,
-    }))
-    .filter((item) => item.sku)
-    .map((item) => ({
-      sku: String(item.sku),
-      quantity: Number(item.quantity || 1),
-    }));
+  return normalizeCheckoutItems(sourceItems);
 }
 
 function sumItemsQuantity(items = []) {
@@ -265,6 +256,7 @@ export default function CartPageClient() {
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [remoteSummary, setRemoteSummary] = useState(null);
+  const [checkoutApiError, setCheckoutApiError] = useState('');
   const [isCheckoutAuthFlowPending, setIsCheckoutAuthFlowPending] = useState(false);
   const [isPreparingCheckout, setIsPreparingCheckout] = useState(false);
   const [isGuestCartMergeDone, setIsGuestCartMergeDone] = useState(false);
@@ -468,6 +460,12 @@ export default function CartPageClient() {
     () => selectedItemsPayload.map((item) => `${item.sku}:${item.quantity}`).join('|'),
     [selectedItemsPayload]
   );
+
+  useEffect(() => {
+    if (checkoutApiError) {
+      setCheckoutApiError('');
+    }
+  }, [selectedItemsPayloadKey]);
 
   useEffect(() => {
     if (!isCheckoutAuthFlowPending) return;
@@ -751,6 +749,7 @@ export default function CartPageClient() {
     if (!payloadOverride && !canCheckout) return false;
 
     setCheckoutLoading(true);
+    setCheckoutApiError('');
 
     try {
       let normalizedSummary = null;
@@ -766,7 +765,11 @@ export default function CartPageClient() {
         } else {
           saveSummaryToSession();
         }
-      } catch {
+      } catch (err) {
+        if (err?.status === 422) {
+          setCheckoutApiError('Не удалось пересчитать корзину. Обновите страницу или повторите позже.');
+          return false;
+        }
         // Если summary не доступен — используем fallback из корзины
       }
 
@@ -837,6 +840,10 @@ export default function CartPageClient() {
         sessionStorage.removeItem('pendingCheckout');
         router.push(`/checkout?draft_id=${conflictDraftId}`);
         return true;
+      }
+
+      if (err?.status === 422) {
+        setCheckoutApiError('Не удалось пересчитать корзину. Обновите страницу или повторите позже.');
       }
 
       return false;
@@ -1005,6 +1012,15 @@ export default function CartPageClient() {
                       <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
                     </svg>
                     <p>Выберите товары, чтобы перейти к оформлению заказа</p>
+                  </div>
+                )}
+
+                {checkoutApiError && (
+                  <div className="order-toast_choose">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM11.3 8.28C11.3 7.89 11.61 7.58 12 7.58C12.39 7.58 12.7 7.89 12.7 8.28V12.47C12.7 12.86 12.39 13.17 12 13.17C11.61 13.17 11.3 12.86 11.3 12.47V8.28ZM12.83 15.72C12.83 16.18 12.46 16.56 11.99 16.56C11.52 16.56 11.15 16.18 11.15 15.72C11.15 15.26 11.52 14.88 11.99 14.88C12.46 14.88 12.83 15.25 12.83 15.71V15.72Z" fill="#B71C1C" />
+                    </svg>
+                    <p>{checkoutApiError}</p>
                   </div>
                 )}
 

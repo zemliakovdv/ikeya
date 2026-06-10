@@ -9,7 +9,7 @@ import DeliveryModal from '@/components/delivery/modal/DeliveryModal';
 import SavedAddressesModal from '@/components/delivery/modal/SavedAddressesModal';
 import EditPersonalDataModal from '@/components/profile/modals/EditPersonalDataModal';
 import EditPassportModal from '@/components/profile/modals/EditPassportModal';
-import { getProfile, getDraft, finalizeDraft, updateCheckoutDraft } from '@/lib/api/cart';
+import { getProfile, getDraft, finalizeDraft, normalizeCheckoutItems, updateCheckoutDraft } from '@/lib/api/cart';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import { requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
@@ -427,12 +427,7 @@ function CheckoutPageInner() {
   }, [draftId, draftItems.length, selectedSkus.length, storedCheckoutItems.length]);
 
   const cartItems = useMemo(() => {
-    return checkoutItemsSource
-      .map((item) => ({
-        sku: getItemSku(item),
-        quantity: item?.quantity || 1,
-      }))
-      .filter((item) => item.sku);
+    return normalizeCheckoutItems(checkoutItemsSource);
   }, [checkoutItemsSource]);
 
   useEffect(() => {

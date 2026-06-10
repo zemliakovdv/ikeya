@@ -9,6 +9,8 @@ import PvzDetail from '@/components/delivery/cards/PvzDetail';
 import DeliveryMap from '@/components/delivery/map/DeliveryMap';
 import { getEuropostOffices, calculateDelivery } from '@/lib/api/delivery';
 
+const MOBILE_VIEWPORT_QUERY = '(max-width: 767px)';
+
 function getDistanceKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -50,6 +52,33 @@ function filterPvzOffices(offices, search) {
   });
 }
 
+function useIsMobileViewport() {
+  const [isMobileViewport, setIsMobileViewport] = useState(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+    const updateViewport = (event) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    setIsMobileViewport(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', updateViewport);
+      return () => mediaQuery.removeEventListener('change', updateViewport);
+    }
+
+    mediaQuery.addListener(updateViewport);
+    return () => mediaQuery.removeListener(updateViewport);
+  }, []);
+
+  return isMobileViewport;
+}
+
 export default function PickupTab({
   ymapsReady,
   orderId,
@@ -73,6 +102,7 @@ export default function PickupTab({
   const [mobileView, setMobileView] = useState('list');
 
   const searchTimer = useRef(null);
+  const isMobileViewport = useIsMobileViewport();
 
   const deliveryContext = useMemo(() => {
     if (orderId) {
@@ -98,7 +128,6 @@ export default function PickupTab({
 
           const coords = position.geometry.getCoordinates();
           setUserCoords(coords);
-          setMapCenter({ coords, zoom: 12 });
         })
         .catch(() => { });
     });
@@ -162,6 +191,38 @@ export default function PickupTab({
       setFiltered(sorted);
     }
   }, [userCoords]);
+
+  useEffect(() => {
+    if (!userCoords) return;
+
+    const nearestPoint = allPoints.reduce((nearest, point) => {
+      if (!point.lat || !point.lon) return nearest;
+
+      const distance = getDistanceKm(userCoords[0], userCoords[1], point.lat, point.lon);
+
+      if (!nearest || distance < nearest.distance) {
+        return {
+          point,
+          distance,
+        };
+      }
+
+      return nearest;
+    }, null);
+
+    if (nearestPoint?.point) {
+      setMapCenter({
+        coords: [nearestPoint.point.lat, nearestPoint.point.lon],
+        zoom: 15,
+      });
+      return;
+    }
+
+    setMapCenter({
+      coords: userCoords,
+      zoom: 12,
+    });
+  }, [userCoords, allPoints]);
 
   useEffect(() => {
     if (!search.trim()) {
@@ -340,27 +401,31 @@ export default function PickupTab({
           )}
         </aside>
 
-        <div className={`pvz-mobile-map ${mobileView === 'map' ? 'is-active' : ''}`}>
-          <DeliveryMap
-            mapId="pickup-tab-mobile-map"
-            ymapsReady={ymapsReady}
-            points={filtered}
-            pinType="europost"
-            centerOverride={mapCenter}
-            onPinClick={handleDetailOpen}
-          />
-        </div>
+        {isMobileViewport === true && mobileView === 'map' ? (
+          <div className={`pvz-mobile-map ${mobileView === 'map' ? 'is-active' : ''}`}>
+            <DeliveryMap
+              mapId="pickup-tab-mobile-map"
+              ymapsReady={ymapsReady}
+              points={filtered}
+              pinType="europost"
+              centerOverride={mapCenter}
+              onPinClick={handleDetailOpen}
+            />
+          </div>
+        ) : null}
 
-        <div className="pvz-desktop-map">
-          <DeliveryMap
-            mapId="pickup-tab-map"
-            ymapsReady={ymapsReady}
-            points={filtered}
-            pinType="europost"
-            centerOverride={mapCenter}
-            onPinClick={handleDetailOpen}
-          />
-        </div>
+        {isMobileViewport === false ? (
+          <div className="pvz-desktop-map">
+            <DeliveryMap
+              mapId="pickup-tab-map"
+              ymapsReady={ymapsReady}
+              points={filtered}
+              pinType="europost"
+              centerOverride={mapCenter}
+              onPinClick={handleDetailOpen}
+            />
+          </div>
+        ) : null}
       </div>
 
       {selectedPoint && (
