@@ -3564,8 +3564,16 @@
             max-width: none;
         }
 
-        .datepicker-input{
+        .form-group{
+            margin-bottom: 0;
+        }
+
+        .passport-row, .who-group, .passport-row passport-row--address1{
             margin-bottom: 16px;
+        }
+
+        .datepicker-input{
+            margin-bottom: 0;
         }
 
         .passport-address-title{
