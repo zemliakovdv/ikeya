@@ -129,7 +129,10 @@ export default function PickupTab({
           const coords = position.geometry.getCoordinates();
           setUserCoords(coords);
         })
-        .catch(() => { });
+        .catch((error) => {
+          // Не критично для работы страницы, но причина должна быть видна
+          console.warn('Геолокация недоступна:', error?.message || error);
+        });
     });
   }, [ymapsReady]);
 
@@ -172,6 +175,9 @@ export default function PickupTab({
     };
   }, [orderId, cartToken]);
 
+  // Сортировка по близости: зависит и от userCoords, и от факта загрузки точек,
+  // чтобы сработать независимо от того, что пришло раньше — координаты или список.
+  // setAllPoints(sorted) не меняет length, поэтому эффект не зацикливается.
   useEffect(() => {
     if (!userCoords || !allPoints.length) return;
 
@@ -190,7 +196,7 @@ export default function PickupTab({
     if (!search.trim()) {
       setFiltered(sorted);
     }
-  }, [userCoords]);
+  }, [userCoords, allPoints.length]);
 
   useEffect(() => {
     if (!userCoords) return;
