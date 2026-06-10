@@ -151,6 +151,28 @@
         display: flex;
         flex-direction: column;
         gap: 24px;
+        min-width: 0;
+    }
+
+    .favorite-profile .profile-favorites,
+    .favorite-profile .profile-favorites__wrapper,
+    .favorite-profile .profile-favorites__content,
+    .favorite-profile .profile-favorites__cards {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .favorite-profile .profile-favorites__empty {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .favorite-profile .profile-favorites__empty .empty-text {
+        max-width: 520px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     /* ===== SUMMARY ===== */
@@ -4924,17 +4946,64 @@
         }
     }
 
+    @media (min-width: 1400px) {
+        .favorite-profile .orders-page>.container {
+            max-width: 1336px;
+            padding-left: 0;
+            padding-right: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .favorite-profile .profile-layout {
+            display: grid;
+            grid-template-columns: 332px 980px;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .favorite-profile .profile-layout>.sidebar,
+        .favorite-profile .profile-layout>.quest-bar {
+            width: 332px;
+            max-width: 332px;
+        }
+
+        .favorite-profile .profile-content,
+        .favorite-profile .profile-favorites,
+        .favorite-profile .profile-favorites__wrapper,
+        .favorite-profile .profile-favorites__content,
+        .favorite-profile .profile-favorites__cards {
+            width: 980px;
+            max-width: 980px;
+            min-width: 0;
+        }
+
+        .favorite-profile .profile-favorites__grid {
+            display: grid;
+            grid-template-columns: repeat(4, 239px);
+            gap: 8px;
+            width: 980px;
+            max-width: 980px;
+            min-width: 0;
+            margin-bottom: 0;
+            align-items: start;
+            justify-content: start;
+        }
+
+        .favorite-profile .profile-favorites__grid .product-card-inner {
+            width: 239px;
+            min-width: 239px;
+            max-width: 239px;
+            margin: 0;
+        }
+    }
+
     @media (min-width: 1400px) and (max-width: 1919px) {
         .orders-page .profile-layout>.sidebar {
             position: sticky;
             top: 80px;
             align-self: flex-start;
             height: fit-content;
-        }
-
-        .favorite-profile .all-catalog-items .product-card-inner {
-            max-width: 215px;
-            min-width: 215px;
         }
 
         .zakazi .orders-page>.container {
@@ -5118,6 +5187,63 @@
             width: 96px;
             text-align: right;
             white-space: nowrap;
+        }
+    }
+
+    @media (max-width: 1199px) {
+        .favorite-profile .profile-content {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        .favorite-profile .profile-favorites {
+            overflow-x: hidden;
+        }
+
+        .favorite-profile .profile-layout>.quest-bar {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            padding: 0;
+            max-height: none;
+            background: transparent;
+        }
+
+        .favorite-profile .quest-bar .guest-sidebar,
+        .favorite-profile .quest-bar .guest-sidebar__favorites-link {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            margin-bottom: 0;
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid .product-card-inner,
+        .favorite-profile .profile-favorites .profile-favorites__grid .product-card {
+            width: 100%;
+            max-width: none;
+            min-width: 0;
+            margin: 0;
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid .product-card__title,
+        .favorite-profile .profile-favorites .profile-favorites__grid .product-card__description {
+            overflow-wrap: anywhere;
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid .shop_button {
+            width: 100%;
+            max-width: 100%;
         }
     }
 
@@ -5727,6 +5853,53 @@
             line-height: 20px;
         }
 
+        .favorite-profile .orders-page>.container {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .favorite-profile .profile-favorites .all-catalog-sort,
+        .favorite-profile .profile-favorites .catalog-sort,
+        .favorite-profile .profile-favorites .catalog-sort__selected {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid .shop_button {
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid .shop_button p {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .favorite-profile .profile-favorites__empty {
+            padding: 24px 16px;
+        }
+
+        .favorite-profile .profile-favorites__empty .empty-illustration img {
+            max-width: 140px;
+            max-height: 140px;
+        }
+
+        .favorite-profile .profile-favorites__empty .empty-title {
+            font-size: 18px;
+            line-height: 24px;
+        }
+
+        .favorite-profile .profile-favorites__empty .empty-text {
+            max-width: 100%;
+            margin-bottom: 20px;
+        }
+
         .zakazi .orders-tabs {
             width: 100%;
             max-width: 100%;
@@ -6251,6 +6424,30 @@
 
         .order-repeit {
             width: 100%;
+        }
+
+        .favorite-profile .orders-page>.container {
+            max-width: 100%;
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .favorite-profile .profile-favorites .profile-favorites__grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .favorite-profile .profile-favorites__empty {
+            padding: 24px 12px;
+        }
+
+        .favorite-profile .profile-favorites__empty .empty-title {
+            font-size: 17px;
+            line-height: 22px;
+        }
+
+        .favorite-profile .profile-favorites__empty .empty-text {
+            font-size: 13px;
+            line-height: 18px;
         }
     }
 

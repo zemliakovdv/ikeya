@@ -1,4 +1,3 @@
-// components/profile/Favorites.js
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -29,23 +28,21 @@ export default function Favorites() {
   const { items: products, remove: handleRemoved, loading } = useFavorites();
   const router = useRouter();
 
-
   const [sortOpen, setSortOpen] = useState(false);
   const [sortValue, setSortValue] = useState('popular');
-
 
   const sorted = useMemo(() => sortProducts(products, sortValue), [products, sortValue]);
   const currentLabel = SORT_OPTIONS.find(o => o.value === sortValue)?.label ?? 'Популярные';
 
   if (loading) {
-    return <div className="orders-lists"><div className="profile-loading">Загружаем избранное…</div></div>;
+    return <div className="orders-lists profile-favorites"><div className="profile-loading">Загружаем избранное…</div></div>;
   }
 
   if (products.length === 0) {
     return (
       <>
-        <div className="orders-lists">
-          <div className="empty">
+        <div className="orders-lists profile-favorites">
+          <div className="empty profile-favorites__empty">
             <div className="empty-illustration">
               <img src="/assets/img/profile/no-favorite.png" alt="" />
             </div>
@@ -66,9 +63,9 @@ export default function Favorites() {
   }
 
   return (
-    <div className="orders-lists">
-      <div className="orders-shopping_wrapper">
-        <div className="orders-shopping">
+    <div className="orders-lists profile-favorites">
+      <div className="orders-shopping_wrapper profile-favorites__wrapper">
+        <div className="orders-shopping profile-favorites__content">
 
           {/* Сортировка */}
           <div className="all-catalog-sort">
@@ -100,8 +97,8 @@ export default function Favorites() {
           </div>
 
           {/* Карточки */}
-          <div className="shopping-cards">
-            <div className="all-catalog-items">
+          <div className="shopping-cards profile-favorites__cards">
+            <div className="all-catalog-items profile-favorites__grid">
               {sorted.filter(item => item.product).map(item => (
                 <ProductCard
                   key={item.sku}
