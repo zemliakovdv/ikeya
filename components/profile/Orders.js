@@ -65,15 +65,32 @@ function formatPrice(value) {
 
 function resolveImage(imageUrl) {
   if (!imageUrl) return null;
-  let urls = imageUrl;
-  if (typeof urls === 'string') {
-    try { urls = JSON.parse(urls); } catch { return null; }
+
+  if (Array.isArray(imageUrl)) {
+    const first = imageUrl.find((url) => url && !String(url).startsWith('as:'));
+    if (!first) return null;
+    return resolveImage(first);
   }
-  if (!Array.isArray(urls) || urls.length === 0) return null;
-  const first = urls[0];
-  if (!first || String(first).startsWith('as:')) return null;
-  if (String(first).startsWith('http')) return first;
-  if (String(first).startsWith('/')) return buildAssetUrl(first);
+
+  if (typeof imageUrl === 'string') {
+    const value = imageUrl.trim();
+    if (!value || value.startsWith('as:')) return null;
+
+    if (value.startsWith('[')) {
+      try {
+        return resolveImage(JSON.parse(value));
+      } catch {
+        return null;
+      }
+    }
+
+    if (value.startsWith('http://') || value.startsWith('https://')) return value;
+    if (value.startsWith('/')) return buildAssetUrl(value);
+    if (value.startsWith('images/')) return buildAssetUrl(`/${value}`);
+
+    return null;
+  }
+
   return null;
 }
 
@@ -171,17 +188,35 @@ function parseOrders(data) {
     const orderItemIds =
       order.relationships?.order_items?.data?.map((item) => item.id) || [];
 
-    const items = orderItemIds
-      .map((id) => itemsMap[id])
-      .filter(Boolean)
-      .map((item) => ({
-        name: item.name || '—',
-        desc: item.product_sku || '',
-        product_sku: item.product_sku || null,
-        quantity: item.quantity || 1,
-        price: Number.parseFloat(item.price_byn || 0).toFixed(2),
-        image: resolveImage(item.image_url),
-      }));
+const items = orderItemIds
+  .map((id) => itemsMap[id])
+  .filter(Boolean)
+  .map((item) => {
+    const image =
+      resolveImage(item.image_url) ||
+      resolveImage(item.image) ||
+      resolveImage(item.local_image) ||
+      resolveImage(item.local_images) ||
+      resolveImage(item.images) ||
+      resolveImage(item.product?.image_url) ||
+      resolveImage(item.product?.image) ||
+      resolveImage(item.product?.local_images) ||
+      resolveImage(item.product?.images);
+
+    return {
+      name: item.name || '—',
+      desc: item.product_sku || '',
+      product_sku: item.product_sku || null,
+      quantity: item.quantity || 1,
+      price: Number.parseFloat(item.price_byn || 0).toFixed(2),
+      image,
+      image_url: item.image_url || null,
+      local_image: item.local_image || null,
+      local_images: item.local_images || null,
+      images: item.images || null,
+      product: item.product || null,
+    };
+  });
 
     return {
       id: String(attr.public_uid || attr.id || order.id),
