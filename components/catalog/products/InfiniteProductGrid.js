@@ -10,6 +10,19 @@ function sanitize(products) {
   return (products || []).filter((product) => product && product.attributes);
 }
 
+function normalizeProductsResponse(payload) {
+  const products = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload?.products)
+      ? payload.products
+      : [];
+
+  return {
+    products,
+    meta: payload?.meta || {},
+  };
+}
+
 export default function InfiniteProductGrid({
   initialProducts = [],
   categoryId,
@@ -98,8 +111,8 @@ export default function InfiniteProductGrid({
 
       if (controller.signal.aborted || requestKeyRef.current !== activeRequestKey) return;
 
-      const nextProducts = sanitize(data.data || []);
-      const meta = data.meta || {};
+      const { products: rawProducts, meta } = normalizeProductsResponse(data);
+      const nextProducts = sanitize(rawProducts);
 
       const serverTotalPages = Number(meta.total_pages) ||
         Math.ceil((Number(meta.total) || 0) / ITEMS_PER_PAGE);

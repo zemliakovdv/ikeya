@@ -47,15 +47,19 @@ export async function GET(request, { params }) {
       return true;
     });
 
+    const meta = data.meta || { total: 0, page: 1, per_page: perPage, total_pages: 0 };
+
     return NextResponse.json({
+      data: filteredProducts,
       products: filteredProducts,
-      meta: data.meta || { total: 0, page: 1, per_page: perPage, total_pages: 0 }
+      meta
     });
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(
       {
         error: 'Failed to load products',
+        data: [],
         products: [],
         meta: { total: 0, page: 1, per_page: perPage, total_pages: 0 }
       },

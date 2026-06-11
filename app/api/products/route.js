@@ -25,12 +25,16 @@ export async function GET(request) {
 
     const data = await response.json();
 
+    const products = data.data || [];
+    const meta = data.meta || {};
+
     return NextResponse.json({
-      products: data.data || [],
-      meta: data.meta || {}
+      data: products,
+      products,
+      meta
     });
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json({ products: [], meta: {} }, { status: 500 });
+    return NextResponse.json({ data: [], products: [], meta: {} }, { status: 500 });
   }
 }
