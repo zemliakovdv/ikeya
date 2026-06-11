@@ -6,7 +6,23 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 const SORT_CLOSE_DELAY = 180;
 
-export default function ProductSort({ currentSort = null }) {
+const DEFAULT_OPTIONS = [
+  { value: null, label: 'По умолчанию' },
+  { value: 'cheapest', label: 'Дешевле' },
+  { value: 'expensive', label: 'Дороже' },
+];
+
+/**
+ * Дропдаун сортировки.
+ *
+ * Режим по умолчанию (каталог): без пропсов options/onSelect —
+ * пишет выбор в URL (?sort=...), как и раньше.
+ *
+ * Управляемый режим (например, «Покупки» в профиле):
+ *   <ProductSort options={[...]} currentSort={sort} onSelect={setSort} />
+ * — URL не трогает, выбор отдаёт в колбэк.
+ */
+export default function ProductSort({ currentSort = null, options = null, onSelect = null }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -19,16 +35,13 @@ export default function ProductSort({ currentSort = null }) {
   const [shouldRender, setShouldRender] = useState(false);
 
   const sortOptions = useMemo(
-    () => [
-      { value: null, label: 'По умолчанию' },
-      { value: 'cheapest', label: 'Дешевле' },
-      { value: 'expensive', label: 'Дороже' },
-    ],
-    []
+    () => (Array.isArray(options) && options.length ? options : DEFAULT_OPTIONS),
+    [options]
   );
 
   const currentLabel =
     sortOptions.find((opt) => opt.value === currentSort)?.label ||
+    sortOptions[0]?.label ||
     'По умолчанию';
 
   const closeDropdown = useCallback(() => {
@@ -117,6 +130,14 @@ export default function ProductSort({ currentSort = null }) {
 
   const handleSelectSort = useCallback(
     (value) => {
+      // Управляемый режим: отдаём выбор наружу, URL не трогаем
+      if (typeof onSelect === 'function') {
+        onSelect(value);
+        closeDropdown();
+        return;
+      }
+
+      // Режим каталога: пишем в URL
       const params = new URLSearchParams(searchParams.toString());
 
       if (!value) {
@@ -132,7 +153,7 @@ export default function ProductSort({ currentSort = null }) {
 
       closeDropdown();
     },
-    [router, pathname, searchParams, closeDropdown]
+    [onSelect, router, pathname, searchParams, closeDropdown]
   );
 
   return (

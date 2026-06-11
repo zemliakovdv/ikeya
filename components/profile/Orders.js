@@ -43,6 +43,8 @@ const PAYMENT_LIFETIME_MS = 20 * 60 * 1000;
 
 const PURCHASES_PER_PAGE = 20;
 
+const PURCHASES_DEFAULT_SORT = 'newest';
+
 // ─── Утилиты ─────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr) {
@@ -188,35 +190,35 @@ function parseOrders(data) {
     const orderItemIds =
       order.relationships?.order_items?.data?.map((item) => item.id) || [];
 
-const items = orderItemIds
-  .map((id) => itemsMap[id])
-  .filter(Boolean)
-  .map((item) => {
-    const image =
-      resolveImage(item.image_url) ||
-      resolveImage(item.image) ||
-      resolveImage(item.local_image) ||
-      resolveImage(item.local_images) ||
-      resolveImage(item.images) ||
-      resolveImage(item.product?.image_url) ||
-      resolveImage(item.product?.image) ||
-      resolveImage(item.product?.local_images) ||
-      resolveImage(item.product?.images);
+    const items = orderItemIds
+      .map((id) => itemsMap[id])
+      .filter(Boolean)
+      .map((item) => {
+        const image =
+          resolveImage(item.image_url) ||
+          resolveImage(item.image) ||
+          resolveImage(item.local_image) ||
+          resolveImage(item.local_images) ||
+          resolveImage(item.images) ||
+          resolveImage(item.product?.image_url) ||
+          resolveImage(item.product?.image) ||
+          resolveImage(item.product?.local_images) ||
+          resolveImage(item.product?.images);
 
-    return {
-      name: item.name || '—',
-      desc: item.product_sku || '',
-      product_sku: item.product_sku || null,
-      quantity: item.quantity || 1,
-      price: Number.parseFloat(item.price_byn || 0).toFixed(2),
-      image,
-      image_url: item.image_url || null,
-      local_image: item.local_image || null,
-      local_images: item.local_images || null,
-      images: item.images || null,
-      product: item.product || null,
-    };
-  });
+        return {
+          name: item.name || '—',
+          desc: item.product_sku || '',
+          product_sku: item.product_sku || null,
+          quantity: item.quantity || 1,
+          price: Number.parseFloat(item.price_byn || 0).toFixed(2),
+          image,
+          image_url: item.image_url || null,
+          local_image: item.local_image || null,
+          local_images: item.local_images || null,
+          images: item.images || null,
+          product: item.product || null,
+        };
+      });
 
     return {
       id: String(attr.public_uid || attr.id || order.id),
@@ -259,6 +261,20 @@ const items = orderItemIds
   });
 }
 
+// Поля картинок могут приходить JSON-строками — приводим к массиву
+function parseImagesField(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function parsePurchases(data) {
   return (data?.purchases || []).map((purchase) => {
     const product = purchase.product || {};
@@ -267,8 +283,8 @@ function parsePurchases(data) {
     const quantity = purchase.quantity ?? product.quantity ?? 1;
     const priceByn = purchase.price_byn ?? product.price_byn ?? '0';
     const productImages = product.images || {};
-    const localImages = productImages.local_images || [];
-    const remoteImages = productImages.images || [];
+    const localImages = parseImagesField(productImages.local_images);
+    const remoteImages = parseImagesField(productImages.images);
     const image =
       (localImages[0] ? buildAssetUrl(localImages[0]) : null) ||
       remoteImages[0] ||
@@ -306,7 +322,7 @@ function parsePurchases(data) {
 
 // ─── Хук: бесконечная прокрутка покупок ──────────────────────────────────────
 
-function usePurchasesInfinite(token, enabled) {
+function usePurchasesInfinite(token, enabled, sort = PURCHASES_DEFAULT_SORT) {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -319,6 +335,7 @@ function usePurchasesInfinite(token, enabled) {
   const observerRef = useRef(null);
   const abortRef = useRef(null);
 
+  // Сброс накопленных страниц при смене токена ИЛИ сортировки
   useEffect(() => {
     setPurchases([]);
     setLoading(false);
@@ -329,7 +346,7 @@ function usePurchasesInfinite(token, enabled) {
     pageRef.current = 1;
     observerRef.current?.disconnect();
     abortRef.current?.abort();
-  }, [token]);
+  }, [token, sort]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current || !token) return;
@@ -344,7 +361,7 @@ function usePurchasesInfinite(token, enabled) {
     try {
       const page = pageRef.current;
       const res = await fetch(
-        buildApiUrl(`/account/purchases?sort=newest&page=${page}&per_page=${PURCHASES_PER_PAGE}`),
+        buildApiUrl(`/account/purchases?sort=${encodeURIComponent(sort)}&page=${page}&per_page=${PURCHASES_PER_PAGE}`),
         {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           cache: 'no-store',
@@ -376,7 +393,7 @@ function usePurchasesInfinite(token, enabled) {
         setLoading(false);
       }
     }
-  }, [token]);
+  }, [token, sort]);
 
   useEffect(() => {
     if (!enabled || !token) return;
@@ -428,6 +445,7 @@ export default function Orders() {
   const [allOrders, setAllOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [purchasesSort, setPurchasesSort] = useState(PURCHASES_DEFAULT_SORT);
 
   const refreshTimerRef = useRef(null);
 
@@ -505,7 +523,7 @@ export default function Orders() {
     hasMore: purchasesHasMore,
     loadedOnce: purchasesLoadedOnce,
     setTrigger,
-  } = usePurchasesInfinite(token, purchasesEnabled);
+  } = usePurchasesInfinite(token, purchasesEnabled, purchasesSort);
 
   // ── Фильтрация заказов ──────────────────────────────────────────────────────
 
@@ -631,7 +649,13 @@ export default function Orders() {
                 </div>
               ) : (
                 <>
-                  {purchases.length > 0 && <Purchases products={purchases} />}
+                  {purchases.length > 0 && (
+                    <Purchases
+                      products={purchases}
+                      sort={purchasesSort}
+                      onSortChange={setPurchasesSort}
+                    />
+                  )}
 
                   {(purchasesHasMore || purchasesLoading) && (
                     <div
