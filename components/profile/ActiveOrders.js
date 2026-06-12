@@ -43,12 +43,14 @@ const serviceStyles = {
     gap: '16px',
     padding: '12px 16px',
     flexWrap: 'wrap',
-    alignItems: 'stretch',
+    alignItems: 'flex-start',
   },
   leftGroup: {
     display: 'flex',
     gap: '16px',
-    flex: '1 1 466px',
+    flex: '0 1 466px',
+    width: '100%',
+    maxWidth: '466px',
     minWidth: '280px',
     flexWrap: 'wrap',
     alignItems: 'stretch',
@@ -67,9 +69,10 @@ const serviceStyles = {
     cursor: 'pointer',
   },
   smallCard: {
-    flex: '1 1 225px',
+    flex: '1 1 calc(50% - 8px)',
     minWidth: '220px',
     minHeight: '72px',
+    position: 'relative',
     borderRadius: '4px',
     background: '#FAFAFA',
     padding: '12px 8px 12px 16px',
@@ -87,7 +90,7 @@ const serviceStyles = {
     background: '#FAFAFA',
     padding: '16px',
     display: 'flex',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: '12px',
     boxSizing: 'border-box',
   },
@@ -133,6 +136,24 @@ const serviceStyles = {
   linkCard: {
     color: 'inherit',
     textDecoration: 'none',
+  },
+  cardIcon: {
+    flex: '0 0 auto',
+  },
+  copyFeedback: {
+    position: 'absolute',
+    top: '8px',
+    right: '12px',
+    zIndex: 2,
+    background: '#FFFFFF',
+    color: '#00910A',
+    fontSize: '12px',
+    lineHeight: '16px',
+    fontWeight: 600,
+    padding: '2px 6px',
+    borderRadius: '4px',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
   },
 };
 
@@ -208,6 +229,19 @@ function DeliveryServiceIcon() {
   );
 }
 
+function EvropochtaIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      <path d="M24 12C24 18.6267 18.6267 24 12 24C5.37333 24 0 18.6267 0 12C0 5.37333 5.37333 0 12 0C18.6267 0 24 5.37333 24 12Z" fill="white"/>
+      <path d="M22.8 12C22.8 17.9667 17.9667 22.8 12 22.8C6.03333 22.8 1.2 17.9667 1.2 12C1.2 6.03333 6.03333 1.2 12 1.2C17.9667 1.2 22.8 6.03333 22.8 12Z" fill="#FF0000"/>
+      <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white"/>
+      <path d="M12.7333 11.96V16.2533L14.1867 15.4133V12.52L16.3933 11.26V14.14L17.8533 13.3V9.04667H17.84L12.7333 11.96Z" fill="white"/>
+      <path d="M12.7333 17.2267V18.6733H12.74L17.8533 15.7467V14.2867L12.7333 17.2267Z" fill="white"/>
+      <path d="M11.54 18.6333V17.24V17.26L7.87333 15.16V13.8533L11.54 15.96V14.6333L7.87333 12.5333V11.1933L11.54 13.2867V11.96L7.87333 9.87333L6.42667 9.04667H6.41333V15.68L11.54 18.6333Z" fill="white"/>
+    </svg>
+  );
+}
+
 function firstImageFromValue(value) {
   if (Array.isArray(value)) return value[0] || null;
   return value || null;
@@ -242,19 +276,45 @@ function ArrowIcon() {
   );
 }
 
-const isEuropostOrder = (order) =>
-  order?.deliveryType === 'europost_pickup' ||
-  order?.deliveryType === 'courier' ||
-  order?.deliveryType === 'ikeya_delivery';
-
-function getDeliveryProviderLabel(order = {}) {
+function getDeliveryProvider(order = {}) {
   return (
     order.deliveryName ||
     order.deliveryProvider ||
     order.deliveryMethod ||
     order.deliveryType ||
-    TEXT.delivery
+    ''
   );
+}
+
+function isEuropochtaDelivery(value) {
+  const normalized = String(value || '').toLowerCase();
+  return (
+    normalized.includes('европочт') ||
+    normalized.includes('europost') ||
+    normalized.includes('evropochta')
+  );
+}
+
+function getDeliveryProviderLabel(order = {}) {
+  const provider = getDeliveryProvider(order);
+  return isEuropochtaDelivery(provider) ? 'Европочта' : (provider || TEXT.delivery);
+}
+
+function getTrackingUrl(order = {}) {
+  const provider = getDeliveryProvider(order);
+
+  if (order.trackingUrl) return order.trackingUrl;
+  if (isEuropochtaDelivery(provider)) return 'https://evropochta.by/';
+
+  return '';
+}
+
+function renderTrackingIcon(order = {}) {
+  if (isEuropochtaDelivery(getDeliveryProvider(order))) {
+    return <EvropochtaIcon />;
+  }
+
+  return <DeliveryServiceIcon />;
 }
 
 function shouldShowWhereIsMyOrder(order = {}) {
@@ -304,10 +364,14 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackNumberCard() {
-    if (!isEuropostOrder(order) || !order.trackNumber) return null;
+    if (!order.trackNumber) return null;
 
     return (
       <div style={serviceStyles.smallCard}>
+        {trackCopied ? (
+          <span style={serviceStyles.copyFeedback}>{TEXT.copied}</span>
+        ) : null}
+
         <div style={serviceStyles.cardMain}>
           <div style={serviceStyles.title}>{order.trackNumber}</div>
           <div style={serviceStyles.subtitle}>{TEXT.trackNumber}</div>
@@ -316,26 +380,27 @@ const OrderCard = ({ order }) => {
         <button
           className="btn-copy-order"
           onClick={handleTrackCopy}
-          title={TEXT.copyTrack}
+          title={trackCopied ? TEXT.copied : TEXT.copyTrack}
+          aria-label={trackCopied ? TEXT.copied : TEXT.copyTrack}
           type="button"
           style={serviceStyles.iconButton}
         >
-          {trackCopied ? (
-            <span style={{ color: '#00910A', fontSize: 14, lineHeight: '20px' }}>{TEXT.copied}</span>
-          ) : (
-            <CopyIcon />
-          )}
+          <CopyIcon />
         </button>
       </div>
     );
   }
 
   function renderTrackingCard() {
-    if (!isEuropostOrder(order) || !order.trackNumber) return null;
+    if (!order.trackNumber) return null;
+
+    const trackingUrl = getTrackingUrl(order);
 
     const content = (
       <>
-        <DeliveryServiceIcon />
+        <div style={serviceStyles.cardIcon}>
+          {renderTrackingIcon(order)}
+        </div>
         <div style={serviceStyles.cardMain}>
           <div style={serviceStyles.title}>{TEXT.track}</div>
           <div style={serviceStyles.subtitle}>{getDeliveryProviderLabel(order)}</div>
@@ -344,10 +409,10 @@ const OrderCard = ({ order }) => {
       </>
     );
 
-    if (order.trackingUrl) {
+    if (trackingUrl) {
       return (
         <a
-          href={order.trackingUrl}
+          href={trackingUrl}
           target="_blank"
           rel="noopener noreferrer"
           style={{ ...serviceStyles.smallCard, ...serviceStyles.linkCard }}
@@ -399,7 +464,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderOrderServiceBlocks() {
-    if (order.trackNumber && isEuropostOrder(order)) {
+    if (order.trackNumber) {
       return (
         <div style={serviceStyles.row}>
           <div style={serviceStyles.leftGroup}>
