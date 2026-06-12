@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
-import SeoProductCard from '@/components/catalog/products/SeoProductCard';
+import SeoCatalogClient from '@/components/catalog/seo/SeoCatalogClient';
+import SeoSection from '@/components/home/SeoSection';
 import { buildAssetUrl, SITE_URL } from '@/lib/config/api';
 import { getSeoCatalogPageBySlug, getSeoCatalogPages } from '@/lib/api/seoCatalogPages';
 
@@ -15,84 +16,97 @@ function getSafeSlug(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function getSafeText(value, fallback = '') {
+  return typeof value === 'string' ? value.trim() : fallback;
+}
+
 function getRobotsConfig(page) {
   if (isPlainObject(page?.robots)) {
     return {
       index: page.robots.index !== false,
       follow: page.robots.follow !== false,
-      raw: '',
     };
   }
 
-  const raw = typeof page?.robots === 'string' ? page.robots.toLowerCase() : '';
+  const raw = getSafeText(page?.robots).toLowerCase();
 
   return {
     index: !raw.includes('noindex'),
     follow: !raw.includes('nofollow'),
-    raw,
   };
-}
-
-function isPublishedPage(page) {
-  return !!page && page.published !== false && page.is_active !== false;
-}
-
-function isIndexablePage(page) {
-  if (!isPublishedPage(page)) return false;
-  if (page.indexable === false) return false;
-  if (page.noindex === true) return false;
-  if (getRobotsConfig(page).index === false) return false;
-  return true;
-}
-
-function buildCanonicalUrl(page, slug) {
-  const explicit = typeof page?.canonical_url === 'string' ? page.canonical_url.trim() : '';
-  if (explicit) {
-    if (/^https?:\/\//i.test(explicit)) return explicit;
-    if (explicit.startsWith('/')) return `${SITE_URL}${explicit}`;
-  }
-  return `${SITE_URL}/catalog/seo/${slug}`;
-}
-
-function resolveOgImage(page) {
-  const candidate = typeof page?.og_image === 'string' ? page.og_image.trim() : '';
-  if (!candidate) return null;
-  if (/^https?:\/\//i.test(candidate)) return candidate;
-  return buildAssetUrl(candidate);
 }
 
 function normalizeProducts(page) {
   if (Array.isArray(page?.products?.data)) return page.products.data;
   if (Array.isArray(page?.products)) return page.products;
   if (Array.isArray(page?.items)) return page.items;
-  if (Array.isArray(page?.products_data)) return page.products_data;
   return [];
 }
 
-function normalizeFilters(page) {
-  const source = Array.isArray(page?.filters)
-    ? page.filters
-    : Array.isArray(page?.applied_filters)
-      ? page.applied_filters
-      : [];
+function getUiFilters(page) {
+  if (Array.isArray(page?.available_filters)) return page.available_filters;
+  if (Array.isArray(page?.filters)) return page.filters;
+  return [];
+}
 
-  return source
-    .map((filter) => {
-      if (typeof filter === 'string') {
-        return { key: filter, label: filter };
-      }
+function isPublishedPage(page) {
+  return !!page && page.published !== false && page.is_active !== false;
+}
 
-      const title = filter?.label || filter?.name || filter?.title || '';
-      const value = filter?.value;
-      const label = title && value ? `${title}: ${value}` : (title || value);
-      if (!label) return null;
+function hasProductsSnapshot(page) {
+  return normalizeProducts(page).some((product) => isPlainObject(product));
+}
 
-      return {
-        key: filter?.key || filter?.parameter || label,
-        label: String(label),
-      };
-    })
-    .filter(Boolean);
+function getProductsCount(page) {
+  const value = Number(page?.products_count);
+  if (Number.isFinite(value)) return value;
+  return normalizeProducts(page).length;
+}
+
+function isIndexablePage(page) {
+  if (!isPublishedPage(page)) return false;
+  if (page?.indexable !== true) return false;
+  if (page?.noindex === true) return false;
+  if (getRobotsConfig(page).index === false) return false;
+  if (getProductsCount(page) <= 0) return false;
+  if (!hasProductsSnapshot(page)) return false;
+  return true;
+}
+
+function resolveAbsoluteUrl(value) {
+  const candidate = getSafeText(value);
+  if (!candidate) return '';
+  if (/^https?:\/\//i.test(candidate)) return candidate;
+  if (candidate.startsWith('/')) return `${SITE_URL}${candidate}`;
+  return `${SITE_URL}/${candidate.replace(/^\/+/, '')}`;
+}
+
+function buildCanonicalUrl(page, slug) {
+  const candidate =
+    getSafeText(page?.canonical_path) ||
+    getSafeText(page?.path) ||
+    `/catalog/seo/${slug}`;
+
+  return resolveAbsoluteUrl(candidate);
+}
+
+function resolveCatalogUrl(page) {
+  const explicit = getSafeText(page?.catalog_url);
+  if (explicit) return explicit;
+
+  const path = getSafeText(page?.path);
+  if (path.startsWith('/catalog/') && !path.startsWith('/catalog/seo/')) {
+    return path;
+  }
+
+  return '/catalog';
+}
+
+function resolveOgImage(page) {
+  const candidate = getSafeText(page?.og_image);
+  if (!candidate) return null;
+  if (/^https?:\/\//i.test(candidate)) return candidate;
+  return buildAssetUrl(candidate);
 }
 
 function buildBreadcrumbJsonLd(breadcrumbs) {
@@ -100,7 +114,7 @@ function buildBreadcrumbJsonLd(breadcrumbs) {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: breadcrumbs.map((item, index) => {
-      const href = typeof item?.href === 'string' ? item.href.trim() : '';
+      const href = getSafeText(item?.href);
       const absoluteUrl = href
         ? (href.startsWith('http') ? href : `${SITE_URL}${href.startsWith('/') ? href : `/${href}`}`)
         : undefined;
@@ -129,15 +143,13 @@ function buildRobotsMetadata(page) {
   if (!isIndexablePage(page)) {
     return {
       index: false,
-      follow: getRobotsConfig(page).follow,
+      follow: true,
     };
   }
 
-  const robotsConfig = getRobotsConfig(page);
-
   return {
-    index: robotsConfig.index,
-    follow: robotsConfig.follow,
+    index: true,
+    follow: getRobotsConfig(page).follow,
   };
 }
 
@@ -212,12 +224,12 @@ export default async function SeoCatalogPage({ params }) {
   }
 
   const title = page.h1 || page.title || 'Подборка IKEYA';
-  const description = typeof page.description === 'string' ? page.description.trim() : '';
-  const catalogUrl = typeof page.catalog_url === 'string' ? page.catalog_url.trim() : '';
-  const products = normalizeProducts(page).filter((product) => isPlainObject(product));
-  const filters = normalizeFilters(page);
-  const seoText = typeof page.seo_text === 'string' ? page.seo_text.trim() : '';
+  const description = getSafeText(page.description);
   const breadcrumbs = buildBreadcrumbItems(page, slug);
+  const seoText = getSafeText(page.seo_text);
+  const products = normalizeProducts(page).filter((product) => isPlainObject(product));
+  const filters = getUiFilters(page);
+  const catalogUrl = resolveCatalogUrl(page);
 
   return (
     <main className="main catalog-inner">
@@ -238,67 +250,13 @@ export default async function SeoCatalogPage({ params }) {
             </div>
           ) : null}
 
-          {filters.length > 0 ? (
-            <div className="catalog-page-filter-chips" style={{ marginBottom: '24px' }}>
-              {filters.map((filter) => (
-                <span
-                  key={filter.key}
-                  className="filter-chip active"
-                  style={{ display: 'inline-flex', marginRight: '8px', marginBottom: '8px' }}
-                >
-                  {filter.label}
-                </span>
-              ))}
-            </div>
-          ) : null}
+          <SeoCatalogClient
+            initialProducts={products}
+            filters={filters}
+            catalogUrl={catalogUrl}
+          />
 
-          {catalogUrl ? (
-            <div style={{ marginBottom: '24px' }}>
-              <a href={catalogUrl}>Открыть в каталоге</a>
-            </div>
-          ) : null}
-
-          {products.length > 0 ? (
-            <div className="products-grid">
-              {products.map((product, index) => {
-                const productKey =
-                  product.id ||
-                  product.sku ||
-                  product.attributes?.sku ||
-                  product.attributes?.id ||
-                  index;
-
-                return (
-                <SeoProductCard
-                  key={`${productKey}-${slug}`}
-                  product={product}
-                />
-                );
-              })}
-            </div>
-          ) : (
-            <div className="all-catalog-empty">
-              <p>Товары для этой подборки пока не найдены.</p>
-            </div>
-          )}
-
-          {seoText ? (
-            <section className="seo">
-              <div className="container">
-                <div className="row">
-                  <div className="col-12">
-                    <div className="seo-inner">
-                      <div
-                        className="seo-text-content seo-text-content--expanded"
-                        // Backend must return sanitized HTML for SEO text blocks.
-                        dangerouslySetInnerHTML={{ __html: seoText }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          ) : null}
+          {seoText ? <SeoSection seoText={seoText} /> : null}
         </div>
       </section>
     </main>

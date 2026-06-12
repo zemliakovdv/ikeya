@@ -34,7 +34,7 @@ function buildSeoPageEntry(page) {
 }
 
 export default async function sitemap() {
-  const seoPages = await getSeoCatalogPages();
+  const seoPages = await getSeoCatalogPages({ sitemap: true });
 
   const staticEntries = [
     { url: `${SITE_URL}/` },

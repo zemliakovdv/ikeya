@@ -1,12 +1,140 @@
 'use client';
 
-// components/profile/ActiveOrders.js
-
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import TrackingModal from '@/components/profile/TrackingModal';
+
+const TRACKING_STATUSES = ['transit', 'customs-belarus', 'in-transit-pvz'];
+const PICKUP_READY_STATUSES = ['arrived-pvz'];
+
+const TEXT = {
+  delivery: '\u0414\u043e\u0441\u0442\u0430\u0432\u043a\u0430',
+  trackNumber: '\u0422\u0440\u0435\u043a-\u043d\u043e\u043c\u0435\u0440',
+  copied: '\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u043d\u043e',
+  copyTrack: '\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u0442\u0440\u0435\u043a-\u043d\u043e\u043c\u0435\u0440',
+  track: '\u041e\u0442\u0441\u043b\u0435\u0434\u0438\u0442\u044c',
+  whereIsOrder: '\u0413\u0434\u0435 \u043c\u043e\u0439 \u0437\u0430\u043a\u0430\u0437',
+  trackInfo:
+    '\u0412\u044b\u0434\u0430\u0447\u0430 \u0437\u0430\u043a\u0430\u0437\u043e\u0432 \u043e\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u043f\u043e \u0442\u0440\u0435\u043a-\u043d\u043e\u043c\u0435\u0440\u0443 \u0438 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0443, \u0443\u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u044f\u044e\u0449\u0435\u043c\u0443 \u043b\u0438\u0447\u043d\u043e\u0441\u0442\u044c.',
+  orderInfo:
+    '\u0412\u044b\u0434\u0430\u0447\u0430 \u0437\u0430\u043a\u0430\u0437\u043e\u0432 \u043e\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u043f\u043e \u043d\u043e\u043c\u0435\u0440\u0443 \u0437\u0430\u043a\u0430\u0437\u0430 \u0438 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0443, \u0443\u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u044f\u044e\u0449\u0435\u043c\u0443 \u043b\u0438\u0447\u043d\u043e\u0441\u0442\u044c.',
+  draftInfo:
+    '\u0417\u0430\u043a\u0430\u0437 \u043e\u0436\u0438\u0434\u0430\u0435\u0442 \u043e\u0444\u043e\u0440\u043c\u043b\u0435\u043d\u0438\u044f. \u0412\u044b \u043c\u043e\u0436\u0435\u0442\u0435 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u0432 \u043b\u044e\u0431\u043e\u0439 \u043c\u043e\u043c\u0435\u043d\u0442.',
+  continueCheckout: '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u043e\u0444\u043e\u0440\u043c\u043b\u0435\u043d\u0438\u0435',
+  awaitingPayment: '\u0417\u0430\u043a\u0430\u0437 \u043e\u0436\u0438\u0434\u0430\u0435\u0442 \u043e\u043f\u043b\u0430\u0442\u044b',
+  paymentHint:
+    '\u0421\u043a\u043e\u043f\u0438\u0440\u0443\u0439\u0442\u0435 \u043a\u043e\u0434 \u0437\u0430\u043a\u0430\u0437\u0430 \u0434\u043b\u044f \u0443\u0434\u043e\u0431\u0441\u0442\u0432\u0430 \u043e\u043f\u043b\u0430\u0442\u044b. \u0410\u0432\u0442\u043e\u043c\u0430\u0442\u0438\u0447\u0435\u0441\u043a\u0430\u044f \u043e\u0442\u043c\u0435\u043d\u0430 \u0437\u0430\u043a\u0430\u0437\u0430 \u043f\u0440\u043e\u0438\u0441\u0445\u043e\u0434\u0438\u0442 \u0441\u0440\u0430\u0437\u0443 \u043f\u043e\u0441\u043b\u0435 \u0438\u0441\u0442\u0435\u0447\u0435\u043d\u0438\u044f \u0441\u0440\u043e\u043a\u0430 \u043e\u043f\u043b\u0430\u0442\u044b.',
+  payOrder: '\u041e\u043f\u043b\u0430\u0442\u0438\u0442\u044c \u0437\u0430\u043a\u0430\u0437',
+  orderPrefix: '\u0417\u0430\u043a\u0430\u0437 \u2116',
+  copyOrder: '\u0421\u043a\u043e\u043f\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043d\u043e\u043c\u0435\u0440 \u0437\u0430\u043a\u0430\u0437\u0430',
+  from: '\u043e\u0442',
+  plannedDate: '\u041f\u043b\u0430\u043d\u0438\u0440\u0443\u0435\u043c\u0430\u044f \u0434\u0430\u0442\u0430 \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u044f \u0437\u0430\u043a\u0430\u0437\u0430:',
+  rubles: '\u0440.',
+  product: '\u0422\u043e\u0432\u0430\u0440',
+  pcs: '\u0448\u0442',
+  itemsUnavailable: '\u0421\u043f\u0438\u0441\u043e\u043a \u0442\u043e\u0432\u0430\u0440\u043e\u0432 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u0435\u043d',
+};
+
+const serviceStyles = {
+  row: {
+    display: 'flex',
+    gap: '16px',
+    padding: '12px 16px',
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+  },
+  leftGroup: {
+    display: 'flex',
+    gap: '16px',
+    flex: '1 1 466px',
+    minWidth: '280px',
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+  },
+  compactButton: {
+    width: '100%',
+    minHeight: '48px',
+    border: 'none',
+    borderRadius: '4px',
+    background: '#FAFAFA',
+    padding: '12px 8px 12px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    textAlign: 'left',
+    cursor: 'pointer',
+  },
+  smallCard: {
+    flex: '1 1 225px',
+    minWidth: '220px',
+    minHeight: '72px',
+    borderRadius: '4px',
+    background: '#FAFAFA',
+    padding: '12px 8px 12px 16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '12px',
+    boxSizing: 'border-box',
+  },
+  infoCard: {
+    flex: '1 1 320px',
+    minWidth: '280px',
+    minHeight: '72px',
+    borderRadius: '8px',
+    background: '#FAFAFA',
+    padding: '16px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '12px',
+    boxSizing: 'border-box',
+  },
+  fullWidthInfoCard: {
+    flex: '1 1 100%',
+    minWidth: '100%',
+  },
+  cardMain: {
+    minWidth: 0,
+    flex: '1 1 auto',
+  },
+  title: {
+    fontSize: '14px',
+    lineHeight: '20px',
+    fontWeight: 600,
+    color: '#181818',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
+  },
+  subtitle: {
+    fontSize: '14px',
+    lineHeight: '20px',
+    color: '#757575',
+    overflowWrap: 'anywhere',
+    wordBreak: 'break-word',
+  },
+  infoText: {
+    fontSize: '14px',
+    lineHeight: '20px',
+    color: '#181818',
+  },
+  iconButton: {
+    marginLeft: '8px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '0 4px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: '0 0 auto',
+  },
+  linkCard: {
+    color: 'inherit',
+    textDecoration: 'none',
+  },
+};
 
 function pad(n) {
   return String(n).padStart(2, '0');
@@ -69,11 +197,19 @@ function PackageIcon() {
   );
 }
 
-function firstImageFromValue(value) {
-  if (Array.isArray(value)) {
-    return value[0] || null;
-  }
+function DeliveryServiceIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 7.75C3 6.78 3.78 6 4.75 6H13.25C14.22 6 15 6.78 15 7.75V14.25C15 15.22 14.22 16 13.25 16H12.72C12.39 17.16 11.33 18 10.08 18C8.84 18 7.77 17.16 7.44 16H6.75C5.78 16 5 15.22 5 14.25V13.75C5 13.34 5.34 13 5.75 13C6.16 13 6.5 13.34 6.5 13.75V14.25C6.5 14.39 6.61 14.5 6.75 14.5H7.44C7.77 13.34 8.84 12.5 10.08 12.5C11.33 12.5 12.39 13.34 12.72 14.5H13.25C13.39 14.5 13.5 14.39 13.5 14.25V7.75C13.5 7.61 13.39 7.5 13.25 7.5H4.75C4.61 7.5 4.5 7.61 4.5 7.75V9.75C4.5 10.16 4.16 10.5 3.75 10.5C3.34 10.5 3 10.16 3 9.75V7.75Z" fill="#181818"/>
+      <path d="M15 9.25C15 8.56 15.56 8 16.25 8H17.77C18.22 8 18.64 8.24 18.86 8.63L20.59 11.67C20.72 11.9 20.79 12.16 20.79 12.42V14.25C20.79 15.22 20.01 16 19.04 16H18.81C18.48 17.16 17.42 18 16.17 18C14.92 18 13.86 17.16 13.53 16H13.25C12.84 16 12.5 15.66 12.5 15.25C12.5 14.84 12.84 14.5 13.25 14.5H13.53C13.86 13.34 14.92 12.5 16.17 12.5C17.42 12.5 18.48 13.34 18.81 14.5H19.04C19.18 14.5 19.29 14.39 19.29 14.25V12.65L17.56 9.62C17.53 9.57 17.47 9.53 17.4 9.53H16.5V10.75C16.5 11.16 16.16 11.5 15.75 11.5C15.34 11.5 15 11.16 15 10.75V9.25Z" fill="#181818"/>
+      <path d="M10.08 16.5C10.63 16.5 11.08 16.05 11.08 15.5C11.08 14.95 10.63 14.5 10.08 14.5C9.52 14.5 9.08 14.95 9.08 15.5C9.08 16.05 9.52 16.5 10.08 16.5Z" fill="#181818"/>
+      <path d="M16.17 16.5C16.72 16.5 17.17 16.05 17.17 15.5C17.17 14.95 16.72 14.5 16.17 14.5C15.61 14.5 15.17 14.95 15.17 15.5C15.17 16.05 15.61 16.5 16.17 16.5Z" fill="#181818"/>
+    </svg>
+  );
+}
 
+function firstImageFromValue(value) {
+  if (Array.isArray(value)) return value[0] || null;
   return value || null;
 }
 
@@ -111,6 +247,24 @@ const isEuropostOrder = (order) =>
   order?.deliveryType === 'courier' ||
   order?.deliveryType === 'ikeya_delivery';
 
+function getDeliveryProviderLabel(order = {}) {
+  return (
+    order.deliveryName ||
+    order.deliveryProvider ||
+    order.deliveryMethod ||
+    order.deliveryType ||
+    TEXT.delivery
+  );
+}
+
+function shouldShowWhereIsMyOrder(order = {}) {
+  return TRACKING_STATUSES.includes(order.status) && !order.trackNumber;
+}
+
+function shouldShowOrderNumberInfo(order = {}) {
+  return !order.trackNumber && PICKUP_READY_STATUSES.includes(order.status);
+}
+
 const OrderCard = ({ order }) => {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
@@ -124,17 +278,14 @@ const OrderCard = ({ order }) => {
     !order.isDraft &&
     !order.paymentExpired &&
     paymentUrl &&
-    (
-      order.isAwaitingPayment === true ||
-      order.status === 'awaiting' ||
-      order.rawStatus === 'created' ||
-      order.rawStatus === 'processing'
-    )
+      (order.isAwaitingPayment === true ||
+        order.status === 'awaiting' ||
+        order.rawStatus === 'created' ||
+        order.rawStatus === 'processing')
   );
 
   function handleCopy() {
     const value = order.id || order.publicUid || order.draftId;
-
     if (!value) return;
 
     navigator.clipboard.writeText(String(value)).then(() => {
@@ -153,42 +304,122 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackNumberCard() {
-    if (!isEuropostOrder(order) || !order.trackNumber) {
-      return null;
-    }
+    if (!isEuropostOrder(order) || !order.trackNumber) return null;
 
     return (
-      <div className="order-address">
-        <div className="order-address__inner">
-          <div className="address-text">
-            <strong>{order.trackNumber}</strong>
-            <br />
-            Трек-номер
-          </div>
+      <div style={serviceStyles.smallCard}>
+        <div style={serviceStyles.cardMain}>
+          <div style={serviceStyles.title}>{order.trackNumber}</div>
+          <div style={serviceStyles.subtitle}>{TEXT.trackNumber}</div>
+        </div>
 
-          <button
-            className="btn-copy-order"
-            onClick={handleTrackCopy}
-            title="Скопировать трек-номер"
-            type="button"
-            style={{
-              marginLeft: '8px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '0 4px',
-              verticalAlign: 'middle',
-            }}
-          >
-            {trackCopied ? (
-              <span style={{ color: '#00910A', fontSize: 14 }}>Трек-номер скопирован</span>
-            ) : (
-              <CopyIcon />
-            )}
-          </button>
+        <button
+          className="btn-copy-order"
+          onClick={handleTrackCopy}
+          title={TEXT.copyTrack}
+          type="button"
+          style={serviceStyles.iconButton}
+        >
+          {trackCopied ? (
+            <span style={{ color: '#00910A', fontSize: 14, lineHeight: '20px' }}>{TEXT.copied}</span>
+          ) : (
+            <CopyIcon />
+          )}
+        </button>
+      </div>
+    );
+  }
+
+  function renderTrackingCard() {
+    if (!isEuropostOrder(order) || !order.trackNumber) return null;
+
+    const content = (
+      <>
+        <DeliveryServiceIcon />
+        <div style={serviceStyles.cardMain}>
+          <div style={serviceStyles.title}>{TEXT.track}</div>
+          <div style={serviceStyles.subtitle}>{getDeliveryProviderLabel(order)}</div>
+        </div>
+        <ArrowIcon />
+      </>
+    );
+
+    if (order.trackingUrl) {
+      return (
+        <a
+          href={order.trackingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ ...serviceStyles.smallCard, ...serviceStyles.linkCard }}
+        >
+          {content}
+        </a>
+      );
+    }
+
+    return <div style={serviceStyles.smallCard}>{content}</div>;
+  }
+
+  function renderTrackInfoCard() {
+    if (!order.trackNumber) return null;
+
+    return (
+      <div style={serviceStyles.infoCard}>
+        <InfoIcon />
+        <div style={serviceStyles.infoText}>{TEXT.trackInfo}</div>
+      </div>
+    );
+  }
+
+  function renderOrderNumberInfoCard() {
+    if (!shouldShowOrderNumberInfo(order)) return null;
+
+    return (
+      <div style={serviceStyles.row}>
+        <div style={{ ...serviceStyles.infoCard, ...serviceStyles.fullWidthInfoCard }}>
+          <InfoIcon />
+          <div style={serviceStyles.infoText}>{TEXT.orderInfo}</div>
         </div>
       </div>
     );
+  }
+
+  function renderWhereIsMyOrderCard() {
+    if (!shouldShowWhereIsMyOrder(order)) return null;
+
+    return (
+      <div style={serviceStyles.row}>
+        <button type="button" onClick={() => setShowTracking(true)} style={serviceStyles.compactButton}>
+          <PackageIcon />
+          <div style={{ ...serviceStyles.title, flex: '1 1 auto' }}>{TEXT.whereIsOrder}</div>
+          <ArrowIcon />
+        </button>
+      </div>
+    );
+  }
+
+  function renderOrderServiceBlocks() {
+    if (order.trackNumber && isEuropostOrder(order)) {
+      return (
+        <div style={serviceStyles.row}>
+          <div style={serviceStyles.leftGroup}>
+            {renderTrackNumberCard()}
+            {renderTrackingCard()}
+          </div>
+          {renderTrackInfoCard()}
+        </div>
+      );
+    }
+
+    if (shouldShowOrderNumberInfo(order)) {
+      return renderOrderNumberInfoCard();
+    }
+
+    if (shouldShowWhereIsMyOrder(order)) {
+      return renderWhereIsMyOrderCard();
+    }
+
+    return null;
   }
 
   function renderDraftStatus() {
@@ -197,9 +428,7 @@ const OrderCard = ({ order }) => {
         <div className="order-status-content">
           <div className="order-status-inner">
             <InfoIcon />
-            <div className="status-text">
-              Заказ ожидает оформления. Вы можете продолжить в любой момент.
-            </div>
+            <div className="status-text">{TEXT.draftInfo}</div>
           </div>
 
           <div className="order-actions">
@@ -208,7 +437,7 @@ const OrderCard = ({ order }) => {
               type="button"
               onClick={() => router.push(`/checkout?draft_id=${order.draftId || order.id}`)}
             >
-              Продолжить оформление
+              {TEXT.continueCheckout}
             </button>
           </div>
         </div>
@@ -224,23 +453,16 @@ const OrderCard = ({ order }) => {
             <InfoIcon color="#B71C1C" />
 
             <div className="status-text">
-              Заказ ожидает оплаты
+              {TEXT.awaitingPayment}
               {countdown && <> <strong className="timer-value">{countdown}.</strong></>}
               {' '}
-              <span>
-                Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.
-              </span>
+              <span>{TEXT.paymentHint}</span>
             </div>
           </div>
 
           <div className="order-actions">
-            <a
-              href={paymentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-danger"
-            >
-              Оплатить заказ
+            <a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="btn btn-danger">
+              {TEXT.payOrder}
             </a>
           </div>
         </div>
@@ -248,58 +470,9 @@ const OrderCard = ({ order }) => {
     );
   }
 
-  function renderTrackingStatus() {
-    return (
-      <div className="orders-statuses">
-        {renderTrackNumberCard()}
-
-        <div className="order-address order-track">
-          <div
-            className="order-address__inner"
-            style={{ cursor: 'pointer' }}
-            onClick={() => setShowTracking(true)}
-          >
-            <PackageIcon />
-            <div className="address-text where-oreder">Где мой заказ</div>
-            <ArrowIcon />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function renderArrivedPvzStatus() {
-    return (
-      <div className="orders-statuses">
-        {renderTrackNumberCard()}
-
-        <div className="order-status status-info">
-          <InfoIcon />
-          <div className="status-text">
-            Выдача заказов осуществляется по трек-номеру и документу, удостоверяющему личность.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   function renderStatusSection() {
-    if (order.isDraft) {
-      return renderDraftStatus();
-    }
-
-    if (shouldShowPaymentBlock) {
-      return renderPaymentStatus();
-    }
-
-    if (['transit', 'customs-belarus', 'in-transit-pvz'].includes(order.status)) {
-      return renderTrackingStatus();
-    }
-
-    if (order.status === 'arrived-pvz') {
-      return renderArrivedPvzStatus();
-    }
-
+    if (order.isDraft) return renderDraftStatus();
+    if (shouldShowPaymentBlock) return renderPaymentStatus();
     return null;
   }
 
@@ -326,30 +499,23 @@ const OrderCard = ({ order }) => {
         <div className="odrer-header_inner">
           <div className="order-header_top">
             <div className="order-title">
-              Заказ № {order.id}
+              {TEXT.orderPrefix} {order.id}
 
               <button
                 className="btn-copy-order"
                 onClick={handleCopy}
-                title="Скопировать номер заказа"
+                title={TEXT.copyOrder}
                 type="button"
-                style={{
-                  marginLeft: '8px',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '0 4px',
-                  verticalAlign: 'middle',
-                }}
+                style={serviceStyles.iconButton}
               >
                 {copied ? (
-                  <span style={{ color: '#00910A', fontSize: 14 }}>Скопировано</span>
+                  <span style={{ color: '#00910A', fontSize: 14 }}>{TEXT.copied}</span>
                 ) : (
                   <CopyIcon />
                 )}
               </button>
 
-              {' '}от {order.date}
+              {' '}{TEXT.from} {order.date}
             </div>
 
             <div className={`order-badge ${getBadgeClass()}`}>
@@ -359,16 +525,16 @@ const OrderCard = ({ order }) => {
 
           {!order.isDraft && order.dateRange && order.dateRange !== '—' && (
             <div className="order-subtitle">
-              Планируемая дата получения заказа:{' '}
-              <span className="order_the_date">{order.dateRange}</span>
+              {TEXT.plannedDate} <span className="order_the_date">{order.dateRange}</span>
             </div>
           )}
         </div>
 
-        <div className="order-price">{order.price} р.</div>
+        <div className="order-price">{order.price} {TEXT.rubles}</div>
       </div>
 
       {renderStatusSection()}
+      {renderOrderServiceBlocks()}
 
       <div className="order-items">
         {order.items?.length > 0 ? (
@@ -381,7 +547,7 @@ const OrderCard = ({ order }) => {
               >
                 <img
                   src={getOrderItemImage(item) || '/assets/img/profile/active_1.png'}
-                  alt={item.name || 'Товар'}
+                  alt={item.name || TEXT.product}
                   className="item-image"
                   onError={(event) => {
                     event.currentTarget.src = '/assets/img/profile/active_1.png';
@@ -395,8 +561,8 @@ const OrderCard = ({ order }) => {
                   </div>
 
                   <div className="item-meta">
-                    <span className="item-quantity">{item.quantity} шт</span>
-                    <span className="item-price">{item.price} р.</span>
+                    <span className="item-quantity">{item.quantity} {TEXT.pcs}</span>
+                    <span className="item-price">{item.price} {TEXT.rubles}</span>
                   </div>
                 </div>
               </Link>
@@ -404,7 +570,7 @@ const OrderCard = ({ order }) => {
               <div key={`${item.desc || item.name || 'item'}-${idx}`} className="order-item">
                 <img
                   src={getOrderItemImage(item) || '/assets/img/profile/active_1.png'}
-                  alt={item.name || 'Товар'}
+                  alt={item.name || TEXT.product}
                   className="item-image"
                   onError={(event) => {
                     event.currentTarget.src = '/assets/img/profile/active_1.png';
@@ -418,8 +584,8 @@ const OrderCard = ({ order }) => {
                   </div>
 
                   <div className="item-meta">
-                    <span className="item-quantity">{item.quantity} шт</span>
-                    <span className="item-price">{item.price} р.</span>
+                    <span className="item-quantity">{item.quantity} {TEXT.pcs}</span>
+                    <span className="item-price">{item.price} {TEXT.rubles}</span>
                   </div>
                 </div>
               </div>
@@ -427,7 +593,7 @@ const OrderCard = ({ order }) => {
           ))
         ) : (
           <div className="order-item-empty" style={{ color: '#9e9e9e', padding: '8px 0' }}>
-            Список товаров недоступен
+            {TEXT.itemsUnavailable}
           </div>
         )}
       </div>

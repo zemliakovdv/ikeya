@@ -89,13 +89,6 @@ export default function ProfileSidebar() {
       {/* Additional Links */}
       <div className="profile-sidebar-bottom">
         <div className="sidebar-section">
-          <div
-          className={`nav-item ${isActive('/profile/electronic-receipts') ? 'active' : ''}`}
-          onClick={() => router.push('/profile/electronic-receipts')}
-          style={{ cursor: 'pointer' }}
-        >
-          Электронные чеки
-        </div>
         <div
           className={`nav-item ${isActive('/profile/returns') ? 'active' : ''}`}
           onClick={() => router.push('/profile/returns')}

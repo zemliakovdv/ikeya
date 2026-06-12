@@ -474,9 +474,6 @@ export default function Header() {
               <div className="profile-divider" />
 
               <nav className="profile-menu">
-                <Link href="/profile/electronic-receipts/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
-                  <span className="menu-item-text">Электронные чеки</span>
-                </Link>
                 <Link href="/profile/returns/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <span className="menu-item-text">Возвраты</span>
                 </Link>

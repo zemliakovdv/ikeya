@@ -230,12 +230,36 @@ function parseOrders(data) {
       rawDate: attr.created_at,
       rawStatus,
       deliveryType: attr.delivery_type || null,
+      deliveryName:
+        attr.delivery_name ||
+        attr.delivery_provider ||
+        attr.delivery_method ||
+        attr.delivery?.name ||
+        attr.delivery?.provider ||
+        attr.delivery?.method ||
+        null,
+      deliveryProvider:
+        attr.delivery_provider ||
+        attr.delivery_name ||
+        attr.delivery?.provider ||
+        attr.delivery?.name ||
+        null,
+      deliveryMethod:
+        attr.delivery_method ||
+        attr.delivery?.method ||
+        null,
       status: mappedStatus,
       statusDescription: isExpiredUnpaid
         ? 'Истёк срок оплаты'
         : attr.status_description || null,
+      paymentStatus: attr.payment_status || null,
       price: formatPrice(attr.total_amount),
       trackNumber: attr.track_number || null,
+      trackingUrl:
+        attr.tracking_url ||
+        attr.tracking?.url ||
+        attr.delivery?.tracking_url ||
+        null,
       paymentUrl,
       paymentSecondsLeft,
       paymentExpired,
