@@ -1,14 +1,7 @@
 import Link from 'next/link';
 import Breadcrumbs from '@/components/catalog/Breadcrumbs';
+import { buildHelpNavSections } from '@/components/help/helpNav';
 import { getLegalPages } from '@/lib/api/content';
-
-const BUYER_LEGAL_SLUGS = [
-  'webpay-services-payment-ikeya-by',
-  'delivery-international-logistics-ikeya-by',
-  'returns-and-exchange-ikeya-by',
-];
-
-const LEGAL_FALLBACK_HREF = '/help/personal-data-consent-ikeya-by/';
 
 export const metadata = {
   title: 'Помощь | IKEYA',
@@ -84,20 +77,7 @@ function HelpTileIcon({ type }) {
 
 export default async function HelpPage() {
   const legalPages = await getLegalPages();
-  const legalItems = legalPages
-    .filter((page) => !BUYER_LEGAL_SLUGS.includes(page.attributes.slug))
-    .map((page) => `/help/${page.attributes.slug}`);
-
-  const legalHref = legalItems[0] || LEGAL_FALLBACK_HREF;
-
-  const tiles = [
-    { title: 'Как оформить заказ', href: '/help/how-to-order', icon: 'order' },
-    { title: 'Условия доставки', href: '/help/delivery', icon: 'delivery' },
-    { title: 'Оплата', href: '/help/payment', icon: 'payment' },
-    { title: 'Как вернуть товар', href: '/help/returns', icon: 'returns' },
-    { title: 'Таможенное оформление', href: '/help/customs', icon: 'customs' },
-    { title: 'Правовая информация', href: legalHref, icon: 'legal' },
-  ];
+  const sections = buildHelpNavSections(legalPages);
 
   return (
     <main className="help-page help-home">
@@ -111,14 +91,21 @@ export default async function HelpPage() {
                   <h1>Нужна помощь?</h1>
                 </div>
 
-                <div className="help-hub__grid">
-                  {tiles.map((tile) => (
-                    <Link key={tile.href} href={tile.href} className="help-hub__tile">
-                      <span className="help-hub__tile-icon">
-                        <HelpTileIcon type={tile.icon} />
-                      </span>
-                      <span className="help-hub__tile-title">{tile.title}</span>
-                    </Link>
+                <div className="help-hub__sections">
+                  {sections.map((section) => (
+                    <section key={section.title} className="help-hub__group">
+                      <h2 className="help-hub__group-title">{section.title}</h2>
+                      <div className="help-hub__grid">
+                        {section.items.map((tile) => (
+                          <Link key={tile.href} href={tile.href} className="help-hub__tile">
+                            <span className="help-hub__tile-icon">
+                              <HelpTileIcon type={tile.icon} />
+                            </span>
+                            <span className="help-hub__tile-title">{tile.title}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               </div>

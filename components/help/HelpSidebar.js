@@ -4,55 +4,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-// Slug'и legal pages, которые отображаются в секции "Покупателям"
-const BUYER_LEGAL_SLUGS = [
-  'webpay-services-payment-ikeya-by',
-  'delivery-international-logistics-ikeya-by',
-  'returns-and-exchange-ikeya-by',
-];
-
-// Порядок отображения в секции "Покупателям"
-const BUYER_LEGAL_ORDER = {
-  'webpay-services-payment-ikeya-by': 2,
-  'delivery-international-logistics-ikeya-by': 3,
-  'returns-and-exchange-ikeya-by': 4,
-};
-
-const STATIC_BUYER_ITEMS = [
-  { label: 'Таможенная пошлина', href: '/help/customs', order: 0 },
-  { label: 'Как сделать заказ', href: '/help/how-to-order', order: 1 },
-];
+import { buildHelpNavSections } from '@/components/help/helpNav';
 
 export default function HelpSidebar({ legalPages = [] }) {
   const pathname = usePathname().replace(/\/$/, '');
-
-  const legalForBuyers = legalPages
-    .filter((page) => BUYER_LEGAL_SLUGS.includes(page.attributes.slug))
-    .map((page) => ({
-      label: page.attributes.title,
-      href: `/help/${page.attributes.slug}`,
-      order: BUYER_LEGAL_ORDER[page.attributes.slug],
-    }));
-
-  const buyerItems = [...STATIC_BUYER_ITEMS, ...legalForBuyers].sort(
-    (a, b) => a.order - b.order
-  );
-
-  const legalItems = legalPages
-    .filter((page) => !BUYER_LEGAL_SLUGS.includes(page.attributes.slug))
-    .map((page) => ({
-      label: page.attributes.title,
-      href: `/help/${page.attributes.slug}`,
-    }));
-
-  const menu = [
-    ...(legalItems.length > 0
-      ? [{ title: 'Правовая информация', items: legalItems }]
-      : []),
-    { title: 'Покупателям', items: buyerItems },
-  ];
-
+  const menu = buildHelpNavSections(legalPages);
   const [open, setOpen] = useState(menu.map(() => true));
 
   const toggle = (index) => {
@@ -90,7 +46,7 @@ export default function HelpSidebar({ legalPages = [] }) {
                     href={item.href}
                     className={`help-sidebar__link ${pathname === item.href ? 'active' : ''}`}
                   >
-                    {item.label}
+                    {item.title}
                   </Link>
                 </li>
               ))}
