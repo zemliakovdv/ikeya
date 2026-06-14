@@ -233,12 +233,14 @@ function parseOrders(data) {
         null,
       status: mappedStatus,
       statusDescription:
-        attr.status_description ||
-        attr.status_label ||
-        attr.status_name ||
-        attr.status_title ||
-        attr.status_text ||
-        '—',
+        rawStatus === 'delivered'
+          ? 'Получен'
+          : attr.status_description ||
+            attr.status_label ||
+            attr.status_name ||
+            attr.status_title ||
+            attr.status_text ||
+            '—',
       paymentStatus: attr.payment_status || null,
       price: formatPrice(attr.total_amount),
       trackNumber: attr.track_number || null,

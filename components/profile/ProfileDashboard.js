@@ -119,7 +119,7 @@ export default function ProfileDashboard() {
 
               return {
                 publicId: order.id, // public_uid
-                statusDescription: a.status_description || a.status,
+                statusDescription: a.status === 'delivered' ? 'Получен' : (a.status_description || a.status),
                 badgeCls,
                 date: new Date(a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
                 imageUrl,
