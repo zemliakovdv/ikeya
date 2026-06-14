@@ -118,26 +118,50 @@ export default function Header() {
     setShowNext(!swiper.isEnd)
   }
 
-  useEffect(() => {
-    if (!isMounted || !isDesktopSlider || !swiperElRef.current) return
-
-    const destroy = () => {
-      if (swiperInst.current) {
+  function destroySwiperInstance() {
+    if (swiperInst.current) {
+      try {
         swiperInst.current.destroy(true, true)
-        swiperInst.current = null
-        setShowPrev(false)
-        setShowNext(false)
-      }
+      } catch { }
+      swiperInst.current = null
     }
 
-    const init = () => {
-      if (!window.Swiper || swiperInst.current || !swiperElRef.current) return false
+    setShowPrev(false)
+    setShowNext(false)
+  }
 
+  function updateSwiperInstance() {
+    const swiper = swiperInst.current
+
+    if (!swiper) return false
+
+    if (swiper.destroyed) {
+      swiperInst.current = null
+      return false
+    }
+
+    try {
+      swiper.update()
+      syncNavButtons(swiper)
+      return true
+    } catch {
+      destroySwiperInstance()
+      return false
+    }
+  }
+
+  function createSwiperInstance() {
+    if (!window.Swiper || !swiperElRef.current) return false
+
+    try {
       swiperInst.current = new window.Swiper(swiperElRef.current, {
         slidesPerView: 'auto',
         speed: 300,
         freeMode: true,
         watchOverflow: true,
+        observer: true,
+        observeParents: true,
+        resizeObserver: true,
         grabCursor: true,
         mousewheel: { forceToAxis: true },
         breakpoints: {
@@ -157,62 +181,10 @@ export default function Header() {
 
       syncNavButtons(swiperInst.current)
       return true
+    } catch {
+      destroySwiperInstance()
+      return false
     }
-
-    let raf = 0
-    let timeoutId = 0
-    let cancelled = false
-
-    const waitForSwiper = (attempt = 0) => {
-      if (cancelled) return
-
-      if (init()) return
-
-      if (attempt >= 50) {
-        setShowPrev(false)
-        setShowNext(false)
-        return
-      }
-
-      timeoutId = window.setTimeout(() => {
-        waitForSwiper(attempt + 1)
-      }, 100)
-    }
-
-    const onResize = () => {
-      if (raf) cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => {
-        if (!swiperInst.current) return
-        swiperInst.current.update()
-        syncNavButtons(swiperInst.current)
-      })
-    }
-
-    waitForSwiper()
-    window.addEventListener('resize', onResize)
-
-    return () => {
-      cancelled = true
-      if (timeoutId) clearTimeout(timeoutId)
-      window.removeEventListener('resize', onResize)
-      if (raf) cancelAnimationFrame(raf)
-      destroy()
-    }
-  }, [isMounted, isDesktopSlider])
-
-  useEffect(() => {
-    if (menuCategories.length > 0 && swiperInst.current) {
-      swiperInst.current.update()
-      syncNavButtons(swiperInst.current)
-    }
-  }, [menuCategories])
-
-  function handleSlideNext() {
-    swiperInst.current?.slideNext()
-  }
-
-  function handleSlidePrev() {
-    swiperInst.current?.slidePrev()
   }
 
   const bottomItems = (
@@ -227,6 +199,123 @@ export default function Header() {
       })
       : FALLBACK_CATEGORIES
   )
+
+  const bottomItemsKey = bottomItems.map((item) => item.key).join('|')
+
+  useEffect(() => {
+    if (!isMounted || !isDesktopSlider || !swiperElRef.current) return
+
+    let initRaf1 = 0
+    let initRaf2 = 0
+    let resizeRaf = 0
+    let timeoutId = 0
+    let cancelled = false
+
+    const clearInitSchedule = () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      if (initRaf1) cancelAnimationFrame(initRaf1)
+      if (initRaf2) cancelAnimationFrame(initRaf2)
+      timeoutId = 0
+      initRaf1 = 0
+      initRaf2 = 0
+    }
+
+    const scheduleInit = () => {
+      if (cancelled || !isDesktopSlider || !swiperElRef.current) return
+
+      clearInitSchedule()
+      initRaf1 = requestAnimationFrame(() => {
+        initRaf2 = requestAnimationFrame(() => {
+          if (cancelled || !isDesktopSlider || !swiperElRef.current) return
+
+          if (!window.Swiper) {
+            timeoutId = window.setTimeout(scheduleInit, 150)
+            return
+          }
+
+          if (updateSwiperInstance()) return
+          if (createSwiperInstance()) return
+
+          timeoutId = window.setTimeout(scheduleInit, 150)
+        })
+      })
+    }
+
+    const onResize = () => {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
+      resizeRaf = requestAnimationFrame(() => {
+        if (cancelled || !isDesktopSlider || !swiperElRef.current) return
+        if (!updateSwiperInstance()) scheduleInit()
+      })
+    }
+
+    scheduleInit()
+    window.addEventListener('resize', onResize)
+
+    return () => {
+      cancelled = true
+      clearInitSchedule()
+      window.removeEventListener('resize', onResize)
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
+      destroySwiperInstance()
+    }
+  }, [isMounted, isDesktopSlider])
+
+  useEffect(() => {
+    if (!isMounted || !isDesktopSlider || !swiperElRef.current) return
+
+    let raf1 = 0
+    let raf2 = 0
+    let timeoutId = 0
+    let cancelled = false
+
+    const clearSchedule = () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      if (raf1) cancelAnimationFrame(raf1)
+      if (raf2) cancelAnimationFrame(raf2)
+      timeoutId = 0
+      raf1 = 0
+      raf2 = 0
+    }
+
+    const syncOrInit = () => {
+      if (cancelled || !isDesktopSlider || !swiperElRef.current) return
+
+      if (!window.Swiper) {
+        timeoutId = window.setTimeout(scheduleSync, 150)
+        return
+      }
+
+      if (updateSwiperInstance()) return
+      if (createSwiperInstance()) return
+
+      timeoutId = window.setTimeout(scheduleSync, 150)
+    }
+
+    const scheduleSync = () => {
+      if (cancelled || !isDesktopSlider || !swiperElRef.current) return
+
+      clearSchedule()
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(syncOrInit)
+      })
+    }
+
+    scheduleSync()
+
+    return () => {
+      cancelled = true
+      clearSchedule()
+    }
+  }, [bottomItemsKey, isMounted, isDesktopSlider])
+
+  function handleSlideNext() {
+    swiperInst.current?.slideNext()
+  }
+
+  function handleSlidePrev() {
+    swiperInst.current?.slidePrev()
+  }
 
   function handleCatalogToggle() {
     setIsProfileOpen(false)
