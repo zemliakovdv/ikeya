@@ -1271,7 +1271,7 @@ body.mobile-phone-open .mobile-phone-sheet {
     .korzina .zakaz-inner h2 {
         width: 100%;
         max-width: 1368px;
-        margin-bottom: 24px;
+        margin-bottom: 0;
         font-size: 21px;
         line-height: 28px;
         font-weight: 600;
@@ -16535,7 +16535,6 @@ body.mobile-phone-open .mobile-phone-sheet {
         align-items: center;
         column-gap: 16px;
         width: 100%;
-        min-height: 108px;
         margin: 0;
         padding: 12px;
         border: 1px solid #E0E0E0;

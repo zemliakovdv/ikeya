@@ -2,22 +2,20 @@
 
 // components/delivery/cards/DeliveryResult.js
 
-import { useState } from 'react';
-
 const PassportIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-    <path d="M8 1.33334C4.32667 1.33334 1.33334 4.32667 1.33334 8.00001C1.33334 11.6733 4.32667 14.6667 8 14.6667C11.6733 14.6667 14.6667 11.6733 14.6667 8.00001C14.6667 4.32667 11.6733 1.33334 8 1.33334ZM8.46667 10.48C8.46667 10.74 8.26 10.9467 8 10.9467C7.74 10.9467 7.53334 10.74 7.53334 10.48V7.68667C7.53334 7.42667 7.74 7.22 8 7.22C8.26 7.22 8.46667 7.42667 8.46667 7.68667V10.48ZM8 6.08C7.69334 6.08 7.44667 5.83334 7.44667 5.52667C7.44667 5.22 7.69334 4.97334 8 4.97334C8.30667 4.97334 8.55334 5.22 8.55334 5.52667C8.55334 5.83334 8.30667 6.08 8 6.08Z" fill="#0058A3" />
-  </svg>
-);
-
-const EuropostLogo = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="12" fill="white" />
-    <circle cx="12" cy="12" r="10.8" fill="#FF0000" />
-    <path d="M16.3933 8.81333L17.1733 8.36667L12.1333 5.45333L7.09333 8.36667L8.56 9.19333L12.1333 7.09333L15.7067 9.2L16.3933 8.81333Z" fill="white" />
-    <path d="M12.7333 11.96V16.2533L14.1867 15.4133V12.52L16.3933 11.26V14.14L17.8533 13.3V9.04667H17.84L12.7333 11.96Z" fill="white" />
-    <path d="M12.7333 17.2267V18.6733H12.74L17.8533 15.7467V14.2867L12.7333 17.2267Z" fill="white" />
-    <path d="M11.54 18.6333V17.24L7.87333 15.16V13.8533L11.54 15.96V14.6333L7.87333 12.5333V11.1933L11.54 13.2867V11.96L7.87333 9.87333L6.42667 9.04667H6.41333V15.68L11.54 18.6333Z" fill="white" />
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <path
+      d="M5.83333 3.33334H14.1667C15.0871 3.33334 15.8333 4.07954 15.8333 5.00001V15C15.8333 15.9205 15.0871 16.6667 14.1667 16.6667H5.83333C4.91286 16.6667 4.16666 15.9205 4.16666 15V5.00001C4.16666 4.07954 4.91286 3.33334 5.83333 3.33334Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M7.5 7.08334C7.5 5.93275 8.43274 5.00001 9.58333 5.00001H10.4167C11.5673 5.00001 12.5 5.93275 12.5 7.08334C12.5 8.23394 11.5673 9.16668 10.4167 9.16668H9.58333C8.43274 9.16668 7.5 8.23394 7.5 7.08334Z"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    />
+    <path d="M7.5 12.0833H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M7.5 14.5833H10.8333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
@@ -103,14 +101,15 @@ function getDeliveryCost(delivery) {
     delivery?.pricing?.internal?.poland_delivery_byn,
   ];
 
-  const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
+  const found = candidates.find((value) => {
+    if (value === undefined || value === null || value === '') return false;
+    return toNumber(value, 0) > 0;
+  });
 
-  return found ?? null;
+  return found !== undefined ? toNumber(found, 0) : 0;
 }
 
 export default function DeliveryResult({ calcResult }) {
-  const [conditionsOpen, setConditionsOpen] = useState(false);
-
   const delivery = calcResult?.delivery || {};
   const deliveryType = getDeliveryType(delivery);
   const isEuropost = isEuropostDelivery(deliveryType);
@@ -128,67 +127,50 @@ export default function DeliveryResult({ calcResult }) {
         </span>
 
         <span className="delivery-result__logo">
-          {isIkeyaDelivery ? <IkeyaLogo /> : <EuropostLogo />}
+          {isIkeyaDelivery ? (
+            <IkeyaLogo />
+          ) : (
+            <img src="/assets/img/cart/evropochta-logo.png" alt="Европочта" />
+          )}
         </span>
       </div>
 
       {isEuropost && (
         <>
-          <div className="delivery-result__row">
-            <span className="delivery-result__label">Стоимость доставки</span>
+          <div className="delivery-result__meta">
+            <div className="delivery-result__row">
+              <span className="delivery-result__label">Стоимость доставки</span>
+              <span className="delivery-result__value">
+                {cost > 0 ? formatMoney(cost) : isFree ? <span className="text-success">бесплатно</span> : '—'}
+              </span>
+            </div>
 
-            <span className="delivery-result__value">
-              {isFree ? (
-                <span className="text-success">бесплатно</span>
-              ) : (
-                cost !== null ? formatMoney(cost) : '—'
-              )}
-            </span>
+            {deliveryDate && (
+              <div className="delivery-result__row">
+                <span className="delivery-result__label">Дата доставки</span>
+                <span className="delivery-result__value">{formatDate(deliveryDate)}</span>
+              </div>
+            )}
           </div>
 
-          {deliveryDate && (
-            <div className="delivery-result__row">
-              <span className="delivery-result__label">Дата доставки</span>
-              <span className="delivery-result__value">{formatDate(deliveryDate)}</span>
-            </div>
-          )}
+          <div className="delivery-result__passport">
+            <PassportIcon />
+            <span>Для получения заказа необходим паспорт</span>
+          </div>
 
-          {storageUntil && (
-            <div className="delivery-result__row">
-              <span className="delivery-result__label">Хранение до</span>
-              <span className="delivery-result__value">{formatDate(storageUntil)}</span>
-            </div>
-          )}
-        </>
-      )}
-
-      {isEuropost && (
-        <>
-          <button
-            type="button"
-            className="delivery-result__conditions-link"
-            onClick={() => setConditionsOpen((value) => !value)}
-          >
-            Условия получения товаров
-          </button>
-
-          {conditionsOpen && (
+          <div className="delivery-result__conditions">
+            <div className="delivery-result__conditions-link">Условия получения товаров</div>
             <div className="delivery-result__conditions-text">
-              Получатель обязан предъявить паспорт и оплатить таможенную пошлину при наличии.
-              Срок хранения посылки — 14 дней.
+              Окно доставки будет дополнительно согласовано с вами службой доставки Европочты
             </div>
-          )}
-
-          <p className="delivery-result__note">
-            Окно доставки будет дополнительно согласовано с вами службой доставки Европочты
-          </p>
+          </div>
         </>
       )}
 
       {isIkeyaDelivery && (
         <>
           <div className="delivery-result__info">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <path d="M8 1.33334C4.32667 1.33334 1.33334 4.32667 1.33334 8.00001C1.33334 11.6733 4.32667 14.6667 8 14.6667C11.6733 14.6667 14.6667 11.6733 14.6667 8.00001C14.6667 4.32667 11.6733 1.33334 8 1.33334ZM8.46667 10.48C8.46667 10.74 8.26 10.9467 8 10.9467C7.74 10.9467 7.53334 10.74 7.53334 10.48V7.68667C7.53334 7.42667 7.74 7.22 8 7.22C8.26 7.22 8.46667 7.42667 8.46667 7.68667V10.48ZM8 6.08C7.69334 6.08 7.44667 5.83334 7.44667 5.52667C7.44667 5.22 7.69334 4.97334 8 4.97334C8.30667 4.97334 8.55334 5.22 8.55334 5.52667C8.55334 5.83334 8.30667 6.08 8 6.08Z" fill="#0058A3" />
             </svg>
 
@@ -205,10 +187,10 @@ export default function DeliveryResult({ calcResult }) {
         </>
       )}
 
-      {!isIkeyaDelivery && (
-        <div className="delivery-result__passport">
-          <PassportIcon />
-          <span>Для получения заказа необходим паспорт</span>
+      {!isIkeyaDelivery && storageUntil && (
+        <div className="delivery-result__storage">
+          <span className="delivery-result__label">Хранение до</span>
+          <span className="delivery-result__value">{formatDate(storageUntil)}</span>
         </div>
       )}
     </div>

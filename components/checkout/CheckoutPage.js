@@ -247,6 +247,25 @@ function EuropostIcon({ size = 32 }) {
   );
 }
 
+function PassportIcon({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M5.83333 3.33334H14.1667C15.0871 3.33334 15.8333 4.07954 15.8333 5.00001V15C15.8333 15.9205 15.0871 16.6667 14.1667 16.6667H5.83333C4.91286 16.6667 4.16666 15.9205 4.16666 15V5.00001C4.16666 4.07954 4.91286 3.33334 5.83333 3.33334Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M7.5 7.08334C7.5 5.93275 8.43274 5.00001 9.58333 5.00001H10.4167C11.5673 5.00001 12.5 5.93275 12.5 7.08334C12.5 8.23394 11.5673 9.16668 10.4167 9.16668H9.58333C8.43274 9.16668 7.5 8.23394 7.5 7.08334Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path d="M7.5 12.0833H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M7.5 14.5833H10.8333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function IkeyaLogo() {
   return (
     <span style={{ fontFamily: 'Arial', fontWeight: 900, fontSize: 18, color: '#0058A3' }}>
@@ -647,6 +666,7 @@ function CheckoutPageInner() {
   const pvzDeliveryCost = getDeliveryPrice(pvzCalcResult);
 
   const addrDeliveryCost = getDeliveryPrice(addrCalcResult);
+  const selectedDeliveryDisplayPrice = `${addrDeliveryCost.toFixed(2)} р.`;
   const addrDeliveryType =
     addrCalcResult?.delivery?.normalized_delivery_type ||
     addrCalcResult?.delivery?.delivery_type ||
@@ -1514,41 +1534,35 @@ function CheckoutPageInner() {
                                   <button type="button" className="change-link" onClick={handleChangeAddr}>Изменить</button>
                                 </div>
 
-                                <div className="alert alert-info">
-                                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                    <path d="M10 1.66666C5.40002 1.66666 1.66669 5.39999 1.66669 9.99999C1.66669 14.6 5.40002 18.3333 10 18.3333C14.6 18.3333 18.3334 14.6 18.3334 9.99999C18.3334 5.39999 14.6 1.66666 10 1.66666ZM10.625 13.5417C10.625 13.8833 10.3417 14.1667 10 14.1667C9.65835 14.1667 9.37502 13.8833 9.37502 13.5417V9.37499C9.37502 9.03332 9.65835 8.74999 10 8.74999C10.3417 8.74999 10.625 9.03332 10.625 9.37499V13.5417ZM10 7.70832C9.65002 7.70832 9.37502 7.43332 9.37502 7.08332C9.37502 6.73332 9.65002 6.45832 10 6.45832C10.35 6.45832 10.625 6.73732 10.625 7.08332C10.625 7.43332 10.35 7.70832 10 7.70832Z" fill="#0058A3" />
-                                  </svg>
-                                  <span>Для получения заказа необходим паспорт</span>
-                                </div>
+                                {!isIkeyaDelivery && (
+                                  <div className="alert alert-info">
+                                    <PassportIcon />
+                                    <span>Для получения заказа необходим паспорт</span>
+                                  </div>
+                                )}
 
                                 {!isIkeyaDelivery && (
-                                  <div className="delivery-info-block">
+                                  <div className="delivery-info-block delivery-info-block--europost">
                                     <div className="delivery-info-header">
                                       <span className="delivery-info-name">Доставка Европочта</span>
-                                      <EuropostIcon size={24} />
-                                    </div>
-                                    <div className="delivery-info-row">
-                                      <span>Стоимость доставки</span>
-                                      <span>
-                                        {(() => {
-                                          const cost = addrCalcResult?.delivery?.pricing?.internal?.total_delivery_byn ||
-                                            addrCalcResult?.delivery?.total_delivery_price_byn ||
-                                            addrCalcResult?.delivery?.base_cost_byn;
-                                          return cost && parseFloat(cost) > 0
-                                            ? `${cost} р.`
-                                            : '—';
-                                        })()}
+                                      <span className="delivery-info-logo">
+                                        <img src="/assets/img/cart/evropochta-logo.png" alt="Европочта" />
                                       </span>
                                     </div>
-                                    {addrCalcResult?.delivery?.delivery_date && (
+                                    <div className="delivery-info-meta">
                                       <div className="delivery-info-row">
-                                        <span>Дата доставки</span>
-                                        <span>{formatDeliveryDate(addrCalcResult.delivery.delivery_date)}</span>
+                                        <span className="delivery-info-label">Стоимость доставки</span>
+                                        <span className="delivery-info-value">
+                                          {selectedDeliveryDisplayPrice}
+                                        </span>
                                       </div>
-                                    )}
-                                    <p className="delivery-conditions-note">
-                                      Окно доставки будет дополнительно согласовано с вами службой доставки Европочты
-                                    </p>
+                                    </div>
+                                    <div className="delivery-info-conditions">
+                                      <div className="delivery-info-conditions-title">Условия получения товаров</div>
+                                      <p className="delivery-conditions-note">
+                                        Окно доставки будет дополнительно согласовано с вами службой доставки Европочты
+                                      </p>
+                                    </div>
                                   </div>
                                 )}
 
@@ -1557,6 +1571,12 @@ function CheckoutPageInner() {
                                     <div className="delivery-info-header">
                                       <span className="delivery-info-name">Доставка IKEYA</span>
                                       <IkeyaLogo />
+                                    </div>
+                                    <div className="alert alert-info">
+                                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                        <path d="M10 1.66666C5.40002 1.66666 1.66669 5.39999 1.66669 9.99999C1.66669 14.6 5.40002 18.3333 10 18.3333C14.6 18.3333 18.3334 14.6 18.3334 9.99999C18.3334 5.39999 14.6 1.66666 10 1.66666ZM10.625 13.5417C10.625 13.8833 10.3417 14.1667 10 14.1667C9.65835 14.1667 9.37502 13.8833 9.37502 13.5417V9.37499C9.37502 9.03332 9.65835 8.74999 10 8.74999C10.3417 8.74999 10.625 9.03332 10.625 9.37499V13.5417ZM10 7.70832C9.65002 7.70832 9.37502 7.43332 9.37502 7.08332C9.37502 6.73332 9.65002 6.45832 10 6.45832C10.35 6.45832 10.625 6.73732 10.625 7.08332C10.625 7.43332 10.35 7.70832 10 7.70832Z" fill="#0058A3" />
+                                      </svg>
+                                      <span>Для получения заказа необходим паспорт</span>
                                     </div>
                                     <div className="alert alert-info" style={{ marginTop: 8 }}>
                                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
