@@ -8,7 +8,6 @@ import ProfileSidebar from './ProfileSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
 import { getProfile } from '@/lib/api/account';
-import { ProfileCountsProvider } from './ProfileCountsContext';
 
 export default function ProfileLayout({ children, breadcrumbs, mainClassName = 'zakazi' }) {
   const { isAuth, isHydrated, user, setUser } = useAuth();
@@ -46,14 +45,12 @@ export default function ProfileLayout({ children, breadcrumbs, mainClassName = '
           <div className="row">
             <div className="col-12">
               <div className="page">
-                <ProfileCountsProvider>
-                  <div className="profile-layout">
-                    <ProfileSidebar />
-                    <div className="profile-content">
-                      {children}
-                    </div>
+                <div className="profile-layout">
+                  <ProfileSidebar />
+                  <div className="profile-content">
+                    {children}
                   </div>
-                </ProfileCountsProvider>
+                </div>
               </div>
             </div>
           </div>

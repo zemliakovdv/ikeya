@@ -1,11 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function SeoSection({ seoText }) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [needsToggle, setNeedsToggle] = useState(false)
+  const contentRef = useRef(null)
 
   const html = typeof seoText === 'string' ? seoText.trim() : ''
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (!el) return
+    setNeedsToggle(el.scrollHeight > el.clientHeight)
+  }, [html])
 
   if (!html) return null
 
@@ -16,26 +24,29 @@ export default function SeoSection({ seoText }) {
           <div className="col-12">
             <div className="seo-inner">
               <div
+                ref={contentRef}
                 id="seo-text-content"
                 className={`seo-text-content ${isExpanded ? 'seo-text-content--expanded' : ''}`}
                 dangerouslySetInnerHTML={{ __html: html }}
               />
 
-              <div className="seo-text-bottom">
-                <button
-                  className="seo-text-bottom-btn"
-                  type="button"
-                  onClick={() => setIsExpanded((prev) => !prev)}
-                  aria-expanded={isExpanded}
-                  aria-controls="seo-text-content"
-                >
-                  <span className="button-text">
-                    <span className="else-link">
-                      <span>{isExpanded ? 'Скрыть текст' : 'Показать полностью'}</span>
+              {needsToggle && (
+                <div className="seo-text-bottom">
+                  <button
+                    className="seo-text-bottom-btn"
+                    type="button"
+                    onClick={() => setIsExpanded((prev) => !prev)}
+                    aria-expanded={isExpanded}
+                    aria-controls="seo-text-content"
+                  >
+                    <span className="button-text">
+                      <span className="else-link">
+                        <span>{isExpanded ? 'Скрыть текст' : 'Показать полностью'}</span>
+                      </span>
                     </span>
-                  </span>
-                </button>
-              </div>
+                  </button>
+                </div>
+              )}
 
             </div>
           </div>

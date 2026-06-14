@@ -10,6 +10,7 @@ import { FavoritesProvider } from '@/contexts/FavoritesContext';
 import CookieBanner from '@/components/cookie/CookieBanner';
 import CatalogRouteLoader from '@/components/ui/CatalogRouteLoader';
 import BootstrapClient from '@/components/BootstrapClient'
+import { ProfileCountsProvider } from '@/components/profile/ProfileCountsContext';
 import { Suspense } from 'react'
 import './globals.css'
 import Script from 'next/script'
@@ -76,19 +77,21 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <AuthProvider>
-          <CartProvider>
-            <AuthModalsProvider>
-              <FavoritesProvider>
-                <Header />
-                <Suspense fallback={null}>
-                  <CatalogRouteLoader />
-                </Suspense>
-                {children}
-                <Footer />
-                <MobileBottomNav />
-              </FavoritesProvider>
-            </AuthModalsProvider>
-          </CartProvider>
+          <ProfileCountsProvider>
+            <CartProvider>
+              <AuthModalsProvider>
+                <FavoritesProvider>
+                  <Header />
+                  <Suspense fallback={null}>
+                    <CatalogRouteLoader />
+                  </Suspense>
+                  {children}
+                  <Footer />
+                  <MobileBottomNav />
+                </FavoritesProvider>
+              </AuthModalsProvider>
+            </CartProvider>
+          </ProfileCountsProvider>
         </AuthProvider>
 
         {/* Плавающая кнопка чата */}

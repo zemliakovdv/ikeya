@@ -8,6 +8,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAuthModals } from '@/components/auth/AuthModalsHost'
 import { useFavorites } from '@/contexts/FavoritesContext'
+import { useProfileCounts } from '@/components/profile/ProfileCountsContext'
 import { getTopCategories } from '@/lib/api/ikea'
 import MegaMenu from './MegaMenu'
 import SearchBox from './SearchBox'
@@ -32,6 +33,7 @@ export default function Header() {
   const pathname = usePathname()
   const { openLogin } = useAuthModals()
   const { count } = useFavorites()
+  const { activeOrdersCount } = useProfileCounts()
 
   const [menuCategories, setMenuCategories] = useState([])
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -545,6 +547,7 @@ export default function Header() {
                     <path d="M7.26668 13.6833H12.5333C16.575 13.6833 17.15 10.85 17.75 7.84167C17.9584 6.79167 18.075 6.21667 17.7084 5.70001C17.3084 5.15001 16.6834 5.15001 15.7333 5.15001H5.82502L5.43335 3.27501C5.19168 2.32501 4.34168 1.65834 3.36668 1.65834H2.64168C2.31668 1.65834 2.05835 1.91667 2.05835 2.24167C2.05835 2.56667 2.31668 2.82501 2.64168 2.82501H3.36668C3.80835 2.82501 4.20002 3.12501 4.30002 3.54167L6.23335 12.7583C5.37502 13.1667 4.76668 14.0583 4.76668 15.1C4.76668 15.6083 5.16668 16.0167 5.66668 16.0167H7.20002C7.13335 16.2 7.09168 16.3917 7.09168 16.6C7.09168 17.5583 7.87502 18.3417 8.83335 18.3417C9.79168 18.3417 10.575 17.5583 10.575 16.6C10.575 16.3917 10.5333 16.2 10.4667 16.0167H12.6167C12.55 16.2 12.5084 16.3917 12.5084 16.6C12.5084 17.5583 13.2917 18.3417 14.25 18.3417C15.2084 18.3417 15.9917 17.5583 15.9917 16.6C15.9917 15.6417 15.2084 14.8583 14.25 14.8583H5.95002C6.05835 14.2 6.60835 13.6917 7.25835 13.6917L7.26668 13.6833ZM9.42502 16.5917C9.42502 16.9083 9.16668 17.175 8.84168 17.175C8.51668 17.175 8.25835 16.9167 8.25835 16.5917C8.25835 16.2667 8.51668 16.0083 8.84168 16.0083C9.16668 16.0083 9.42502 16.2667 9.42502 16.5917ZM14.2667 17.175C13.95 17.175 13.6833 16.9167 13.6833 16.5917C13.6833 16.2667 13.9417 16.0083 14.2667 16.0083C14.5917 16.0083 14.85 16.2667 14.85 16.5917C14.85 16.9167 14.5917 17.175 14.2667 17.175ZM15.7333 6.32501C16.175 6.32501 16.6667 6.32501 16.7667 6.39167C16.8417 6.49167 16.7167 7.09167 16.6084 7.61667C15.9417 10.9333 15.4917 12.525 12.5333 12.525H7.37502L6.07502 6.32501H15.7417H15.7333Z" fill="#181818" />
                   </svg>
                   <span className="menu-item-text">Заказы</span>
+                  {activeOrdersCount > 0 && <span className="badge">{activeOrdersCount}</span>}
                 </Link>
                 <Link href="/profile/favorite/" className="profile-menu-item" onClick={() => setIsProfileOpen(false)}>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

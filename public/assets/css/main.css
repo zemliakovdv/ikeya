@@ -219,19 +219,19 @@ h2 {
     margin-right: 24px;
 }
 
-.header-middle-panel .header-panel-item > a,
+.header-middle-panel .header-panel-item>a,
 .header-middle-panel .panel-item-button {
     color: #181818;
 }
 
-.header-middle-panel .header-panel-item > a:hover,
-.header-middle-panel .header-panel-item > a:focus-visible,
+.header-middle-panel .header-panel-item>a:hover,
+.header-middle-panel .header-panel-item>a:focus-visible,
 .header-middle-panel .panel-item-button:hover,
 .header-middle-panel .panel-item-button:focus-visible {
     color: #CE0061;
 }
 
-.panel-item-button:hover p{
+.panel-item-button:hover p {
     color: #CE0061;
 }
 
@@ -611,29 +611,29 @@ h2 {
 
 /* Кнопки навигации */
 .header-bottom-nav {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: #181818;
-  padding: 0;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #181818;
+    padding: 0;
 }
 
 .header-bottom-nav--prev {
-  left: 0;
-  background: linear-gradient(to right, #fff 60%, transparent);
+    left: 0;
+    background: linear-gradient(to right, #fff 60%, transparent);
 }
 
 .header-bottom-nav--next {
-  right: 0;
-  background: linear-gradient(to left, #fff 60%, transparent);
+    right: 0;
+    background: linear-gradient(to left, #fff 60%, transparent);
 }
 
 /* Убираем старый .header-bottom-links — он больше не нужен */
@@ -2436,7 +2436,7 @@ main {
     min-width: 240px;
 }
 
-.catalog-sort__overlay{
+.catalog-sort__overlay {
     display: none;
 }
 
@@ -6394,11 +6394,13 @@ main {
 }
 
 .badge {
-    padding: 2px 8px;
+    padding: 2px 6px;
+    background: #0058a3;
+    color: #fff;
     border-radius: 4px;
     height: fit-content;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
     line-height: 133%;
     letter-spacing: 0.04em;
 }
