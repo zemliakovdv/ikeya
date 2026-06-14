@@ -2,27 +2,12 @@
 
 import { useState } from 'react';
 
-import { buildAssetUrl } from '@/lib/config/api';
-
-function parseImages(value) {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    try { return JSON.parse(value); } catch { return []; }
-  }
-  return [];
-}
-
-function getImageSrc(product) {
-  const localImages = parseImages(product.local_images);
-  if (localImages.length > 0) {
-    return buildAssetUrl(localImages[0]);
-  }
-  const images = parseImages(product.images);
-  if (images.length > 0) {
-    return images[0];
-  }
-  return '/assets/img/placeholder.png';
-}
+import {
+  getReviewProductImage,
+  getReviewProductName,
+  getReviewProductSku,
+  getReviewProductSlug,
+} from '@/components/profile/reviewProductUtils';
 
 function formatDeliveryDate(dateStr) {
   if (!dateStr) return '';
@@ -37,10 +22,19 @@ function formatDeliveryDate(dateStr) {
 export default function AwaitingReviewItem({ product, onOpenDrawer }) {
   const [hoveredStar, setHoveredStar] = useState(0);
 
-  const imageSrc = getImageSrc(product);
+  const productSku = getReviewProductSku(product);
+  const productName = getReviewProductName(product, productSku);
+  const productSlug = getReviewProductSlug(product, productSku);
+  const imageSrc = getReviewProductImage(product);
 
   function openDrawer(initialRating = 0) {
-    onOpenDrawer({ ...product, initialRating });
+    onOpenDrawer({
+      ...product,
+      sku: productSku || product?.sku || null,
+      slug: product?.slug || productSlug || null,
+      name: productName,
+      initialRating,
+    });
   }
 
   function handleStarClick(rating) {
@@ -62,28 +56,24 @@ export default function AwaitingReviewItem({ product, onOpenDrawer }) {
       className="awaiting-review-item"
       role="button"
       tabIndex={0}
-      aria-label={`Открыть отзыв на товар ${product.name}`}
+      aria-label={`Открыть отзыв на товар ${productName}`}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
       style={{ cursor: 'pointer' }}
     >
       <div className="awaiting-review-item__inner">
-
-        {/* Фото */}
         <div className="awaiting-review-item__image">
           <img
             src={imageSrc}
-            alt={product.name}
+            alt={productName}
             width={80}
             height={80}
           />
         </div>
 
-        {/* Контент */}
         <div className="awaiting-review-item__content">
-          <div className="awaiting-review-item__name">{product.name}</div>
+          <div className="awaiting-review-item__name">{productName}</div>
 
-          {/* Звёзды */}
           <div className="awaiting-review-item__stars">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -105,14 +95,12 @@ export default function AwaitingReviewItem({ product, onOpenDrawer }) {
             ))}
           </div>
 
-          {/* Дата доставки */}
           {product.delivered_at && (
             <div className="awaiting-review-item__date">
               {formatDeliveryDate(product.delivered_at)}
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

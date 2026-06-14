@@ -237,6 +237,7 @@ export default function OrderSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
+  const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
   const timerRef = useRef(null);
 
   const [pvz, setPvz] = useState(null);
@@ -451,6 +452,13 @@ export default function OrderSuccessPage() {
     });
   }
 
+  function handlePaymentRedirect() {
+    if (!paymentUrl || isRedirectingToPayment) return;
+
+    setIsRedirectingToPayment(true);
+    window.location.assign(paymentUrl);
+  }
+
   return (
     <main className="orders-statused">
       <div className="container">
@@ -479,9 +487,15 @@ export default function OrderSuccessPage() {
                   </p>
 
                   {paymentUrl && (
-                    <a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="btn-pay-order">
+                    <button
+                      type="button"
+                      className="btn-pay-order"
+                      onClick={handlePaymentRedirect}
+                      disabled={isRedirectingToPayment}
+                      aria-disabled={isRedirectingToPayment}
+                    >
                       Оплатить заказ
-                    </a>
+                    </button>
                   )}
                 </div>
               )}

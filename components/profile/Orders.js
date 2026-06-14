@@ -8,34 +8,19 @@ import { useCart } from '@/contexts/CartContext';
 import ActiveOrders from '@/components/profile/ActiveOrders';
 import OrderHistory from '@/components/profile/OrderHistory';
 import Purchases from '@/components/profile/Purchases';
-import { reorder } from '@/lib/api/account';
+import {
+  canShowOrderTrackNumber,
+  canShowWhereIsOrderButton,
+  isProfileActiveOrder,
+  isProfileDraftOrder,
+  isProfileExpiredUnpaidOrder,
+  isProfileHistoryOrder,
+  reorder,
+} from '@/lib/api/account';
 import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
+import { useProfileCounts } from './ProfileCountsContext';
 
 // ─── Константы ───────────────────────────────────────────────────────────────
-
-const ACTIVE_STATUSES = [
-  'created',
-  'processing',
-  'confirmed',
-  'paid',
-  'purchased',
-  'received_poland',
-  'preparing_for_shipment',
-  'export_eu',
-  'customs_poland',
-  'on_border',
-  'customs_belarus',
-  'shipped',
-  'handed_to_courier',
-  'handed_to_courier_ikeya',
-  'arrived_pvz',
-];
-
-const HISTORY_STATUSES = [
-  'completed',
-  'cancelled',
-  'canceled',
-];
 
 const UNPAID_STATUSES = ['created', 'processing'];
 
@@ -170,14 +155,12 @@ function parseOrders(data) {
   return (data?.data || []).map((order) => {
     const attr = order.attributes || {};
     const rawStatus = attr.status;
-    const isDraft = attr.checkout_draft === true;
+    const isDraft = isProfileDraftOrder(order);
 
     const paymentUrl = getPaymentUrl(attr);
     const paymentExpired = isPaymentExpired(attr, rawStatus);
     const paymentSecondsLeft = getPaymentSecondsLeft(attr, rawStatus);
-
-    const isExpiredUnpaid =
-      !isDraft && paymentExpired && UNPAID_STATUSES.includes(rawStatus);
+    const isExpiredUnpaid = isProfileExpiredUnpaidOrder(order);
 
     const isAwaitingPayment =
       !isDraft &&
@@ -249,12 +232,18 @@ function parseOrders(data) {
         attr.delivery?.method ||
         null,
       status: mappedStatus,
-      statusDescription: isExpiredUnpaid
-        ? 'Истёк срок оплаты'
-        : attr.status_description || null,
+      statusDescription:
+        attr.status_description ||
+        attr.status_label ||
+        attr.status_name ||
+        attr.status_title ||
+        attr.status_text ||
+        '—',
       paymentStatus: attr.payment_status || null,
       price: formatPrice(attr.total_amount),
       trackNumber: attr.track_number || null,
+      canShowTrackNumber: canShowOrderTrackNumber(order),
+      canShowWhereIsOrderButton: canShowWhereIsOrderButton(order),
       trackingUrl:
         attr.tracking_url ||
         attr.tracking?.url ||
@@ -463,6 +452,7 @@ function usePurchasesInfinite(token, enabled, sort = PURCHASES_DEFAULT_SORT) {
 export default function Orders() {
   const { token } = useAuth();
   const { refreshCart } = useCart();
+  const { setActiveOrdersCount } = useProfileCounts();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState('active');
@@ -551,13 +541,13 @@ export default function Orders() {
 
   // ── Фильтрация заказов ──────────────────────────────────────────────────────
 
-  const activeOrders = allOrders.filter(
-    (o) => o.isDraft || (!o.isExpiredUnpaid && ACTIVE_STATUSES.includes(o.rawStatus))
-  );
+  const activeOrders = allOrders.filter(isProfileActiveOrder);
 
-  const historyOrders = allOrders.filter(
-    (o) => !o.isDraft && (o.isExpiredUnpaid || HISTORY_STATUSES.includes(o.rawStatus))
-  );
+  const historyOrders = allOrders.filter(isProfileHistoryOrder);
+
+  useEffect(() => {
+    setActiveOrdersCount(activeOrders.length);
+  }, [activeOrders.length, setActiveOrdersCount]);
 
   // ── Рендер ──────────────────────────────────────────────────────────────────
 

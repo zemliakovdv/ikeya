@@ -5,6 +5,9 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import ProductCard from '@/components/catalog/products/ProductCard';
+import ProductSort from '@/components/catalog/ProductSort';
+import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
+import CatalogStickyOffset from '@/components/catalog/CatalogStickyOffset';
 import PriceFilter from '@/components/catalog/sidebar/PriceFilter';
 import CheckboxFilter from '@/components/catalog/sidebar/CheckboxFilter';
 import FilterChips from '@/components/catalog/FilterChips';
@@ -14,6 +17,7 @@ import NotFoundRecommendations from '@/components/recommendations/NotFoundRecomm
 import PageLoader from '@/components/ui/PageLoader';
 
 import { buildApiUrl } from '@/lib/config/api';
+
 const ITEMS_PER_PAGE = 20;
 
 function parsePrice(value) {
@@ -94,7 +98,6 @@ export default function SearchPageContent() {
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [sortOpen, setSortOpen] = useState(false);
   const [draftPriceMin, setDraftPriceMin] = useState('');
   const [draftPriceMax, setDraftPriceMax] = useState('');
   const [draftFilters, setDraftFilters] = useState({});
@@ -119,11 +122,10 @@ export default function SearchPageContent() {
   }, [searchParams]);
 
   const sortOptions = [
+    { value: null, label: 'Сортировка' },
     { value: 'cheapest', label: 'Дешевле' },
     { value: 'expensive', label: 'Дороже' },
   ];
-
-  const currentSortLabel = sortOptions.find((option) => option.value === sortParam)?.label || 'Сортировка';
 
   const normalizedFilters = useMemo(() => {
     const filters = firstPageData?.available_filters || [];
@@ -474,7 +476,6 @@ export default function SearchPageContent() {
     params.delete('page');
 
     router.push(`${pathname}?${params.toString()}`);
-    setSortOpen(false);
   }
 
   const currentMin = useMemo(() => {
@@ -531,7 +532,6 @@ export default function SearchPageContent() {
     <main className="main catalog-inner">
       <section className="all-catalog">
         <div className="container">
-
           <h1>
             {loading
               ? `Поиск по запросу «${q}»...`
@@ -542,16 +542,17 @@ export default function SearchPageContent() {
           {loading && <PageLoader />}
 
           <div className="all-catalog-inner" style={{ visibility: loading ? 'hidden' : 'visible' }}>
-
             {!hideSidebar && (
               <aside
                 className="filter-aside"
                 style={{
                   position: 'sticky',
-                  top: 0,
+                  top: '80px',
                   alignSelf: 'flex-start',
+                  maxHeight: 'calc(100vh - 80px)',
                   overflowY: 'auto',
                   overflowX: 'hidden',
+                  overscrollBehavior: 'contain',
                 }}
               >
                 {categories.length > 0 && (
@@ -609,37 +610,24 @@ export default function SearchPageContent() {
             )}
 
             <div className="all-catalog-center" style={hideSidebar ? { width: '100%' } : {}}>
+              {!hideSidebar && <CatalogStickyOffset />}
+
               {!hideSidebar && (
-                <div className="all-catalog-sort">
-                  <div className="catalog-sort">
-                    <button
-                      className="catalog-sort__selected"
-                      onClick={() => setSortOpen((value) => !value)}
-                      type="button"
-                      aria-expanded={sortOpen}
-                    >
-                      <span className="catalog-sort__current">{currentSortLabel}</span>
+                <div className="catalog-toolbar-sticky">
+                  <div className="catalog-toolbar">
+                    <MobileCatalogFilters
+                      treeData={[]}
+                      slugChain={[]}
+                      showAllFilters
+                      hasChildren={false}
+                      availableFilters={firstPageData?.available_filters || []}
+                    />
 
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M7.99999 10.2201C7.25333 10.2201 5.46666 8.19343 4.09999 6.5001C3.94666 6.30677 3.97333 6.02677 4.16666 5.87343C4.35999 5.7201 4.63999 5.74677 4.79333 5.9401C5.99333 7.42677 7.52666 9.1001 7.99999 9.3201C8.47333 9.1001 10.0067 7.42677 11.2067 5.9401C11.36 5.74677 11.64 5.7201 11.8333 5.87343C12.0267 6.02677 12.0533 6.30677 11.9 6.5001C10.5333 8.2001 8.74 10.2201 7.99999 10.2201Z" fill="#757575" />
-                      </svg>
-                    </button>
-
-                    {sortOpen && (
-                      <ul className="catalog-sort__dropdown">
-                        {sortOptions.map((option) => (
-                          <li key={option.value}>
-                            <button
-                              className={`catalog-sort__option ${option.value === sortParam ? 'active' : ''}`}
-                              onClick={() => handleSort(option.value)}
-                              type="button"
-                            >
-                              {option.label}
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    <ProductSort
+                      currentSort={sortParam || null}
+                      options={sortOptions}
+                      onSelect={handleSort}
+                    />
                   </div>
                 </div>
               )}

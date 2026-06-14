@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { getOrders, getPurchases, isActiveOrder } from '@/lib/api/account';
+import { getOrders, getPurchases, isProfileActiveOrder } from '@/lib/api/account';
 import { openJivoChat } from '@/components/FloatingChatButton';
 import { useProfileCounts } from './ProfileCountsContext';
 
@@ -102,7 +102,7 @@ export default function ProfileDashboard() {
             if (inc.type === 'order_item') itemsMap[inc.id] = inc.attributes;
           });
 
-          const activeAll = all.filter(o => isActiveOrder(o.attributes.status));
+          const activeAll = all.filter(isProfileActiveOrder);
           setActiveOrdersCount(activeAll.length);
 
           const active = activeAll
@@ -143,7 +143,7 @@ export default function ProfileDashboard() {
     }
 
     loadData();
-  }, [isHydrated, isAuth]);
+  }, [isHydrated, isAuth, setActiveOrdersCount]);
 
   const favCount = favoriteItems?.length ?? 0;
 

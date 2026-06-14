@@ -3877,6 +3877,7 @@
         border-radius: 6px;
         overflow: hidden;
         background: #F9FAFB;
+        margin-right: 5px;
     }
 
     .review-item__image img {

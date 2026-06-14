@@ -6,43 +6,92 @@ import ProductCard from '@/components/catalog/products/ProductCard';
 import ProductSort from '@/components/catalog/ProductSort';
 
 const SORT_OPTIONS = [
-  { value: 'newest',     label: 'Сначала новые' },
-  { value: 'oldest',     label: 'Сначала старые' },
+  { value: 'newest', label: 'Сначала новые' },
+  { value: 'oldest', label: 'Сначала старые' },
   { value: 'price_desc', label: 'Сначала дорогие' },
-  { value: 'price_asc',  label: 'Сначала дешёвые' },
+  { value: 'price_asc', label: 'Сначала дешёвые' },
 ];
 
-// Поля картинок приходят как JSON-строки — парсим безопасно
 function parseImagesField(value) {
-  if (Array.isArray(value)) return value;
+  if (Array.isArray(value)) return value.filter(Boolean);
+
   if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+      } catch {
+        return [];
+      }
     }
+
+    return [trimmed];
   }
+
   return [];
+}
+
+function normalizeProductImages(product = {}) {
+  return [
+    ...parseImagesField(product.local_images),
+    ...parseImagesField(product.images?.local_images),
+    ...parseImagesField(product.images?.images),
+    ...parseImagesField(product.image_url),
+    ...parseImagesField(product.preview_image),
+  ].filter(Boolean);
 }
 
 function purchaseToProduct(purchase) {
   const p = purchase.product || {};
-
-  const localImages = [
-    ...parseImagesField(p.images?.local_images),
-    ...parseImagesField(p.images?.images),
-  ].filter(Boolean);
+  const sku =
+    p.sku ||
+    purchase.product_sku ||
+    purchase.sku ||
+    '';
 
   return {
-    id: purchase.product_sku,
+    id: purchase.product_sku || sku,
     attributes: {
-      sku:             purchase.product_sku,
-      name_ru:         p.name || '—',
-      small_desc_name: '',
-      price_byn:       purchase.price_byn, // цена на момент покупки
-      local_images:    localImages,
-      variants:        [],
+      ...p,
+      sku,
+      slug:
+        p.slug ||
+        p.product_slug ||
+        purchase.slug ||
+        purchase.product_slug ||
+        sku,
+      name_ru:
+        p.name_ru ||
+        p.translated_name ||
+        p.name ||
+        purchase.name ||
+        purchase.product_name ||
+        sku ||
+        '—',
+      small_desc_name:
+        p.small_desc_name ||
+        p.description ||
+        p.short_description ||
+        p.subtitle ||
+        purchase.small_desc_name ||
+        purchase.description ||
+        '',
+      price_byn:
+        p.price_byn ||
+        p.price ||
+        p.new_price ||
+        p.price_new ||
+        purchase.price_byn ||
+        purchase.price ||
+        '0',
+      local_images: normalizeProductImages(p),
+      variants: p.variants || p.product_variants || [],
+      is_bestseller: p.is_bestseller || p.isBestseller || false,
+      is_popular: p.is_popular || p.isPopular || false,
+      is_new: p.is_new || p.isNew || false,
     },
   };
 }
@@ -52,12 +101,9 @@ export default function Purchases({ products, sort = 'newest', onSortChange }) {
     return <EmptyState type="purchases" />;
   }
 
-  // Сортирует сервер (sort уходит в запрос /account/purchases в Orders.js),
-  // здесь только рендерим в полученном порядке.
   return (
     <div className="orders-shopping_wrapper">
       <div className="orders-shopping">
-
         <ProductSort
           options={SORT_OPTIONS}
           currentSort={sort}
@@ -74,7 +120,6 @@ export default function Purchases({ products, sort = 'newest', onSortChange }) {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );

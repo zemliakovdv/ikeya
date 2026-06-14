@@ -7,7 +7,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getOrders, isActiveOrder } from '@/lib/api/account';
+import { getOrders, isProfileActiveOrder } from '@/lib/api/account';
 
 const ProfileCountsContext = createContext(null);
 
@@ -24,7 +24,7 @@ export function ProfileCountsProvider({ children }) {
       .then((resp) => {
         if (cancelled) return;
         const orders = resp?.data || [];
-        const activeCount = orders.filter((o) => isActiveOrder(o?.attributes?.status)).length;
+        const activeCount = orders.filter(isProfileActiveOrder).length;
         setActiveOrdersCount(activeCount);
       })
       .catch((error) => {

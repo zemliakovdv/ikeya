@@ -3,27 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 
-import { buildAssetUrl } from '@/lib/config/api';
-
-function parseImages(value) {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    try { return JSON.parse(value); } catch { return []; }
-  }
-  return [];
-}
-
-function getImageSrc(product) {
-  const localImages = parseImages(product?.local_images);
-  if (localImages.length > 0) {
-    return buildAssetUrl(localImages[0]);
-  }
-  const images = parseImages(product?.images);
-  if (images.length > 0) {
-    return images[0];
-  }
-  return '/assets/img/placeholder.png';
-}
+import {
+  getReviewProductImage,
+  getReviewProductName,
+  getReviewProductSku,
+} from '@/components/profile/reviewProductUtils';
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
@@ -68,7 +52,7 @@ function StatusBadge({ status, adminNote }) {
         className={`review-item__badge ${isRejected ? 'review-item__badge--rejected' : 'review-item__badge--pending'}`}
         onMouseEnter={() => isRejected && setShowTooltip(true)}
         onMouseLeave={() => isRejected && setShowTooltip(false)}
-        onClick={() => isRejected && setShowTooltip(v => !v)}
+        onClick={() => isRejected && setShowTooltip((v) => !v)}
       >
         {label}
       </span>
@@ -85,13 +69,14 @@ export default function ReviewItem({ review, onDelete }) {
   const { id, attributes: a } = review;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const product = a.product || {};
 
   const isPublished = a.status === 'published';
-  const sku = a.product?.sku || review.product_sku || review.sku || null;
-  const imageSrc = getImageSrc(a.product);
+  const sku = getReviewProductSku(product, review);
+  const productName = getReviewProductName(product, sku);
+  const imageSrc = getReviewProductImage(product, { preferLegacyImages: true });
   const date = formatDate(a.created_at);
 
-  // Закрываем меню при клике вне
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -111,36 +96,28 @@ export default function ReviewItem({ review, onDelete }) {
 
   const mainContent = (
     <>
-      {/* Фото товара */}
       <div className="review-item__image">
         <img
           src={imageSrc}
-          alt={a.product?.name || ''}
+          alt={productName}
           width={64}
           height={64}
         />
       </div>
 
-      {/* Основной контент */}
       <div className="review-item__content">
-
-        {/* Бейдж статуса */}
         <StatusBadge status={a.status} adminNote={a.admin_note} />
 
-        {/* Название товара */}
-        <div className="review-item__name">{a.product?.name}</div>
+        <div className="review-item__name">{productName}</div>
 
-        {/* Атрибуты (цвет и т.д.) — если есть */}
-        {a.product?.sku && (
-          <div className="review-item__attr">арт. {a.product.sku}</div>
+        {sku && (
+          <div className="review-item__attr">арт. {sku}</div>
         )}
 
-        {/* Текст отзыва */}
         {a.body && (
           <div className="review-item__body">{a.body}</div>
         )}
 
-        {/* Фото отзыва */}
         {a.photos?.length > 0 && (
           <div className="review-item__photos">
             {a.photos.map((photo, idx) => (
@@ -150,7 +127,6 @@ export default function ReviewItem({ review, onDelete }) {
             ))}
           </div>
         )}
-
       </div>
     </>
   );
@@ -162,7 +138,7 @@ export default function ReviewItem({ review, onDelete }) {
           <Link
             href={`/product/${sku}`}
             className="review-item__main"
-            aria-label={`Открыть товар ${a.product?.name || ''}`}
+            aria-label={`Открыть товар ${productName}`}
             style={{ display: 'flex', flex: 1, color: 'inherit', textDecoration: 'none' }}
           >
             {mainContent}
@@ -173,18 +149,16 @@ export default function ReviewItem({ review, onDelete }) {
           </div>
         )}
 
-        {/* Правая колонка: звёзды, дата, меню */}
         <div className="review-item__right">
           <div className="review-item__meta">
             <StarRating rating={a.rating} />
             <span className="review-item__date">{date}</span>
           </div>
 
-          {/* Меню ⋮ */}
           <div className="review-item__menu" ref={menuRef}>
             <button
               className="review-item__menu-btn"
-              onClick={() => setMenuOpen(v => !v)}
+              onClick={() => setMenuOpen((v) => !v)}
               aria-label="Меню отзыва"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -205,7 +179,6 @@ export default function ReviewItem({ review, onDelete }) {
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

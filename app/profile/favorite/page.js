@@ -6,7 +6,6 @@ import { useAuthModals } from '@/components/auth/AuthModalsHost';
 import Breadcrumbs from '@/components/profile/Breadcrumbs';
 import ProfileSidebar from '@/components/profile/ProfileSidebar';
 import GuestFavoriteSidebar from '@/components/profile/GuestFavoriteSidebar';
-import { ProfileCountsProvider } from '@/components/profile/ProfileCountsContext';
 import Favorites from '@/components/profile/Favorites';
 
 export default function FavoritesPage() {
@@ -34,9 +33,7 @@ export default function FavoritesPage() {
                 <div className="profile-layout">
                   {isHydrated && (
                     isAuth ? (
-                      <ProfileCountsProvider>
-                        <ProfileSidebar />
-                      </ProfileCountsProvider>
+                      <ProfileSidebar />
                     ) : (
                       <GuestFavoriteSidebar />
                     )

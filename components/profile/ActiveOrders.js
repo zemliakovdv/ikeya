@@ -57,6 +57,7 @@ const serviceStyles = {
   },
   compactButton: {
     width: '100%',
+    maxWidth: 'fit-content',
     minHeight: '48px',
     border: 'none',
     borderRadius: '4px',
@@ -318,11 +319,11 @@ function renderTrackingIcon(order = {}) {
 }
 
 function shouldShowWhereIsMyOrder(order = {}) {
-  return TRACKING_STATUSES.includes(order.status) && !order.trackNumber;
+  return order.canShowWhereIsOrderButton === true;
 }
 
 function shouldShowOrderNumberInfo(order = {}) {
-  return !order.trackNumber && PICKUP_READY_STATUSES.includes(order.status);
+  return !(order.trackNumber && order.canShowTrackNumber) && PICKUP_READY_STATUSES.includes(order.status);
 }
 
 const OrderCard = ({ order }) => {
@@ -355,7 +356,7 @@ const OrderCard = ({ order }) => {
   }
 
   function handleTrackCopy() {
-    if (!order?.trackNumber) return;
+    if (!(order?.trackNumber && order?.canShowTrackNumber)) return;
 
     navigator.clipboard.writeText(String(order.trackNumber)).then(() => {
       setTrackCopied(true);
@@ -364,7 +365,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackNumberCard() {
-    if (!order.trackNumber) return null;
+    if (!(order.trackNumber && order.canShowTrackNumber)) return null;
 
     return (
       <div style={serviceStyles.smallCard}>
@@ -392,7 +393,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackingCard() {
-    if (!order.trackNumber) return null;
+    if (!(order.trackNumber && order.canShowTrackNumber)) return null;
 
     const trackingUrl = getTrackingUrl(order);
 
@@ -426,7 +427,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackInfoCard() {
-    if (!order.trackNumber) return null;
+    if (!(order.trackNumber && order.canShowTrackNumber)) return null;
 
     return (
       <div style={serviceStyles.infoCard}>
@@ -464,7 +465,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderOrderServiceBlocks() {
-    if (order.trackNumber) {
+    if (order.trackNumber && order.canShowTrackNumber) {
       return (
         <div style={serviceStyles.row}>
           <div style={serviceStyles.leftGroup}>

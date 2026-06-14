@@ -2,47 +2,30 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
-
-function parseImages(value) {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    try { return JSON.parse(value); } catch { return []; }
-  }
-  return [];
-}
-
-function getImageSrc(product) {
-  const localImages = parseImages(product?.local_images);
-  if (localImages.length > 0) {
-    return buildAssetUrl(localImages[0]);
-  }
-  const images = parseImages(product?.images);
-  if (images.length > 0) {
-    return images[0];
-  }
-  return '/assets/img/placeholder.png';
-}
+import { buildApiUrl } from '@/lib/config/api';
+import {
+  getReviewProductImage,
+  getReviewProductName,
+  getReviewProductSku,
+} from '@/components/profile/reviewProductUtils';
 
 export default function ReviewDrawer({ open, product, token, onClose, onSubmitted }) {
-  const [rating, setRating]       = useState(0);
+  const [rating, setRating] = useState(0);
   const [hoveredStar, setHoveredStar] = useState(0);
-  const [body, setBody]           = useState('');
-  const [photos, setPhotos]       = useState([]); // File[]
-  const [previews, setPreviews]   = useState([]); // blob URLs
+  const [body, setBody] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors]       = useState({});
-  const fileInputRef              = useRef(null);
-  const drawerRef                 = useRef(null);
+  const [errors, setErrors] = useState({});
+  const fileInputRef = useRef(null);
+  const drawerRef = useRef(null);
 
-  // Устанавливаем начальный рейтинг если передан (клик по звезде в списке)
   useEffect(() => {
     if (open && product?.initialRating) {
       setRating(product.initialRating);
     }
   }, [open, product]);
 
-  // Сброс формы при закрытии
   useEffect(() => {
     if (!open) {
       setRating(0);
@@ -54,7 +37,6 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
     }
   }, [open]);
 
-  // Закрытие по Escape
   useEffect(() => {
     function handleKeyDown(e) {
       if (e.key === 'Escape') onClose();
@@ -63,14 +45,15 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
-  // Блокируем скролл body при открытом дровере
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [open]);
 
   function handleFileChange(e) {
@@ -80,22 +63,22 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
 
   function addFiles(files) {
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/heic'];
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    const valid = files.filter(f => allowed.includes(f.type) && f.size <= maxSize);
+    const maxSize = 5 * 1024 * 1024;
+    const valid = files.filter((f) => allowed.includes(f.type) && f.size <= maxSize);
     const remaining = 5 - photos.length;
     const toAdd = valid.slice(0, remaining);
 
-    setPhotos(prev => [...prev, ...toAdd]);
-    setPreviews(prev => [
+    setPhotos((prev) => [...prev, ...toAdd]);
+    setPreviews((prev) => [
       ...prev,
-      ...toAdd.map(f => URL.createObjectURL(f)),
+      ...toAdd.map((f) => URL.createObjectURL(f)),
     ]);
   }
 
   function removePhoto(idx) {
     URL.revokeObjectURL(previews[idx]);
-    setPhotos(prev => prev.filter((_, i) => i !== idx));
-    setPreviews(prev => prev.filter((_, i) => i !== idx));
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+    setPreviews((prev) => prev.filter((_, i) => i !== idx));
   }
 
   function handleDrop(e) {
@@ -126,7 +109,7 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
         const formData = new FormData();
         formData.append('review[rating]', rating);
         formData.append('review[body]', body.trim());
-        photos.forEach(photo => formData.append('review[photos][]', photo));
+        photos.forEach((photo) => formData.append('review[photos][]', photo));
         res = await fetch(buildApiUrl(`/products/${product.sku}/reviews`), {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
@@ -160,12 +143,13 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
 
   if (!product) return null;
 
-  const imageSrc = getImageSrc(product);
+  const productSku = getReviewProductSku(product);
+  const productName = getReviewProductName(product, productSku);
+  const imageSrc = getReviewProductImage(product);
   const displayRating = hoveredStar || rating;
 
   return (
     <>
-      {/* Backdrop */}
       {open && (
         <div
           className="review-drawer__backdrop"
@@ -173,13 +157,10 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
         />
       )}
 
-      {/* Drawer */}
       <div className={`review-drawer ${open ? 'review-drawer--open' : ''}`} ref={drawerRef}>
-
-        {/* Шапка */}
         <div className="review-drawer__header">
-          <h5 className="review-drawer__title" title={product.name}>
-            {product.name}
+          <h5 className="review-drawer__title" title={productName}>
+            {productName}
           </h5>
           <button className="review-drawer__close" onClick={onClose} aria-label="Закрыть">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -188,15 +169,11 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
           </button>
         </div>
 
-        {/* Контент */}
         <div className="review-drawer__body">
-
-          {/* Фото товара */}
           <div className="review-drawer__product-image">
-            <img src={imageSrc} alt={product.name} width={120} height={120} />
+            <img src={imageSrc} alt={productName} width={120} height={120} />
           </div>
 
-          {/* Оценка */}
           <div className="review-drawer__rating">
             <div className="review-drawer__rating-label">Оцените покупку</div>
             <div className="review-drawer__stars">
@@ -208,7 +185,7 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
                   onMouseLeave={() => setHoveredStar(0)}
                   onClick={() => {
                     setRating(star);
-                    setErrors(prev => ({ ...prev, rating: null }));
+                    setErrors((prev) => ({ ...prev, rating: null }));
                   }}
                   aria-label={`Оценить на ${star}`}
                 >
@@ -223,16 +200,15 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
             )}
           </div>
 
-          {/* Комментарий */}
           <div className="review-drawer__field">
             <textarea
               className={`review-drawer__textarea ${errors.body ? 'review-drawer__textarea--error' : ''}`}
               placeholder="Комментарий"
               value={body}
               rows={4}
-              onChange={e => {
+              onChange={(e) => {
                 setBody(e.target.value);
-                setErrors(prev => ({ ...prev, body: null }));
+                setErrors((prev) => ({ ...prev, body: null }));
               }}
             />
             {errors.body && (
@@ -243,13 +219,11 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
             </div>
           </div>
 
-          {/* Загрузка фото */}
           <div className="review-drawer__field">
             <div className="review-drawer__upload-label">
               Загрузите до 5 фото
             </div>
 
-            {/* Превью загруженных фото */}
             {previews.length > 0 && (
               <div className="review-drawer__previews">
                 {previews.map((src, idx) => (
@@ -267,12 +241,11 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
               </div>
             )}
 
-            {/* Зона загрузки */}
             {photos.length < 5 && (
               <div
                 className="review-drawer__dropzone"
                 onDrop={handleDrop}
-                onDragOver={e => e.preventDefault()}
+                onDragOver={(e) => e.preventDefault()}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <div className="review-drawer__dropzone-hint">
@@ -281,7 +254,7 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
                 <button
                   type="button"
                   className="review-drawer__upload-btn"
-                  onClick={e => {
+                  onClick={(e) => {
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
@@ -306,16 +279,13 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
             )}
           </div>
 
-          {/* Ошибка сабмита */}
           {errors.submit && (
             <div className="review-drawer__error review-drawer__error--submit">
               {errors.submit}
             </div>
           )}
-
         </div>
 
-        {/* Футер с кнопкой */}
         <div className="review-drawer__footer">
           <button
             className="review-drawer__submit"
@@ -325,7 +295,6 @@ export default function ReviewDrawer({ open, product, token, onClose, onSubmitte
             {submitting ? 'Отправляем…' : 'Опубликовать отзыв'}
           </button>
         </div>
-
       </div>
     </>
   );
