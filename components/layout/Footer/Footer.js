@@ -63,7 +63,8 @@ export default function Footer({ categoryLinks = [] }) {
                     </a>
                     <p>Мы в социальных сетях:</p>
                     <div className="footer-links__social">
-                      <a href="https://www.instagram.com/shopbyshop_by?igsh=MWRoazFqbGE5ZHlibg%3D%3D"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
+                      <a href="https://www.instagram.com/shopbyshop_by"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
+                      <a href="https://t.me/ShopByShopBelarus"><img src="/assets/img/icons/tg.svg" alt="Telegram" /></a>
                     </div>
                   </div>
                   <div className="footer-navigation">
@@ -181,7 +182,8 @@ export default function Footer({ categoryLinks = [] }) {
                     <div className="footer-sociai-inner">
                       <p>Мы в социальных сетях:</p>
                       <div className="footer-links__social">
-                        <a href="https://www.instagram.com/shopbyshop_by?igsh=MWRoazFqbGE5ZHlibg%3D%3D"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
+                        <a href="https://www.instagram.com/shopbyshop_by"><img src="/assets/img/icons/instagram.svg" alt="Instagram" /></a>
+                        <a href="https://t.me/ShopByShopBelarus"><img src="/assets/img/icons/tg.svg" alt="Telegram" /></a>
                       </div>
                     </div>
                     <div className="footer-payment">
