@@ -182,40 +182,78 @@ function getItemPrice(item = {}) {
   return found ?? 0;
 }
 
-function getLiftLabel(lift) {
-  switch (lift) {
-    case 'freight':
-      return 'грузовой лифт';
+function normalizeElevatorType(addr = {}) {
+  if (addr?.elevator_type === 'passenger' || addr?.elevator_type === 'cargo') {
+    return addr.elevator_type;
+  }
+
+  if (addr?.lift === 'passenger') return 'passenger';
+  if (addr?.lift === 'freight' || addr?.lift === 'cargo') return 'cargo';
+
+  return null;
+}
+
+function normalizeDeliveryAddress(addr) {
+  if (!addr || typeof addr !== 'object') {
+    return null;
+  }
+
+  const {
+    lift,
+    has_elevator,
+    isPrivateHouse,
+    ...rest
+  } = addr;
+
+  const isPrivate = Boolean(addr.is_private_house ?? isPrivateHouse);
+
+  return {
+    ...rest,
+    is_private_house: isPrivate,
+    apartment: isPrivate ? '' : (addr.apartment || ''),
+    entrance: isPrivate ? '' : (addr.entrance || ''),
+    floor: isPrivate ? '' : (addr.floor || ''),
+    elevator_type: isPrivate ? null : normalizeElevatorType(addr),
+    intercom: isPrivate ? '' : (addr.intercom || ''),
+  };
+}
+
+function getElevatorTypeLabel(elevatorType) {
+  switch (elevatorType) {
     case 'passenger':
       return 'пассажирский лифт';
-    case 'none':
-      return 'без лифта';
+    case 'cargo':
+      return 'грузовой лифт';
     default:
-      return '';
+      return 'лифт не указан';
   }
 }
 
 function formatDeliveryAddressLabel(addr) {
-  if (!addr || typeof addr !== 'object') {
+  const normalizedAddr = normalizeDeliveryAddress(addr);
+
+  if (!normalizedAddr) {
     return '';
   }
 
-  const streetLine = [addr.street, addr.house, addr.building].filter(Boolean).join(', ');
+  const streetLine = [normalizedAddr.street, normalizedAddr.house, normalizedAddr.building].filter(Boolean).join(', ');
   const baseAddress = String(
-    [addr.city, streetLine].filter(Boolean).join(', ') ||
-    addr.address ||
-    addr.full_address ||
+    [normalizedAddr.city, streetLine].filter(Boolean).join(', ') ||
+    normalizedAddr.address ||
+    normalizedAddr.full_address ||
     ''
   ).trim();
   const parts = [baseAddress];
 
-  if (addr.apartment) parts.push(`кв.${addr.apartment}`);
-  if (addr.entrance) parts.push(`подъезд ${addr.entrance}`);
-  if (addr.floor) parts.push(`этаж ${addr.floor}`);
-  if (addr.intercom) parts.push(`домофон ${addr.intercom}`);
+  if (!normalizedAddr.is_private_house) {
+    if (normalizedAddr.apartment) parts.push(`кв.${normalizedAddr.apartment}`);
+    if (normalizedAddr.entrance) parts.push(`подъезд ${normalizedAddr.entrance}`);
+    if (normalizedAddr.floor) parts.push(`этаж ${normalizedAddr.floor}`);
+    if (normalizedAddr.intercom) parts.push(`домофон ${normalizedAddr.intercom}`);
 
-  const liftLabel = getLiftLabel(addr.lift);
-  if (liftLabel) parts.push(liftLabel);
+    const elevatorTypeLabel = getElevatorTypeLabel(normalizedAddr.elevator_type);
+    if (elevatorTypeLabel) parts.push(elevatorTypeLabel);
+  }
 
   return parts.filter(Boolean).join(', ');
 }
@@ -301,7 +339,7 @@ export default function OrderSuccessPage() {
         const storedAddr = sessionStorage.getItem('selectedDeliveryAddr');
 
         if (storedAddr) {
-          setDeliveryAddr(JSON.parse(storedAddr));
+          setDeliveryAddr(normalizeDeliveryAddress(JSON.parse(storedAddr)));
           sessionStorage.removeItem('selectedDeliveryAddr');
         }
 
@@ -392,11 +430,7 @@ export default function OrderSuccessPage() {
               const addrSnap = deliverySnap.address || addr;
 
               if (addrSnap.city || addrSnap.street) {
-                const normalizedAddr = {
-                  ...addrSnap,
-                  lift: addrSnap.lift || 'none',
-                  has_elevator: addrSnap.has_elevator ?? (addrSnap.lift ? addrSnap.lift !== 'none' : false),
-                };
+                const normalizedAddr = normalizeDeliveryAddress(addrSnap) || {};
                 const label = formatDeliveryAddressLabel(normalizedAddr);
 
                 setDeliveryAddr({
@@ -410,8 +444,7 @@ export default function OrderSuccessPage() {
                   entrance: normalizedAddr.entrance || '',
                   floor: normalizedAddr.floor || '',
                   intercom: normalizedAddr.intercom || '',
-                  lift: normalizedAddr.lift,
-                  has_elevator: normalizedAddr.has_elevator,
+                  elevator_type: normalizedAddr.elevator_type ?? null,
                   is_private_house: normalizedAddr.is_private_house || false,
                   calcResult: { delivery: { normalized_delivery_type: deliveryType } },
                 });

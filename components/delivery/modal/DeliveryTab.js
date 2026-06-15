@@ -39,6 +39,7 @@ export default function DeliveryTab({
   orderId,
   cartToken,
   cartItems = [],
+  preferredDeliveryType = 'courier',
   onSelect,
   activeTab,
   setActiveTab,
@@ -54,7 +55,7 @@ export default function DeliveryTab({
     entrance: '',
     floor: '',
     intercom: '',
-    lift: 'none', // 'none' | 'freight' | 'passenger'
+    elevator_type: null,
     isPrivateHouse: false,
   });
 
@@ -213,18 +214,19 @@ export default function DeliveryTab({
   }, [ymapsReady]);
 
   function buildAddressPayload() {
+    const isPrivateHouse = Boolean(form.isPrivateHouse);
+
     return {
       city: form.city || '',
       street: form.street || '',
       house: form.house || '',
       building: form.building || '',
-      apartment: form.apartment || '',
-      entrance: form.entrance || '',
-      floor: form.floor || '',
-      lift: form.lift || 'none',
-      has_elevator: form.lift !== 'none',
-      intercom: form.intercom || '',
-      is_private_house: form.isPrivateHouse,
+      apartment: isPrivateHouse ? '' : (form.apartment || ''),
+      entrance: isPrivateHouse ? '' : (form.entrance || ''),
+      floor: isPrivateHouse ? '' : (form.floor || ''),
+      elevator_type: isPrivateHouse ? null : (form.elevator_type || null),
+      intercom: isPrivateHouse ? null : (form.intercom || null),
+      is_private_house: isPrivateHouse,
       lat: coords?.[0] ?? null,
       lng: coords?.[1] ?? null,
       full_address: form.fullAddress || '',
@@ -253,7 +255,7 @@ export default function DeliveryTab({
 
     const payload = {
       ...deliveryContext,
-      delivery_type: 'courier',
+      delivery_type: preferredDeliveryType,
       items: cartItems,
       address: addressPayload,
     };
@@ -268,7 +270,7 @@ export default function DeliveryTab({
           (method) => method?.code === 'ikeya_delivery' && method?.available
         );
 
-        if (hasIkeyaDelivery) {
+        if (payload.delivery_type === 'courier' && hasIkeyaDelivery) {
           try {
             const fallback = await calculateDelivery({
               ...payload,
@@ -322,18 +324,19 @@ export default function DeliveryTab({
 
     const label = parts.join(', ');
 
+    const isPrivateHouse = Boolean(form.isPrivateHouse);
+
     const addr = {
       city: form.city,
       street: form.street,
       house: form.house,
       building: form.building,
-      apartment: form.apartment,
-      entrance: form.entrance,
-      floor: form.floor,
-      lift: form.lift,
-      has_elevator: form.lift !== 'none',
-      intercom: form.intercom,
-      is_private_house: form.isPrivateHouse,
+      apartment: isPrivateHouse ? '' : form.apartment,
+      entrance: isPrivateHouse ? '' : form.entrance,
+      floor: isPrivateHouse ? '' : form.floor,
+      elevator_type: isPrivateHouse ? null : (form.elevator_type || null),
+      intercom: isPrivateHouse ? '' : form.intercom,
+      is_private_house: isPrivateHouse,
       address: form.fullAddress,
       label,
       coords,
@@ -411,9 +414,15 @@ export default function DeliveryTab({
                 type="checkbox"
                 checked={form.isPrivateHouse}
                 onChange={(event) => {
+                  const isPrivateHouse = event.target.checked;
                   setForm((prev) => ({
                     ...prev,
-                    isPrivateHouse: event.target.checked,
+                    isPrivateHouse,
+                    apartment: isPrivateHouse ? '' : prev.apartment,
+                    entrance: isPrivateHouse ? '' : prev.entrance,
+                    floor: isPrivateHouse ? '' : prev.floor,
+                    elevator_type: isPrivateHouse ? null : prev.elevator_type,
+                    intercom: isPrivateHouse ? '' : prev.intercom,
                   }));
                 }}
               />
@@ -483,20 +492,20 @@ export default function DeliveryTab({
 
                   <div className="delivery-lift-options">
                     {[
-                      { value: 'none', label: 'Нет' },
-                      { value: 'freight', label: 'грузовой' },
+                      { value: null, label: 'Не указан' },
+                      { value: 'cargo', label: 'грузовой' },
                       { value: 'passenger', label: 'пассажирский' },
                     ].map((option) => (
-                      <label key={option.value} className="delivery-lift-option">
+                      <label key={String(option.value)} className="delivery-lift-option">
                         <input
                           type="radio"
-                          name="lift"
-                          value={option.value}
-                          checked={form.lift === option.value}
+                          name="elevator_type"
+                          value={option.value ?? ''}
+                          checked={form.elevator_type === option.value}
                           onChange={() => {
                             setForm((prev) => ({
                               ...prev,
-                              lift: option.value,
+                              elevator_type: option.value,
                             }));
                           }}
                         />

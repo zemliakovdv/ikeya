@@ -1,0 +1,986 @@
+diff --git a/components/checkout/CheckoutPage.js b/components/checkout/CheckoutPage.js
+index 40036b08..7d5b2ba9 100644
+--- a/components/checkout/CheckoutPage.js
++++ b/components/checkout/CheckoutPage.js
+@@ -1,6 +1,6 @@
+ 'use client';
+ 
+-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
++import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+ import { useRouter, useSearchParams } from 'next/navigation';
+ import { useCart } from '@/contexts/CartContext';
+ import { useAuth } from '@/contexts/AuthContext';
+@@ -30,6 +30,7 @@ const LS_SELECTED_PVZ = 'checkout_selected_pvz';
+ const LS_SELECTED_ADDR = 'checkout_selected_addr';
+ const LS_PVZ_CALC = 'checkout_pvz_calc';
+ const LS_ADDR_CALC = 'checkout_addr_calc';
++const CHECKOUT_DELIVERY_SIGNATURE_KEY = 'checkout_delivery_signature';
+ 
+ function mask(str, visible = 2) {
+   if (!str) return '—';
+@@ -118,11 +119,179 @@ function getItemSku(item) {
+   );
+ }
+ 
++function getItemQuantity(item) {
++  const value = Number(item?.quantity ?? item?.qty ?? 1);
++  return Number.isFinite(value) && value > 0 ? value : 1;
++}
++
+ function toNumber(value, fallback = 0) {
+   const num = parseFloat(String(value ?? '').replace(/\s/g, ''));
+   return Number.isFinite(num) ? num : fallback;
+ }
+ 
++function normalizeSignatureValue(value) {
++  if (value === null || value === undefined) return '';
++  if (typeof value === 'number') return Number.isFinite(value) ? value : '';
++  if (typeof value === 'boolean') return value;
++  return String(value).trim();
++}
++
++function normalizeSignatureList(value) {
++  if (!Array.isArray(value) || !value.length) return [];
++
++  return value
++    .map((entry) => {
++      if (entry && typeof entry === 'object') {
++        return JSON.stringify(
++          Object.keys(entry)
++            .sort()
++            .reduce((acc, key) => {
++              acc[key] = normalizeSignatureValue(entry[key]);
++              return acc;
++            }, {})
++        );
++      }
++
++      return normalizeSignatureValue(entry);
++    })
++    .sort();
++}
++
++function getItemWeightKg(item) {
++  const value = Number(
++    item?.weight_kg ??
++    item?.weight ??
++    item?.product?.weight_kg ??
++    item?.product?.weight ??
++    item?.product?.data?.attributes?.weight_kg ??
++    item?.product?.data?.attributes?.weight ??
++    item?.product?.attributes?.weight_kg ??
++    item?.product?.attributes?.weight ??
++    item?.attributes?.weight_kg ??
++    item?.attributes?.weight ??
++    0
++  );
++
++  return Number.isFinite(value) && value > 0 ? value : 0;
++}
++
++function calculateItemsTotalWeight(items = []) {
++  return items.reduce((sum, item) => {
++    return sum + getItemWeightKg(item) * getItemQuantity(item);
++  }, 0);
++}
++
++function buildCheckoutDeliverySignature(items = []) {
++  const normalized = (items || [])
++    .map((item) => {
++      const product =
++        item?.product?.data?.attributes ||
++        item?.product?.attributes ||
++        item?.product ||
++        item?.attributes ||
++        item ||
++        {};
++
++      return {
++        sku: normalizeSignatureValue(getItemSku(item)),
++        quantity: getItemQuantity(item),
++        weight: normalizeSignatureValue(
++          item?.weight_kg ??
++          item?.weight ??
++          product?.weight_kg ??
++          product?.weight ??
++          product?.total_weight_kg
++        ),
++        width: normalizeSignatureValue(item?.width ?? product?.width),
++        height: normalizeSignatureValue(item?.height ?? product?.height),
++        depth: normalizeSignatureValue(item?.depth ?? product?.depth),
++        length: normalizeSignatureValue(item?.length ?? product?.length),
++        delivery_name: normalizeSignatureValue(product?.delivery_name ?? item?.delivery_name),
++        delivery_type: normalizeSignatureValue(product?.delivery_type ?? item?.delivery_type),
++        delivery_restrictions: normalizeSignatureList(
++          product?.delivery_restrictions ?? item?.delivery_restrictions
++        ),
++        available_methods: normalizeSignatureList(
++          product?.available_methods ?? item?.available_methods
++        ),
++        europost_eligible: product?.europost_eligible ?? item?.europost_eligible ?? '',
++        is_large: product?.is_large ?? item?.is_large ?? '',
++        is_heavy: product?.is_heavy ?? item?.is_heavy ?? '',
++        is_oversized: product?.is_oversized ?? item?.is_oversized ?? '',
++      };
++    })
++    .filter((item) => item.sku)
++    .sort((a, b) => a.sku.localeCompare(b.sku));
++
++  return normalized.length ? JSON.stringify(normalized) : '';
++}
++
++function withDeliverySignature(value, deliverySignature) {
++  if (!value || !deliverySignature) return value;
++  return {
++    ...value,
++    deliverySignature,
++  };
++}
++
++function isCalcResultFresh(calcResult, deliverySignature) {
++  return Boolean(
++    calcResult &&
++    deliverySignature &&
++    calcResult?.deliverySignature &&
++    calcResult.deliverySignature === deliverySignature
++  );
++}
++
++function stripSelectedDeliveryStateFromSummary(summary) {
++  if (!summary || typeof summary !== 'object') {
++    return null;
++  }
++
++  const nextSummary = { ...summary };
++
++  delete nextSummary.deliveryCost;
++  delete nextSummary.selectedAddr;
++  delete nextSummary.selectedPvz;
++  delete nextSummary.addrCalcResult;
++  delete nextSummary.pvzCalcResult;
++  delete nextSummary.deliverySignature;
++
++  return Object.keys(nextSummary).length ? nextSummary : null;
++}
++
++function hasStoredCheckoutDeliveryState() {
++  if (typeof window === 'undefined') return false;
++
++  return Boolean(
++    readLS(LS_SELECTED_PVZ) ||
++    readLS(LS_SELECTED_ADDR) ||
++    readLS(LS_PVZ_CALC) ||
++    readLS(LS_ADDR_CALC)
++  );
++}
++
++function hasLegacyCheckoutSummary(summary) {
++  if (!summary || typeof summary !== 'object') return false;
++
++  return Boolean(
++    !summary.deliverySignature &&
++    (
++      summary.delivery !== undefined ||
++      summary.deliveryCost !== undefined ||
++      summary.logisticsDelivery !== undefined ||
++      summary.selectedAddr !== undefined ||
++      summary.selectedPvz !== undefined ||
++      summary.addrCalcResult !== undefined ||
++      summary.pvzCalcResult !== undefined ||
++      summary.totalWeight !== undefined ||
++      summary.availableMethods !== undefined ||
++      summary.europostEligible !== undefined ||
++      summary.finalTotal !== undefined
++    )
++  );
++}
++
+ function getDeliveryPrice(calcResult) {
+   const delivery = calcResult?.delivery || {};
+ 
+@@ -285,7 +454,7 @@ function CheckoutPageInner() {
+   }, [searchParams]);
+ 
+   const { token } = useAuth();
+-  const { cart, totals, items, refreshCart } = useCart();
++  const { cart, totals, items, refreshCart, loading: cartLoading } = useCart();
+ 
+   const [profile, setProfile] = useState(null);
+   const [loadingProfile, setLoadingProfile] = useState(true);
+@@ -304,11 +473,11 @@ function CheckoutPageInner() {
+   const [pickupEligible, setPickupEligible] = useState(true);
+   const [showVghModal, setShowVghModal] = useState(false);
+ 
+-  const [selectedPvz, setSelectedPvz] = useState(() => readLS(LS_SELECTED_PVZ));
+-  const [pvzCalcResult, setPvzCalcResult] = useState(() => readLS(LS_PVZ_CALC));
++  const [selectedPvz, setSelectedPvz] = useState(null);
++  const [pvzCalcResult, setPvzCalcResult] = useState(null);
+ 
+-  const [selectedAddr, setSelectedAddr] = useState(() => readLS(LS_SELECTED_ADDR));
+-  const [addrCalcResult, setAddrCalcResult] = useState(() => readLS(LS_ADDR_CALC));
++  const [selectedAddr, setSelectedAddr] = useState(null);
++  const [addrCalcResult, setAddrCalcResult] = useState(null);
+ 
+   const [savedPvzList, setSavedPvzList] = useState([]);
+   const [savedAddrList, setSavedAddrList] = useState([]);
+@@ -320,6 +489,9 @@ function CheckoutPageInner() {
+ 
+   const [paymentMethod, setPaymentMethod] = useState('card');
+   const [selectedServices, setSelectedServices] = useState([]);
++  const deliveryStorageHydratedSignatureRef = useRef('');
++  const deliveryStorageMigratedRef = useRef(false);
++  const loadedDraftIdRef = useRef('');
+ 
+   const [showPassportData, setShowPassportData] = useState(false);
+   const [showPersonalModal, setShowPersonalModal] = useState(false);
+@@ -337,47 +509,8 @@ function CheckoutPageInner() {
+   const [checkoutSummary, setCheckoutSummary] = useState(() => readSessionJSON('checkoutSummary'));
+   const [checkoutPricing, setCheckoutPricing] = useState(null);
+   const [checkoutDeliveryOptions, setCheckoutDeliveryOptions] = useState(null);
+-
+   const cartToken = typeof window !== 'undefined' ? (localStorage.getItem('cart_token') || cart?.token || '') : '';
+ 
+-  const availableMethods = useMemo(() => {
+-    const methodsFromDraft = checkoutDeliveryOptions?.methods;
+-    if (Array.isArray(methodsFromDraft) && methodsFromDraft.length) return methodsFromDraft;
+-
+-    const fromSummary = checkoutSummary?.availableMethods;
+-    const fromCart = cart?.delivery?.available_methods;
+-
+-    if (Array.isArray(fromSummary) && fromSummary.length) return fromSummary;
+-    if (Array.isArray(fromCart) && fromCart.length) return fromCart;
+-
+-    return [];
+-  }, [checkoutSummary?.availableMethods, cart?.delivery?.available_methods, checkoutDeliveryOptions]);
+-
+-  const getMethodOption = useCallback((code) => {
+-    return availableMethods.find((item) => item?.code === code) || null;
+-  }, [availableMethods]);
+-
+-  const methodIsAvailable = useCallback((code) => {
+-    if (!availableMethods.length) return true;
+-
+-    const method = availableMethods.find((item) => item?.code === code);
+-
+-    return method ? method.available !== false : true;
+-  }, [availableMethods]);
+-
+-  const europostEligible = (
+-    cart?.delivery?.europost_eligible ??
+-    checkoutSummary?.europostEligible ??
+-    true
+-  ) !== false;
+-
+-  const europostPickupAvailable =
+-    europostEligible &&
+-    methodIsAvailable('europost_pickup');
+-
+-  const courierAvailable = methodIsAvailable('courier');
+-  const ikeyaDeliveryAvailable = methodIsAvailable('ikeya_delivery');
+-
+   const selectedSkus = useMemo(() => {
+     const parsed = readSessionJSON('selectedSkus', []);
+ 
+@@ -438,6 +571,145 @@ function CheckoutPageInner() {
+     return normalizeCheckoutItems(checkoutItemsSource);
+   }, [checkoutItemsSource]);
+ 
++  const checkoutItemsReady = useMemo(() => {
++    if (draftId) {
++      return !draftLoading && draftResolved && draftItems.length > 0;
++    }
++
++    if (storedCheckoutItems.length > 0) {
++      return true;
++    }
++
++    if (selectedSkus.length > 0) {
++      return !cartLoading;
++    }
++
++    return false;
++  }, [cartLoading, draftId, draftItems.length, draftLoading, draftResolved, selectedSkus.length, storedCheckoutItems.length]);
++
++  const currentDeliverySignature = useMemo(() => {
++    if (!checkoutItemsReady) {
++      return '';
++    }
++
++    return buildCheckoutDeliverySignature(checkoutItemsSource);
++  }, [checkoutItemsReady, checkoutItemsSource]);
++
++  const calculatedItemsTotalWeight = useMemo(() => {
++    return toNumber(calculateItemsTotalWeight(checkoutItemsSource).toFixed(3));
++  }, [checkoutItemsSource]);
++
++  const persistCheckoutSummary = useCallback((summary) => {
++    setCheckoutSummary(summary);
++
++    if (typeof window === 'undefined') {
++      return;
++    }
++
++    try {
++      if (summary) {
++        sessionStorage.setItem('checkoutSummary', JSON.stringify(summary));
++      } else {
++        sessionStorage.removeItem('checkoutSummary');
++      }
++    } catch {
++    }
++  }, []);
++
++  const persistDeliverySignature = useCallback((signature) => {
++    if (!signature) return;
++
++    writeLS(CHECKOUT_DELIVERY_SIGNATURE_KEY, signature);
++
++    setCheckoutSummary((prev) => {
++      if (!prev || prev?.deliverySignature === signature) {
++        return prev;
++      }
++
++      const nextSummary = {
++        ...prev,
++        deliverySignature: signature,
++      };
++
++      if (typeof window !== 'undefined') {
++        try {
++          sessionStorage.setItem('checkoutSummary', JSON.stringify(nextSummary));
++        } catch {
++        }
++      }
++
++      return nextSummary;
++    });
++  }, []);
++
++  const resetCheckoutDeliveryState = useCallback((summaryOverride = null) => {
++    setSelectedPvz(null);
++    setPvzCalcResult(null);
++    setSelectedAddr(null);
++    setAddrCalcResult(null);
++    setCheckoutPricing(null);
++
++    removeLS(LS_SELECTED_PVZ);
++    removeLS(LS_SELECTED_ADDR);
++    removeLS(LS_PVZ_CALC);
++    removeLS(LS_ADDR_CALC);
++    removeLS(CHECKOUT_DELIVERY_SIGNATURE_KEY);
++
++    const summaryToClean = summaryOverride ?? readSessionJSON('checkoutSummary');
++    persistCheckoutSummary(stripSelectedDeliveryStateFromSummary(summaryToClean));
++  }, [persistCheckoutSummary]);
++
++  const isSummaryFreshForCurrentItems = Boolean(
++    checkoutSummary?.deliverySignature &&
++    currentDeliverySignature &&
++    checkoutSummary.deliverySignature === currentDeliverySignature
++  );
++
++  const freshAddrCalcResult = isCalcResultFresh(addrCalcResult, currentDeliverySignature)
++    ? addrCalcResult
++    : null;
++  const freshPvzCalcResult = isCalcResultFresh(pvzCalcResult, currentDeliverySignature)
++    ? pvzCalcResult
++    : null;
++
++  const availableMethods = useMemo(() => {
++    const methodsFromDraft = checkoutDeliveryOptions?.methods;
++    if (Array.isArray(methodsFromDraft) && methodsFromDraft.length) return methodsFromDraft;
++
++    const fromSummary = isSummaryFreshForCurrentItems ? checkoutSummary?.availableMethods : null;
++    const fromCart = cart?.delivery?.available_methods;
++
++    if (Array.isArray(fromSummary) && fromSummary.length) return fromSummary;
++    if (Array.isArray(fromCart) && fromCart.length) return fromCart;
++
++    return [];
++  }, [cart?.delivery?.available_methods, checkoutDeliveryOptions, checkoutSummary?.availableMethods, isSummaryFreshForCurrentItems]);
++
++  const getMethodOption = useCallback((code) => {
++    return availableMethods.find((item) => item?.code === code) || null;
++  }, [availableMethods]);
++
++  const methodIsAvailable = useCallback((code) => {
++    if (!availableMethods.length) return true;
++
++    const method = availableMethods.find((item) => item?.code === code);
++
++    return method ? method.available !== false : true;
++  }, [availableMethods]);
++
++  const europostEligible = (
++    cart?.delivery?.europost_eligible ??
++    (isSummaryFreshForCurrentItems ? checkoutSummary?.europostEligible : null) ??
++    true
++  ) !== false;
++
++  const europostPickupAvailable =
++    europostEligible &&
++    methodIsAvailable('europost_pickup');
++
++  const courierAvailable = methodIsAvailable('courier');
++  const ikeyaDeliveryAvailable = methodIsAvailable('ikeya_delivery');
++
+   useEffect(() => {
+     const storedSummary = readSessionJSON('checkoutSummary');
+     if (storedSummary) {
+@@ -445,6 +717,81 @@ function CheckoutPageInner() {
+     }
+   }, []);
+ 
++  useEffect(() => {
++    if (!checkoutItemsReady || !currentDeliverySignature) {
++      return;
++    }
++
++    const persistedSignature = readLS(CHECKOUT_DELIVERY_SIGNATURE_KEY, '');
++    const storedSummary = readSessionJSON('checkoutSummary');
++
++    if (!persistedSignature) {
++      setSelectedPvz(null);
++      setPvzCalcResult(null);
++      setSelectedAddr(null);
++      setAddrCalcResult(null);
++
++      const hasStoredDeliveryState = hasStoredCheckoutDeliveryState();
++
++      if (
++        !deliveryStorageMigratedRef.current &&
++        (hasStoredDeliveryState || hasLegacyCheckoutSummary(storedSummary))
++      ) {
++        deliveryStorageMigratedRef.current = true;
++
++        removeLS(LS_SELECTED_PVZ);
++        removeLS(LS_SELECTED_ADDR);
++        removeLS(LS_PVZ_CALC);
++        removeLS(LS_ADDR_CALC);
++        removeLS(CHECKOUT_DELIVERY_SIGNATURE_KEY);
++
++        if (hasStoredDeliveryState) {
++          persistCheckoutSummary(stripSelectedDeliveryStateFromSummary(storedSummary));
++        } else if (storedSummary && typeof storedSummary === 'object') {
++          persistCheckoutSummary({
++            ...storedSummary,
++            deliverySignature: currentDeliverySignature,
++          });
++        }
++      }
++
++      deliveryStorageHydratedSignatureRef.current = currentDeliverySignature;
++      return;
++    }
++
++    if (persistedSignature !== currentDeliverySignature) {
++      if (deliveryStorageHydratedSignatureRef.current !== currentDeliverySignature) {
++        deliveryStorageHydratedSignatureRef.current = currentDeliverySignature;
++        resetCheckoutDeliveryState(storedSummary);
++      }
++
++      return;
++    }
++
++    if (deliveryStorageHydratedSignatureRef.current === currentDeliverySignature) {
++      return;
++    }
++
++    deliveryStorageHydratedSignatureRef.current = currentDeliverySignature;
++
++    setSelectedPvz(readLS(LS_SELECTED_PVZ));
++    setSelectedAddr(readLS(LS_SELECTED_ADDR));
++
++    const storedPvzCalcResult = readLS(LS_PVZ_CALC);
++    const storedAddrCalcResult = readLS(LS_ADDR_CALC);
++
++    setPvzCalcResult(
++      isCalcResultFresh(storedPvzCalcResult, currentDeliverySignature)
++        ? storedPvzCalcResult
++        : null
++    );
++    setAddrCalcResult(
++      isCalcResultFresh(storedAddrCalcResult, currentDeliverySignature)
++        ? storedAddrCalcResult
++        : null
++    );
++  }, [checkoutItemsReady, currentDeliverySignature, persistCheckoutSummary, resetCheckoutDeliveryState]);
++
+   useEffect(() => {
+     if (draftLoading) {
+       return;
+@@ -480,12 +827,19 @@ function CheckoutPageInner() {
+ 
+   useEffect(() => {
+     if (!draftId) {
++      loadedDraftIdRef.current = '';
+       setDraftResolved(false);
+       setDraftLoadFailed(false);
+       setDraftLoading(false);
+       return;
+     }
+ 
++    if (loadedDraftIdRef.current === draftId && draftResolved) {
++      return;
++    }
++
++    loadedDraftIdRef.current = draftId;
++
+     setDraftLoading(true);
+     setDraftResolved(false);
+     setDraftLoadFailed(false);
+@@ -518,36 +872,50 @@ function CheckoutPageInner() {
+         );
+         const itemCount = loadedDraftItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+         const totalWeight = parseFloat(attr.address?.weight_kg || 0);
++        const draftDeliverySignature = buildCheckoutDeliverySignature(loadedDraftItems);
++        const draftItemsTotalWeight = toNumber(calculateItemsTotalWeight(loadedDraftItems).toFixed(3));
+ 
+         const previousSummary = readSessionJSON('checkoutSummary');
++        const isPreviousSummaryFresh = Boolean(
++          previousSummary?.deliverySignature &&
++          draftDeliverySignature &&
++          previousSummary.deliverySignature === draftDeliverySignature
++        );
++        const nextWeight = totalWeight > 0
++          ? totalWeight
++          : draftItemsTotalWeight;
+ 
+         const summary = {
+           subtotal: toNumber(subtotal.toFixed(2)),
+           promoDiscount: previousSummary?.promoDiscount ?? 0,
+           itemCount,
+-          totalWeight: totalWeight > 0 ? totalWeight : previousSummary?.totalWeight ?? 0,
++          totalWeight: nextWeight > 0
++            ? nextWeight
++            : isPreviousSummaryFresh
++              ? previousSummary?.totalWeight ?? 0
++              : 0,
+           customsDuty: previousSummary?.customsDuty ?? 0,
+-          delivery: previousSummary?.delivery ?? 0,
+-          logisticsDelivery: previousSummary?.logisticsDelivery ?? 0,
+-          finalTotal: previousSummary?.finalTotal ?? null,
+-          europostEligible: previousSummary?.europostEligible ?? null,
+-          availableMethods: deliveryOptions?.methods ?? previousSummary?.availableMethods ?? [],
++          delivery: isPreviousSummaryFresh ? previousSummary?.delivery ?? 0 : 0,
++          logisticsDelivery: isPreviousSummaryFresh ? previousSummary?.logisticsDelivery ?? 0 : 0,
++          finalTotal: isPreviousSummaryFresh ? previousSummary?.finalTotal ?? null : null,
++          europostEligible: isPreviousSummaryFresh ? previousSummary?.europostEligible ?? null : null,
++          availableMethods: deliveryOptions?.methods ?? (isPreviousSummaryFresh ? previousSummary?.availableMethods ?? [] : []),
++          deliverySignature: draftDeliverySignature || '',
+         };
+ 
+-        sessionStorage.setItem('checkoutSummary', JSON.stringify(summary));
+-
+         setDraftItems(loadedDraftItems);
+-        setCheckoutSummary(summary);
++        persistCheckoutSummary(summary);
+         setDraftResolved(true);
+       })
+       .catch(() => {
++        loadedDraftIdRef.current = '';
+         sessionStorage.removeItem('checkoutDraftId');
+         setDraftItems([]);
+         setDraftLoadFailed(true);
+         setError('Не удалось загрузить черновик заказа. Вернитесь в корзину и начните оформление заново.');
+       })
+       .finally(() => setDraftLoading(false));
+-  }, [draftId]);
++  }, [draftId, draftResolved, persistCheckoutSummary]);
+ 
+   useEffect(() => {
+     if (!token) {
+@@ -634,32 +1002,46 @@ function CheckoutPageInner() {
+     checkoutSummary?.subtotal
+   );
+   const promoDiscount = checkoutSummary?.promoDiscount ?? toNumber(totals?.discount_total_byn || totals?.discount);
++  const summaryDeliveryToBelarus = isSummaryFreshForCurrentItems
++    ? (
++      checkoutSummary?.delivery ??
++      checkoutSummary?.logisticsDelivery ??
++      checkoutSummary?.deliveryToBelarus ??
++      checkoutSummary?.delivery_to_belarus_byn ??
++      checkoutSummary?.delivery_to_belarus_price_byn
++    )
++    : null;
+ 
+   const deliveryCost = toNumber(
+     pricingTotals?.delivery_to_belarus_price_byn ??
+     pricingDelivery?.delivery_to_belarus_price_byn ??
+-    checkoutSummary?.delivery ??
++    summaryDeliveryToBelarus ??
+     cart?.delivery?.delivery_to_belarus_byn ??
+     cart?.totals?.delivery_to_belarus_byn
+   );
+ 
+-  const totalWeight = checkoutSummary?.totalWeight ?? toNumber(totals?.total_weight_kg);
+-  const customsDuty = checkoutSummary?.customsDuty ?? 0;
++  const totalWeight = toNumber(
++    totals?.total_weight_kg ??
++    calculatedItemsTotalWeight ??
++    (isSummaryFreshForCurrentItems ? checkoutSummary?.totalWeight : null) ??
++    0
++  );
++  const customsDuty = isSummaryFreshForCurrentItems ? checkoutSummary?.customsDuty ?? 0 : 0;
+   const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+   const finalTotal = toNumber(
+     pricingTotals?.final_total_byn ??
+     pricingTotals?.total_byn ??
+-    checkoutSummary?.finalTotal
++    (isSummaryFreshForCurrentItems ? checkoutSummary?.finalTotal : null)
+   );
+ 
+-  const pvzDeliveryCost = getDeliveryPrice(pvzCalcResult);
++  const pvzDeliveryCost = getDeliveryPrice(freshPvzCalcResult);
+ 
+-  const addrDeliveryCost = getDeliveryPrice(addrCalcResult);
++  const addrDeliveryCost = getDeliveryPrice(freshAddrCalcResult);
+   const selectedDeliveryDisplayPrice = `${addrDeliveryCost.toFixed(2)} р.`;
+   const addrDeliveryType =
+-    addrCalcResult?.delivery?.normalized_delivery_type ||
+-    addrCalcResult?.delivery?.delivery_type ||
+-    addrCalcResult?.delivery?.type ||
++    freshAddrCalcResult?.delivery?.normalized_delivery_type ||
++    freshAddrCalcResult?.delivery?.delivery_type ||
++    freshAddrCalcResult?.delivery?.type ||
+     (courierAvailable ? 'courier' : ikeyaDeliveryAvailable ? 'ikeya_delivery' : null);
+   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
+   const selectedPickupPointId =
+@@ -698,11 +1080,15 @@ function CheckoutPageInner() {
+   const hasValidDeliveryAddress = isPickup
+     ? Boolean(selectedPickupPointId || selectedPvz)
+     : hasSelectedDeliveryAddressPayload;
++  const hasFreshPickupCalculation = isPickup ? Boolean(freshPvzCalcResult) : true;
++  const hasFreshAddressCalculation = isPickup ? true : Boolean(freshAddrCalcResult);
+ 
+   const canCheckout = !!(
+     fullName &&
+     profile?.phone &&
+     hasValidDeliveryAddress &&
++    hasFreshPickupCalculation &&
++    hasFreshAddressCalculation &&
+     itemCount > 0 &&
+     (!draftId || (draftResolved && !draftLoadFailed && draftItems.length > 0)) &&
+     !submitting
+@@ -767,10 +1153,18 @@ function CheckoutPageInner() {
+       return;
+     }
+ 
++    if (!currentDeliverySignature || !calcResult) {
++      setError('\u0414\u0430\u043d\u043d\u044b\u0435\u0020\u0437\u0430\u043a\u0430\u0437\u0430\u0020\u0435\u0449\u0451\u0020\u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e\u0442\u0441\u044f\u002e\u0020\u041f\u043e\u0432\u0442\u043e\u0440\u0438\u0442\u0435\u0020\u0432\u044b\u0431\u043e\u0440\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438\u0020\u0447\u0435\u0440\u0435\u0437\u0020\u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e\u0020\u0441\u0435\u043a\u0443\u043d\u0434\u002e');
++      return;
++    }
++
++    const nextCalcResult = withDeliverySignature(calcResult, currentDeliverySignature);
++
+     setSelectedPvz(pvz);
+-    setPvzCalcResult(calcResult);
++    setPvzCalcResult(nextCalcResult);
+     writeLS(LS_SELECTED_PVZ, pvz);
+-    writeLS(LS_PVZ_CALC, calcResult);
++    writeLS(LS_PVZ_CALC, nextCalcResult);
++    persistDeliverySignature(currentDeliverySignature);
+     saveReceiveMethod('pickup');
+ 
+     try {
+@@ -820,19 +1214,27 @@ function CheckoutPageInner() {
+       setSavedPvzList(updated);
+       writeLS(LS_SAVED_PVZ, updated);
+     }
+-  }, [token, savedPvzList, saveDeliveryToDraft, europostPickupAvailable]);
++  }, [currentDeliverySignature, europostPickupAvailable, persistDeliverySignature, saveDeliveryToDraft, savedPvzList, token]);
+ 
+   const handleSelectAddr = useCallback(async (addr, calcResult) => {
++    if (!currentDeliverySignature || !calcResult) {
++      setError('\u0414\u0430\u043d\u043d\u044b\u0435\u0020\u0437\u0430\u043a\u0430\u0437\u0430\u0020\u0435\u0449\u0451\u0020\u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e\u0442\u0441\u044f\u002e\u0020\u041f\u043e\u0432\u0442\u043e\u0440\u0438\u0442\u0435\u0020\u0432\u044b\u0431\u043e\u0440\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438\u0020\u0447\u0435\u0440\u0435\u0437\u0020\u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e\u0020\u0441\u0435\u043a\u0443\u043d\u0434\u002e');
++      return;
++    }
++
++    const nextCalcResult = withDeliverySignature(calcResult, currentDeliverySignature);
++
+     setSelectedAddr(addr);
+-    setAddrCalcResult(calcResult);
++    setAddrCalcResult(nextCalcResult);
+     writeLS(LS_SELECTED_ADDR, addr);
+-    writeLS(LS_ADDR_CALC, calcResult);
++    writeLS(LS_ADDR_CALC, nextCalcResult);
++    persistDeliverySignature(currentDeliverySignature);
+     saveReceiveMethod('delivery');
+ 
+     const resolvedDeliveryType =
+-      calcResult?.delivery?.normalized_delivery_type ||
+-      calcResult?.delivery?.delivery_type ||
+-      calcResult?.delivery?.type ||
++      nextCalcResult?.delivery?.normalized_delivery_type ||
++      nextCalcResult?.delivery?.delivery_type ||
++      nextCalcResult?.delivery?.type ||
+       'courier';
+ 
+     if (!methodIsAvailable(resolvedDeliveryType)) {
+@@ -915,7 +1317,7 @@ function CheckoutPageInner() {
+       setSavedAddrList(updated);
+       writeLS(LS_SAVED_ADDR, updated);
+     }
+-  }, [token, savedAddrList, saveDeliveryToDraft, methodIsAvailable]);
++  }, [currentDeliverySignature, methodIsAvailable, persistDeliverySignature, saveDeliveryToDraft, savedAddrList, token]);
+ 
+   const handleChangePvz = () => {
+     if (!pickupEligible || !europostPickupAvailable) {
+@@ -947,11 +1349,10 @@ function CheckoutPageInner() {
+     const found = savedPvzList.find((addr) => addr.id === id);
+     if (!found) return;
+ 
+-    setSelectedPvz(found);
+-    writeLS(LS_SELECTED_PVZ, found);
+-    saveReceiveMethod('pickup');
+-
+-    if (!cartItems.length) return;
++    if (!currentDeliverySignature) {
++      setError('\u0414\u0430\u043d\u043d\u044b\u0435\u0020\u0437\u0430\u043a\u0430\u0437\u0430\u0020\u0435\u0449\u0451\u0020\u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e\u0442\u0441\u044f\u002e\u0020\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435\u0020\u0432\u044b\u0431\u0440\u0430\u0442\u044c\u0020\u041f\u0412\u0417\u0020\u0447\u0435\u0440\u0435\u0437\u0020\u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e\u0020\u0441\u0435\u043a\u0443\u043d\u0434\u002e');
++      return;
++    }
+ 
+     const deliveryContext = draftId
+       ? { order_id: draftId }
+@@ -959,18 +1360,25 @@ function CheckoutPageInner() {
+         ? { cart_token: cartToken }
+         : null;
+ 
+-    if (!deliveryContext) return;
++    if (!cartItems.length || !deliveryContext) {
++      setError('\u0414\u0430\u043d\u043d\u044b\u0435\u0020\u0437\u0430\u043a\u0430\u0437\u0430\u0020\u0435\u0449\u0451\u0020\u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e\u0442\u0441\u044f\u002e\u0020\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435\u0020\u0432\u044b\u0431\u0440\u0430\u0442\u044c\u0020\u041f\u0412\u0417\u0020\u0447\u0435\u0440\u0435\u0437\u0020\u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e\u0020\u0441\u0435\u043a\u0443\u043d\u0434\u002e');
++      return;
++    }
+ 
+     try {
+-      const result = await calculateDelivery({
++      const result = withDeliverySignature(await calculateDelivery({
+         ...deliveryContext,
+         delivery_type: 'europost_pickup',
+         pickup_point_id: found.pickup_point_id || found.id,
+         items: cartItems,
+-      });
++      }), currentDeliverySignature);
+ 
++      setSelectedPvz(found);
+       setPvzCalcResult(result);
++      writeLS(LS_SELECTED_PVZ, found);
+       writeLS(LS_PVZ_CALC, result);
++      persistDeliverySignature(currentDeliverySignature);
++      saveReceiveMethod('pickup');
+ 
+       try {
+         const response = await saveDeliveryToDraft({
+@@ -989,11 +1397,10 @@ function CheckoutPageInner() {
+     const found = savedAddrList.find((addr) => addr.id === id);
+     if (!found) return;
+ 
+-    setSelectedAddr(found);
+-    writeLS(LS_SELECTED_ADDR, found);
+-    saveReceiveMethod('delivery');
+-
+-    if (!cartItems.length) return;
++    if (!currentDeliverySignature) {
++      setError('\u0414\u0430\u043d\u043d\u044b\u0435\u0020\u0437\u0430\u043a\u0430\u0437\u0430\u0020\u0435\u0449\u0451\u0020\u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e\u0442\u0441\u044f\u002e\u0020\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435\u0020\u0432\u044b\u0431\u0440\u0430\u0442\u044c\u0020\u0430\u0434\u0440\u0435\u0441\u0020\u0447\u0435\u0440\u0435\u0437\u0020\u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e\u0020\u0441\u0435\u043a\u0443\u043d\u0434\u002e');
++      return;
++    }
+ 
+     const deliveryContext = draftId
+       ? { order_id: draftId }
+@@ -1001,7 +1408,10 @@ function CheckoutPageInner() {
+         ? { cart_token: cartToken }
+         : null;
+ 
+-    if (!deliveryContext) return;
++    if (!cartItems.length || !deliveryContext) {
++      setError('\u0414\u0430\u043d\u043d\u044b\u0435\u0020\u0437\u0430\u043a\u0430\u0437\u0430\u0020\u0435\u0449\u0451\u0020\u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044e\u0442\u0441\u044f\u002e\u0020\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435\u0020\u0432\u044b\u0431\u0440\u0430\u0442\u044c\u0020\u0430\u0434\u0440\u0435\u0441\u0020\u0447\u0435\u0440\u0435\u0437\u0020\u043d\u0435\u0441\u043a\u043e\u043b\u044c\u043a\u043e\u0020\u0441\u0435\u043a\u0443\u043d\u0434\u002e');
++      return;
++    }
+ 
+     const payload = {
+       ...deliveryContext,
+@@ -1011,9 +1421,13 @@ function CheckoutPageInner() {
+     };
+ 
+     try {
+-      const result = await calculateDelivery(payload);
++      const result = withDeliverySignature(await calculateDelivery(payload), currentDeliverySignature);
++      setSelectedAddr(found);
+       setAddrCalcResult(result);
++      writeLS(LS_SELECTED_ADDR, found);
+       writeLS(LS_ADDR_CALC, result);
++      persistDeliverySignature(currentDeliverySignature);
++      saveReceiveMethod('delivery');
+ 
+       const resolvedDeliveryType =
+         result?.delivery?.normalized_delivery_type ||
+@@ -1049,13 +1463,17 @@ function CheckoutPageInner() {
+       if (!hasIkeyaDelivery) return;
+ 
+       try {
+-        const fallback = await calculateDelivery({
++        const fallback = withDeliverySignature(await calculateDelivery({
+           ...payload,
+           delivery_type: 'ikeya_delivery',
+-        });
++        }), currentDeliverySignature);
+ 
++        setSelectedAddr(found);
+         setAddrCalcResult(fallback);
++        writeLS(LS_SELECTED_ADDR, found);
+         writeLS(LS_ADDR_CALC, fallback);
++        persistDeliverySignature(currentDeliverySignature);
++        saveReceiveMethod('delivery');
+ 
+         try {
+           const response = await saveDeliveryToDraft({
+@@ -1111,7 +1529,7 @@ function CheckoutPageInner() {
+       return;
+     }
+ 
+-    if (selectedPvz) {
++    if (selectedPvz && freshPvzCalcResult) {
+       saveReceiveMethod('pickup');
+       return;
+     }
+@@ -1134,7 +1552,7 @@ function CheckoutPageInner() {
+       });
+     } catch { }
+ 
+-    if (selectedAddr) return;
++    if (selectedAddr && freshAddrCalcResult) return;
+ 
+     setDeliveryModalTab('delivery');
+     setShowDeliveryModal(true);
+@@ -1148,6 +1566,15 @@ function CheckoutPageInner() {
+ 
+   async function handleCheckout() {
+     if (!canCheckout) {
++      if (receiveMethod === 'delivery' && !freshAddrCalcResult) {
++        setError('\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435\u0020\u0430\u0434\u0440\u0435\u0441\u0020\u0438\u0020\u043f\u0435\u0440\u0435\u0441\u0447\u0438\u0442\u0430\u0439\u0442\u0435\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0443\u0020\u0434\u043b\u044f\u0020\u0442\u0435\u043a\u0443\u0449\u0435\u0439\u0020\u043a\u043e\u0440\u0437\u0438\u043d\u044b\u002e');
++        return;
++      }
++
++      if (receiveMethod === 'pickup' && !freshPvzCalcResult) {
++        setError('\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435\u0020\u041f\u0412\u0417\u0020\u0438\u0020\u043f\u0435\u0440\u0435\u0441\u0447\u0438\u0442\u0430\u0439\u0442\u0435\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0443\u0020\u0434\u043b\u044f\u0020\u0442\u0435\u043a\u0443\u0449\u0435\u0439\u0020\u043a\u043e\u0440\u0437\u0438\u043d\u044b\u002e');
++        return;
++      }
+       if (receiveMethod === 'delivery' && selectedAddr && !selectedAddr.house) {
+         setError('Укажите номер дома для доставки.');
+       }
+@@ -1166,6 +1593,11 @@ function CheckoutPageInner() {
+       }
+     }
+ 
++    if (receiveMethod === 'pickup' && !freshPvzCalcResult) {
++      setError('\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435\u0020\u041f\u0412\u0417\u0020\u0438\u0020\u043f\u0435\u0440\u0435\u0441\u0447\u0438\u0442\u0430\u0439\u0442\u0435\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0443\u0020\u0434\u043b\u044f\u0020\u0442\u0435\u043a\u0443\u0449\u0435\u0439\u0020\u043a\u043e\u0440\u0437\u0438\u043d\u044b\u002e');
++      return;
++    }
++
+     if (receiveMethod === 'delivery') {
+       if (!methodIsAvailable(addrDeliveryType)) {
+         setError('Выбранный способ доставки недоступен для текущего заказа.');
+@@ -1178,6 +1610,11 @@ function CheckoutPageInner() {
+       }
+     }
+ 
++    if (receiveMethod === 'delivery' && !freshAddrCalcResult) {
++      setError('\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435\u0020\u0430\u0434\u0440\u0435\u0441\u0020\u0438\u0020\u043f\u0435\u0440\u0435\u0441\u0447\u0438\u0442\u0430\u0439\u0442\u0435\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0443\u0020\u0434\u043b\u044f\u0020\u0442\u0435\u043a\u0443\u0449\u0435\u0439\u0020\u043a\u043e\u0440\u0437\u0438\u043d\u044b\u002e');
++      return;
++    }
++
+     setError(null);
+     setA1Loading(true);
+     setA1Error(null);
+@@ -1285,7 +1722,7 @@ function CheckoutPageInner() {
+       if (receiveMethod === 'delivery' && selectedAddr) {
+         sessionStorage.setItem('selectedDeliveryAddr', JSON.stringify({
+           ...selectedAddr,
+-          calcResult: addrCalcResult,
++          calcResult: freshAddrCalcResult,
+         }));
+       }
+ 
+@@ -1309,7 +1746,7 @@ function CheckoutPageInner() {
+         payment_expires_at: order?.payment_expires_at || finalizeResponse?.payment_expires_at || null,
+         payment_expired: false,
+         address: {
+-          delivery: receiveMethod === 'delivery' ? addrCalcResult?.delivery : pvzCalcResult?.delivery,
++          delivery: receiveMethod === 'delivery' ? freshAddrCalcResult?.delivery : freshPvzCalcResult?.delivery,
+           services: selectedServices,
+         },
+       }));
+@@ -1344,6 +1781,7 @@ function CheckoutPageInner() {
+       removeLS(LS_PVZ_CALC);
+       removeLS(LS_ADDR_CALC);
+       removeLS(LS_RECEIVE_METHOD);
++      removeLS(CHECKOUT_DELIVERY_SIGNATURE_KEY);
+ 
+       router.push(`/order-success?order_id=${orderId}`);
+     } catch (err) {
+@@ -1491,16 +1929,16 @@ function CheckoutPageInner() {
+                                   <div className="timeline-item">
+                                     <span className="timeline-label">Дата получения</span>
+                                     <span className="timeline-value">
+-                                      {pvzCalcResult?.delivery?.delivery_date
+-                                        ? formatDeliveryDate(pvzCalcResult.delivery.delivery_date)
++                                      {freshPvzCalcResult?.delivery?.delivery_date
++                                        ? formatDeliveryDate(freshPvzCalcResult.delivery.delivery_date)
+                                         : '—'}
+                                     </span>
+                                   </div>
+                                   <div className="timeline-item">
+                                     <span className="timeline-label">Срок хранения до</span>
+                                     <span className="timeline-value">
+-                                      {pvzCalcResult?.delivery?.storage_until
+-                                        ? formatDeliveryDate(pvzCalcResult.delivery.storage_until)
++                                      {freshPvzCalcResult?.delivery?.storage_until
++                                        ? formatDeliveryDate(freshPvzCalcResult.delivery.storage_until)
+                                         : '14 дней'}
+                                     </span>
+                                   </div>
+@@ -1523,12 +1961,10 @@ function CheckoutPageInner() {
+                                   <button type="button" className="change-link" onClick={handleChangeAddr}>Изменить</button>
+                                 </div>
+ 
+-                                {!isIkeyaDelivery && (
+-                                  <div className="alert alert-info">
++                                <div className="alert alert-info">
+                                     <PassportIcon />
+                                     <span>Для получения заказа необходим паспорт</span>
+-                                  </div>
+-                                )}
++                                </div>
+ 
+                                 {!isIkeyaDelivery && (
+                                   <div className="delivery-info-block delivery-info-block--europost">
+@@ -1561,12 +1997,14 @@ function CheckoutPageInner() {
+                                       <span className="delivery-info-name">Доставка IKEYA</span>
+                                       <IkeyaLogo />
+                                     </div>
+-                                    <div className="alert alert-info">
++                                    {false && (
++                                      <div className="alert alert-info">
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                         <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+                                       </svg>
+-                                      <span>Для получения заказа необходим паспорт</span>
+-                                    </div>
++                                      <span />
++                                      </div>
++                                    )}
+                                     <div className="alert alert-info" style={{ marginTop: 8 }}>
+                                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                         <path d="M12 2C6.49 2 2 6.49 2 12C2 17.51 6.49 22 12 22C17.51 22 22 17.51 22 12C22 6.49 17.51 2 12 2ZM12.7 15.72C12.7 16.11 12.39 16.42 12 16.42C11.61 16.42 11.3 16.11 11.3 15.72V11.53C11.3 11.14 11.61 10.83 12 10.83C12.39 10.83 12.7 11.14 12.7 11.53V15.72ZM12 9.12C11.54 9.12 11.16 8.75 11.16 8.29C11.16 7.82 11.53 7.44 12 7.44C12.47 7.44 12.84 7.81 12.84 8.28C12.84 8.75 12.47 9.12 12 9.12Z" fill="#0058A3" />
+@@ -1817,9 +2255,9 @@ function CheckoutPageInner() {
+                         promoDiscount={promoDiscount}
+                         delivery={deliveryCost}
+                         pvzDelivery={receiveMethod === 'pickup' ? pvzDeliveryCost : 0}
+-                        showPvzDelivery={receiveMethod === 'pickup' && !!selectedPvz}
++                        showPvzDelivery={receiveMethod === 'pickup' && !!selectedPvz && !!freshPvzCalcResult}
+                         courierDelivery={receiveMethod === 'delivery' && !isIkeyaDelivery ? addrDeliveryCost : 0}
+-                        showCourierDelivery={receiveMethod === 'delivery' && !!selectedAddr && !isIkeyaDelivery}
++                        showCourierDelivery={receiveMethod === 'delivery' && !!selectedAddr && !!freshAddrCalcResult && !isIkeyaDelivery}
+                         finalTotal={finalTotal}
+                         itemCount={itemCount}
+                         totalWeight={totalWeight}

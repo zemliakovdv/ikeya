@@ -332,6 +332,14 @@ function getDeliveryPrice(calcResult) {
   return toNumber(found);
 }
 
+function getCalcTotals(calcResult) {
+  if (!calcResult || typeof calcResult !== 'object') {
+    return {};
+  }
+
+  return calcResult?.totals || calcResult?.delivery?.totals || {};
+}
+
 function getAvailableMethodsFromError(error) {
   const payload = error?.payload || {};
 
@@ -363,58 +371,98 @@ function extractDeliveryOptions(payload) {
   return checkout?.delivery_options || payload?.delivery_options || null;
 }
 
-function getLiftLabel(lift) {
-  switch (lift) {
-    case 'freight':
-      return 'грузовой лифт';
+function normalizeElevatorType(addr = {}) {
+  if (addr?.elevator_type === 'passenger' || addr?.elevator_type === 'cargo') {
+    return addr.elevator_type;
+  }
+
+  if (addr?.lift === 'passenger') return 'passenger';
+  if (addr?.lift === 'freight' || addr?.lift === 'cargo') return 'cargo';
+
+  return null;
+}
+
+function normalizeDeliveryAddress(addr) {
+  if (!addr || typeof addr !== 'object') {
+    return null;
+  }
+
+  const {
+    lift,
+    has_elevator,
+    isPrivateHouse,
+    ...rest
+  } = addr;
+
+  const isPrivate = Boolean(addr.is_private_house ?? isPrivateHouse);
+
+  return {
+    ...rest,
+    is_private_house: isPrivate,
+    apartment: isPrivate ? '' : (addr.apartment || ''),
+    entrance: isPrivate ? '' : (addr.entrance || ''),
+    floor: isPrivate ? '' : (addr.floor || ''),
+    elevator_type: isPrivate ? null : normalizeElevatorType(addr),
+    intercom: isPrivate ? '' : (addr.intercom || ''),
+  };
+}
+
+function getElevatorTypeLabel(elevatorType) {
+  switch (elevatorType) {
     case 'passenger':
       return 'пассажирский лифт';
-    case 'none':
-      return 'без лифта';
+    case 'cargo':
+      return 'грузовой лифт';
     default:
-      return '';
+      return 'лифт не указан';
   }
 }
 
 function formatDeliveryAddressLabel(addr) {
-  if (!addr || typeof addr !== 'object') {
+  const normalizedAddr = normalizeDeliveryAddress(addr);
+
+  if (!normalizedAddr) {
     return '';
   }
 
-  const streetLine = [addr.street, addr.house, addr.building].filter(Boolean).join(', ');
+  const streetLine = [normalizedAddr.street, normalizedAddr.house, normalizedAddr.building].filter(Boolean).join(', ');
   const baseAddress = String(
-    [addr.city, streetLine].filter(Boolean).join(', ') ||
-    addr.address ||
-    addr.full_address
+    [normalizedAddr.city, streetLine].filter(Boolean).join(', ') ||
+    normalizedAddr.address ||
+    normalizedAddr.full_address
   ).trim();
   const parts = [baseAddress];
 
-  if (addr.apartment) parts.push(`кв.${addr.apartment}`);
-  if (addr.entrance) parts.push(`подъезд ${addr.entrance}`);
-  if (addr.floor) parts.push(`этаж ${addr.floor}`);
-  if (addr.intercom) parts.push(`домофон ${addr.intercom}`);
+  if (!normalizedAddr.is_private_house) {
+    if (normalizedAddr.apartment) parts.push(`кв.${normalizedAddr.apartment}`);
+    if (normalizedAddr.entrance) parts.push(`подъезд ${normalizedAddr.entrance}`);
+    if (normalizedAddr.floor) parts.push(`этаж ${normalizedAddr.floor}`);
+    if (normalizedAddr.intercom) parts.push(`домофон ${normalizedAddr.intercom}`);
 
-  const liftLabel = getLiftLabel(addr.lift);
-  if (liftLabel) parts.push(liftLabel);
+    const elevatorTypeLabel = getElevatorTypeLabel(normalizedAddr.elevator_type);
+    if (elevatorTypeLabel) parts.push(elevatorTypeLabel);
+  }
 
   return parts.filter(Boolean).join(', ');
 }
 
 function parseAddressToFields(addr) {
+  const normalizedAddr = normalizeDeliveryAddress(addr) || {};
+  const isPrivateHouse = Boolean(normalizedAddr.is_private_house);
+
   return {
-    city: addr.city || '',
-    street: addr.street || '',
-    house: addr.house || '',
-    building: addr.building || '',
-    apartment: addr.apartment || '',
-    entrance: addr.entrance || '',
-    floor: addr.floor || '',
-    lift: addr.lift || 'none',
-    has_elevator: addr.has_elevator || false,
-    intercom: addr.intercom || '',
-    is_private_house: addr.isPrivateHouse || addr.is_private_house || false,
-    lat: addr.lat ?? addr.coords?.[0] ?? null,
-    lng: addr.lng ?? addr.coords?.[1] ?? null,
+    city: normalizedAddr.city || '',
+    street: normalizedAddr.street || '',
+    house: normalizedAddr.house || '',
+    building: normalizedAddr.building || '',
+    apartment: isPrivateHouse ? '' : (normalizedAddr.apartment || ''),
+    entrance: isPrivateHouse ? '' : (normalizedAddr.entrance || ''),
+    floor: isPrivateHouse ? '' : (normalizedAddr.floor || ''),
+    elevator_type: isPrivateHouse ? null : (normalizedAddr.elevator_type ?? null),
+    intercom: isPrivateHouse ? null : (normalizedAddr.intercom || null),
+    is_private_house: isPrivateHouse,
+    lat: normalizedAddr.lat ?? normalizedAddr.coords?.[0] ?? null,
+    lng: normalizedAddr.lng ?? normalizedAddr.coords?.[1] ?? null,
   };
 }
 
@@ -563,6 +611,7 @@ function CheckoutPageInner() {
   const [checkoutSummary, setCheckoutSummary] = useState(() => readSessionJSON('checkoutSummary'));
   const [checkoutPricing, setCheckoutPricing] = useState(null);
   const [checkoutDeliveryOptions, setCheckoutDeliveryOptions] = useState(null);
+  const [draftAddressWeight, setDraftAddressWeight] = useState(null);
   const cartToken = typeof window !== 'undefined' ? (localStorage.getItem('cart_token') || cart?.token || '') : '';
 
   const selectedSkus = useMemo(() => {
@@ -763,6 +812,11 @@ function CheckoutPageInner() {
 
   const courierAvailable = methodIsAvailable('courier');
   const ikeyaDeliveryAvailable = methodIsAvailable('ikeya_delivery');
+  const preferredAddressDeliveryType = courierAvailable
+    ? 'courier'
+    : ikeyaDeliveryAvailable
+      ? 'ikeya_delivery'
+      : null;
 
   useEffect(() => {
     const storedSummary = readSessionJSON('checkoutSummary');
@@ -829,7 +883,7 @@ function CheckoutPageInner() {
     deliveryStorageHydratedSignatureRef.current = currentDeliverySignature;
 
     setSelectedPvz(readLS(LS_SELECTED_PVZ));
-    setSelectedAddr(readLS(LS_SELECTED_ADDR));
+    setSelectedAddr(normalizeDeliveryAddress(readLS(LS_SELECTED_ADDR)));
 
     const storedPvzCalcResult = readLS(LS_PVZ_CALC);
     const storedAddrCalcResult = readLS(LS_ADDR_CALC);
@@ -885,6 +939,7 @@ function CheckoutPageInner() {
       setDraftResolved(false);
       setDraftLoadFailed(false);
       setDraftLoading(false);
+      setDraftAddressWeight(null);
       return;
     }
 
@@ -911,6 +966,7 @@ function CheckoutPageInner() {
         if (pricing) {
           setCheckoutPricing(pricing);
         }
+        setDraftAddressWeight(toNumber(attr.address?.weight_kg, 0));
 
         const deliveryOptions = extractDeliveryOptions(data);
         if (deliveryOptions) {
@@ -1012,20 +1068,19 @@ function CheckoutPageInner() {
           apartment: d.attributes.apartment,
           entrance: d.attributes.entrance,
           floor: d.attributes.floor,
-          lift: d.attributes.lift,
-          has_elevator: d.attributes.has_elevator,
-          intercom: d.attributes.intercom,
+          elevator_type: d.attributes.elevator_type ?? normalizeElevatorType(d.attributes),
+          intercom: d.attributes.intercom ?? '',
           is_private_house: d.attributes.is_private_house,
           lat: d.attributes.lat,
           lng: d.attributes.lng,
           address: d.attributes.formatted_address || d.attributes.street,
-        })).map((addr) => ({
+        })).map((addr) => normalizeDeliveryAddress(addr)).filter(Boolean).map((addr) => ({
           ...addr,
           label: formatDeliveryAddressLabel(addr) || addr.city || addr.address,
         }));
         setSavedAddrList(addrs);
       })
-      .catch(() => setSavedAddrList(readLS(LS_SAVED_ADDR, [])));
+      .catch(() => setSavedAddrList((readLS(LS_SAVED_ADDR, []) || []).map((addr) => normalizeDeliveryAddress(addr)).filter(Boolean)));
   }, [token]);
 
   useEffect(() => {
@@ -1049,17 +1104,24 @@ function CheckoutPageInner() {
 
   const pricingTotals = checkoutPricing?.totals || {};
   const pricingDelivery = checkoutPricing?.delivery || {};
+  const currentCalcTotals = receiveMethod === 'pickup'
+    ? getCalcTotals(freshPvzCalcResult)
+    : getCalcTotals(freshAddrCalcResult);
 
   const subtotal = toNumber(
     pricingTotals?.subtotal_new_byn ??
+    pricingTotals?.items_total_byn ??
     pricingTotals?.subtotal_byn ??
     pricingTotals?.subtotal ??
-    totals?.subtotal_new_byn ??
-    totals?.subtotal_byn ??
-    totals?.subtotal ??
-    checkoutSummary?.subtotal
+    currentCalcTotals?.subtotal_new_byn ??
+    currentCalcTotals?.items_total_byn ??
+    (isSummaryFreshForCurrentItems ? checkoutSummary?.subtotal : null)
   );
-  const promoDiscount = checkoutSummary?.promoDiscount ?? toNumber(totals?.discount_total_byn || totals?.discount);
+  const promoDiscount = toNumber(
+    pricingTotals?.discount_total_byn ??
+    currentCalcTotals?.discount_total_byn ??
+    (isSummaryFreshForCurrentItems ? checkoutSummary?.promoDiscount : null)
+  );
   const summaryDeliveryToBelarus = isSummaryFreshForCurrentItems
     ? (
       checkoutSummary?.delivery ??
@@ -1071,17 +1133,38 @@ function CheckoutPageInner() {
     : null;
 
   const deliveryCost = toNumber(
+    pricingTotals?.delivery_to_belarus_byn ??
+    currentCalcTotals?.delivery_to_belarus_byn ??
     pricingTotals?.delivery_to_belarus_price_byn ??
     pricingDelivery?.delivery_to_belarus_price_byn ??
-    summaryDeliveryToBelarus ??
-    cart?.delivery?.delivery_to_belarus_byn ??
-    cart?.totals?.delivery_to_belarus_byn
+    summaryDeliveryToBelarus
+  );
+
+  const rawBackendSelectedDeliveryCost =
+    pricingTotals?.delivery_method_byn ??
+    currentCalcTotals?.delivery_method_byn ??
+    pricingDelivery?.delivery_method_byn ??
+    pricingDelivery?.delivery_method_price_byn;
+  const hasSeparateBackendSelectedDeliveryCost =
+    rawBackendSelectedDeliveryCost !== undefined &&
+    rawBackendSelectedDeliveryCost !== null &&
+    rawBackendSelectedDeliveryCost !== '';
+  const backendSelectedDeliveryCost = hasSeparateBackendSelectedDeliveryCost
+    ? toNumber(rawBackendSelectedDeliveryCost)
+    : 0;
+  const backendDeliveryTotal = toNumber(
+    pricingTotals?.delivery_total_byn ??
+    currentCalcTotals?.delivery_total_byn ??
+    pricingDelivery?.total_delivery_price_byn ??
+    pricingDelivery?.delivery_total_byn ??
+    pricingDelivery?.total_delivery_byn
   );
 
   const totalWeight = toNumber(
-    totals?.total_weight_kg ??
-    calculatedItemsTotalWeight ??
+    pricingTotals?.total_weight_kg ??
+    draftAddressWeight ??
     (isSummaryFreshForCurrentItems ? checkoutSummary?.totalWeight : null) ??
+    calculatedItemsTotalWeight ??
     0
   );
   const customsDuty = isSummaryFreshForCurrentItems ? checkoutSummary?.customsDuty ?? 0 : 0;
@@ -1089,18 +1172,20 @@ function CheckoutPageInner() {
   const finalTotal = toNumber(
     pricingTotals?.final_total_byn ??
     pricingTotals?.total_byn ??
+    currentCalcTotals?.final_total_byn ??
+    currentCalcTotals?.total_byn ??
     (isSummaryFreshForCurrentItems ? checkoutSummary?.finalTotal : null)
   );
 
   const pvzDeliveryCost = getDeliveryPrice(freshPvzCalcResult);
 
   const addrDeliveryCost = getDeliveryPrice(freshAddrCalcResult);
-  const selectedDeliveryDisplayPrice = `${addrDeliveryCost.toFixed(2)} р.`;
+  const selectedDeliveryDisplayPrice = `${(backendDeliveryTotal || addrDeliveryCost).toFixed(2)} р.`;
   const addrDeliveryType =
     freshAddrCalcResult?.delivery?.normalized_delivery_type ||
     freshAddrCalcResult?.delivery?.delivery_type ||
     freshAddrCalcResult?.delivery?.type ||
-    (courierAvailable ? 'courier' : ikeyaDeliveryAvailable ? 'ikeya_delivery' : null);
+    preferredAddressDeliveryType;
   const isIkeyaDelivery = addrDeliveryType === 'ikeya_delivery';
   const selectedPickupPointId =
     selectedPvz?.pickup_point_id ||
@@ -1337,14 +1422,13 @@ function CheckoutPageInner() {
           apartment: d.attributes.apartment,
           entrance: d.attributes.entrance,
           floor: d.attributes.floor,
-          lift: d.attributes.lift,
-          has_elevator: d.attributes.has_elevator,
-          intercom: d.attributes.intercom,
+          elevator_type: d.attributes.elevator_type ?? normalizeElevatorType(d.attributes),
+          intercom: d.attributes.intercom ?? '',
           is_private_house: d.attributes.is_private_house,
           lat: d.attributes.lat,
           lng: d.attributes.lng,
           address: d.attributes.formatted_address || d.attributes.street,
-        })).map((addr) => ({
+        })).map((addr) => normalizeDeliveryAddress(addr)).filter(Boolean).map((addr) => ({
           ...addr,
           label: formatDeliveryAddressLabel(addr) || addr.city || addr.address,
         }));
@@ -1476,7 +1560,7 @@ function CheckoutPageInner() {
 
     const payload = {
       ...deliveryContext,
-      delivery_type: 'courier',
+      delivery_type: preferredAddressDeliveryType || 'courier',
       items: cartItems,
       address: parseAddressToFields(found),
     };
@@ -1494,7 +1578,7 @@ function CheckoutPageInner() {
         result?.delivery?.normalized_delivery_type ||
         result?.delivery?.delivery_type ||
         result?.delivery?.type ||
-        'courier';
+        preferredAddressDeliveryType || 'courier';
 
       if (!methodIsAvailable(resolvedDeliveryType)) {
         setError('Выбранный способ доставки недоступен для текущего заказа.');
@@ -1514,7 +1598,7 @@ function CheckoutPageInner() {
         setError('Адрес выбран, но не удалось сохранить способ доставки в заказе.');
       }
     } catch (err) {
-      if (err.status !== 422) return;
+      if (err.status !== 422 || payload.delivery_type !== 'courier') return;
 
       const available = getAvailableMethodsFromError(err);
       const hasIkeyaDelivery = available.some(
@@ -1609,7 +1693,7 @@ function CheckoutPageInner() {
 
     try {
       await saveDeliveryToDraft({
-        deliveryType: courierAvailable ? 'courier' : 'ikeya_delivery',
+        deliveryType: preferredAddressDeliveryType || 'courier',
       });
     } catch { }
 
@@ -1781,12 +1865,16 @@ function CheckoutPageInner() {
       }
 
       if (receiveMethod === 'delivery' && selectedAddr) {
+        const normalizedSelectedAddr = normalizeDeliveryAddress(selectedAddr) || {};
+        const {
+          is_private_house: _isPrivateHouse,
+          ...selectedAddrRest
+        } = normalizedSelectedAddr;
         const selectedDeliveryAddrPayload = {
-          ...selectedAddr,
-          ...parseAddressToFields(selectedAddr),
-          address: selectedAddr?.address || selectedAddr?.full_address || formatDeliveryAddressLabel(selectedAddr),
-          label: formatDeliveryAddressLabel(selectedAddr) || selectedAddr?.label || selectedAddr?.address || '',
-          has_elevator: selectedAddr?.has_elevator ?? (selectedAddr?.lift ? selectedAddr.lift !== 'none' : false),
+          ...selectedAddrRest,
+          ...parseAddressToFields(normalizedSelectedAddr),
+          address: normalizedSelectedAddr.address || normalizedSelectedAddr.full_address || formatDeliveryAddressLabel(normalizedSelectedAddr),
+          label: formatDeliveryAddressLabel(normalizedSelectedAddr) || normalizedSelectedAddr.label || normalizedSelectedAddr.address || '',
           calcResult: freshAddrCalcResult,
         };
 
@@ -2321,10 +2409,10 @@ function CheckoutPageInner() {
                         subtotal={subtotal}
                         promoDiscount={promoDiscount}
                         delivery={deliveryCost}
-                        pvzDelivery={receiveMethod === 'pickup' ? pvzDeliveryCost : 0}
-                        showPvzDelivery={receiveMethod === 'pickup' && !!selectedPvz && !!freshPvzCalcResult}
-                        courierDelivery={receiveMethod === 'delivery' && !isIkeyaDelivery ? addrDeliveryCost : 0}
-                        showCourierDelivery={receiveMethod === 'delivery' && !!selectedAddr && !!freshAddrCalcResult && !isIkeyaDelivery}
+                        pvzDelivery={receiveMethod === 'pickup' ? backendSelectedDeliveryCost : 0}
+                        showPvzDelivery={receiveMethod === 'pickup' && !!selectedPvz && !!freshPvzCalcResult && hasSeparateBackendSelectedDeliveryCost}
+                        courierDelivery={receiveMethod === 'delivery' && !isIkeyaDelivery ? backendSelectedDeliveryCost : 0}
+                        showCourierDelivery={receiveMethod === 'delivery' && !!selectedAddr && !!freshAddrCalcResult && !isIkeyaDelivery && hasSeparateBackendSelectedDeliveryCost}
                         finalTotal={finalTotal}
                         itemCount={itemCount}
                         totalWeight={totalWeight}
@@ -2350,6 +2438,7 @@ function CheckoutPageInner() {
           orderId={draftId}
           cartToken={draftId ? '' : cartToken}
           cartItems={cartItems}
+          preferredAddressDeliveryType={preferredAddressDeliveryType || 'courier'}
           onClose={() => setShowDeliveryModal(false)}
           onSelectPvz={handleSelectPvz}
           onSelectAddr={handleSelectAddr}

@@ -13,6 +13,7 @@ export default function DeliveryModal({
   orderId,
   cartToken,
   cartItems = [],
+  preferredAddressDeliveryType = 'courier',
   onClose,
   onSelectPvz,
   onSelectAddr,
@@ -111,6 +112,7 @@ export default function DeliveryModal({
                   orderId={orderId}
                   cartToken={cartToken}
                   cartItems={cartItems}
+                  preferredDeliveryType={preferredAddressDeliveryType}
                   onSelect={handleAddrSelect}
                   activeTab={activeTab}
                   setActiveTab={setActiveTab}
