@@ -292,6 +292,22 @@ function hasLegacyCheckoutSummary(summary) {
   );
 }
 
+function getSummaryDeliveryToBelarus(summary) {
+  if (!summary || typeof summary !== 'object') {
+    return 0;
+  }
+
+  return toNumber(
+    summary.delivery ??
+    summary.logisticsDelivery ??
+    summary.deliveryToBelarus ??
+    summary.delivery_to_belarus_byn ??
+    summary.delivery_to_belarus_price_byn ??
+    summary.deliveryToBelarusPrice ??
+    0
+  );
+}
+
 function getDeliveryPrice(calcResult) {
   const delivery = calcResult?.delivery || {};
 
@@ -596,7 +612,7 @@ function CheckoutPageInner() {
   }, [checkoutItemsReady, checkoutItemsSource]);
 
   const calculatedItemsTotalWeight = useMemo(() => {
-    return toNumber(calculateItemsTotalWeight(checkoutItemsSource).toFixed(3));
+    return toNumber(calculateItemsTotalWeight(checkoutItemsSource));
   }, [checkoutItemsSource]);
 
   const persistCheckoutSummary = useCallback((summary) => {
@@ -873,7 +889,7 @@ function CheckoutPageInner() {
         const itemCount = loadedDraftItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
         const totalWeight = parseFloat(attr.address?.weight_kg || 0);
         const draftDeliverySignature = buildCheckoutDeliverySignature(loadedDraftItems);
-        const draftItemsTotalWeight = toNumber(calculateItemsTotalWeight(loadedDraftItems).toFixed(3));
+        const draftItemsTotalWeight = toNumber(calculateItemsTotalWeight(loadedDraftItems));
 
         const previousSummary = readSessionJSON('checkoutSummary');
         const isPreviousSummaryFresh = Boolean(
@@ -881,12 +897,13 @@ function CheckoutPageInner() {
           draftDeliverySignature &&
           previousSummary.deliverySignature === draftDeliverySignature
         );
+        const previousDeliveryToBelarus = getSummaryDeliveryToBelarus(previousSummary);
         const nextWeight = totalWeight > 0
           ? totalWeight
           : draftItemsTotalWeight;
 
         const summary = {
-          subtotal: toNumber(subtotal.toFixed(2)),
+          subtotal: toNumber(subtotal),
           promoDiscount: previousSummary?.promoDiscount ?? 0,
           itemCount,
           totalWeight: nextWeight > 0
@@ -895,8 +912,8 @@ function CheckoutPageInner() {
               ? previousSummary?.totalWeight ?? 0
               : 0,
           customsDuty: previousSummary?.customsDuty ?? 0,
-          delivery: isPreviousSummaryFresh ? previousSummary?.delivery ?? 0 : 0,
-          logisticsDelivery: isPreviousSummaryFresh ? previousSummary?.logisticsDelivery ?? 0 : 0,
+          delivery: previousDeliveryToBelarus,
+          logisticsDelivery: previousSummary?.logisticsDelivery ?? previousDeliveryToBelarus,
           finalTotal: isPreviousSummaryFresh ? previousSummary?.finalTotal ?? null : null,
           europostEligible: isPreviousSummaryFresh ? previousSummary?.europostEligible ?? null : null,
           availableMethods: deliveryOptions?.methods ?? (isPreviousSummaryFresh ? previousSummary?.availableMethods ?? [] : []),

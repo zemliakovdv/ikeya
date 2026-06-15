@@ -6,7 +6,13 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { addToCart, createDraft, getCartSummary, normalizeCheckoutItems } from '@/lib/api/cart';
+import {
+  addToCart,
+  createDraft,
+  getCartSummary,
+  normalizeCheckoutItems,
+  updateCartItemQuantity,
+} from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -255,6 +261,7 @@ export default function CartPageClient() {
   const [selectedItems, setSelectedItems] = useState(storedSelectedItemsState.items);
   const [selectedUnavailable, setSelectedUnavailable] = useState([]);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [selectionUpdating, setSelectionUpdating] = useState(false);
   const [remoteSummary, setRemoteSummary] = useState(null);
   const [checkoutApiError, setCheckoutApiError] = useState('');
   const [isCheckoutAuthFlowPending, setIsCheckoutAuthFlowPending] = useState(false);
@@ -456,6 +463,17 @@ export default function CartPageClient() {
     [selectedAvailableItems]
   );
 
+  const buildSummaryItemsPayload = useCallback((skus = [], sourceItems = availableItems) => {
+    const selectedSet = new Set((skus || []).map((sku) => String(sku)));
+
+    return buildItemsPayload(
+      (sourceItems || []).filter((item) => {
+        const sku = getCartItemSku(item);
+        return sku && selectedSet.has(String(sku));
+      })
+    );
+  }, [availableItems]);
+
   const selectedItemsPayloadKey = useMemo(
     () => selectedItemsPayload.map((item) => `${item.sku}:${item.quantity}`).join('|'),
     [selectedItemsPayload]
@@ -634,12 +652,12 @@ export default function CartPageClient() {
     });
   
     return {
-      subtotal: toNumber(subtotal.toFixed(2)),
+      subtotal: toNumber(subtotal),
       finalTotal: null,
-      promoDiscount: toNumber(promoDiscount.toFixed(2)),
+      promoDiscount: toNumber(promoDiscount),
       itemCount,
-      totalWeight: toNumber(totalWeight.toFixed(2)),
-      customsDuty: toNumber(customsDuty.toFixed(2)),
+      totalWeight: toNumber(totalWeight),
+      customsDuty: toNumber(customsDuty),
       deliveryToBelarus: toNumber(
         delivery?.delivery_to_belarus_byn ||
         totals?.delivery_to_belarus_byn
@@ -867,7 +885,7 @@ export default function CartPageClient() {
       return;
     }
 
-    if (isPreparingCheckout || checkoutLoading) {
+    if (isPreparingCheckout || checkoutLoading || selectionUpdating) {
       return;
     }
 
@@ -900,6 +918,7 @@ export default function CartPageClient() {
     isAuth,
     isPreparingCheckout,
     checkoutLoading,
+    selectionUpdating,
     openLogin,
     persistPendingCheckoutData,
     handleCheckoutAuthorized,
@@ -913,6 +932,82 @@ export default function CartPageClient() {
     }
   }, [updateQuantity]);
 
+  const triggerSelectionRecalculation = useCallback(async ({
+    changedSkus = [],
+    selectedSkus = [],
+  } = {}) => {
+    const uniqueChangedSkus = Array.from(
+      new Set(
+        (changedSkus || [])
+          .map((sku) => String(sku || ''))
+          .filter(Boolean)
+      )
+    );
+    const nextSelectedSkus = Array.from(
+      new Set(
+        (selectedSkus || [])
+          .map((sku) => String(sku || ''))
+          .filter(Boolean)
+      )
+    );
+
+    if (!uniqueChangedSkus.length && !nextSelectedSkus.length) {
+      setRemoteSummary(null);
+      return;
+    }
+
+    const quantityBySku = new Map(
+      (availableItems || []).map((item) => [
+        String(getCartItemSku(item) || ''),
+        Number(item?.quantity || 0),
+      ])
+    );
+
+    setSelectionUpdating(true);
+    setCheckoutApiError('');
+
+    try {
+      if (uniqueChangedSkus.length) {
+        await Promise.all(
+          uniqueChangedSkus.map((sku) => {
+            const quantity = quantityBySku.get(sku);
+
+            if (!Number.isFinite(quantity) || quantity <= 0) {
+              return Promise.resolve();
+            }
+
+            return updateCartItemQuantity(sku, quantity);
+          })
+        );
+      }
+
+      await refreshCart?.();
+
+      const summaryPayload = buildSummaryItemsPayload(nextSelectedSkus);
+
+      if (!summaryPayload.length) {
+        setRemoteSummary(null);
+        return;
+      }
+
+      const summaryResponse = await getCartSummary({
+        items: summaryPayload,
+      });
+      const normalizedSummary = normalizeSummaryResponse(summaryResponse);
+
+      if (normalizedSummary) {
+        setRemoteSummary(normalizedSummary);
+        saveSummaryToSession(normalizedSummary);
+      } else {
+        setRemoteSummary(null);
+      }
+    } catch {
+      setCheckoutApiError('Не удалось обновить корзину. Повторите попытку.');
+    } finally {
+      setSelectionUpdating(false);
+    }
+  }, [availableItems, buildSummaryItemsPayload, refreshCart, saveSummaryToSession]);
+
   const handleDelete = useCallback(async (sku) => {
     try {
       await removeFromCart(sku);
@@ -921,25 +1016,46 @@ export default function CartPageClient() {
     }
   }, [removeFromCart]);
 
-  const handleCheckChange = useCallback((sku, checked) => {
+  const handleCheckChange = useCallback(async (sku, checked) => {
     if (!sku) return;
+    if (selectionUpdating) return;
 
-    setSelectedItems((prev) => {
-      const set = new Set(prev);
+    const normalizedSku = String(sku);
+    const currentSet = new Set(selectedItems);
 
-      if (checked) {
-        set.add(sku);
-      } else {
-        set.delete(sku);
-      }
+    if (checked) {
+      currentSet.add(normalizedSku);
+    } else {
+      currentSet.delete(normalizedSku);
+    }
 
-      return Array.from(set);
+    const nextSelectedItems = Array.from(currentSet);
+
+    setRemoteSummary(null);
+    setSelectedItems(nextSelectedItems);
+
+    await triggerSelectionRecalculation({
+      changedSkus: [normalizedSku],
+      selectedSkus: nextSelectedItems,
     });
-  }, []);
+  }, [selectedItems, selectionUpdating, triggerSelectionRecalculation]);
 
-  const handleSelectAll = useCallback((checked) => {
-    setSelectedItems(checked ? availableSkus : []);
-  }, [availableSkus]);
+  const handleSelectAll = useCallback(async (checked) => {
+    if (selectionUpdating) return;
+
+    const nextSelectedItems = checked ? availableSkus : [];
+    const changedSkus = checked
+      ? availableSkus.filter((sku) => !selectedItems.includes(sku))
+      : selectedItems.filter((sku) => availableSkus.includes(sku));
+
+    setRemoteSummary(null);
+    setSelectedItems(nextSelectedItems);
+
+    await triggerSelectionRecalculation({
+      changedSkus,
+      selectedSkus: nextSelectedItems,
+    });
+  }, [availableSkus, selectedItems, selectionUpdating, triggerSelectionRecalculation]);
 
   const handleCheckChangeUnavailable = useCallback((sku, checked) => {
     if (!sku) return;
@@ -1038,7 +1154,7 @@ export default function CartPageClient() {
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
-                            loading={loading}
+                            loading={loading || selectionUpdating}
                           />
                         )}
 
@@ -1051,7 +1167,7 @@ export default function CartPageClient() {
                             onSelectAll={handleSelectAllUnavailable}
                             onDeleteSelected={handleDeleteSelectedUnavailable}
                             onCheckChange={handleCheckChangeUnavailable}
-                            loading={loading}
+                            loading={loading || selectionUpdating}
                           />
                         )}
 
@@ -1078,7 +1194,7 @@ export default function CartPageClient() {
                           canCheckout={canCheckout}
                           onCheckout={handleCheckout}
                           cart={cart}
-                          checkoutLoading={checkoutLoading}
+                          checkoutLoading={checkoutLoading || selectionUpdating}
                         />
                       )}
                     </div>
