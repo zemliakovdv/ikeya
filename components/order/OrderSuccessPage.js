@@ -182,6 +182,44 @@ function getItemPrice(item = {}) {
   return found ?? 0;
 }
 
+function getLiftLabel(lift) {
+  switch (lift) {
+    case 'freight':
+      return 'грузовой лифт';
+    case 'passenger':
+      return 'пассажирский лифт';
+    case 'none':
+      return 'без лифта';
+    default:
+      return '';
+  }
+}
+
+function formatDeliveryAddressLabel(addr) {
+  if (!addr || typeof addr !== 'object') {
+    return '';
+  }
+
+  const streetLine = [addr.street, addr.house, addr.building].filter(Boolean).join(', ');
+  const baseAddress = String(
+    [addr.city, streetLine].filter(Boolean).join(', ') ||
+    addr.address ||
+    addr.full_address ||
+    ''
+  ).trim();
+  const parts = [baseAddress];
+
+  if (addr.apartment) parts.push(`кв.${addr.apartment}`);
+  if (addr.entrance) parts.push(`подъезд ${addr.entrance}`);
+  if (addr.floor) parts.push(`этаж ${addr.floor}`);
+  if (addr.intercom) parts.push(`домофон ${addr.intercom}`);
+
+  const liftLabel = getLiftLabel(addr.lift);
+  if (liftLabel) parts.push(liftLabel);
+
+  return parts.filter(Boolean).join(', ');
+}
+
 function EuropostIcon() {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -354,13 +392,27 @@ export default function OrderSuccessPage() {
               const addrSnap = deliverySnap.address || addr;
 
               if (addrSnap.city || addrSnap.street) {
-                const parts = [addrSnap.street, addrSnap.house, addrSnap.building].filter(Boolean).join(', ');
-                const label = `${addrSnap.city || ''}, ${parts}`.replace(/^, /, '');
+                const normalizedAddr = {
+                  ...addrSnap,
+                  lift: addrSnap.lift || 'none',
+                  has_elevator: addrSnap.has_elevator ?? (addrSnap.lift ? addrSnap.lift !== 'none' : false),
+                };
+                const label = formatDeliveryAddressLabel(normalizedAddr);
 
                 setDeliveryAddr({
-                  address: label,
-                  apartment: addrSnap.apartment || '',
                   label,
+                  address: normalizedAddr.address || label,
+                  city: normalizedAddr.city || '',
+                  street: normalizedAddr.street || '',
+                  house: normalizedAddr.house || '',
+                  building: normalizedAddr.building || '',
+                  apartment: normalizedAddr.apartment || '',
+                  entrance: normalizedAddr.entrance || '',
+                  floor: normalizedAddr.floor || '',
+                  intercom: normalizedAddr.intercom || '',
+                  lift: normalizedAddr.lift,
+                  has_elevator: normalizedAddr.has_elevator,
+                  is_private_house: normalizedAddr.is_private_house || false,
                   calcResult: { delivery: { normalized_delivery_type: deliveryType } },
                 });
               }
@@ -432,9 +484,7 @@ export default function OrderSuccessPage() {
     : null;
 
   const courierAddress = deliveryAddr
-    ? (deliveryAddr.apartment
-      ? `${deliveryAddr.address}, кв.${deliveryAddr.apartment}`
-      : deliveryAddr.address)
+    ? (formatDeliveryAddressLabel(deliveryAddr) || deliveryAddr.label || deliveryAddr.address)
     : null;
 
   const rawDeliveryCost = getOrderDeliveryCost(attrs);

@@ -363,6 +363,43 @@ function extractDeliveryOptions(payload) {
   return checkout?.delivery_options || payload?.delivery_options || null;
 }
 
+function getLiftLabel(lift) {
+  switch (lift) {
+    case 'freight':
+      return 'грузовой лифт';
+    case 'passenger':
+      return 'пассажирский лифт';
+    case 'none':
+      return 'без лифта';
+    default:
+      return '';
+  }
+}
+
+function formatDeliveryAddressLabel(addr) {
+  if (!addr || typeof addr !== 'object') {
+    return '';
+  }
+
+  const streetLine = [addr.street, addr.house, addr.building].filter(Boolean).join(', ');
+  const baseAddress = String(
+    [addr.city, streetLine].filter(Boolean).join(', ') ||
+    addr.address ||
+    addr.full_address
+  ).trim();
+  const parts = [baseAddress];
+
+  if (addr.apartment) parts.push(`кв.${addr.apartment}`);
+  if (addr.entrance) parts.push(`подъезд ${addr.entrance}`);
+  if (addr.floor) parts.push(`этаж ${addr.floor}`);
+  if (addr.intercom) parts.push(`домофон ${addr.intercom}`);
+
+  const liftLabel = getLiftLabel(addr.lift);
+  if (liftLabel) parts.push(liftLabel);
+
+  return parts.filter(Boolean).join(', ');
+}
+
 function parseAddressToFields(addr) {
   return {
     city: addr.city || '',
@@ -372,6 +409,7 @@ function parseAddressToFields(addr) {
     apartment: addr.apartment || '',
     entrance: addr.entrance || '',
     floor: addr.floor || '',
+    lift: addr.lift || 'none',
     has_elevator: addr.has_elevator || false,
     intercom: addr.intercom || '',
     is_private_house: addr.isPrivateHouse || addr.is_private_house || false,
@@ -974,13 +1012,16 @@ function CheckoutPageInner() {
           apartment: d.attributes.apartment,
           entrance: d.attributes.entrance,
           floor: d.attributes.floor,
+          lift: d.attributes.lift,
           has_elevator: d.attributes.has_elevator,
           intercom: d.attributes.intercom,
           is_private_house: d.attributes.is_private_house,
           lat: d.attributes.lat,
           lng: d.attributes.lng,
-          label: d.attributes.formatted_address || d.attributes.city,
           address: d.attributes.formatted_address || d.attributes.street,
+        })).map((addr) => ({
+          ...addr,
+          label: formatDeliveryAddressLabel(addr) || addr.city || addr.address,
         }));
         setSavedAddrList(addrs);
       })
@@ -1296,13 +1337,16 @@ function CheckoutPageInner() {
           apartment: d.attributes.apartment,
           entrance: d.attributes.entrance,
           floor: d.attributes.floor,
+          lift: d.attributes.lift,
           has_elevator: d.attributes.has_elevator,
           intercom: d.attributes.intercom,
           is_private_house: d.attributes.is_private_house,
           lat: d.attributes.lat,
           lng: d.attributes.lng,
-          label: d.attributes.formatted_address || d.attributes.city,
           address: d.attributes.formatted_address || d.attributes.street,
+        })).map((addr) => ({
+          ...addr,
+          label: formatDeliveryAddressLabel(addr) || addr.city || addr.address,
         }));
         setSavedAddrList(addrs);
       } catch (err) {
@@ -1328,7 +1372,7 @@ function CheckoutPageInner() {
         }
       }
     } else {
-      const label = addr.apartment ? `${addr.address}, кв.${addr.apartment}` : addr.address;
+      const label = formatDeliveryAddressLabel(addr) || addr.address;
       const entry = { id: genId(), label, ...addr };
       const updated = [entry, ...savedAddrList.filter((savedAddr) => savedAddr.address !== addr.address)].slice(0, 5);
       setSavedAddrList(updated);
@@ -1737,10 +1781,16 @@ function CheckoutPageInner() {
       }
 
       if (receiveMethod === 'delivery' && selectedAddr) {
-        sessionStorage.setItem('selectedDeliveryAddr', JSON.stringify({
+        const selectedDeliveryAddrPayload = {
           ...selectedAddr,
+          ...parseAddressToFields(selectedAddr),
+          address: selectedAddr?.address || selectedAddr?.full_address || formatDeliveryAddressLabel(selectedAddr),
+          label: formatDeliveryAddressLabel(selectedAddr) || selectedAddr?.label || selectedAddr?.address || '',
+          has_elevator: selectedAddr?.has_elevator ?? (selectedAddr?.lift ? selectedAddr.lift !== 'none' : false),
           calcResult: freshAddrCalcResult,
-        }));
+        };
+
+        sessionStorage.setItem('selectedDeliveryAddr', JSON.stringify(selectedDeliveryAddrPayload));
       }
 
       sessionStorage.setItem('selectedServices', JSON.stringify(selectedServices));
@@ -1972,7 +2022,7 @@ function CheckoutPageInner() {
                                       <path d="M11.9998 15.0191C9.8198 15.0191 8.0498 13.2491 8.0498 11.0691C8.0498 8.88914 9.8198 7.11914 11.9998 7.11914C14.1798 7.11914 15.9498 8.88914 15.9498 11.0691C15.9498 13.2491 14.1798 15.0191 11.9998 15.0191ZM11.9998 8.50914C10.5898 8.50914 9.4398 9.65914 9.4398 11.0691C9.4398 12.4791 10.5898 13.6291 11.9998 13.6291C13.4098 13.6291 14.5598 12.4791 14.5598 11.0691C14.5598 9.65914 13.4098 8.50914 11.9998 8.50914Z" fill="#9E9E9E" />
                                     </svg>
                                     <div className="selected-delivery-address">
-                                      {selectedAddr.label || selectedAddr.address}
+                                      {formatDeliveryAddressLabel(selectedAddr) || selectedAddr.label || selectedAddr.address}
                                     </div>
                                   </div>
                                   <button type="button" className="change-link" onClick={handleChangeAddr}>Изменить</button>
