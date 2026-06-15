@@ -7,8 +7,11 @@ import MobileCatalogFilters from '@/components/catalog/MobileCatalogFilters';
 import FilterChips from '@/components/catalog/FilterChips';
 import ProductSort from '@/components/catalog/ProductSort';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
+import SeoCatalogPage from '@/components/catalog/seo/SeoCatalogPage';
 import SeoSection from '@/components/home/SeoSection';
 import { getCachedCategoriesTree, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
+import { getSeoCatalogPageBySlug } from '@/lib/api/seoCatalogPages';
+import { buildSeoCatalogMetadata, isPublishedSeoCatalogPage } from '@/lib/seoCatalogPage';
 import {
   flattenCategoriesTree,
   findCategoryBySlug,
@@ -28,7 +31,17 @@ export async function generateMetadata({ params }) {
     const allCategories = flattenCategoriesTree(tree);
     const category = findCategoryBySlug(allCategories, currentSlug);
 
-    if (!category) return {};
+    if (!category) {
+      if (slug.length === 1) {
+        const seoPage = await getSeoCatalogPageBySlug(currentSlug);
+
+        if (seoPage && isPublishedSeoCatalogPage(seoPage)) {
+          return buildSeoCatalogMetadata(seoPage, currentSlug);
+        }
+      }
+
+      return {};
+    }
 
     const attrs = category.attributes || {};
     const seo = attrs.seo || {};
@@ -106,6 +119,14 @@ export default async function CategoryPage({ params, searchParams }) {
     const currentCategory = findCategoryBySlug(allCategories, currentSlug);
 
     if (!currentCategory) {
+      if (slug.length === 1) {
+        const seoPage = await getSeoCatalogPageBySlug(currentSlug);
+
+        if (seoPage && isPublishedSeoCatalogPage(seoPage)) {
+          return <SeoCatalogPage page={seoPage} slug={currentSlug} />;
+        }
+      }
+
       redirect('/catalog');
     }
 

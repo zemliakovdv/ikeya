@@ -1,5 +1,6 @@
 import { SITE_URL } from '@/lib/config/api';
 import { getSeoCatalogPages } from '@/lib/api/seoCatalogPages';
+import { normalizeSeoCatalogPath } from '@/lib/seoCatalogPage';
 
 function normalizeDate(value) {
   if (!value) return undefined;
@@ -24,9 +25,10 @@ function buildSeoPageEntry(page) {
   if (!slug) return null;
 
   const lastModified = normalizeDate(page?.updated_at) || normalizeDate(page?.generated_at);
+  const path = normalizeSeoCatalogPath(page?.canonical_path || page?.path, slug);
 
   return {
-    url: `${SITE_URL}/catalog/seo/${slug}`,
+    url: `${SITE_URL}${path}`,
     ...(lastModified ? { lastModified } : {}),
     changeFrequency: 'weekly',
     priority: 0.8,
