@@ -2314,9 +2314,9 @@
 
 @media (max-width: 575px) {
   .checkout-pvz-modal.delivery-mode .pvz-layout--delivery-result .pvz-sidebar {
-    height: 352px;
-    min-height: 352px;
-    max-height: 352px;
+    height: 450px;
+    min-height: 450px;
+    max-height: 450px;
   }
 
   .checkout-pvz-modal.delivery-mode .pvz-layout--delivery-result .delivery-result {

@@ -44,6 +44,20 @@ function normalizeProductImages(product = {}) {
   ].filter(Boolean);
 }
 
+function pickPriceValue(...values) {
+  for (const value of values) {
+    if (value !== null && value !== undefined && value !== '') {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function pickNonEmptyArray(...values) {
+  return values.find((value) => Array.isArray(value) && value.length > 0) || [];
+}
+
 function purchaseToProduct(purchase) {
   const p = purchase.product || {};
   const sku =
@@ -51,6 +65,23 @@ function purchaseToProduct(purchase) {
     purchase.product_sku ||
     purchase.sku ||
     '';
+  const purchasePrice = pickPriceValue(
+    purchase.price_byn,
+    purchase.price,
+    purchase.unit_price_byn,
+    purchase.unit_price,
+    purchase.final_price_byn,
+    purchase.final_price,
+    purchase.product_price_byn,
+    purchase.product_price,
+  );
+  const productCurrentPrice = pickPriceValue(
+    p.price_byn,
+    p.price,
+    p.new_price,
+    p.price_new,
+  );
+  const displayPrice = purchasePrice ?? productCurrentPrice ?? '0';
 
   return {
     id: purchase.product_sku || sku,
@@ -78,17 +109,18 @@ function purchaseToProduct(purchase) {
         p.subtitle ||
         purchase.small_desc_name ||
         purchase.description ||
+        purchase.short_description ||
+        purchase.subtitle ||
         '',
-      price_byn:
-        p.price_byn ||
-        p.price ||
-        p.new_price ||
-        p.price_new ||
-        purchase.price_byn ||
-        purchase.price ||
-        '0',
+      price_byn: displayPrice,
+      price: displayPrice,
       local_images: normalizeProductImages(p),
-      variants: p.variants || p.product_variants || [],
+      variants: pickNonEmptyArray(
+        p.variants,
+        p.product_variants,
+        purchase.variants,
+        purchase.product_variants,
+      ),
       is_bestseller: p.is_bestseller || p.isBestseller || false,
       is_popular: p.is_popular || p.isPopular || false,
       is_new: p.is_new || p.isNew || false,

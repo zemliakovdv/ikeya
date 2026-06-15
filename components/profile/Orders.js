@@ -296,7 +296,20 @@ function parsePurchases(data) {
     const productSku = purchase.product_sku || purchase.sku || product.sku || null;
     const purchasedAt = purchase.purchased_at || purchase.purchasedAt || purchase.created_at || null;
     const quantity = purchase.quantity ?? product.quantity ?? 1;
-    const priceByn = purchase.price_byn ?? product.price_byn ?? '0';
+    const priceByn =
+      purchase.price_byn ??
+      purchase.price ??
+      purchase.unit_price_byn ??
+      purchase.unit_price ??
+      purchase.final_price_byn ??
+      purchase.final_price ??
+      purchase.product_price_byn ??
+      purchase.product_price ??
+      product.price_byn ??
+      product.price ??
+      product.new_price ??
+      product.price_new ??
+      '0';
     const productImages = product.images || {};
     const localImages = parseImagesField(productImages.local_images);
     const remoteImages = parseImagesField(productImages.images);
@@ -320,9 +333,25 @@ function parsePurchases(data) {
       order_id: purchase.order_id,
       status: purchase.status || null,
       purchased_at: purchasedAt,
+      sku: purchase.sku ?? product.sku ?? productSku,
+      slug: purchase.slug ?? product.slug ?? null,
+      product_slug: purchase.product_slug ?? product.product_slug ?? null,
       product_sku: productSku,
       quantity,
+      small_desc_name: purchase.small_desc_name ?? product.small_desc_name ?? null,
+      description: purchase.description ?? product.description ?? null,
+      short_description: purchase.short_description ?? product.short_description ?? null,
+      subtitle: purchase.subtitle ?? product.subtitle ?? null,
+      variants: purchase.variants ?? product.variants ?? null,
+      product_variants: purchase.product_variants ?? product.product_variants ?? null,
       price_byn: price.toFixed(2),
+      price: purchase.price ?? purchase.price_byn ?? null,
+      unit_price_byn: purchase.unit_price_byn ?? null,
+      unit_price: purchase.unit_price ?? null,
+      final_price_byn: purchase.final_price_byn ?? null,
+      final_price: purchase.final_price ?? null,
+      product_price_byn: purchase.product_price_byn ?? null,
+      product_price: purchase.product_price ?? null,
       product: normalizedProduct,
       id: productSku,
       orderId: purchase.order_id,
