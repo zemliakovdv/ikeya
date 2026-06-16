@@ -759,7 +759,7 @@ export default function CartPageClient() {
         return;
       }
 
-      setCheckoutApiError('Не удалось обновить корзину. Повторите попытку.');
+      setCheckoutApiError('РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±РЅРѕРІРёС‚СЊ РєРѕСЂР·РёРЅСѓ. РџРѕРІС‚РѕСЂРёС‚Рµ РїРѕРїС‹С‚РєСѓ.');
     } finally {
       if (cartSummaryRequestIdRef.current === requestId) {
         setSelectionUpdating(false);
