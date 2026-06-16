@@ -22,14 +22,44 @@ export function CartProvider({ children }) {
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pendingQuantityUpdateSkus, setPendingQuantityUpdateSkus] = useState(() => new Set());
 
   const updateTimeoutsRef = useRef(new Map());
+  const quantityUpdateVersionRef = useRef(new Map());
+  const hasPendingQuantityUpdates = pendingQuantityUpdateSkus.size > 0;
 
   useEffect(() => {
     return () => {
       updateTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
       updateTimeoutsRef.current.clear();
+      quantityUpdateVersionRef.current.clear();
     };
+  }, []);
+
+  const markQuantityUpdatePending = useCallback((sku) => {
+    const normalizedSku = String(sku || '');
+    if (!normalizedSku) return;
+
+    setPendingQuantityUpdateSkus((prev) => {
+      if (prev.has(normalizedSku)) return prev;
+
+      const next = new Set(prev);
+      next.add(normalizedSku);
+      return next;
+    });
+  }, []);
+
+  const clearQuantityUpdatePending = useCallback((sku) => {
+    const normalizedSku = String(sku || '');
+    if (!normalizedSku) return;
+
+    setPendingQuantityUpdateSkus((prev) => {
+      if (!prev.has(normalizedSku)) return prev;
+
+      const next = new Set(prev);
+      next.delete(normalizedSku);
+      return next;
+    });
   }, []);
 
   const enrichCartItems = useCallback(async (cartObj) => {
@@ -218,9 +248,29 @@ export function CartProvider({ children }) {
   }, [enrichCartItems]);
 
   const updateQuantity = useCallback(async (sku, newQuantity) => {
+    const normalizedSku = String(sku || '');
+
+    if (!normalizedSku) {
+      return undefined;
+    }
+
     if (newQuantity === 0) {
+      const currentTimeout = updateTimeoutsRef.current.get(normalizedSku);
+
+      if (currentTimeout) {
+        clearTimeout(currentTimeout);
+        updateTimeoutsRef.current.delete(normalizedSku);
+      }
+
+      quantityUpdateVersionRef.current.delete(normalizedSku);
+      clearQuantityUpdatePending(normalizedSku);
+
       return removeFromCart(sku);
     }
+
+    const nextVersion = (quantityUpdateVersionRef.current.get(normalizedSku) || 0) + 1;
+    quantityUpdateVersionRef.current.set(normalizedSku, nextVersion);
+    markQuantityUpdatePending(normalizedSku);
 
     setCart((prev) => {
       if (!prev) return prev;
@@ -228,12 +278,12 @@ export function CartProvider({ children }) {
       return {
         ...prev,
         items: (prev.items || []).map((item) =>
-          item.sku === sku ? { ...item, quantity: newQuantity } : item
+          String(item.sku) === normalizedSku ? { ...item, quantity: newQuantity } : item
         ),
       };
     });
 
-    const currentTimeout = updateTimeoutsRef.current.get(sku);
+    const currentTimeout = updateTimeoutsRef.current.get(normalizedSku);
 
     if (currentTimeout) {
       clearTimeout(currentTimeout);
@@ -241,7 +291,7 @@ export function CartProvider({ children }) {
 
     const timeoutId = setTimeout(async () => {
       try {
-        const response = await cartAPI.updateCartItemQuantity(sku, newQuantity);
+        const response = await cartAPI.updateCartItemQuantity(normalizedSku, newQuantity);
         const nextCart = response.cart ? await enrichCartItems(response.cart) : null;
 
         setCart((prev) => ({
@@ -255,14 +305,27 @@ export function CartProvider({ children }) {
         await fetchCart();
         setError(err.message);
       } finally {
-        updateTimeoutsRef.current.delete(sku);
+        if (updateTimeoutsRef.current.get(normalizedSku) === timeoutId) {
+          updateTimeoutsRef.current.delete(normalizedSku);
+        }
+
+        if (quantityUpdateVersionRef.current.get(normalizedSku) === nextVersion) {
+          quantityUpdateVersionRef.current.delete(normalizedSku);
+          clearQuantityUpdatePending(normalizedSku);
+        }
       }
     }, 200);
 
-    updateTimeoutsRef.current.set(sku, timeoutId);
+    updateTimeoutsRef.current.set(normalizedSku, timeoutId);
 
     return undefined;
-  }, [enrichCartItems, fetchCart, removeFromCart]);
+  }, [
+    clearQuantityUpdatePending,
+    enrichCartItems,
+    fetchCart,
+    markQuantityUpdatePending,
+    removeFromCart,
+  ]);
 
   const mergeGuestCart = useCallback(async (guestItems) => {
     if (!guestItems?.length) return;
@@ -399,6 +462,7 @@ export function CartProvider({ children }) {
         delivery,
         flags,
         recommendations,
+        hasPendingQuantityUpdates,
       }}
     >
       {children}

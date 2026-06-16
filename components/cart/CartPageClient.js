@@ -227,6 +227,7 @@ export default function CartPageClient() {
     delivery,
     loading,
     items,
+    hasPendingQuantityUpdates,
   } = useCart();
 
   const isInitialLoading = loading && (items || []).length === 0;
@@ -693,6 +694,7 @@ export default function CartPageClient() {
         : fallbackCanCheckout
     )
   );
+  const canProceedToCheckout = canCheckout && !hasPendingQuantityUpdates;
 
   const checkoutErrorMessage = selectedData.minOrderError ||
     `Оформление заказа доступно от ${formatAmount(minOrderAmount)} р. стоимости товаров`;
@@ -952,7 +954,7 @@ export default function CartPageClient() {
       return;
     }
 
-    if (isPreparingCheckout || checkoutLoading || selectionUpdating) {
+    if (isPreparingCheckout || checkoutLoading || selectionUpdating || hasPendingQuantityUpdates) {
       return;
     }
 
@@ -985,6 +987,7 @@ export default function CartPageClient() {
     isAuth,
     isPreparingCheckout,
     checkoutLoading,
+    hasPendingQuantityUpdates,
     selectionUpdating,
     openLogin,
     persistPendingCheckoutData,
@@ -1040,6 +1043,10 @@ export default function CartPageClient() {
       return;
     }
 
+    if (hasPendingQuantityUpdates) {
+      return;
+    }
+
     if (
       inFlightSummaryPayloadKeyRef.current === selectedItemsPayloadKey ||
       lastSuccessfulSummaryPayloadKeyRef.current === selectedItemsPayloadKey
@@ -1049,7 +1056,13 @@ export default function CartPageClient() {
 
     inFlightSummaryPayloadKeyRef.current = selectedItemsPayloadKey;
     requestSummaryForPayload(selectedItemsPayload, selectedItemsPayloadKey);
-  }, [isInitialLoading, requestSummaryForPayload, selectedItemsPayload, selectedItemsPayloadKey]);
+  }, [
+    hasPendingQuantityUpdates,
+    isInitialLoading,
+    requestSummaryForPayload,
+    selectedItemsPayload,
+    selectedItemsPayloadKey,
+  ]);
 
   const handleCheckChangeUnavailable = useCallback((sku, checked) => {
     if (!sku) return;
@@ -1185,7 +1198,7 @@ export default function CartPageClient() {
                           itemCount={selectedItemsCount}
                           totalWeight={selectedData.totalWeight}
                           customsDuty={selectedData.customsDuty}
-                          canCheckout={canCheckout}
+                          canCheckout={canProceedToCheckout}
                           onCheckout={handleCheckout}
                           cart={cart}
                           checkoutLoading={checkoutLoading}
