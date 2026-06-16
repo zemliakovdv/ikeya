@@ -322,6 +322,13 @@ function shouldShowWhereIsMyOrder(order = {}) {
   return order.canShowWhereIsOrderButton === true;
 }
 
+function shouldShowTrackingBlock(order = {}) {
+  return Boolean(
+    order.trackNumber &&
+    ['shipped', 'handed_to_courier'].includes(order.rawStatus)
+  );
+}
+
 function shouldShowOrderNumberInfo(order = {}) {
   return !(order.trackNumber && order.canShowTrackNumber) && PICKUP_READY_STATUSES.includes(order.status);
 }
@@ -356,7 +363,7 @@ const OrderCard = ({ order }) => {
   }
 
   function handleTrackCopy() {
-    if (!(order?.trackNumber && order?.canShowTrackNumber)) return;
+    if (!shouldShowTrackingBlock(order)) return;
 
     navigator.clipboard.writeText(String(order.trackNumber)).then(() => {
       setTrackCopied(true);
@@ -365,7 +372,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackNumberCard() {
-    if (!(order.trackNumber && order.canShowTrackNumber)) return null;
+    if (!shouldShowTrackingBlock(order)) return null;
 
     return (
       <div style={serviceStyles.smallCard}>
@@ -393,7 +400,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackingCard() {
-    if (!(order.trackNumber && order.canShowTrackNumber)) return null;
+    if (!shouldShowTrackingBlock(order)) return null;
 
     const trackingUrl = getTrackingUrl(order);
 
@@ -427,7 +434,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderTrackInfoCard() {
-    if (!(order.trackNumber && order.canShowTrackNumber)) return null;
+    if (!shouldShowTrackingBlock(order)) return null;
 
     return (
       <div style={serviceStyles.infoCard}>
@@ -465,7 +472,7 @@ const OrderCard = ({ order }) => {
   }
 
   function renderOrderServiceBlocks() {
-    if (order.trackNumber && order.canShowTrackNumber) {
+    if (shouldShowTrackingBlock(order)) {
       return (
         <div style={serviceStyles.row}>
           <div style={serviceStyles.leftGroup}>
