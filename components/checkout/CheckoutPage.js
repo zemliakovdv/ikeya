@@ -1180,7 +1180,7 @@ function CheckoutPageInner() {
   const pvzDeliveryCost = getDeliveryPrice(freshPvzCalcResult);
 
   const addrDeliveryCost = getDeliveryPrice(freshAddrCalcResult);
-  const selectedDeliveryDisplayPrice = `${(backendDeliveryTotal || addrDeliveryCost).toFixed(2)} р.`;
+  const selectedDeliveryDisplayPrice = `${(addrDeliveryCost || backendDeliveryTotal).toFixed(2)} р.`;
   const addrDeliveryType =
     freshAddrCalcResult?.delivery?.normalized_delivery_type ||
     freshAddrCalcResult?.delivery?.delivery_type ||
