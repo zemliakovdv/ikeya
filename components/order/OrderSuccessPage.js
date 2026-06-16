@@ -127,25 +127,17 @@ function getOrderItemImage(item = {}) {
 
 function getOrderDeliveryCost(attrs = {}) {
   const delivery = attrs.delivery || attrs.address?.delivery || {};
+  const totals = attrs.totals || delivery.totals || {};
 
   const candidates = [
-    attrs.delivery_price,
-    attrs.delivery_price_byn,
-    attrs.delivery_total_byn,
-    attrs.total_delivery_byn,
-    attrs.total_delivery_price_byn,
-    delivery.delivery_price,
-    delivery.delivery_price_byn,
-    delivery.delivery_total_byn,
-    delivery.total_delivery_byn,
-    delivery.total_delivery_price_byn,
-    delivery.price_byn,
-    delivery.base_cost_byn,
-    delivery.pricing?.internal?.total_delivery_byn,
-    delivery.pricing?.internal?.total_delivery_price_byn,
-    delivery.pricing?.internal?.delivery_total_byn,
-    delivery.pricing?.internal?.delivery_price_byn,
-    delivery.pricing?.internal?.base_cost_byn,
+    attrs.delivery_method_byn,
+    attrs.delivery_method_price_byn,
+    totals.delivery_method_byn,
+    totals.delivery_method_price_byn,
+    delivery.delivery_method_byn,
+    delivery.delivery_method_price_byn,
+    delivery.pricing?.internal?.delivery_method_byn,
+    delivery.pricing?.internal?.delivery_method_price_byn,
   ];
 
   const found = candidates.find((value) => value !== undefined && value !== null && value !== '');

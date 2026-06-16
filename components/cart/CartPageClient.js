@@ -278,7 +278,8 @@ export default function CartPageClient() {
   const previousAvailableSkusRef = useRef([]);
   const hasHydratedAvailableSkusRef = useRef(false);
   const cartSummaryRequestIdRef = useRef(0);
-  const lastRequestedSummaryPayloadKeyRef = useRef(null);
+  const lastSuccessfulSummaryPayloadKeyRef = useRef(null);
+  const inFlightSummaryPayloadKeyRef = useRef(null);
 
   const minOrderAmount = toNumber(
     cart?.rules?.min_order_amount_byn,
@@ -721,13 +722,17 @@ export default function CartPageClient() {
     }
   }, [selectedData, delivery, selectedItemsCount]);
 
-  const requestSummaryForPayload = useCallback(async (payload = []) => {
+  const requestSummaryForPayload = useCallback(async (payload = [], payloadKey = '') => {
     const requestId = cartSummaryRequestIdRef.current + 1;
     cartSummaryRequestIdRef.current = requestId;
 
     if (!payload.length) {
       setRemoteSummary(null);
       setSelectionUpdating(false);
+      lastSuccessfulSummaryPayloadKeyRef.current = payloadKey;
+      if (inFlightSummaryPayloadKeyRef.current === payloadKey) {
+        inFlightSummaryPayloadKeyRef.current = null;
+      }
       return;
     }
 
@@ -755,6 +760,8 @@ export default function CartPageClient() {
       } else {
         setRemoteSummary(null);
       }
+
+      lastSuccessfulSummaryPayloadKeyRef.current = payloadKey;
     } catch {
       if (cartSummaryRequestIdRef.current !== requestId) {
         return;
@@ -762,6 +769,10 @@ export default function CartPageClient() {
 
       setCheckoutApiError('Не удалось обновить корзину. Повторите попытку.');
     } finally {
+      if (inFlightSummaryPayloadKeyRef.current === payloadKey) {
+        inFlightSummaryPayloadKeyRef.current = null;
+      }
+
       if (cartSummaryRequestIdRef.current === requestId) {
         setSelectionUpdating(false);
       }
@@ -1029,12 +1040,15 @@ export default function CartPageClient() {
       return;
     }
 
-    if (lastRequestedSummaryPayloadKeyRef.current === selectedItemsPayloadKey) {
+    if (
+      inFlightSummaryPayloadKeyRef.current === selectedItemsPayloadKey ||
+      lastSuccessfulSummaryPayloadKeyRef.current === selectedItemsPayloadKey
+    ) {
       return;
     }
 
-    lastRequestedSummaryPayloadKeyRef.current = selectedItemsPayloadKey;
-    requestSummaryForPayload(selectedItemsPayload);
+    inFlightSummaryPayloadKeyRef.current = selectedItemsPayloadKey;
+    requestSummaryForPayload(selectedItemsPayload, selectedItemsPayloadKey);
   }, [isInitialLoading, requestSummaryForPayload, selectedItemsPayload, selectedItemsPayloadKey]);
 
   const handleCheckChangeUnavailable = useCallback((sku, checked) => {
@@ -1080,7 +1094,7 @@ export default function CartPageClient() {
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
 
-  if (isInitialLoading || checkoutLoading || isPreparingCheckout) {
+  if (checkoutLoading || isPreparingCheckout) {
     return <PageLoader />;
   }
 

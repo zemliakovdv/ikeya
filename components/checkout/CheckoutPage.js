@@ -310,21 +310,15 @@ function getSummaryDeliveryToBelarus(summary) {
 
 function getDeliveryPrice(calcResult) {
   const delivery = calcResult?.delivery || {};
+  const totals = calcResult?.totals || delivery?.totals || {};
 
   const candidates = [
-    delivery.total_delivery_price_byn,
-    delivery.total_delivery_byn,
-    delivery.delivery_price_byn,
-    delivery.delivery_total_byn,
-    delivery.price_byn,
-    delivery.base_cost_byn,
-    delivery.poland_delivery_byn,
-    delivery.pricing?.internal?.total_delivery_byn,
-    delivery.pricing?.internal?.total_delivery_price_byn,
-    delivery.pricing?.internal?.delivery_total_byn,
-    delivery.pricing?.internal?.delivery_price_byn,
-    delivery.pricing?.internal?.base_cost_byn,
-    delivery.pricing?.internal?.poland_delivery_byn,
+    totals.delivery_method_byn,
+    totals.delivery_method_price_byn,
+    delivery.delivery_method_byn,
+    delivery.delivery_method_price_byn,
+    delivery.pricing?.internal?.delivery_method_byn,
+    delivery.pricing?.internal?.delivery_method_price_byn,
   ];
 
   const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
@@ -1168,7 +1162,13 @@ function CheckoutPageInner() {
     0
   );
   const customsDuty = isSummaryFreshForCurrentItems ? checkoutSummary?.customsDuty ?? 0 : 0;
-  const itemCount = checkoutSummary?.itemCount ?? cartItems.reduce((acc, item) => acc + (item.quantity || 1), 0);
+  const fallbackItemCount = cartItems.reduce(
+    (acc, item) => acc + Number(item?.quantity || 0),
+    0
+  );
+  const itemCount = isSummaryFreshForCurrentItems
+    ? toNumber(checkoutSummary?.itemCount, fallbackItemCount)
+    : fallbackItemCount;
   const finalTotal = toNumber(
     pricingTotals?.final_total_byn ??
     pricingTotals?.total_byn ??
@@ -1212,11 +1212,11 @@ function CheckoutPageInner() {
 
   const formatMethodEstimate = (method) => {
     if (!method) return '';
-    const total = toNumber(method.total_delivery_price_byn);
-    const local = toNumber(method.delivery_price_byn);
-    const crossBorder = toNumber(method.delivery_to_belarus_price_byn);
-    if (total > 0) return `${total.toFixed(2)} р.`;
-    if (local > 0 || crossBorder > 0) return `${(local + crossBorder).toFixed(2)} р.`;
+    const methodPrice = toNumber(
+      method.delivery_method_byn ??
+      method.delivery_method_price_byn
+    );
+    if (methodPrice > 0) return `${methodPrice.toFixed(2)} р.`;
     return '';
   };
 
