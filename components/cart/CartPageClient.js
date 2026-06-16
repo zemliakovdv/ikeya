@@ -1134,7 +1134,7 @@ export default function CartPageClient() {
                             onSelectAll={handleSelectAll}
                             onDeleteSelected={handleDeleteSelected}
                             onCheckChange={handleCheckChange}
-                            loading={loading || selectionUpdating}
+                            loading={loading}
                           />
                         )}
 
@@ -1147,7 +1147,7 @@ export default function CartPageClient() {
                             onSelectAll={handleSelectAllUnavailable}
                             onDeleteSelected={handleDeleteSelectedUnavailable}
                             onCheckChange={handleCheckChangeUnavailable}
-                            loading={loading || selectionUpdating}
+                            loading={loading}
                           />
                         )}
 
@@ -1174,7 +1174,7 @@ export default function CartPageClient() {
                           canCheckout={canCheckout}
                           onCheckout={handleCheckout}
                           cart={cart}
-                          checkoutLoading={checkoutLoading || selectionUpdating}
+                          checkoutLoading={checkoutLoading}
                         />
                       )}
                     </div>
