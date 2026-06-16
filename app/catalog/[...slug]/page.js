@@ -102,6 +102,89 @@ function buildPaginationUrl(basePath, queryParams, page) {
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
+function toCategoryNavNode(node) {
+  if (!node?.id) return null;
+
+  const attrs = node.attributes || {};
+
+  return {
+    id: node.id,
+    attributes: {
+      slug: attrs.slug || '',
+      name: attrs.name || '',
+      translated_name: attrs.translated_name || '',
+      parent_id: attrs.parent_id ?? null,
+      parent_ids: Array.isArray(attrs.parent_ids) ? attrs.parent_ids : [],
+    },
+    children: [],
+  };
+}
+
+function getNodeSlug(node) {
+  return node?.attributes?.slug || node?.id || '';
+}
+
+function buildPrunedCategoryNavTree(tree, slugChain = []) {
+  const roots = Array.isArray(tree) ? tree : [];
+  const chain = Array.isArray(slugChain) ? slugChain.filter(Boolean) : [];
+
+  if (roots.length === 0) return [];
+  if (chain.length === 0) {
+    return roots.map(toCategoryNavNode).filter(Boolean);
+  }
+
+  return roots
+    .map((root) => {
+      const rootNavNode = toCategoryNavNode(root);
+      if (!rootNavNode) return null;
+
+      const isCurrentRoot = getNodeSlug(root) === chain[0];
+      if (!isCurrentRoot) return rootNavNode;
+
+      function pruneAlongPath(node, depth) {
+        const navNode = toCategoryNavNode(node);
+        if (!navNode) return null;
+
+        const children = Array.isArray(node?.children) ? node.children : [];
+        const isCurrentNode = depth === chain.length - 1;
+
+        if (isCurrentNode) {
+          navNode.children = children.map(toCategoryNavNode).filter(Boolean);
+          return navNode;
+        }
+
+        const nextSlug = chain[depth + 1];
+        const nextChild = children.find((child) => getNodeSlug(child) === nextSlug);
+
+        if (depth === chain.length - 2) {
+          navNode.children = children.map((child) => {
+            const childNavNode = toCategoryNavNode(child);
+
+            if (!childNavNode) return null;
+            if (getNodeSlug(child) === nextSlug) {
+              childNavNode.children = Array.isArray(child?.children)
+                ? child.children.map(toCategoryNavNode).filter(Boolean)
+                : [];
+            }
+
+            return childNavNode;
+          }).filter(Boolean);
+
+          return navNode;
+        }
+
+        navNode.children = nextChild
+          ? [pruneAlongPath(nextChild, depth + 1)].filter(Boolean)
+          : [];
+
+        return navNode;
+      }
+
+      return pruneAlongPath(root, 0);
+    })
+    .filter(Boolean);
+}
+
 export default async function CategoryPage({ params, searchParams }) {
   const { slug } = await params;
   const sp = await searchParams;
@@ -156,6 +239,7 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const { node: currentNode, ancestors: currentNodeAncestors } = findNodeInTree(tree, slug);
     const childCategories = currentNode?.children || [];
+    const categoryNavTree = buildPrunedCategoryNavTree(tree, slug);
     const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbsFromTree(tree, slug);
     const parentBreadcrumb = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2] : null;
@@ -220,7 +304,7 @@ export default async function CategoryPage({ params, searchParams }) {
 
             <div className="all-catalog-inner">
               <FilterAside
-                treeData={tree}
+                treeData={categoryNavTree}
                 slugChain={slug}
                 showAllFilters={showAllFilters}
                 availableFilters={availableFilters}
@@ -232,7 +316,7 @@ export default async function CategoryPage({ params, searchParams }) {
                 <div className="catalog-toolbar-sticky">
                   <div className="catalog-toolbar">
                     <MobileCatalogFilters
-                      treeData={tree}
+                      treeData={categoryNavTree}
                       slugChain={slug}
                       showAllFilters={showAllFilters}
                       availableFilters={availableFilters}
