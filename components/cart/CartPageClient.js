@@ -278,6 +278,7 @@ export default function CartPageClient() {
   const previousAvailableSkusRef = useRef([]);
   const hasHydratedAvailableSkusRef = useRef(false);
   const cartSummaryRequestIdRef = useRef(0);
+  const lastRequestedSummaryPayloadKeyRef = useRef(null);
 
   const minOrderAmount = toNumber(
     cart?.rules?.min_order_amount_byn,
@@ -1028,6 +1029,11 @@ export default function CartPageClient() {
       return;
     }
 
+    if (lastRequestedSummaryPayloadKeyRef.current === selectedItemsPayloadKey) {
+      return;
+    }
+
+    lastRequestedSummaryPayloadKeyRef.current = selectedItemsPayloadKey;
     requestSummaryForPayload(selectedItemsPayload);
   }, [isInitialLoading, requestSummaryForPayload, selectedItemsPayload, selectedItemsPayloadKey]);
 
