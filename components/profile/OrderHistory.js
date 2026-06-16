@@ -48,7 +48,7 @@ export default function OrderHistory({ orders, onReorder }) {
               <div className="empty-text">Попробуйте выбрать другой период.</div>
             </div>
           ) : filteredOrders.map((order) => {
-            const isCanceled = ['canceled', 'cancelled'].includes(order.rawStatus);
+            const isCanceled = order.status === 'canceled';
             const badgeClass = isCanceled ? 'badge-canceled' : 'badge-havit';
             const badgeText = order.statusDescription || '—';
             const items = order.items || [];

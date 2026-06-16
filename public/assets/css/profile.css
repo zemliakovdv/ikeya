@@ -808,11 +808,12 @@
     }
 
     .zakazi .badge-canceled {
-        background: #B71C1C;
+        color: #ffffff;
+        background: #C62828;
     }
 
     .zakazi .badge-havit {
-        background: #00910A;
+        background: #CD0101;
     }
 
     .order-canceled_inner {

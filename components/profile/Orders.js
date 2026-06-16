@@ -11,6 +11,8 @@ import Purchases from '@/components/profile/Purchases';
 import {
   canShowOrderTrackNumber,
   canShowWhereIsOrderButton,
+  getOrderStatusLabel,
+  ORDER_STATUS_LABELS,
   isProfileActiveOrder,
   isProfileDraftOrder,
   isProfileExpiredUnpaidOrder,
@@ -232,15 +234,9 @@ function parseOrders(data) {
         attr.delivery?.method ||
         null,
       status: mappedStatus,
-      statusDescription:
-        rawStatus === 'delivered'
-          ? 'Получен'
-          : attr.status_description ||
-            attr.status_label ||
-            attr.status_name ||
-            attr.status_title ||
-            attr.status_text ||
-            '—',
+      statusDescription: isExpiredUnpaid
+        ? ORDER_STATUS_LABELS.canceled
+        : getOrderStatusLabel(order),
       paymentStatus: attr.payment_status || null,
       price: formatPrice(attr.total_amount),
       trackNumber: attr.track_number || null,

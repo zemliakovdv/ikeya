@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { getOrders, getPurchases, isProfileActiveOrder } from '@/lib/api/account';
+import { getOrderStatusLabel, getOrders, getPurchases, isProfileActiveOrder } from '@/lib/api/account';
 import { openJivoChat } from '@/components/FloatingChatButton';
 import { useProfileCounts } from './ProfileCountsContext';
 
@@ -119,7 +119,7 @@ export default function ProfileDashboard() {
 
               return {
                 publicId: order.id, // public_uid
-                statusDescription: a.status === 'delivered' ? 'Получен' : (a.status_description || a.status),
+                statusDescription: getOrderStatusLabel(order),
                 badgeCls,
                 date: new Date(a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
                 imageUrl,
