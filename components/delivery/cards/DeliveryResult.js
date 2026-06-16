@@ -73,29 +73,28 @@ function isEuropostDelivery(type) {
   ].includes(type);
 }
 
-function getDeliveryCost(delivery) {
+function getDeliveryMethodCost(calcResult) {
+  const delivery = calcResult?.delivery || {};
+  const totals = calcResult?.totals || delivery?.totals || {};
+
   const candidates = [
-    delivery?.total_delivery_price_byn,
-    delivery?.total_delivery_byn,
-    delivery?.delivery_price_byn,
-    delivery?.delivery_total_byn,
-    delivery?.price_byn,
-    delivery?.base_cost_byn,
-    delivery?.poland_delivery_byn,
-    delivery?.pricing?.internal?.total_delivery_byn,
-    delivery?.pricing?.internal?.total_delivery_price_byn,
-    delivery?.pricing?.internal?.delivery_total_byn,
-    delivery?.pricing?.internal?.delivery_price_byn,
-    delivery?.pricing?.internal?.base_cost_byn,
-    delivery?.pricing?.internal?.poland_delivery_byn,
+    totals?.delivery_method_byn,
+    delivery?.delivery_method_byn,
+    delivery?.delivery_method_price_byn,
+    delivery?.pricing?.internal?.delivery_method_byn,
+    delivery?.pricing?.internal?.delivery_method_price_byn,
   ];
 
-  const found = candidates.find((value) => {
-    if (value === undefined || value === null || value === '') return false;
-    return toNumber(value, 0) > 0;
-  });
+  const found = candidates.find((value) => value !== undefined && value !== null && value !== '');
 
-  return found !== undefined ? toNumber(found, 0) : 0;
+  if (found === undefined) {
+    return { hasValue: false, value: 0 };
+  }
+
+  return {
+    hasValue: true,
+    value: toNumber(found, 0),
+  };
 }
 
 export default function DeliveryResult({ calcResult }) {
@@ -104,7 +103,7 @@ export default function DeliveryResult({ calcResult }) {
   const isEuropost = isEuropostDelivery(deliveryType);
   const isIkeyaDelivery = deliveryType === 'ikeya_delivery';
   const isFree = delivery?.free_delivery_eligible === true;
-  const cost = getDeliveryCost(delivery);
+  const deliveryMethodCost = getDeliveryMethodCost(calcResult);
   const deliveryDate = delivery?.delivery_date;
   const storageUntil = delivery?.storage_until;
 
@@ -130,7 +129,15 @@ export default function DeliveryResult({ calcResult }) {
             <div className="delivery-result__row">
               <span className="delivery-result__label">Стоимость доставки</span>
               <span className="delivery-result__value">
-                {cost > 0 ? formatMoney(cost) : isFree ? <span className="text-success">бесплатно</span> : '—'}
+                {deliveryMethodCost.hasValue
+                  ? deliveryMethodCost.value > 0
+                    ? formatMoney(deliveryMethodCost.value)
+                    : isFree
+                      ? <span className="text-success">бесплатно</span>
+                      : formatMoney(0)
+                  : isFree
+                    ? <span className="text-success">бесплатно</span>
+                    : '—'}
               </span>
             </div>
 

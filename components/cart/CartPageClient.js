@@ -11,7 +11,6 @@ import {
   createDraft,
   getCartSummary,
   normalizeCheckoutItems,
-  updateCartItemQuantity,
 } from '@/lib/api/cart';
 
 import CartItemsSection from './CartItemsSection';
@@ -19,6 +18,7 @@ import CartSummary from './CartSummary';
 
 const DEFAULT_MIN_ORDER_AMOUNT = 150; // BYN
 const CART_SELECTED_ITEMS_STORAGE_KEY = 'cartSelectedItems';
+const CART_SELECTED_ITEMS_SIGNATURE_STORAGE_KEY = 'cartSelectedItemsSignature';
 
 function toNumber(value, fallback = 0) {
   const normalized = String(value ?? '')
@@ -233,28 +233,30 @@ export default function CartPageClient() {
 
   const storedSelectedItemsState = useMemo(() => {
     if (typeof window === 'undefined') {
-      return { hasStoredSelection: false, items: [] };
+      return { hasStoredSelection: false, items: [], signature: '' };
     }
 
     try {
       const raw = sessionStorage.getItem(CART_SELECTED_ITEMS_STORAGE_KEY);
+      const signature = sessionStorage.getItem(CART_SELECTED_ITEMS_SIGNATURE_STORAGE_KEY) || '';
 
       if (raw === null) {
-        return { hasStoredSelection: false, items: [] };
+        return { hasStoredSelection: false, items: [], signature };
       }
 
       const parsed = JSON.parse(raw);
 
       if (!Array.isArray(parsed)) {
-        return { hasStoredSelection: false, items: [] };
+        return { hasStoredSelection: false, items: [], signature };
       }
 
       return {
         hasStoredSelection: true,
         items: parsed.map((sku) => String(sku)),
+        signature,
       };
     } catch {
-      return { hasStoredSelection: false, items: [] };
+      return { hasStoredSelection: false, items: [], signature: '' };
     }
   }, []);
 
@@ -275,6 +277,7 @@ export default function CartPageClient() {
   const hasStoredSelectionRef = useRef(storedSelectedItemsState.hasStoredSelection);
   const previousAvailableSkusRef = useRef([]);
   const hasHydratedAvailableSkusRef = useRef(false);
+  const cartSummaryRequestIdRef = useRef(0);
 
   const minOrderAmount = toNumber(
     cart?.rules?.min_order_amount_byn,
@@ -386,7 +389,11 @@ export default function CartPageClient() {
         hasHydratedAvailableSkusRef.current = true;
         previousAvailableSkusRef.current = skus;
 
-        if (hasStoredSelectionRef.current) {
+        const hasValidStoredSelection =
+          hasStoredSelectionRef.current &&
+          storedSelectedItemsState.signature === availableSkusKey;
+
+        if (hasValidStoredSelection) {
           return prev.filter((sku) => currentSet.has(sku));
         }
 
@@ -439,6 +446,10 @@ export default function CartPageClient() {
         CART_SELECTED_ITEMS_STORAGE_KEY,
         JSON.stringify(selectedItems)
       );
+      sessionStorage.setItem(
+        CART_SELECTED_ITEMS_SIGNATURE_STORAGE_KEY,
+        availableSkusKey
+      );
       hasStoredSelectionRef.current = true;
     } catch {
     }
@@ -463,19 +474,12 @@ export default function CartPageClient() {
     [selectedAvailableItems]
   );
 
-  const buildSummaryItemsPayload = useCallback((skus = [], sourceItems = availableItems) => {
-    const selectedSet = new Set((skus || []).map((sku) => String(sku)));
-
-    return buildItemsPayload(
-      (sourceItems || []).filter((item) => {
-        const sku = getCartItemSku(item);
-        return sku && selectedSet.has(String(sku));
-      })
-    );
-  }, [availableItems]);
-
   const selectedItemsPayloadKey = useMemo(
     () => selectedItemsPayload.map((item) => `${item.sku}:${item.quantity}`).join('|'),
+    [selectedItemsPayload]
+  );
+  const selectedItemsCount = useMemo(
+    () => sumItemsQuantity(selectedItemsPayload),
     [selectedItemsPayload]
   );
 
@@ -704,7 +708,7 @@ export default function CartPageClient() {
         subtotal: summarySource?.subtotal ?? 0,
         finalTotal: summarySource?.finalTotal ?? 0,
         promoDiscount: summarySource?.promoDiscount ?? 0,
-        itemCount: summarySource?.itemCount ?? 0,
+        itemCount: selectedItemsCount,
         totalWeight: summarySource?.totalWeight ?? 0,
         customsDuty: summarySource?.customsDuty ?? 0,
         delivery: summarySource?.deliveryToBelarus ?? 0,
@@ -714,7 +718,54 @@ export default function CartPageClient() {
       }));
     } catch {
     }
-  }, [selectedData, delivery]);
+  }, [selectedData, delivery, selectedItemsCount]);
+
+  const requestSummaryForPayload = useCallback(async (payload = []) => {
+    const requestId = cartSummaryRequestIdRef.current + 1;
+    cartSummaryRequestIdRef.current = requestId;
+
+    if (!payload.length) {
+      setRemoteSummary(null);
+      setSelectionUpdating(false);
+      return;
+    }
+
+    setSelectionUpdating(true);
+    setCheckoutApiError('');
+
+    try {
+      const summaryResponse = await getCartSummary({
+        items: payload,
+      });
+      const normalizedSummary = normalizeSummaryResponse(summaryResponse);
+
+      if (cartSummaryRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      if (normalizedSummary) {
+        const summaryWithActualCount = {
+          ...normalizedSummary,
+          itemCount: sumItemsQuantity(payload),
+        };
+
+        setRemoteSummary(summaryWithActualCount);
+        saveSummaryToSession(summaryWithActualCount);
+      } else {
+        setRemoteSummary(null);
+      }
+    } catch {
+      if (cartSummaryRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      setCheckoutApiError('Не удалось обновить корзину. Повторите попытку.');
+    } finally {
+      if (cartSummaryRequestIdRef.current === requestId) {
+        setSelectionUpdating(false);
+      }
+    }
+  }, [saveSummaryToSession]);
 
   const persistPendingCheckoutData = useCallback((payload, summaryOverride = null) => {
     if (typeof window === 'undefined') {
@@ -731,6 +782,10 @@ export default function CartPageClient() {
       sessionStorage.setItem(
         CART_SELECTED_ITEMS_STORAGE_KEY,
         JSON.stringify(payload.map((item) => String(item.sku)))
+      );
+      sessionStorage.setItem(
+        CART_SELECTED_ITEMS_SIGNATURE_STORAGE_KEY,
+        availableSkusKey
       );
     } catch {
     }
@@ -932,82 +987,6 @@ export default function CartPageClient() {
     }
   }, [updateQuantity]);
 
-  const triggerSelectionRecalculation = useCallback(async ({
-    changedSkus = [],
-    selectedSkus = [],
-  } = {}) => {
-    const uniqueChangedSkus = Array.from(
-      new Set(
-        (changedSkus || [])
-          .map((sku) => String(sku || ''))
-          .filter(Boolean)
-      )
-    );
-    const nextSelectedSkus = Array.from(
-      new Set(
-        (selectedSkus || [])
-          .map((sku) => String(sku || ''))
-          .filter(Boolean)
-      )
-    );
-
-    if (!uniqueChangedSkus.length && !nextSelectedSkus.length) {
-      setRemoteSummary(null);
-      return;
-    }
-
-    const quantityBySku = new Map(
-      (availableItems || []).map((item) => [
-        String(getCartItemSku(item) || ''),
-        Number(item?.quantity || 0),
-      ])
-    );
-
-    setSelectionUpdating(true);
-    setCheckoutApiError('');
-
-    try {
-      if (uniqueChangedSkus.length) {
-        await Promise.all(
-          uniqueChangedSkus.map((sku) => {
-            const quantity = quantityBySku.get(sku);
-
-            if (!Number.isFinite(quantity) || quantity <= 0) {
-              return Promise.resolve();
-            }
-
-            return updateCartItemQuantity(sku, quantity);
-          })
-        );
-      }
-
-      await refreshCart?.();
-
-      const summaryPayload = buildSummaryItemsPayload(nextSelectedSkus);
-
-      if (!summaryPayload.length) {
-        setRemoteSummary(null);
-        return;
-      }
-
-      const summaryResponse = await getCartSummary({
-        items: summaryPayload,
-      });
-      const normalizedSummary = normalizeSummaryResponse(summaryResponse);
-
-      if (normalizedSummary) {
-        setRemoteSummary(normalizedSummary);
-        saveSummaryToSession(normalizedSummary);
-      } else {
-        setRemoteSummary(null);
-      }
-    } catch {
-      setCheckoutApiError('РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±РЅРѕРІРёС‚СЊ РєРѕСЂР·РёРЅСѓ. РџРѕРІС‚РѕСЂРёС‚Рµ РїРѕРїС‹С‚РєСѓ.');
-    } finally {
-      setSelectionUpdating(false);
-    }
-  }, [availableItems, buildSummaryItemsPayload, refreshCart, saveSummaryToSession]);
-
   const handleDelete = useCallback(async (sku) => {
     try {
       await removeFromCart(sku);
@@ -1033,29 +1012,24 @@ export default function CartPageClient() {
 
     setRemoteSummary(null);
     setSelectedItems(nextSelectedItems);
-
-    await triggerSelectionRecalculation({
-      changedSkus: [normalizedSku],
-      selectedSkus: nextSelectedItems,
-    });
-  }, [selectedItems, selectionUpdating, triggerSelectionRecalculation]);
+  }, [selectedItems, selectionUpdating]);
 
   const handleSelectAll = useCallback(async (checked) => {
     if (selectionUpdating) return;
 
     const nextSelectedItems = checked ? availableSkus : [];
-    const changedSkus = checked
-      ? availableSkus.filter((sku) => !selectedItems.includes(sku))
-      : selectedItems.filter((sku) => availableSkus.includes(sku));
 
     setRemoteSummary(null);
     setSelectedItems(nextSelectedItems);
+  }, [availableSkus, selectionUpdating]);
 
-    await triggerSelectionRecalculation({
-      changedSkus,
-      selectedSkus: nextSelectedItems,
-    });
-  }, [availableSkus, selectedItems, selectionUpdating, triggerSelectionRecalculation]);
+  useEffect(() => {
+    if (isInitialLoading || !hasHydratedAvailableSkusRef.current) {
+      return;
+    }
+
+    requestSummaryForPayload(selectedItemsPayload);
+  }, [isInitialLoading, requestSummaryForPayload, selectedItemsPayload, selectedItemsPayloadKey]);
 
   const handleCheckChangeUnavailable = useCallback((sku, checked) => {
     if (!sku) return;
@@ -1188,7 +1162,7 @@ export default function CartPageClient() {
                           promoDiscount={selectedData.promoDiscount}
                           delivery={selectedData.deliveryToBelarus}
                           finalTotal={selectedData.finalTotal}
-                          itemCount={selectedData.itemCount}
+                          itemCount={selectedItemsCount}
                           totalWeight={selectedData.totalWeight}
                           customsDuty={selectedData.customsDuty}
                           canCheckout={canCheckout}
@@ -1208,3 +1182,4 @@ export default function CartPageClient() {
     </main>
   );
 }
+
