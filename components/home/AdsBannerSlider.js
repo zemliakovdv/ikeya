@@ -203,6 +203,7 @@ export default function AdsBannerSlider({ slides = [] }) {
                               src={banner.image}
                               alt="Рекламный баннер"
                               loading={index === 0 ? 'eager' : 'lazy'}
+                              fetchPriority={index === 0 ? undefined : 'low'}
                             />
                           </Link>
                         ))}
@@ -261,6 +262,7 @@ export default function AdsBannerSlider({ slides = [] }) {
                           src={banner.image}
                           alt="Рекламный баннер"
                           loading={index === 0 ? 'eager' : 'lazy'}
+                          fetchPriority={index === 0 ? undefined : 'low'}
                         />
                       </Link>
                     </div>

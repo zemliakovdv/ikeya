@@ -280,7 +280,7 @@ export default function PopularCategory({ categories = [] }) {
                         <CategoryCard
                           key={category.id}
                           category={category}
-                          isPriority={slideIndex === 0 && itemIndex < 2}
+                          isPriority={false}
                         />
                       ))}
                     </div>
@@ -334,7 +334,7 @@ export default function PopularCategory({ categories = [] }) {
                     <div key={category.id} className="swiper-slide popular-categories-mobile-slide">
                       <CategoryCard
                         category={category}
-                        isPriority={index < 2}
+                        isPriority={false}
                       />
                     </div>
                   ))}

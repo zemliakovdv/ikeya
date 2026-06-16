@@ -231,7 +231,7 @@ export default function ProductTabsSection({
                             {products.map((product, productIndex) => (
                               <div key={product.id} className="swiper-slide">
                                 <ProductCard
-                                  priority={index === 0 && productIndex < 5}
+                                  priority={false}
                                   product={{
                                     id: product.id,
                                     attributes: {

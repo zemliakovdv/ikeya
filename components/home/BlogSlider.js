@@ -234,7 +234,7 @@ export default function BlogSlider({ slides = [] }) {
                           <BlogCard
                             key={article.id}
                             article={article}
-                            priority={index === 0}
+                            priority={false}
                           />
                         ))}
                       </div>
@@ -289,7 +289,7 @@ export default function BlogSlider({ slides = [] }) {
                     <div key={`${article.id}-${index}`} className="swiper-slide">
                       <BlogCard
                         article={article}
-                        priority={index === 0}
+                        priority={false}
                       />
                     </div>
                   ))}

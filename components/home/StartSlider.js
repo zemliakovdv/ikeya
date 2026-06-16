@@ -2,7 +2,7 @@
 
 // components/home/StartSlider.js
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { IMAGES_BASE_URL } from '@/lib/api/ikea';
@@ -28,11 +28,21 @@ function getLinkUrl(banner) {
 export default function StartSlider({ slides = [], type = 'single' }) {
   const sliderRef = useRef(null);
   const swiperRef = useRef(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const renderedSlides = useMemo(
+    () => (isHydrated ? slides : slides.slice(0, 1)),
+    [isHydrated, slides]
+  );
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!sliderRef.current) return;
-    if (!slides.length) return;
+    if (!renderedSlides.length) return;
+    if (!isHydrated && slides.length > 1) return;
 
     let raf1 = 0;
     let raf2 = 0;
@@ -136,12 +146,12 @@ export default function StartSlider({ slides = [], type = 'single' }) {
         swiperRef.current = null;
       }
     };
-  }, [slides.length, type]);
+  }, [isHydrated, renderedSlides.length, slides.length, type]);
 
   if (!slides.length) return null;
 
   return (
-    <section className="start-slider">
+    <section className={`start-slider start-slider--${type}`}>
       <div className="container">
         <div className="row">
           <div className="col-12">
@@ -149,9 +159,10 @@ export default function StartSlider({ slides = [], type = 'single' }) {
               <div ref={sliderRef} className="swiper start-slider__swiper">
                 <div className="swiper-wrapper">
                   {type === 'single' &&
-                    slides.map((banner, idx) => {
+                    renderedSlides.map((banner, idx) => {
                       const src = getImageUrl(banner);
                       if (!src) return null;
+                      const isLcpImage = idx === 0;
 
                       return (
                         <div className="swiper-slide" key={banner.id || idx}>
@@ -161,9 +172,11 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                               alt={`Баннер ${idx + 1}`}
                               width={1500}
                               height={516}
-                              priority={idx === 0}
+                              priority={isLcpImage}
+                              loading={isLcpImage ? undefined : 'eager'}
+                              fetchPriority={isLcpImage ? 'high' : undefined}
                               unoptimized
-                              style={{ width: '100%', height: 'auto' }}
+                              style={{ width: '100%', height: '100%' }}
                             />
                           </Link>
                         </div>
@@ -171,12 +184,13 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                     })}
 
                   {type === 'triple' &&
-                    slides.map((group, groupIdx) => (
+                    renderedSlides.map((group, groupIdx) => (
                       <div className="swiper-slide" key={groupIdx}>
                         <div className="triple-banners">
                           {group.map((banner, i) => {
                             const src = getImageUrl(banner);
                             if (!src) return null;
+                            const isLcpImage = groupIdx === 0 && i === 0;
 
                             return (
                               <Link
@@ -189,9 +203,11 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                                   alt={`Баннер ${groupIdx * 3 + i + 1}`}
                                   width={572}
                                   height={594}
-                                  priority={groupIdx === 0}
+                                  priority={isLcpImage}
+                                  loading={isLcpImage ? undefined : 'eager'}
+                                  fetchPriority={isLcpImage ? 'high' : undefined}
                                   unoptimized
-                                  style={{ width: '100%', height: 'auto' }}
+                                  style={{ width: '100%', height: '100%' }}
                                 />
                               </Link>
                             );

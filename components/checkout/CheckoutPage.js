@@ -2482,7 +2482,7 @@ function CheckoutPageInner() {
               <div className="modal-content" style={{ padding: 24 }}>
                 <h5 style={{ marginBottom: 16 }}>Самовывоз недоступен</h5>
                 <p style={{ marginBottom: 12 }}>К пересылке принимаются почтовые отправления:</p>
-                <ul style={{ paddingLeft: 20, marginBottom: 24 }}>
+                <ul style={{ paddingLeft: 20, marginBottom: 24, listStyleType: 'disc' }}>
                   <li>весом до 30 кг (в отдельных пунктах — до 50 кг).</li>
                   <li>максимальные габариты любой из сторон — до 250 см.</li>
                   <li>сумма трёх сторон — не более 350 см.</li>

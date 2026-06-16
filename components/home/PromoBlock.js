@@ -119,9 +119,9 @@ export default function PromoBlock({ bannerImage, bannerUrl, categoryName, produ
               <div className="promo-block-info">
                 <Link href={bannerUrl || '#'}>
                   {bannerImage ? (
-                    <img src={bannerImage} alt={categoryName || 'Промо-баннер'} loading="eager" />
+                    <img src={bannerImage} alt={categoryName || 'Промо-баннер'} loading="lazy" fetchPriority="low" />
                   ) : (
-                    <img src="/assets/img/main-page/promo-block/left-banner.png" alt="Промо-баннер" loading="eager" />
+                    <img src="/assets/img/main-page/promo-block/left-banner.png" alt="Промо-баннер" loading="lazy" fetchPriority="low" />
                   )}
                 </Link>
               </div>
