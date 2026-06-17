@@ -1,29 +1,19 @@
 'use client';
 
-// components/profile/TrackingModal.js
-
-// Шаги в обратном порядке — сверху финальный, снизу первый
 const STEPS = [
-  { key: 'arrived',     label: 'Прибыл в ПВЗ Европочта' },
-  { key: 'in-transit',  label: 'В доставке ПВЗ' },
-  { key: 'customs-by',  label: 'Таможня Беларусь' },
-  { key: 'customs-pl',  label: 'Таможня Польша' },
-  { key: 'warehouse',   label: 'Получен на склад Польша' },
-  { key: 'assembly',    label: 'Подготовка и сборка заказа' },
-  { key: 'created',     label: 'Оформлен' },
+  { key: 'arrived', label: 'Прибыл в ПВЗ Европочта' },
+  { key: 'in-transit', label: 'В доставке ПВЗ' },
+  { key: 'customs-by', label: 'Таможня Беларусь' },
+  { key: 'customs-pl', label: 'Таможня Польша' },
+  { key: 'warehouse', label: 'Получен на склад Польша' },
+  { key: 'assembly', label: 'Подготовка и сборка заказа' },
+  { key: 'created', label: 'Оформлен' },
 ];
 
-// Маппинг статуса → индекс текущего шага
-// 0 = arrived, 1 = in-transit, 2 = customs-by, 3 = customs-pl, 4 = warehouse, 5 = assembly, 6 = created
-const STATUS_TO_STEP = {
-  awaiting: 6,
-  assembly: 5,
-  transit: 4,
-  'customs-poland': 3,
-  'customs-belarus': 2,
-  'in-transit-pvz': 1,
-  'arrived-pvz': 0,
-};
+const STEP_INDEX_BY_KEY = STEPS.reduce((acc, step, index) => {
+  acc[step.key] = index;
+  return acc;
+}, {});
 
 const EuropostCircle = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
@@ -68,7 +58,8 @@ const PastDot = () => (
 );
 
 export default function TrackingModal({ order, onClose }) {
-  const currentStepIndex = STATUS_TO_STEP[order?.status] ?? 6;
+  const trackingStep = order?.statusConfig?.trackingStep || 'created';
+  const currentStepIndex = STEP_INDEX_BY_KEY[trackingStep] ?? STEP_INDEX_BY_KEY.created;
   const visibleSteps = STEPS.slice(currentStepIndex);
 
   return (

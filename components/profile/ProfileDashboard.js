@@ -1,11 +1,16 @@
-// components/profile/ProfileDashboard.js
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { getOrderStatusLabel, getOrders, getPurchases, isProfileActiveOrder } from '@/lib/api/account';
+import {
+  getOrderStatusConfig,
+  getOrderStatusLabel,
+  getOrders,
+  getPurchases,
+  isProfileActiveOrder,
+} from '@/lib/api/account';
 import { openJivoChat } from '@/components/FloatingChatButton';
 import { useProfileCounts } from './ProfileCountsContext';
 
@@ -17,7 +22,6 @@ function resolveImage(imageUrl) {
 
   let first = imageUrl;
 
-  // image_url может быть строкой-путём, JSON-строкой с массивом или массивом
   if (typeof first === 'string' && first.trim().startsWith('[')) {
     try { first = JSON.parse(first); } catch { return FALLBACK; }
   }
@@ -40,37 +44,6 @@ function pluralize(n) {
   if (mod >= 2 && mod <= 4) return `${n} товара`;
   return `${n} товаров`;
 }
-
-const BADGE_CLASS = {
-  awaiting: 'badge-awaiting',
-  assembly: 'badge-assembly',
-  transit: 'badge-available',
-  'customs-belarus': 'badge-available',
-  'in-transit-pvz': 'badge-available',
-  'arrived-pvz': 'badge-ready',
-  delivered: 'badge-havit',
-  canceled: 'badge-canceled',
-};
-
-const STATUS_FRONT_MAP = {
-  created: 'awaiting',
-  processing: 'assembly',
-  confirmed: 'assembly',
-  paid: 'assembly',
-  purchased: 'assembly',
-  received_poland: 'transit',
-  preparing_for_shipment: 'transit',
-  export_eu: 'transit',
-  customs_poland: 'transit',
-  on_border: 'customs-belarus',
-  customs_belarus: 'customs-belarus',
-  shipped: 'in-transit-pvz',
-  handed_to_courier: 'in-transit-pvz',
-  arrived_pvz: 'arrived-pvz',
-  completed: 'delivered',
-  cancelled: 'canceled',
-  canceled: 'canceled',
-};
 
 export default function ProfileDashboard() {
   const router = useRouter();
@@ -96,9 +69,8 @@ export default function ProfileDashboard() {
           const all = ordersResp.value.data || [];
           const included = ordersResp.value.included || [];
 
-          // Строим map товаров из included
           const itemsMap = {};
-          included.forEach(inc => {
+          included.forEach((inc) => {
             if (inc.type === 'order_item') itemsMap[inc.id] = inc.attributes;
           });
 
@@ -107,21 +79,18 @@ export default function ProfileDashboard() {
 
           const active = activeAll
             .slice(0, 3)
-            .map(order => {
-              const a = order.attributes;
-              // Берём картинку первого товара из included
+            .map((order) => {
+              const attributes = order.attributes || {};
+              const statusConfig = getOrderStatusConfig(order);
               const firstItemId = order.relationships?.order_items?.data?.[0]?.id;
               const firstItem = firstItemId ? itemsMap[firstItemId] : null;
               const imageUrl = firstItem?.image_url || null;
 
-              const frontStatus = STATUS_FRONT_MAP[a.status] || 'assembly';
-              const badgeCls = BADGE_CLASS[frontStatus] || 'badge-assembly';
-
               return {
-                publicId: order.id, // public_uid
+                publicId: order.id,
                 statusDescription: getOrderStatusLabel(order),
-                badgeCls,
-                date: new Date(a.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
+                badgeCls: statusConfig?.badgeClass || 'badge-assembly',
+                date: new Date(attributes.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }),
                 imageUrl,
               };
             });
@@ -149,7 +118,6 @@ export default function ProfileDashboard() {
 
   return (
     <>
-      {/* Summary Cards */}
       <div className="summary">
         <div className="summary-card" onClick={() => router.push('/profile/favorite')} style={{ cursor: 'pointer' }}>
           <div className="summary-title">
@@ -182,7 +150,6 @@ export default function ProfileDashboard() {
         </div>
       </div>
 
-      {/* Active Orders */}
       <div className="block">
         <div className="block-header">
           <div className="block-title">Активные заказы</div>
@@ -226,7 +193,6 @@ export default function ProfileDashboard() {
         </div>
       </div>
 
-      {/* Нужна помощь */}
       <div className="block">
         <div className="block-title">Нужна помощь?</div>
         <div className="help-links">

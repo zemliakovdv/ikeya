@@ -1,4 +1,3 @@
-// components/profile/OrderHistory.js
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +11,7 @@ export default function OrderHistory({ orders, onReorder }) {
 
   if (!orders || orders.length === 0) return null;
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders.filter((order) => {
     if (!dateFrom && !dateTo) return true;
     const orderDate = order.rawDate ? new Date(order.rawDate) : null;
     if (!orderDate) return true;
@@ -29,7 +28,6 @@ export default function OrderHistory({ orders, onReorder }) {
     <>
       <div className="orders-hisrory_wrapper">
         <div className="orders-hisrory">
-
           <div className="date-picker-wrapper">
             <RangeDatePicker
               from={dateFrom}
@@ -48,9 +46,9 @@ export default function OrderHistory({ orders, onReorder }) {
               <div className="empty-text">Попробуйте выбрать другой период.</div>
             </div>
           ) : filteredOrders.map((order) => {
-            const isCanceled = order.status === 'canceled';
-            const badgeClass = isCanceled ? 'badge-canceled' : 'badge-havit';
-            const badgeText = order.statusDescription || '—';
+            const canRepeatOrder = order.statusConfig?.repeatAllowed === true;
+            const badgeClass = order.statusConfig?.badgeClass || 'badge-havit';
+            const badgeText = order.statusDescription || order.status || '—';
             const items = order.items || [];
 
             return (
@@ -65,7 +63,7 @@ export default function OrderHistory({ orders, onReorder }) {
                   <div className="order-price">{order.price} р.</div>
                 </div>
 
-                {isCanceled && (
+                {canRepeatOrder && (
                   <div className="order-canceled">
                     <div className="order-canceled_inner">
                       <div className="canceled-inner-why" onClick={() => setCancelModalOpen(true)}>
@@ -74,7 +72,7 @@ export default function OrderHistory({ orders, onReorder }) {
                           <path d="M9.99998 11.7417C9.67498 11.7417 9.41664 11.4834 9.41664 11.1584C9.41664 10.2084 10.1833 9.57508 10.7666 9.17508C11.1333 8.92508 11.3583 8.50008 11.3583 8.05841C11.3583 7.30841 10.75 6.70008 9.99998 6.70008C9.24998 6.70008 8.64164 7.30841 8.64164 8.05841C8.64164 8.38341 8.38331 8.64175 8.05831 8.64175C7.73331 8.64175 7.47498 8.38341 7.47498 8.05841C7.47498 6.66675 8.60831 5.54175 9.99164 5.54175C11.375 5.54175 12.5083 6.67508 12.5083 8.05841C12.5083 8.89175 12.1 9.66675 11.4083 10.1417C10.8416 10.5334 10.5666 10.8667 10.5666 11.1667C10.5666 11.4917 10.3083 11.7501 9.98331 11.7501L9.99998 11.7417Z" fill="#181818" />
                           <path d="M10.0083 14.575C9.62502 14.575 9.30835 14.2584 9.30835 13.875C9.30835 13.4917 9.61668 13.175 10 13.175C10.3833 13.175 10.7 13.4917 10.7 13.875C10.7 14.2584 10.3917 14.575 10 14.575H10.0083Z" fill="#181818" />
                         </svg>
-                        <p style={{ cursor: 'pointer' }}>Почему заказ отменён?</p>
+                        <p style={{ cursor: 'pointer' }}>Почему заказ отменен?</p>
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                           <path d="M12.775 9.99999C12.775 10.9333 10.2417 13.1667 8.125 14.875C7.88334 15.0667 7.53334 15.0333 7.34167 14.7917C7.15 14.55 7.18333 14.2 7.425 14.0083C9.28333 12.5083 11.375 10.5917 11.65 9.99999C11.375 9.40833 9.28333 7.49166 7.425 5.99166C7.18333 5.79999 7.15 5.44999 7.34167 5.20833C7.53334 4.96666 7.88334 4.93333 8.125 5.12499C10.25 6.83333 12.775 9.07499 12.775 9.99999Z" fill="#BDBDBD" />
                         </svg>
@@ -152,9 +150,9 @@ export default function OrderHistory({ orders, onReorder }) {
             style={{ background: '#fff', borderRadius: '8px', padding: '16px 24px 24px 24px', maxWidth: '560px', width: '90%' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ marginBottom: '12px', fontSize: '18px', fontWeight: 600 }}>Заказ не оплатили</h3>
+            <h3 style={{ marginBottom: '12px', fontSize: '18px', fontWeight: 600 }}>Заказ отменен</h3>
             <p style={{ color: '#424242', lineHeight: 1.6 }}>
-              Мы не получили оплату, поэтому заказ пришлось отменить. Вы можете оформить заказ заново
+              Заказ был отменен. Вы можете оформить заказ заново.
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
               <button onClick={() => setCancelModalOpen(false)} className="order-repeit">Закрыть</button>

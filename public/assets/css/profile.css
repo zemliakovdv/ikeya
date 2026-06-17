@@ -473,7 +473,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-bottom: 0;
+        margin-bottom: 6px;
     }
 
     .zakazi .order-title {
@@ -534,6 +534,14 @@
 
     .zakazi .badge-awaiting {
         background: #b71c1c;
+    }
+
+    .zakazi .badge-assembly {
+        background: #616161;
+    }
+
+    .zakazi .badge-available {
+        background: #616161;
     }
 
     .orders-statuses {
@@ -813,7 +821,7 @@
     }
 
     .zakazi .badge-havit {
-        background: #CD0101;
+        background: #009009;
     }
 
     .order-canceled_inner {

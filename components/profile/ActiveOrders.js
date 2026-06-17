@@ -6,9 +6,6 @@ import { useRouter } from 'next/navigation';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import TrackingModal from '@/components/profile/TrackingModal';
 
-const TRACKING_STATUSES = ['transit', 'customs-belarus', 'in-transit-pvz'];
-const PICKUP_READY_STATUSES = ['arrived-pvz'];
-
 const TEXT = {
   delivery: '\u0414\u043e\u0441\u0442\u0430\u0432\u043a\u0430',
   trackNumber: '\u0422\u0440\u0435\u043a-\u043d\u043e\u043c\u0435\u0440',
@@ -319,18 +316,18 @@ function renderTrackingIcon(order = {}) {
 }
 
 function shouldShowWhereIsMyOrder(order = {}) {
-  return order.canShowWhereIsOrderButton === true;
+  return order.statusConfig?.whereIsVisible === true;
 }
 
 function shouldShowTrackingBlock(order = {}) {
   return Boolean(
     order.trackNumber &&
-    ['shipped', 'handed_to_courier'].includes(order.rawStatus)
+    order.statusConfig?.trackingVisible === true
   );
 }
 
 function shouldShowOrderNumberInfo(order = {}) {
-  return !(order.trackNumber && order.canShowTrackNumber) && PICKUP_READY_STATUSES.includes(order.status);
+  return order.statusConfig?.pvzInfoVisible === true;
 }
 
 const OrderCard = ({ order }) => {
@@ -551,19 +548,7 @@ const OrderCard = ({ order }) => {
 
   function getBadgeClass() {
     if (order.isDraft) return 'badge-assembly';
-
-    const map = {
-      awaiting: 'badge-awaiting',
-      assembly: 'badge-assembly',
-      transit: 'badge-available',
-      'customs-belarus': 'badge-available',
-      'in-transit-pvz': 'badge-available',
-      'arrived-pvz': 'badge-ready',
-      delivered: 'badge-havit',
-      canceled: 'badge-canceled',
-    };
-
-    return map[order.status] || '';
+    return order.statusConfig?.badgeClass || '';
   }
 
   return (

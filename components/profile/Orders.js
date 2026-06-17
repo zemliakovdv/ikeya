@@ -12,11 +12,13 @@ import {
   canShowOrderTrackNumber,
   canShowWhereIsOrderButton,
   getOrderStatusLabel,
-  ORDER_STATUS_LABELS,
+  ORDER_STATUS_FALLBACK_LABELS,
+  getOrderStatusConfig,
   isProfileActiveOrder,
   isProfileDraftOrder,
   isProfileExpiredUnpaidOrder,
   isProfileHistoryOrder,
+  normalizeOrderStatus,
   reorder,
 } from '@/lib/api/account';
 import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
@@ -115,36 +117,6 @@ function getPaymentSecondsLeft(attr = {}, rawStatus) {
   return diff > 0 ? diff : null;
 }
 
-function mapStatus(rawStatus, isDraft, isAwaitingPayment, isExpiredUnpaid) {
-  if (isDraft) return 'draft';
-  if (isExpiredUnpaid) return 'canceled';
-  if (isAwaitingPayment) return 'awaiting';
-
-  const map = {
-    created: 'awaiting',
-    processing: 'awaiting',
-    confirmed: 'assembly',
-    paid: 'assembly',
-    purchased: 'assembly',
-    received_poland: 'transit',
-    preparing_for_shipment: 'transit',
-    export_eu: 'transit',
-    customs_poland: 'transit',
-    on_border: 'transit',
-    customs_belarus: 'customs-belarus',
-    shipped: 'transit',
-    handed_to_courier: 'transit',
-    handed_to_courier_ikeya: 'transit',
-    arrived_pvz: 'arrived-pvz',
-    completed: 'delivered',
-    delivered: 'delivered',
-    cancelled: 'canceled',
-    canceled: 'canceled',
-  };
-
-  return map[rawStatus] || rawStatus;
-}
-
 function parseOrders(data) {
   const included = data?.included || [];
   const itemsMap = {};
@@ -157,6 +129,7 @@ function parseOrders(data) {
   return (data?.data || []).map((order) => {
     const attr = order.attributes || {};
     const rawStatus = attr.status;
+    const canonicalStatus = normalizeOrderStatus(rawStatus);
     const isDraft = isProfileDraftOrder(order);
 
     const paymentUrl = getPaymentUrl(attr);
@@ -170,7 +143,17 @@ function parseOrders(data) {
       Boolean(paymentUrl) &&
       UNPAID_STATUSES.includes(rawStatus);
 
-    const mappedStatus = mapStatus(rawStatus, isDraft, isAwaitingPayment, isExpiredUnpaid);
+    const statusConfig = getOrderStatusConfig({
+      ...order,
+      rawStatus,
+      canonicalStatus,
+      isDraft,
+      isExpiredUnpaid,
+      trackNumber: attr.track_number || null,
+    });
+    const mappedStatus = isDraft
+      ? 'draft'
+      : (statusConfig?.frontendStatus || canonicalStatus || rawStatus || 'unknown');
 
     const orderItemIds =
       order.relationships?.order_items?.data?.map((item) => item.id) || [];
@@ -214,6 +197,7 @@ function parseOrders(data) {
       date: formatDate(attr.created_at),
       rawDate: attr.created_at,
       rawStatus,
+      canonicalStatus,
       deliveryType: attr.delivery_type || null,
       deliveryName:
         attr.delivery_name ||
@@ -234,8 +218,9 @@ function parseOrders(data) {
         attr.delivery?.method ||
         null,
       status: mappedStatus,
+      statusConfig,
       statusDescription: isExpiredUnpaid
-        ? ORDER_STATUS_LABELS.canceled
+        ? ORDER_STATUS_FALLBACK_LABELS.cancelled
         : getOrderStatusLabel(order),
       paymentStatus: attr.payment_status || null,
       price: formatPrice(attr.total_amount),
