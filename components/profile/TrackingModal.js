@@ -37,14 +37,19 @@ function EuropostMarker({ state }) {
 
 function StepMarker({ step, state }) {
   if (step.isEuropostStep) {
-    return <EuropostMarker state={state} />;
+    return (
+      <span className="tracking-modal__marker-slot" aria-hidden="true">
+        <EuropostMarker state={state} />
+      </span>
+    );
   }
 
   return (
-    <span
-      className={`tracking-modal__marker tracking-modal__marker--${state}`}
-      aria-hidden="true"
-    />
+    <span className="tracking-modal__marker-slot" aria-hidden="true">
+      <span
+        className={`tracking-modal__marker tracking-modal__marker--${state}`}
+      />
+    </span>
   );
 }
 
@@ -136,13 +141,19 @@ export default function TrackingModal({ order, onClose }) {
                     className={`tracking-modal__step tracking-modal__step--${state}`}
                     aria-current={state === 'current' ? 'step' : undefined}
                   >
-                    <div className="tracking-modal__step-marker-column">
+                    <div className="tracking-modal__marker-column">
                       <StepMarker step={step} state={state} />
-                      {!isLast && <span className="tracking-modal__step-line" aria-hidden="true" />}
+                      {!isLast && <span className="tracking-modal__line" aria-hidden="true" />}
                     </div>
 
                     <div className="tracking-modal__step-body">
                       <span className="tracking-modal__step-title">{step.title}</span>
+                      {step.key === 'arrived' && order?.dateRange ? (
+                        <div className="tracking-modal__step-caption">
+                          Планируемая дата получения заказа:{' '}
+                          <strong>{order.dateRange}</strong>
+                        </div>
+                      ) : null}
                     </div>
                   </li>
                 );

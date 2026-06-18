@@ -879,20 +879,18 @@
     }
 
     .tracking-modal__dialog {
-        width: 100%;
-        max-width: 492px;
+        width: 492px;
+        max-width: calc(100vw - 32px);
     }
 
     .tracking-modal__content {
         position: relative;
-        width: calc(100% - 32px);
-        max-width: 492px;
+        width: 100%;
         max-height: calc(100vh - 32px);
         margin: 0 auto;
         overflow-y: auto;
         background: #fff;
         border-radius: 8px;
-        box-shadow: 0 16px 40px rgba(24, 24, 24, 0.18);
     }
 
     .tracking-modal__header {
@@ -900,15 +898,17 @@
         display: flex;
         align-items: center;
         min-height: 56px;
-        padding: 8px 24px 0;
+        padding: 16px 24px;
     }
 
     .tracking-modal__title {
         margin: 0;
         padding-right: 48px;
+        font-family: Inter, sans-serif;
         font-weight: 600;
         font-size: 18px;
         line-height: 24px;
+        letter-spacing: 0;
         color: #181818;
     }
 
@@ -924,7 +924,7 @@
         padding: 0;
         border: none;
         background: transparent;
-        color: #181818;
+        color: #757575;
         cursor: pointer;
     }
 
@@ -938,39 +938,56 @@
         display: flex;
         gap: 16px;
         align-items: flex-start;
+        min-height: 44px;
     }
 
     .tracking-modal__step:not(:last-child) {
-        padding-bottom: 12px;
+        padding-bottom: 0;
     }
 
-    .tracking-modal__step-marker-column {
-        position: relative;
+    .tracking-modal__marker-column {
         flex: 0 0 24px;
         width: 24px;
-        min-height: 24px;
+        min-width: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        align-self: stretch;
     }
 
-    .tracking-modal__step-line {
-        position: absolute;
-        top: 24px;
-        bottom: -12px;
-        left: 50%;
-        border-left: 1px dotted #bdbdbd;
-        transform: translateX(-50%);
+    .tracking-modal__marker-slot {
+        width: 24px;
+        min-width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tracking-modal__line {
+        flex: 1 1 auto;
+        min-height: 12px;
+        border-left: 2px dotted #bdbdbd;
     }
 
     .tracking-modal__step-body {
         flex: 1 1 auto;
         min-width: 0;
         padding-top: 2px;
+        padding-bottom: 16px;
+    }
+
+    .tracking-modal__step:last-child .tracking-modal__step-body {
+        padding-bottom: 0;
     }
 
     .tracking-modal__step-title {
         display: block;
+        font-family: Inter, sans-serif;
         font-weight: 600;
         font-size: 14px;
         line-height: 20px;
+        letter-spacing: 0.1px;
         overflow-wrap: anywhere;
     }
 
@@ -983,10 +1000,24 @@
         color: #757575;
     }
 
+    .tracking-modal__step-caption {
+        margin-top: 4px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+        letter-spacing: 0.25px;
+        color: #757575;
+        overflow-wrap: anywhere;
+    }
+
+    .tracking-modal__step-caption strong {
+        font-weight: 600;
+    }
+
     .tracking-modal__marker {
         display: block;
-        width: 24px;
-        height: 24px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         box-sizing: border-box;
     }
@@ -1016,8 +1047,12 @@
         height: 24px;
     }
 
-    .tracking-modal__europost--future {
-        opacity: 0.45;
+    .tracking-modal__europost svg circle[stroke="#E53935"] {
+        stroke: #e5001a;
+    }
+
+    .tracking-modal__europost svg circle[fill="#E53935"] {
+        fill: #e5001a;
     }
 
     .tracking-modal__backdrop {
@@ -1025,7 +1060,7 @@
         inset: 0;
         z-index: 1054;
         border: none;
-        background: rgba(24, 24, 24, 0.32);
+        background: rgba(0, 0, 0, 0.45);
         padding: 0;
     }
 
@@ -6926,6 +6961,11 @@
     }
 
     @media (max-width: 575px) {
+        .tracking-modal__dialog {
+            width: calc(100% - 32px);
+            max-width: 492px;
+        }
+
         .tracking-modal__content {
             width: 100%;
         }

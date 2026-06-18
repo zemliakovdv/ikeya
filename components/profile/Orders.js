@@ -200,6 +200,7 @@ function parseOrders(data) {
       canonicalStatus,
       deliveryType: attr.delivery_type || null,
       deliveryName:
+        attr.address?.delivery?.provider ||
         attr.delivery_name ||
         attr.delivery_provider ||
         attr.delivery_method ||
@@ -208,6 +209,7 @@ function parseOrders(data) {
         attr.delivery?.method ||
         null,
       deliveryProvider:
+        attr.address?.delivery?.provider ||
         attr.delivery_provider ||
         attr.delivery_name ||
         attr.delivery?.provider ||

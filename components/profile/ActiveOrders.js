@@ -276,8 +276,8 @@ function ArrowIcon() {
 
 function getDeliveryProvider(order = {}) {
   return (
-    order.deliveryName ||
     order.deliveryProvider ||
+    order.deliveryName ||
     order.deliveryMethod ||
     order.deliveryType ||
     ''
@@ -301,7 +301,6 @@ function getDeliveryProviderLabel(order = {}) {
 function getTrackingUrl(order = {}) {
   const provider = getDeliveryProvider(order);
 
-  if (order.trackingUrl) return order.trackingUrl;
   if (isEuropochtaDelivery(provider)) return 'https://evropochta.by/';
 
   return '';
