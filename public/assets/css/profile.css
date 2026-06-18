@@ -5,6 +5,10 @@
         padding-bottom: 48px;
     }
 
+    .profile-mobile-topbar{
+        display: none;
+    }
+
     /* ===== LAYOUT ===== */
 
     .profile-layout {

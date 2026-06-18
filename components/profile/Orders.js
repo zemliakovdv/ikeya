@@ -228,10 +228,12 @@ function parseOrders(data) {
       canShowTrackNumber: canShowOrderTrackNumber(order),
       canShowWhereIsOrderButton: canShowWhereIsOrderButton(order),
       trackingUrl:
+        attr.tracking_info?.tracking_url ||
         attr.tracking_url ||
         attr.tracking?.url ||
         attr.delivery?.tracking_url ||
         null,
+      trackingInfo: attr.tracking_info || null,
       paymentUrl,
       paymentSecondsLeft,
       paymentExpired,
