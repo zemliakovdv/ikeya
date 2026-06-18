@@ -468,9 +468,17 @@ const OrderCard = ({ order }) => {
   }
 
   function renderOrderServiceBlocks() {
-    if (shouldShowTrackingBlock(order)) {
-      return (
-        <>
+    const hasTrackingBlock = shouldShowTrackingBlock(order);
+    const hasOrderNumberInfo = shouldShowOrderNumberInfo(order);
+    const hasWhereIsMyOrder = !hasTrackingBlock && shouldShowWhereIsMyOrder(order);
+
+    if (!hasTrackingBlock && !hasOrderNumberInfo && !hasWhereIsMyOrder) {
+      return null;
+    }
+
+    return (
+      <>
+        {hasTrackingBlock ? (
           <div style={serviceStyles.row}>
             <div style={serviceStyles.leftGroup}>
               {renderTrackNumberCard()}
@@ -478,20 +486,11 @@ const OrderCard = ({ order }) => {
             </div>
             {renderTrackInfoCard()}
           </div>
-          {shouldShowOrderNumberInfo(order) ? renderOrderNumberInfoCard() : null}
-        </>
-      );
-    }
-
-    if (shouldShowOrderNumberInfo(order)) {
-      return renderOrderNumberInfoCard();
-    }
-
-    if (shouldShowWhereIsMyOrder(order)) {
-      return renderWhereIsMyOrderCard();
-    }
-
-    return null;
+        ) : null}
+        {hasOrderNumberInfo ? renderOrderNumberInfoCard() : null}
+        {hasWhereIsMyOrder ? renderWhereIsMyOrderCard() : null}
+      </>
+    );
   }
 
   function renderDraftStatus() {

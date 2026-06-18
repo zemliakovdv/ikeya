@@ -2,19 +2,49 @@
 
 import { useEffect, useRef } from 'react';
 
-const STEPS = [
-  {
-    key: 'arrived',
-    title: 'Прибыл в ПВЗ Европочта',
-    isEuropostStep: true,
-  },
-  { key: 'in-transit', title: 'В доставке ПВЗ' },
+const COMMON_STEPS = [
   { key: 'customs-by', title: 'Таможня Беларусь' },
   { key: 'customs-pl', title: 'Таможня Польша' },
   { key: 'assembly', title: 'Подготовка и сборка заказа' },
   { key: 'warehouse', title: 'Получен на склад Польша' },
   { key: 'created', title: 'Оформлен' },
 ];
+
+function getTrackingSteps(deliveryType) {
+  const normalizedDeliveryType = String(deliveryType || '').toLowerCase();
+
+  if (normalizedDeliveryType === 'courier') {
+    return [
+      {
+        key: 'delivered-courier',
+        title: 'Доставлено курьером Европочта',
+        isEuropostStep: true,
+        plannedDateLabel: 'Планируемая дата доставки:',
+      },
+      { key: 'courier', title: 'Передано курьеру Европочта' },
+      ...COMMON_STEPS,
+    ];
+  }
+
+  if (normalizedDeliveryType === 'ikeya_delivery') {
+    return [
+      { key: 'delivered-ikeya', title: 'Доставлено курьером IKEYA' },
+      { key: 'courier-ikeya', title: 'Передано курьеру IKEYA' },
+      ...COMMON_STEPS,
+    ];
+  }
+
+  return [
+    {
+      key: 'arrived',
+      title: 'Прибыл в ПВЗ Европочта',
+      isEuropostStep: true,
+      plannedDateLabel: 'Планируемая дата получения заказа:',
+    },
+    { key: 'in-transit', title: 'В доставке ПВЗ' },
+    ...COMMON_STEPS,
+  ];
+}
 
 function EuropostMarker({ state }) {
   return (
@@ -59,13 +89,31 @@ function getStepState(index, currentStepIndex) {
   return 'completed';
 }
 
-function getCurrentStepIndex(currentStepKey) {
-  const currentStepIndex = STEPS.findIndex((step) => step.key === currentStepKey);
+function getCurrentTrackingStep(order = {}) {
+  const normalizedDeliveryType = String(order.deliveryType || '').toLowerCase();
+  const canonicalStatus = order.canonicalStatus;
+
+  if (canonicalStatus === 'completed') {
+    if (normalizedDeliveryType === 'courier') return 'delivered-courier';
+    if (normalizedDeliveryType === 'ikeya_delivery') return 'delivered-ikeya';
+    return 'arrived';
+  }
+
+  if (canonicalStatus === 'arrived_pvz') return 'arrived';
+  if (canonicalStatus === 'shipped') return 'in-transit';
+  if (canonicalStatus === 'handed_to_courier') return 'courier';
+  if (canonicalStatus === 'handed_to_courier_ikeya') return 'courier-ikeya';
+
+  return order?.statusConfig?.trackingStep || 'created';
+}
+
+function getCurrentStepIndex(steps, currentStepKey) {
+  const currentStepIndex = steps.findIndex((step) => step.key === currentStepKey);
   if (currentStepIndex !== -1) {
     return currentStepIndex;
   }
 
-  return STEPS.findIndex((step) => step.key === 'created');
+  return steps.findIndex((step) => step.key === 'created');
 }
 
 export default function TrackingModal({ order, onClose }) {
@@ -95,8 +143,9 @@ export default function TrackingModal({ order, onClose }) {
     };
   }, [onClose]);
 
-  const currentStepKey = order?.statusConfig?.trackingStep || 'created';
-  const currentStepIndex = getCurrentStepIndex(currentStepKey);
+  const steps = getTrackingSteps(order?.deliveryType);
+  const currentStepKey = getCurrentTrackingStep(order);
+  const currentStepIndex = getCurrentStepIndex(steps, currentStepKey);
 
   return (
     <>
@@ -131,9 +180,9 @@ export default function TrackingModal({ order, onClose }) {
             </div>
 
             <ol className="tracking-modal__steps">
-              {STEPS.map((step, index) => {
+              {steps.map((step, index) => {
                 const state = getStepState(index, currentStepIndex);
-                const isLast = index === STEPS.length - 1;
+                const isLast = index === steps.length - 1;
 
                 return (
                   <li
@@ -148,9 +197,9 @@ export default function TrackingModal({ order, onClose }) {
 
                     <div className="tracking-modal__step-body">
                       <span className="tracking-modal__step-title">{step.title}</span>
-                      {step.key === 'arrived' && order?.dateRange ? (
+                      {step.plannedDateLabel && order?.dateRange ? (
                         <div className="tracking-modal__step-caption">
-                          Планируемая дата получения заказа:{' '}
+                          {step.plannedDateLabel}{' '}
                           <strong>{order.dateRange}</strong>
                         </div>
                       ) : null}
