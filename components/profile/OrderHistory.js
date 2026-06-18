@@ -152,7 +152,7 @@ export default function OrderHistory({ orders, onReorder }) {
           >
             <h3 style={{ marginBottom: '12px', fontSize: '18px', fontWeight: 600 }}>Заказ отменен</h3>
             <p style={{ color: '#424242', lineHeight: 1.6 }}>
-              Заказ был отменен. Вы можете оформить заказ заново.
+              Мы не получили оплату, поэтому заказ пришлось отменить. Вы можете оформить заказ заново
             </p>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
               <button onClick={() => setCancelModalOpen(false)} className="order-repeit">Закрыть</button>

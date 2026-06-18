@@ -471,13 +471,16 @@ const OrderCard = ({ order }) => {
   function renderOrderServiceBlocks() {
     if (shouldShowTrackingBlock(order)) {
       return (
-        <div style={serviceStyles.row}>
-          <div style={serviceStyles.leftGroup}>
-            {renderTrackNumberCard()}
-            {renderTrackingCard()}
+        <>
+          <div style={serviceStyles.row}>
+            <div style={serviceStyles.leftGroup}>
+              {renderTrackNumberCard()}
+              {renderTrackingCard()}
+            </div>
+            {renderTrackInfoCard()}
           </div>
-          {renderTrackInfoCard()}
-        </div>
+          {shouldShowOrderNumberInfo(order) ? renderOrderNumberInfoCard() : null}
+        </>
       );
     }
 
