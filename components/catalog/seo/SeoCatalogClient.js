@@ -148,12 +148,20 @@ function normalizeUiFilters(source) {
     .filter((filter) => isPlainObject(filter))
     .filter((filter) => toStringValue(filter.parameter))
     .filter((filter) => toStringValue(filter.parameter) !== PRICE_FILTER_PARAMETER)
-    .map((filter) => ({
-      parameter: toStringValue(filter.parameter),
-      title: toStringValue(filter.translated_name ?? filter.name ?? filter.label ?? filter.title ?? filter.parameter),
-      values: toArray(filter.values).map(normalizeFilterOption).filter(Boolean),
-    }))
-    .filter((filter) => filter.values.length > 0);
+    .map((filter) => {
+      const parameter = toStringValue(filter.parameter);
+      const explicitTitle = toStringValue(
+        filter.translated_name ?? filter.name ?? filter.label ?? filter.title
+      );
+
+      return {
+        parameter,
+        title: explicitTitle || parameter,
+        hasExplicitTitle: Boolean(explicitTitle),
+        values: toArray(filter.values).map(normalizeFilterOption).filter(Boolean),
+      };
+    })
+    .filter((filter) => filter.values.length > 0 || isCollectionParameter(filter.parameter));
 }
 
 function isAvailabilityParameter(parameter) {
@@ -164,6 +172,11 @@ function isAvailabilityParameter(parameter) {
 function isCategoryParameter(parameter) {
   const value = normalizeCompareValue(parameter);
   return value === 'category' || value === 'category_id';
+}
+
+function isCollectionParameter(parameter) {
+  const value = normalizeCompareValue(parameter).replace(/^f-/, '');
+  return value === 'collection' || value === 'collections';
 }
 
 function getParameterAliases(parameter) {
@@ -199,7 +212,65 @@ function extractPrimitiveValues(value) {
   return primitive ? [primitive] : [];
 }
 
-function collectNamedArrayValues(entries, aliases) {
+function getFirstStringValue(values) {
+  for (const value of values) {
+    const text = toStringValue(value);
+    if (text && text !== '[object Object]') return text;
+  }
+
+  return '';
+}
+
+function normalizeCollectionOption(value) {
+  if (!isPlainObject(value)) {
+    const label = toStringValue(value);
+    const normalized = normalizeCompareValue(label);
+
+    if (!normalized || label === '[object Object]') return null;
+
+    return {
+      value: normalized,
+      label,
+      matchValues: [normalized],
+    };
+  }
+
+  const technicalValue = getFirstStringValue([
+    value.id,
+    value.value,
+    value.slug,
+    value.code,
+  ]);
+  const label = getFirstStringValue([
+    value.translated_name,
+    value.name,
+    value.label,
+    value.title,
+  ]);
+  const normalizedValue = normalizeCompareValue(technicalValue || label);
+  const normalizedLabel = normalizeCompareValue(label);
+
+  if (!normalizedValue || !normalizedLabel || label === '[object Object]') {
+    return null;
+  }
+
+  return {
+    value: normalizedValue,
+    label,
+    matchValues: Array.from(new Set([normalizedValue, normalizedLabel])),
+  };
+}
+
+function extractCollectionOptions(value) {
+  if (Array.isArray(value)) {
+    return value.flatMap(extractCollectionOptions);
+  }
+
+  const option = normalizeCollectionOption(value);
+  return option ? [option] : [];
+}
+
+function collectNamedArrayValues(entries, aliases, extractValues = extractPrimitiveValues) {
   if (!Array.isArray(entries)) return [];
 
   return entries.flatMap((entry) => {
@@ -217,7 +288,7 @@ function collectNamedArrayValues(entries, aliases) {
     const matches = aliases.some((alias) => keys.includes(normalizeCompareValue(alias)));
     if (!matches) return [];
 
-    return extractPrimitiveValues(
+    return extractValues(
       entry.value ??
       entry.values ??
       entry.option ??
@@ -226,6 +297,117 @@ function collectNamedArrayValues(entries, aliases) {
       entry.data
     );
   });
+}
+
+function getProductCollectionValues(product) {
+  const attr = getProductAttributes(product);
+  const collectionFields = ['collection', 'collections', 'collection_name', 'collectionName'];
+  const aliases = Array.from(new Set(collectionFields.flatMap(getParameterAliases)));
+  const options = [];
+
+  aliases.forEach((alias) => {
+    options.push(...extractCollectionOptions(attr[alias]));
+
+    if (isPlainObject(attr.filters) && alias in attr.filters) {
+      options.push(...extractCollectionOptions(attr.filters[alias]));
+    }
+
+    if (isPlainObject(attr.parameters) && alias in attr.parameters) {
+      options.push(...extractCollectionOptions(attr.parameters[alias]));
+    }
+  });
+
+  options.push(...collectNamedArrayValues(attr.filters, aliases, extractCollectionOptions));
+  options.push(...collectNamedArrayValues(attr.parameters, aliases, extractCollectionOptions));
+  options.push(...collectNamedArrayValues(attr.characteristics, aliases, extractCollectionOptions));
+  options.push(...collectNamedArrayValues(attr.filters_list, aliases, extractCollectionOptions));
+
+  return mergeCollectionOptions(options);
+}
+
+function buildCollectionFilter(products) {
+  const values = mergeCollectionOptions(products.flatMap(getProductCollectionValues));
+
+  if (values.length === 0) return null;
+
+  return {
+    parameter: 'collection',
+    title: 'Коллекция',
+    hasExplicitTitle: true,
+    values,
+  };
+}
+
+function mergeCollectionOptions(...optionGroups) {
+  const uniqueOptions = [];
+  const optionsByValue = new Map();
+  const optionsByLabel = new Map();
+
+  optionGroups.flat().forEach((rawOption) => {
+    const option = normalizeCollectionOption(rawOption);
+    if (!option) return;
+
+    const labelKey = normalizeCompareValue(option.label);
+    const existingOption =
+      optionsByValue.get(option.value) ||
+      optionsByLabel.get(labelKey);
+
+    if (existingOption) {
+      existingOption.matchValues = Array.from(new Set([
+        ...existingOption.matchValues,
+        ...option.matchValues,
+      ]));
+      return;
+    }
+
+    uniqueOptions.push(option);
+    optionsByValue.set(option.value, option);
+    optionsByLabel.set(labelKey, option);
+  });
+
+  return uniqueOptions
+    .sort((left, right) => left.label.localeCompare(right.label, 'ru'));
+}
+
+function mergeCollectionFilter(backendFilters, derivedFilter) {
+  const collectionFilters = backendFilters.filter((filter) =>
+    isCollectionParameter(filter.parameter)
+  );
+
+  if (collectionFilters.length === 0) {
+    return derivedFilter ? [...backendFilters, derivedFilter] : backendFilters;
+  }
+
+  const firstCollectionIndex = backendFilters.findIndex((filter) =>
+    isCollectionParameter(filter.parameter)
+  );
+  const firstCollectionFilter = collectionFilters[0];
+  const explicitTitleFilter = collectionFilters.find((filter) => filter.hasExplicitTitle);
+  const mergedValues = mergeCollectionOptions(
+    collectionFilters.flatMap((filter) => filter.values),
+    derivedFilter?.values || []
+  );
+
+  if (mergedValues.length === 0) {
+    return backendFilters.filter((filter) => !isCollectionParameter(filter.parameter));
+  }
+
+  const mergedCollectionFilter = {
+    ...firstCollectionFilter,
+    title: explicitTitleFilter?.title || derivedFilter?.title || firstCollectionFilter.title,
+    hasExplicitTitle: Boolean(explicitTitleFilter) || Boolean(derivedFilter?.hasExplicitTitle),
+    values: mergedValues,
+  };
+
+  return backendFilters.reduce((result, filter, index) => {
+    if (!isCollectionParameter(filter.parameter)) {
+      result.push(filter);
+    } else if (index === firstCollectionIndex) {
+      result.push(mergedCollectionFilter);
+    }
+
+    return result;
+  }, []);
 }
 
 function getProductParameterValues(product, parameter) {
@@ -252,7 +434,7 @@ function getProductParameterValues(product, parameter) {
   return Array.from(new Set(values.map(normalizeCompareValue).filter(Boolean)));
 }
 
-function matchesSelectedValues(product, parameter, selectedValues) {
+function matchesSelectedValues(product, parameter, selectedValues, filterOptions = []) {
   if (!selectedValues.length) return true;
 
   if (isAvailabilityParameter(parameter)) {
@@ -263,6 +445,25 @@ function matchesSelectedValues(product, parameter, selectedValues) {
     const attr = getProductAttributes(product);
     const categoryValue = normalizeCompareValue(attr.category_id ?? product?.category_id);
     return selectedValues.some((value) => normalizeCompareValue(value) === categoryValue);
+  }
+
+  if (isCollectionParameter(parameter)) {
+    const productCollections = getProductCollectionValues(product);
+
+    if (productCollections.length === 0) return false;
+
+    const selectedMatchValues = selectedValues.flatMap((selectedValue) => {
+      const normalizedSelectedValue = normalizeCompareValue(selectedValue);
+      const selectedOption = filterOptions.find((option) =>
+        normalizeCompareValue(option.value) === normalizedSelectedValue
+      );
+
+      return selectedOption?.matchValues || [normalizedSelectedValue];
+    });
+
+    return productCollections.some((option) =>
+      option.matchValues.some((value) => selectedMatchValues.includes(value))
+    );
   }
 
   const productValues = getProductParameterValues(product, parameter);
@@ -450,7 +651,11 @@ export default function SeoCatalogClient({
     [initialProducts]
   );
 
-  const uiFilters = useMemo(() => normalizeUiFilters(filters), [filters]);
+  const uiFilters = useMemo(() => {
+    const backendUiFilters = normalizeUiFilters(filters);
+    const derivedCollectionFilter = buildCollectionFilter(normalizedProducts);
+    return mergeCollectionFilter(backendUiFilters, derivedCollectionFilter);
+  }, [filters, normalizedProducts]);
   const filterTitles = useMemo(() => buildFilterTitles(uiFilters), [uiFilters]);
   const priceRange = useMemo(
     () => buildPriceRange(normalizedProducts, filters),
@@ -467,6 +672,32 @@ export default function SeoCatalogClient({
   const [selectedMaxPrice, setSelectedMaxPrice] = useState(priceRange.max);
   const [sort, setSort] = useState(null);
 
+  useEffect(() => {
+    setSelectedFilters((previousFilters) => {
+      const nextFilters = uiFilters.reduce((acc, filter) => {
+        const validValues = new Set(filter.values.map((option) => option.value));
+        const previousValues = Array.isArray(previousFilters[filter.parameter])
+          ? previousFilters[filter.parameter]
+          : [];
+
+        acc[filter.parameter] = previousValues.filter((value) => validValues.has(value));
+        return acc;
+      }, {});
+
+      const previousKeys = Object.keys(previousFilters);
+      const nextKeys = Object.keys(nextFilters);
+      const isUnchanged =
+        previousKeys.length === nextKeys.length &&
+        nextKeys.every((key) => (
+          key in previousFilters &&
+          previousFilters[key].length === nextFilters[key].length &&
+          previousFilters[key].every((value, index) => value === nextFilters[key][index])
+        ));
+
+      return isUnchanged ? previousFilters : nextFilters;
+    });
+  }, [uiFilters]);
+
   const filteredProducts = useMemo(() => {
     let nextProducts = normalizedProducts.filter((product) => {
       const price = getPrice(product);
@@ -476,7 +707,10 @@ export default function SeoCatalogClient({
 
     Object.entries(selectedFilters).forEach(([parameter, values]) => {
       if (!Array.isArray(values) || values.length === 0) return;
-      nextProducts = nextProducts.filter((product) => matchesSelectedValues(product, parameter, values));
+      const filterOptions = uiFilters.find((filter) => filter.parameter === parameter)?.values || [];
+      nextProducts = nextProducts.filter((product) =>
+        matchesSelectedValues(product, parameter, values, filterOptions)
+      );
     });
 
     if (sort === 'cheapest') {
@@ -486,7 +720,7 @@ export default function SeoCatalogClient({
     }
 
     return nextProducts;
-  }, [normalizedProducts, selectedMinPrice, selectedMaxPrice, selectedFilters, sort]);
+  }, [normalizedProducts, selectedMinPrice, selectedMaxPrice, selectedFilters, sort, uiFilters]);
 
   const hasActiveFilters = useMemo(() => (
     selectedMinPrice !== priceRange.min ||
