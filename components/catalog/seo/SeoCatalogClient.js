@@ -212,64 +212,6 @@ function extractPrimitiveValues(value) {
   return primitive ? [primitive] : [];
 }
 
-function getFirstStringValue(values) {
-  for (const value of values) {
-    const text = toStringValue(value);
-    if (text && text !== '[object Object]') return text;
-  }
-
-  return '';
-}
-
-function normalizeCollectionOption(value) {
-  if (!isPlainObject(value)) {
-    const label = toStringValue(value);
-    const normalized = normalizeCompareValue(label);
-
-    if (!normalized || label === '[object Object]') return null;
-
-    return {
-      value: normalized,
-      label,
-      matchValues: [normalized],
-    };
-  }
-
-  const technicalValue = getFirstStringValue([
-    value.id,
-    value.value,
-    value.slug,
-    value.code,
-  ]);
-  const label = getFirstStringValue([
-    value.translated_name,
-    value.name,
-    value.label,
-    value.title,
-  ]);
-  const normalizedValue = normalizeCompareValue(technicalValue || label);
-  const normalizedLabel = normalizeCompareValue(label);
-
-  if (!normalizedValue || !normalizedLabel || label === '[object Object]') {
-    return null;
-  }
-
-  return {
-    value: normalizedValue,
-    label,
-    matchValues: Array.from(new Set([normalizedValue, normalizedLabel])),
-  };
-}
-
-function extractCollectionOptions(value) {
-  if (Array.isArray(value)) {
-    return value.flatMap(extractCollectionOptions);
-  }
-
-  const option = normalizeCollectionOption(value);
-  return option ? [option] : [];
-}
-
 function collectNamedArrayValues(entries, aliases, extractValues = extractPrimitiveValues) {
   if (!Array.isArray(entries)) return [];
 
@@ -299,34 +241,28 @@ function collectNamedArrayValues(entries, aliases, extractValues = extractPrimit
   });
 }
 
-function getProductCollectionValues(product) {
+function getProductDisplayTitle(product) {
   const attr = getProductAttributes(product);
-  const collectionFields = ['collection', 'collections', 'collection_name', 'collectionName'];
-  const aliases = Array.from(new Set(collectionFields.flatMap(getParameterAliases)));
-  const options = [];
+  return toStringValue(attr.name_ru);
+}
 
-  aliases.forEach((alias) => {
-    options.push(...extractCollectionOptions(attr[alias]));
+function getProductCollectionOptions(product) {
+  const title = getProductDisplayTitle(product);
+  if (!title) return [];
 
-    if (isPlainObject(attr.filters) && alias in attr.filters) {
-      options.push(...extractCollectionOptions(attr.filters[alias]));
-    }
-
-    if (isPlainObject(attr.parameters) && alias in attr.parameters) {
-      options.push(...extractCollectionOptions(attr.parameters[alias]));
-    }
-  });
-
-  options.push(...collectNamedArrayValues(attr.filters, aliases, extractCollectionOptions));
-  options.push(...collectNamedArrayValues(attr.parameters, aliases, extractCollectionOptions));
-  options.push(...collectNamedArrayValues(attr.characteristics, aliases, extractCollectionOptions));
-  options.push(...collectNamedArrayValues(attr.filters_list, aliases, extractCollectionOptions));
-
-  return mergeCollectionOptions(options);
+  return title
+    .split('/')
+    .map((part) => part.trim().replace(/\s+/g, ' '))
+    .filter(Boolean)
+    .map((label) => ({
+      value: normalizeCompareValue(label),
+      label,
+    }))
+    .filter((option) => option.value);
 }
 
 function buildCollectionFilter(products) {
-  const values = mergeCollectionOptions(products.flatMap(getProductCollectionValues));
+  const values = mergeCollectionOptions(products.flatMap(getProductCollectionOptions));
 
   if (values.length === 0) return null;
 
@@ -339,34 +275,22 @@ function buildCollectionFilter(products) {
 }
 
 function mergeCollectionOptions(...optionGroups) {
-  const uniqueOptions = [];
-  const optionsByValue = new Map();
-  const optionsByLabel = new Map();
+  const uniqueOptions = new Map();
 
-  optionGroups.flat().forEach((rawOption) => {
-    const option = normalizeCollectionOption(rawOption);
-    if (!option) return;
+  optionGroups.flat().forEach((option) => {
+    const label = toStringValue(option?.label);
+    const value = normalizeCompareValue(option?.value || label);
 
-    const labelKey = normalizeCompareValue(option.label);
-    const existingOption =
-      optionsByValue.get(option.value) ||
-      optionsByLabel.get(labelKey);
-
-    if (existingOption) {
-      existingOption.matchValues = Array.from(new Set([
-        ...existingOption.matchValues,
-        ...option.matchValues,
-      ]));
-      return;
+    if (value && label && !uniqueOptions.has(value)) {
+      uniqueOptions.set(value, { value, label });
     }
-
-    uniqueOptions.push(option);
-    optionsByValue.set(option.value, option);
-    optionsByLabel.set(labelKey, option);
   });
 
-  return uniqueOptions
-    .sort((left, right) => left.label.localeCompare(right.label, 'ru'));
+  return Array.from(uniqueOptions.values())
+    .sort((left, right) => left.label.localeCompare(right.label, 'ru', {
+      sensitivity: 'base',
+      numeric: true,
+    }));
 }
 
 function mergeCollectionFilter(backendFilters, derivedFilter) {
@@ -383,12 +307,8 @@ function mergeCollectionFilter(backendFilters, derivedFilter) {
   );
   const firstCollectionFilter = collectionFilters[0];
   const explicitTitleFilter = collectionFilters.find((filter) => filter.hasExplicitTitle);
-  const mergedValues = mergeCollectionOptions(
-    collectionFilters.flatMap((filter) => filter.values),
-    derivedFilter?.values || []
-  );
 
-  if (mergedValues.length === 0) {
+  if (!derivedFilter?.values.length) {
     return backendFilters.filter((filter) => !isCollectionParameter(filter.parameter));
   }
 
@@ -396,7 +316,7 @@ function mergeCollectionFilter(backendFilters, derivedFilter) {
     ...firstCollectionFilter,
     title: explicitTitleFilter?.title || derivedFilter?.title || firstCollectionFilter.title,
     hasExplicitTitle: Boolean(explicitTitleFilter) || Boolean(derivedFilter?.hasExplicitTitle),
-    values: mergedValues,
+    values: derivedFilter.values,
   };
 
   return backendFilters.reduce((result, filter, index) => {
@@ -434,7 +354,7 @@ function getProductParameterValues(product, parameter) {
   return Array.from(new Set(values.map(normalizeCompareValue).filter(Boolean)));
 }
 
-function matchesSelectedValues(product, parameter, selectedValues, filterOptions = []) {
+function matchesSelectedValues(product, parameter, selectedValues) {
   if (!selectedValues.length) return true;
 
   if (isAvailabilityParameter(parameter)) {
@@ -448,21 +368,13 @@ function matchesSelectedValues(product, parameter, selectedValues, filterOptions
   }
 
   if (isCollectionParameter(parameter)) {
-    const productCollections = getProductCollectionValues(product);
+    const productCollections = getProductCollectionOptions(product)
+      .map((option) => option.value);
 
     if (productCollections.length === 0) return false;
 
-    const selectedMatchValues = selectedValues.flatMap((selectedValue) => {
-      const normalizedSelectedValue = normalizeCompareValue(selectedValue);
-      const selectedOption = filterOptions.find((option) =>
-        normalizeCompareValue(option.value) === normalizedSelectedValue
-      );
-
-      return selectedOption?.matchValues || [normalizedSelectedValue];
-    });
-
-    return productCollections.some((option) =>
-      option.matchValues.some((value) => selectedMatchValues.includes(value))
+    return selectedValues.some((value) =>
+      productCollections.includes(normalizeCompareValue(value))
     );
   }
 
@@ -707,9 +619,8 @@ export default function SeoCatalogClient({
 
     Object.entries(selectedFilters).forEach(([parameter, values]) => {
       if (!Array.isArray(values) || values.length === 0) return;
-      const filterOptions = uiFilters.find((filter) => filter.parameter === parameter)?.values || [];
       nextProducts = nextProducts.filter((product) =>
-        matchesSelectedValues(product, parameter, values, filterOptions)
+        matchesSelectedValues(product, parameter, values)
       );
     });
 
@@ -720,7 +631,7 @@ export default function SeoCatalogClient({
     }
 
     return nextProducts;
-  }, [normalizedProducts, selectedMinPrice, selectedMaxPrice, selectedFilters, sort, uiFilters]);
+  }, [normalizedProducts, selectedMinPrice, selectedMaxPrice, selectedFilters, sort]);
 
   const hasActiveFilters = useMemo(() => (
     selectedMinPrice !== priceRange.min ||
