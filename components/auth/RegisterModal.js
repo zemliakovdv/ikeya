@@ -7,7 +7,7 @@ export default function RegisterModal({
   isOpen,
   onClose,
   onOpenCode,
-  onBackToPhone,
+  onOpenLogin,
 
   username,
   setUsername,
@@ -52,7 +52,7 @@ export default function RegisterModal({
         <div className="modal-content">
           <div className="modal-header">
             <h1 className="modal-title" id="regModalLabel">
-              Завершение регистрации
+              Регистрация
             </h1>
             <button
               type="button"
@@ -181,10 +181,10 @@ export default function RegisterModal({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    onBackToPhone?.();
+                    onOpenLogin?.();
                   }}
                 >
-                  Изменить номер телефона
+                  Уже есть аккаунт
                 </a>
               </div>
             </div>

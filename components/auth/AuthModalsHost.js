@@ -19,6 +19,7 @@ export function AuthModalsProvider({ children }) {
   const router = useRouter();
   const redirectAfterAuth = useRef(null);
   const [active, setActive] = useState(null); // null|'login'|'register'|'code'|'success'
+  const [authMode, setAuthMode] = useState('login'); // 'login'|'register'
   const [userExists, setUserExists] = useState(null); // null|boolean
 
   // форма
@@ -46,6 +47,7 @@ export function AuthModalsProvider({ children }) {
   function resetFlowState({ keepPhone = false } = {}) {
     resetUi();
     setUserExists(null);
+    setAuthMode('login');
     setUsername('');
     setEmail('');
     setConsentPersonal(false);
@@ -70,21 +72,33 @@ export function AuthModalsProvider({ children }) {
   function openLogin(redirectTo = null) {
     resetFlowState();
     redirectAfterAuth.current = redirectTo;
+    setAuthMode('login');
     setActive('login');
   }
 
   function openRegister() {
     resetFlowState();
-    redirectAfterAuth.current = null;
-    setActive('login');
+    setAuthMode('register');
+    setActive('register');
   }
 
-  function backToPhone() {
+  function switchToRegister() {
     resetUi();
     setUserExists(null);
     setCodeDigits(['', '', '', '']);
     setSendMessage('');
     setNeedsConsentRetry(false);
+    setAuthMode('register');
+    setActive('register');
+  }
+
+  function switchToLogin() {
+    resetUi();
+    setUserExists(null);
+    setCodeDigits(['', '', '', '']);
+    setSendMessage('');
+    setNeedsConsentRetry(false);
+    setAuthMode('login');
     setActive('login');
   }
 
@@ -95,7 +109,7 @@ export function AuthModalsProvider({ children }) {
     return `375${(phoneDigits || '').replace(/\D/g, '').slice(0, 9)}`;
   }
 
-  const isNewUser = userExists === false;
+  const isNewUser = authMode === 'register' && userExists === false;
 
   async function sendCode(phone) {
     const resp = await phoneSend({ phone });
@@ -128,7 +142,7 @@ export function AuthModalsProvider({ children }) {
         return;
       }
 
-      setActive('register');
+      setErrorText('Пользователь с таким номером не найден. Зарегистрируйтесь.');
     } catch (e) {
       setErrorText(e.message || 'Не удалось запросить звонок.');
     } finally {
@@ -161,6 +175,15 @@ export function AuthModalsProvider({ children }) {
 
     setLoading(true);
     try {
+      const checkResp = await phoneCheck({ phone });
+
+      setUserExists(Boolean(checkResp.exists));
+
+      if (checkResp.exists) {
+        setErrorText('Пользователь с таким номером уже зарегистрирован. Войдите.');
+        return;
+      }
+
       await sendCode(phone);
     } catch (e) {
       setErrorText(e.message || 'Не удалось запросить звонок.');
@@ -235,6 +258,7 @@ export function AuthModalsProvider({ children }) {
         setNeedsConsentRetry(true);
         setUserExists(false);
         setConsentPersonal(false);
+        setAuthMode('register');
         setActive('register');
         setErrorText('Для завершения регистрации нужно согласие на обработку персональных данных.');
       } else if (e.status === 401) {
@@ -249,7 +273,7 @@ export function AuthModalsProvider({ children }) {
         }
       } else {
         if (e.status === 422 || /уже используется|already/i.test(msg)) {
-          setActive('login');
+          setActive('register');
           setErrorText('Этот номер уже используется. Проверьте номер и попробуйте войти.');
         } else {
           setErrorText(msg);
@@ -285,6 +309,7 @@ export function AuthModalsProvider({ children }) {
           isOpen={true}
           onClose={closeAll}
           onOpenCode={submitPhone}
+          onOpenRegister={switchToRegister}
           phoneDigits={phoneDigits}
           setPhoneDigits={setPhoneDigits}
           loading={loading}
@@ -297,7 +322,7 @@ export function AuthModalsProvider({ children }) {
           isOpen={true}
           onClose={closeAll}
           onOpenCode={requestRegistrationCode}
-          onBackToPhone={backToPhone}
+          onOpenLogin={switchToLogin}
           username={username}
           setUsername={setUsername}
           phoneDigits={phoneDigits}
@@ -310,7 +335,7 @@ export function AuthModalsProvider({ children }) {
           setConsentMarketing={setConsentMarketing}
           loading={loading}
           errorText={errorText}
-          isPhoneLocked={true}
+          isPhoneLocked={needsConsentRetry}
           submitLabel={needsConsentRetry ? 'Подтвердить согласие' : 'Получить код'}
         />
       )}

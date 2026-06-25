@@ -5,6 +5,7 @@ export default function LoginModal({
   isOpen,
   onClose,
   onOpenCode,
+  onOpenRegister,
   phoneDigits,
   setPhoneDigits,
   loading = false,
@@ -30,7 +31,7 @@ export default function LoginModal({
         <div className="modal-content">
           <div className="modal-header">
             <h1 className="modal-title up-the-hide" id="loginModalLabel">
-              Вход или регистрация
+              Вход
             </h1>
             <button
               type="button"
@@ -87,6 +88,18 @@ export default function LoginModal({
                   >
                     {loading ? 'Отправляем…' : 'Получить код'}
                   </button>
+
+                  <div className="register-link">
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onOpenRegister?.();
+                      }}
+                    >
+                      Зарегистрироваться
+                    </a>
+                  </div>
 
                 </div>
               </div>
