@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as cartAPI from '@/lib/api/cart';
-import { getProductBySku, getRecommendedProducts, resolveImageUrl } from '@/lib/api/ikea';
+import { getProductBySku } from '@/lib/api/ikea';
 import { useAuth } from '@/contexts/AuthContext';
 
 const CartContext = createContext();
@@ -111,37 +111,6 @@ export function CartProvider({ children }) {
       const response = await cartAPI.getCart();
       let nextCart = response.cart ? await enrichCartItems(response.cart) : null;
 
-      try {
-        const recsData = await getRecommendedProducts({ page: 1, per_page: 10 });
-
-        const recs = (recsData.data || []).map((item) => {
-          const attr = item.attributes || {};
-          const images = (attr.local_images || [])
-            .map((img) => resolveImageUrl(img))
-            .filter(Boolean);
-
-          const fallback = '/assets/img/no-image.jpg';
-
-          return {
-            id: item.id,
-            sku: attr.sku,
-            title: attr.small_desc_name || attr.name_ru || '',
-            description: attr.name_ru || '',
-            price: Number.parseFloat(attr.price_byn || attr.price || 0),
-            images: images.length ? images : [fallback],
-            thumbs: images.length ? images : [fallback],
-            isHit: attr.is_bestseller || false,
-            promoCode: attr.promo?.code || null,
-          };
-        });
-
-        nextCart = nextCart
-          ? { ...nextCart, recommendations: recs }
-          : { recommendations: recs };
-      } catch {
-        // Рекомендации не должны ломать корзину.
-      }
-
       setCart(nextCart);
       setError(null);
     } catch (err) {
@@ -185,7 +154,6 @@ export function CartProvider({ children }) {
 
       setCart((prev) => ({
         ...nextCart,
-        recommendations: prev?.recommendations || [],
         items: mergeWithOrder(prev?.items, nextCart?.items),
       }));
 
@@ -209,7 +177,6 @@ export function CartProvider({ children }) {
 
       setCart((prev) => ({
         ...nextCart,
-        recommendations: prev?.recommendations || [],
         items: mergeWithOrder(prev?.items, nextCart?.items),
       }));
 
@@ -233,7 +200,6 @@ export function CartProvider({ children }) {
 
       setCart((prev) => ({
         ...nextCart,
-        recommendations: prev?.recommendations || [],
       }));
 
       setError(null);
@@ -296,7 +262,6 @@ export function CartProvider({ children }) {
 
         setCart((prev) => ({
           ...nextCart,
-          recommendations: prev?.recommendations || [],
           items: mergeWithOrder(prev?.items, nextCart?.items),
         }));
 
@@ -338,7 +303,6 @@ export function CartProvider({ children }) {
         if (nextCart) {
           setCart((prev) => ({
             ...nextCart,
-            recommendations: prev?.recommendations || [],
             items: mergeWithOrder(prev?.items, nextCart?.items),
           }));
         }
@@ -372,7 +336,6 @@ export function CartProvider({ children }) {
 
       setCart((prev) => ({
         ...nextCart,
-        recommendations: prev?.recommendations || [],
         items: mergeWithOrder(prev?.items, nextCart?.items),
       }));
 
@@ -396,7 +359,6 @@ export function CartProvider({ children }) {
 
       setCart((prev) => ({
         ...nextCart,
-        recommendations: prev?.recommendations || [],
         items: mergeWithOrder(prev?.items, nextCart?.items),
       }));
 
@@ -434,7 +396,6 @@ export function CartProvider({ children }) {
   const totals = cart?.totals || {};
   const delivery = cart?.delivery || {};
   const flags = cart?.flags || {};
-  const recommendations = cart?.recommendations || [];
   const availableItems = items.filter((item) => item.available);
   const unavailableItems = items.filter((item) => !item.available);
 
@@ -461,7 +422,6 @@ export function CartProvider({ children }) {
         totals,
         delivery,
         flags,
-        recommendations,
         hasPendingQuantityUpdates,
       }}
     >

@@ -1,17 +1,11 @@
 // components/recommendations/NotFoundRecommendations.js
 
 import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
-import { IMAGES_BASE_URL } from '@/lib/api/ikea';
-
-import { buildApiUrl } from '@/lib/config/api';
+import { getRecommendedProducts } from '@/lib/api/ikea';
 
 async function getRecommended() {
   try {
-    const res = await fetch(buildApiUrl('/homepage/recommendations?per_page=10'), {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
+    const data = await getRecommendedProducts({ page: 1, per_page: 10 });
     return data.data || [];
   } catch {
     return [];
