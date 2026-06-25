@@ -1249,6 +1249,20 @@ main {
     z-index: 10;
 }
 
+.product-card > .sales-hit + .sales-hit {
+    top: 34px;
+}
+
+.sales-hit.sales-hit--bestseller {
+    background-color: #181818;
+    color: #fff;
+}
+
+.sales-hit.sales-hit--new {
+    background-color: #04A31A;
+    color: #fff;
+}
+
 .pink {
     background-color: #CE0061;
     display: none;

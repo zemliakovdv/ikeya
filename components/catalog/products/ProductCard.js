@@ -308,8 +308,9 @@ export default function ProductCard({ product, priority = false }) {
 
         {badges.length > 0 && (
           <>
-            <ProductBadge label={badges[0]} />
-            {badges[1] && <ProductBadge label={badges[1]} variant="pink" />}
+            {badges.map((label) => (
+              <ProductBadge key={label} label={label} />
+            ))}
           </>
         )}
 
