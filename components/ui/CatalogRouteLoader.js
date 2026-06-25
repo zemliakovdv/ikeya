@@ -14,10 +14,21 @@ function isCatalogPath(pathname) {
   return pathname === '/catalog' || pathname.startsWith('/catalog/');
 }
 
+function isProductPath(pathname) {
+  return pathname.startsWith('/product/');
+}
+
+function getRouteType(pathname) {
+  if (isCatalogPath(pathname)) return 'catalog';
+  if (isProductPath(pathname)) return 'product';
+  return null;
+}
+
 export default function CatalogRouteLoader() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isVisible, setIsVisible] = useState(false);
+  const [routeType, setRouteType] = useState(null);
   const timeoutRef = useRef(null);
 
   const currentSearch = useMemo(() => {
@@ -27,6 +38,7 @@ export default function CatalogRouteLoader() {
 
   useEffect(() => {
     setIsVisible(false);
+    setRouteType(null);
 
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current);
@@ -42,11 +54,13 @@ export default function CatalogRouteLoader() {
       }
     }
 
-    function showLoader() {
+    function showLoader(nextRouteType) {
       clearFallback();
+      setRouteType(nextRouteType);
       setIsVisible(true);
       timeoutRef.current = window.setTimeout(() => {
         setIsVisible(false);
+        setRouteType(null);
         timeoutRef.current = null;
       }, FALLBACK_TIMEOUT_MS);
     }
@@ -73,7 +87,8 @@ export default function CatalogRouteLoader() {
       }
 
       if (nextUrl.origin !== window.location.origin) return;
-      if (!isCatalogPath(nextUrl.pathname)) return;
+      const nextRouteType = getRouteType(nextUrl.pathname);
+      if (!nextRouteType) return;
 
       const currentUrl = new URL(window.location.href);
 
@@ -84,7 +99,7 @@ export default function CatalogRouteLoader() {
         return;
       }
 
-      showLoader();
+      showLoader(nextRouteType);
     }
 
     document.addEventListener('click', handleDocumentClick, true);
@@ -97,9 +112,13 @@ export default function CatalogRouteLoader() {
 
   if (!isVisible) return null;
 
+  const message = routeType === 'product'
+    ? 'Загружаем товар...'
+    : 'Загружаем товары...';
+
   return (
     <div className="route-page-loader">
-      <PageLoader message="Загружаем товары..." />
+      <PageLoader message={message} />
     </div>
   );
 }
