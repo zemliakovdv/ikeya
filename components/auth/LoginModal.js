@@ -5,15 +5,13 @@ export default function LoginModal({
   isOpen,
   onClose,
   onOpenCode,
-  onOpenRegister,
   phoneDigits,
   setPhoneDigits,
-  showNotRegistered = false,
   loading = false,
   errorText = '',
 }) {
   const isPhoneComplete = (phoneDigits || '').replace(/\D/g, '').length === 9;
-  const hasError = showNotRegistered || !!errorText;
+  const hasError = !!errorText;
 
   return (
     <div
@@ -32,7 +30,7 @@ export default function LoginModal({
         <div className="modal-content">
           <div className="modal-header">
             <h1 className="modal-title up-the-hide" id="loginModalLabel">
-              Вход в систему
+              Вход или регистрация
             </h1>
             <button
               type="button"
@@ -47,17 +45,6 @@ export default function LoginModal({
               <div className="login-container">
                 <div className="login-card">
                   <div className="phone-input-group">
-
-                    {/* Уведомление — номер не зарегистрирован */}
-                    {showNotRegistered && (
-                      <div className="login-notice">
-                        <img src="/assets/img/icons/alert-fill.svg" alt="" />
-                        <p>
-                          Данный номер не зарегистрирован. Проверьте правильность ввода или
-                          зарегистрируйтесь.
-                        </p>
-                      </div>
-                    )}
 
                     <div
                       className="phone-input-container"
@@ -101,17 +88,6 @@ export default function LoginModal({
                     {loading ? 'Отправляем…' : 'Получить код'}
                   </button>
 
-                  <div className="register-link">
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onOpenRegister?.();
-                      }}
-                    >
-                      Зарегистрироваться
-                    </a>
-                  </div>
                 </div>
               </div>
             </div>

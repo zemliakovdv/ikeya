@@ -5,7 +5,7 @@ import { createContext, useContext, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { phoneSend, phoneVerify, phoneCheck } from '@/lib/api/auth';
 import { useAuth } from '@/contexts/AuthContext';
-import { getCartToken, getCart } from '@/lib/api/cart';
+import { getCartToken, getCart, setCartToken } from '@/lib/api/cart';
 
 import LoginModal from '@/components/auth/LoginModal';
 import CodeModal from '@/components/auth/CodeModal';
@@ -19,13 +19,13 @@ export function AuthModalsProvider({ children }) {
   const router = useRouter();
   const redirectAfterAuth = useRef(null);
   const [active, setActive] = useState(null); // null|'login'|'register'|'code'|'success'
-  const [flow, setFlow] = useState('login'); // 'login'|'register'
+  const [userExists, setUserExists] = useState(null); // null|boolean
 
   // форма
   const [phoneDigits, setPhoneDigits] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [consentPersonal, setConsentPersonal] = useState(true);
+  const [consentPersonal, setConsentPersonal] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(true);
 
   // code modal
@@ -35,15 +35,25 @@ export function AuthModalsProvider({ children }) {
   // UI
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState('');
-  const [showNotRegistered, setShowNotRegistered] = useState(false);
-  const [showPhoneUsed, setShowPhoneUsed] = useState(false);
+  const [needsConsentRetry, setNeedsConsentRetry] = useState(false);
 
   // ===== helpers =====
 
   function resetUi() {
     setErrorText('');
-    setShowNotRegistered(false);
-    setShowPhoneUsed(false);
+  }
+
+  function resetFlowState({ keepPhone = false } = {}) {
+    resetUi();
+    setUserExists(null);
+    setUsername('');
+    setEmail('');
+    setConsentPersonal(false);
+    setConsentMarketing(true);
+    setCodeDigits(['', '', '', '']);
+    setSendMessage('');
+    setNeedsConsentRetry(false);
+    if (!keepPhone) setPhoneDigits('');
   }
 
   function closeAll(reason = 'user') {
@@ -58,17 +68,24 @@ export function AuthModalsProvider({ children }) {
   }
 
   function openLogin(redirectTo = null) {
-    resetUi();
+    resetFlowState();
     redirectAfterAuth.current = redirectTo;
-    setFlow('login');
     setActive('login');
   }
 
   function openRegister() {
+    resetFlowState();
+    redirectAfterAuth.current = null;
+    setActive('login');
+  }
+
+  function backToPhone() {
     resetUi();
-    setPhoneDigits('');
-    setFlow('register');
-    setActive('register');
+    setUserExists(null);
+    setCodeDigits(['', '', '', '']);
+    setSendMessage('');
+    setNeedsConsentRetry(false);
+    setActive('login');
   }
 
   function openCode() { resetUi(); setActive('code'); }
@@ -78,10 +95,21 @@ export function AuthModalsProvider({ children }) {
     return `375${(phoneDigits || '').replace(/\D/g, '').slice(0, 9)}`;
   }
 
-  // ===== Шаг 1: запрос звонка =====
+  const isNewUser = userExists === false;
 
-  async function requestCall() {
+  async function sendCode(phone) {
+    const resp = await phoneSend({ phone });
+    setSendMessage(resp.message || '');
+    setCodeDigits(['', '', '', '']);
+    setNeedsConsentRetry(false);
+    openCode();
+  }
+
+  // ===== Шаг 1: проверка телефона =====
+
+  async function submitPhone() {
     resetUi();
+    setNeedsConsentRetry(false);
 
     const phone = fullPhone();
     if (!/^375\d{9}$/.test(phone)) {
@@ -89,34 +117,51 @@ export function AuthModalsProvider({ children }) {
       return;
     }
 
-    if (flow === 'register') {
-      if (!username.trim()) {
-        setErrorText('Введите имя.');
+    setLoading(true);
+    try {
+      const checkResp = await phoneCheck({ phone });
+
+      setUserExists(Boolean(checkResp.exists));
+
+      if (checkResp.exists) {
+        await sendCode(phone);
         return;
       }
-      if (!consentPersonal) {
-        setErrorText('Нужно согласие на обработку персональных данных.');
-        return;
-      }
+
+      setActive('register');
+    } catch (e) {
+      setErrorText(e.message || 'Не удалось запросить звонок.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function requestRegistrationCode() {
+    resetUi();
+
+    const phone = fullPhone();
+    if (!/^375\d{9}$/.test(phone)) {
+      setErrorText('Введите корректный номер (9 цифр после +375).');
+      return;
+    }
+    if (!username.trim()) {
+      setErrorText('Введите имя.');
+      return;
+    }
+    if (!consentPersonal) {
+      setErrorText('Нужно согласие на обработку персональных данных.');
+      return;
+    }
+
+    const existingCode = codeDigits.join('');
+    if (needsConsentRetry && /^\d{4}$/.test(existingCode)) {
+      await submitCode(existingCode);
+      return;
     }
 
     setLoading(true);
     try {
-      // Проверяем существование номера
-      const checkResp = await phoneCheck({ phone });
-      if (flow === 'login' && !checkResp.exists) {
-        setShowNotRegistered(true);
-        return;
-      }
-      if (flow === 'register' && checkResp.exists) {
-        setShowPhoneUsed(true);
-        return;
-      }
-
-      const resp = await phoneSend({ phone });
-      setSendMessage(resp.message || '');
-      setCodeDigits(['', '', '', '']);
-      openCode();
+      await sendCode(phone);
     } catch (e) {
       setErrorText(e.message || 'Не удалось запросить звонок.');
     } finally {
@@ -150,14 +195,19 @@ export function AuthModalsProvider({ children }) {
         phone,
         code,
         cart_token: getCartToken(),
-        ...(flow === 'register' && {
+        ...(isNewUser && {
           username: username.trim() || undefined,
           email: email.trim() || undefined,
+          personal_data_consent: true,
         }),
       });
 
       // ✅ Пишем auth_token в localStorage — addToCart уже уйдёт авторизованным
       setAuth({ token: resp.token, user: resp.user || null });
+
+      if (resp.cart_token) {
+        setCartToken(resp.cart_token);
+      }
 
       // Бэк сливает корзины через cart_token в phoneVerify — просто перезагружаем
       window.dispatchEvent(new Event('auth-change-done'));
@@ -172,7 +222,7 @@ export function AuthModalsProvider({ children }) {
         return;
       }
 
-      if (resp.is_new || flow === 'register') {
+      if (resp.is_new) {
         openSuccess();
       } else {
         closeAll('success');
@@ -181,21 +231,26 @@ export function AuthModalsProvider({ children }) {
     } catch (e) {
       const msg = e.message || 'Ошибка подтверждения.';
 
-      if (flow === 'login') {
-        if (e.status === 401) {
-          setErrorText('Неверный или просроченный код. Попробуйте ещё раз.');
-        } else if (e.status === 422 || /не зарегистрирован/i.test(msg)) {
-          setShowNotRegistered(true);
+      if (e.status === 401 && e.payload?.code === 'personal_data_consent_required') {
+        setNeedsConsentRetry(true);
+        setUserExists(false);
+        setConsentPersonal(false);
+        setActive('register');
+        setErrorText('Для завершения регистрации нужно согласие на обработку персональных данных.');
+      } else if (e.status === 401) {
+        setActive('code');
+        setErrorText('Неверный или просроченный код. Попробуйте ещё раз.');
+      } else if (!isNewUser) {
+        if (e.status === 422 || /не зарегистрирован/i.test(msg)) {
           setActive('login');
+          setErrorText('Данный номер не зарегистрирован. Проверьте номер или продолжите регистрацию.');
         } else {
           setErrorText(msg);
         }
       } else {
-        if (e.status === 401) {
-          setErrorText('Неверный или просроченный код. Попробуйте ещё раз.');
-        } else if (e.status === 422 || /уже используется|already/i.test(msg)) {
-          setShowPhoneUsed(true);
-          setActive('register');
+        if (e.status === 422 || /уже используется|already/i.test(msg)) {
+          setActive('login');
+          setErrorText('Этот номер уже используется. Проверьте номер и попробуйте войти.');
         } else {
           setErrorText(msg);
         }
@@ -206,7 +261,15 @@ export function AuthModalsProvider({ children }) {
   }
 
   async function resendCall() {
-    await requestCall();
+    resetUi();
+    setLoading(true);
+    try {
+      await sendCode(fullPhone());
+    } catch (e) {
+      setErrorText(e.message || 'Не удалось запросить звонок.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const ctxValue = { openLogin, openRegister, closeAll };
@@ -221,11 +284,9 @@ export function AuthModalsProvider({ children }) {
         <LoginModal
           isOpen={true}
           onClose={closeAll}
-          onOpenCode={requestCall}
-          onOpenRegister={openRegister}
+          onOpenCode={submitPhone}
           phoneDigits={phoneDigits}
           setPhoneDigits={setPhoneDigits}
-          showNotRegistered={showNotRegistered}
           loading={loading}
           errorText={errorText}
         />
@@ -235,8 +296,8 @@ export function AuthModalsProvider({ children }) {
         <RegisterModal
           isOpen={true}
           onClose={closeAll}
-          onOpenCode={requestCall}
-          onOpenLogin={openLogin}
+          onOpenCode={requestRegistrationCode}
+          onBackToPhone={backToPhone}
           username={username}
           setUsername={setUsername}
           phoneDigits={phoneDigits}
@@ -247,9 +308,10 @@ export function AuthModalsProvider({ children }) {
           setConsentPersonal={setConsentPersonal}
           consentMarketing={consentMarketing}
           setConsentMarketing={setConsentMarketing}
-          showPhoneUsed={showPhoneUsed}
           loading={loading}
           errorText={errorText}
+          isPhoneLocked={true}
+          submitLabel={needsConsentRetry ? 'Подтвердить согласие' : 'Получить код'}
         />
       )}
 

@@ -7,7 +7,7 @@ export default function RegisterModal({
   isOpen,
   onClose,
   onOpenCode,
-  onOpenLogin,
+  onBackToPhone,
 
   username,
   setUsername,
@@ -20,18 +20,20 @@ export default function RegisterModal({
   consentMarketing,
   setConsentMarketing,
 
-  showPhoneUsed = false,
   loading = false,
   errorText = '',
+  isPhoneLocked = false,
+  submitLabel = 'Получить код',
 }) {
   const [emailTouched, setEmailTouched] = useState(false);
 
   const isPhoneComplete = (phoneDigits || '').replace(/\D/g, '').length === 9;
+  const isNameFilled = !!username?.trim();
   const isEmailValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const showEmailError = emailTouched && email && !isEmailValid;
 
-  const hasPhoneError = showPhoneUsed || !!errorText;
-  const canSubmit = isPhoneComplete && !loading && isEmailValid;
+  const hasPhoneError = !!errorText;
+  const canSubmit = isPhoneComplete && isNameFilled && !!consentPersonal && !loading && isEmailValid;
 
   return (
     <div
@@ -50,7 +52,7 @@ export default function RegisterModal({
         <div className="modal-content">
           <div className="modal-header">
             <h1 className="modal-title" id="regModalLabel">
-              Регистрация
+              Завершение регистрации
             </h1>
             <button
               type="button"
@@ -61,16 +63,6 @@ export default function RegisterModal({
           </div>
 
           <div className="modal-body">
-
-            {/* Уведомление — номер уже используется */}
-            {showPhoneUsed && (
-              <div className="login-notice">
-                <img src="/assets/img/icons/alert-fill.svg" alt="" />
-                <p>
-                  Такой номер телефона уже используется. Укажите другой или воспользуйтесь формой входа.
-                </p>
-              </div>
-            )}
 
             {/* Имя */}
             <div className="form-floating the-name">
@@ -110,7 +102,9 @@ export default function RegisterModal({
                 maxLength={9}
                 required
                 value={phoneDigits}
+                readOnly={isPhoneLocked}
                 onChange={(e) => {
+                  if (isPhoneLocked) return;
                   const v = (e.target.value || '').replace(/\D/g, '').slice(0, 9);
                   setPhoneDigits?.(v);
                 }}
@@ -179,7 +173,7 @@ export default function RegisterModal({
                 onClick={onOpenCode}
                 disabled={!canSubmit}
               >
-                {loading ? 'Отправляем…' : 'Получить код'}
+                {loading ? 'Отправляем…' : submitLabel}
               </button>
 
               <div className="register-link">
@@ -187,10 +181,10 @@ export default function RegisterModal({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    onOpenLogin?.();
+                    onBackToPhone?.();
                   }}
                 >
-                  Уже есть аккаунт
+                  Изменить номер телефона
                 </a>
               </div>
             </div>
