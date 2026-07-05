@@ -7,6 +7,8 @@ import {
   formatBelarusPhoneLocalMask,
   isBelarusPhoneComplete,
 } from '@/lib/utils/phone';
+import { isEmailFormatValid } from '@/lib/utils/email';
+import { isValidPersonName, normalizePersonName } from '@/lib/utils/personName';
 
 export default function RegisterModal({
   isOpen,
@@ -31,10 +33,13 @@ export default function RegisterModal({
   submitLabel = 'Получить код',
 }) {
   const [emailTouched, setEmailTouched] = useState(false);
+  const [nameTouched, setNameTouched] = useState(false);
 
   const isPhoneComplete = isBelarusPhoneComplete(phoneDigits);
-  const isNameFilled = !!username?.trim();
-  const isEmailValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const normalizedName = normalizePersonName(username);
+  const isNameValid = isValidPersonName(username);
+  const showNameError = nameTouched && !isNameValid;
+  const isEmailValid = !email || isEmailFormatValid(email);
   const showEmailError = emailTouched && email && !isEmailValid;
 
   const localPhoneError =
@@ -43,7 +48,7 @@ export default function RegisterModal({
       : '';
   const shownPhoneError = localPhoneError || errorText;
   const hasPhoneError = !!shownPhoneError;
-  const canSubmit = isPhoneComplete && isNameFilled && !!consentPersonal && !loading && isEmailValid;
+  const canSubmit = isPhoneComplete && isNameValid && !!consentPersonal && !loading && isEmailValid;
 
   return (
     <div
@@ -78,17 +83,26 @@ export default function RegisterModal({
             <div className="form-floating the-name">
               <input
                 type="text"
-                className="form-control"
+                className={`form-control${showNameError ? ' is-invalid' : ''}`}
                 id="floatingPassword"
                 placeholder="Имя"
                 required
                 value={username}
                 onChange={(e) => setUsername?.(e.target.value)}
+                onBlur={() => {
+                  setNameTouched(true);
+                  setUsername?.(normalizedName);
+                }}
               />
               <label htmlFor="floatingPassword">
                 Имя <span>*</span>
               </label>
             </div>
+            {showNameError && (
+              <p style={{ color: '#B71C1C', fontSize: 13, marginTop: 4 }}>
+                Используйте только кириллицу, пробел и дефис
+              </p>
+            )}
 
             {/* Телефон */}
             <div
@@ -129,10 +143,13 @@ export default function RegisterModal({
             {/* Email */}
             <div className="form-floating the-mail">
               <input
-                type="text"
+                type="email"
                 className="form-control"
                 id="floatingInput"
                 placeholder="Электронная почта"
+                inputMode="email"
+                autoComplete="email"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail?.(e.target.value.trim().replace(/[а-яёА-ЯЁ]/g, ''))}
                 onBlur={() => {
@@ -185,7 +202,11 @@ export default function RegisterModal({
                 className="get-code-btn"
                 id="getCodeBtn"
                 type="button"
-                onClick={onOpenCode}
+                onClick={() => {
+                  setNameTouched(true);
+                  setUsername?.(normalizedName);
+                  onOpenCode?.();
+                }}
                 disabled={!canSubmit}
               >
                 {loading ? 'Отправляем…' : submitLabel}
