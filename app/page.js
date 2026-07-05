@@ -62,9 +62,9 @@ export async function generateMetadata() {
   }
 }
 
-function SectionSkeleton({ title }) {
+function SectionSkeleton({ title, minHeight = 520 }) {
   return (
-    <section style={{ padding: '40px 0' }}>
+    <section style={{ padding: '40px 0', minHeight }}>
       <div className="container">
         <div className="row">
           <div className="col-12">
@@ -93,26 +93,26 @@ export default async function Home() {
   return (
     <main className="main">
       <StartSliderServer />
-      <Suspense fallback={<SectionSkeleton />}>
+      <Suspense fallback={<SectionSkeleton minHeight={420} />}>
         <PopularCategoriesSection />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Хиты продаж" />}>
+      <Suspense fallback={<SectionSkeleton title="Хиты продаж" minHeight={620} />}>
         <BestsellersSection />
       </Suspense>
-      <Suspense fallback={<div style={{ minHeight: 200 }} />}>
+      <Suspense fallback={<div style={{ minHeight: 460 }} />}>
         <PromoBlockServer />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Рекомендованные товары" />}>
+      <Suspense fallback={<SectionSkeleton title="Рекомендованные товары" minHeight={620} />}>
         <RecommendedSection />
       </Suspense>
       <AdsBanner />
-      <Suspense fallback={<SectionSkeleton title="Новинки" />}>
+      <Suspense fallback={<SectionSkeleton title="Новинки" minHeight={620} />}>
         <NewArrivalsSection />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Советы и идеи" />}>
+      <Suspense fallback={<SectionSkeleton title="Советы и идеи" minHeight={460} />}>
         <BlogSection />
       </Suspense>
-      <Suspense fallback={<section style={{ minHeight: 280 }} />}>
+      <Suspense fallback={<section style={{ minHeight: 760 }} />}>
         <SeoSection seoText={seoText} />
       </Suspense>
     </main>

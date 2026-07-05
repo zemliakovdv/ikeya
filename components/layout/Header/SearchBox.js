@@ -329,7 +329,7 @@ export default function SearchBox() {
         )}
 
         <button type="submit" className="search-but" aria-label="Поиск">
-          <img src="/assets/img/icons/header-search.svg" alt="" />
+          <img src="/assets/img/icons/header-search.svg" alt="" width="20" height="20" />
         </button>
       </form>
 
