@@ -12,6 +12,7 @@ import Script from 'next/script';
 import EditPhoneModal from './modals/EditPhoneModal';
 import EditEmailModal from './modals/EditEmailModal';
 import EditPassportModal from './modals/EditPassportModal';
+import { formatBelarusPhone } from '@/lib/utils/phone';
 
 // Маскирует строку: показывает первые N символов, остальное — звёздочки
 function mask(str, visible = 2) {
@@ -126,15 +127,6 @@ export default function PersonalData() {
   }
 
   const closeModal = () => setModal(null);
-
-  function formatPhone(raw) {
-    if (!raw) return '—';
-    const d = raw.replace(/\D/g, '');
-    if (d.length === 12) {
-      return `+${d.slice(0, 3)} (${d.slice(3, 5)}) ${d.slice(5, 8)}-${d.slice(8, 10)}-${d.slice(10, 12)}`;
-    }
-    return `+${d}`;
-  }
 
   function formatDate(raw) {
     if (!raw) return '—';
@@ -263,7 +255,7 @@ export default function PersonalData() {
               </div>
               <div className="data-section__body">
                 <div className="data-item">
-                  <p className="data-item__value">{formatPhone(profile?.phone)}</p>
+                  <p className="data-item__value">{formatBelarusPhone(profile?.phone)}</p>
                 </div>
               </div>
             </div>

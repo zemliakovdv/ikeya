@@ -5,6 +5,7 @@ import { useState, useRef } from 'react';
 import { updateProfile, getProfile, requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import DatePicker from '@/components/ui/DatePicker';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
+import { formatBelarusPhone } from '@/lib/utils/phone';
 
 const REGIONS = [
   'Брестская',
@@ -290,7 +291,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
     return (
       <>
         <SmsVerifyModal
-          userPhone={profile?.phone}
+          userPhone={formatBelarusPhone(profile?.phone)}
           callerNumber={callerNumberMasked}
           onVerify={handleVerify}
           onResend={handleResend}

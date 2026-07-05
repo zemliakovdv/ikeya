@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { resolveImageUrl } from '@/lib/api/ikea';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
+import { formatBelarusPhone } from '@/lib/utils/phone';
 
 import { buildApiUrl, buildAssetUrl } from '@/lib/config/api';
 
@@ -722,7 +723,7 @@ export default function OrderSuccessPage() {
                       <div className="contact-info-list">
                         {attrs.phone && (
                           <div className="contact-info-item">
-                            <span>+{attrs.phone}</span>
+                            <span>{formatBelarusPhone(attrs.phone)}</span>
                           </div>
                         )}
                       </div>

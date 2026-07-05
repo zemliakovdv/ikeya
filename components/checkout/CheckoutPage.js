@@ -11,6 +11,7 @@ import EditPersonalDataModal from '@/components/profile/modals/EditPersonalDataM
 import EditPassportModal from '@/components/profile/modals/EditPassportModal';
 import { getProfile, getDraft, finalizeDraft, normalizeCheckoutItems, updateCheckoutDraft } from '@/lib/api/cart';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
+import { formatBelarusPhone } from '@/lib/utils/phone';
 import { requestA1Verification, verifyA1Code } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 import {
@@ -2274,7 +2275,7 @@ function CheckoutPageInner() {
 
                                 <div className="recipient-info">
                                   {fullName && <div className="info-row"><span className="info-label">ФИО</span><span className="info-value">{fullName}</span></div>}
-                                  {profile?.phone && <div className="info-row"><span className="info-label">Телефон</span><span className="info-value">+{profile.phone}</span></div>}
+                                  {profile?.phone && <div className="info-row"><span className="info-label">Телефон</span><span className="info-value">{formatBelarusPhone(profile.phone)}</span></div>}
                                   {profile?.email && <div className="info-row"><span className="info-label">Email</span><span className="info-value">{profile.email}</span></div>}
                                 </div>
                               </>
@@ -2521,7 +2522,7 @@ function CheckoutPageInner() {
       {a1Modal && (
         <>
           <SmsVerifyModal
-            userPhone={profile?.phone ? `+${profile.phone}` : ''}
+            userPhone={formatBelarusPhone(profile?.phone)}
             callerNumber={a1CallerNumber || ''}
             onVerify={handleA1Verify}
             onResend={handleCheckout}
