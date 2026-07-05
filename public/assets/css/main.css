@@ -1983,6 +1983,30 @@ main {
     color: #0058A3;
 }
 
+.footer-mobile {
+    display: none;
+}
+
+@media (max-width: 1199.98px) {
+    .footer.d-none.d-xl-block {
+        display: none !important;
+    }
+
+    .footer-mobile.d-xl-none {
+        display: block !important;
+    }
+}
+
+@media (min-width: 1200px) {
+    .footer.d-none.d-xl-block {
+        display: block !important;
+    }
+
+    .footer-mobile.d-xl-none {
+        display: none !important;
+    }
+}
+
 .footer {
     background-color: #F5F5F5;
     padding-top: 32px;
