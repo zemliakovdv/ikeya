@@ -40,7 +40,8 @@ export default function Header() {
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
   const [isSticky, setIsSticky] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
-  const [isDesktopSlider, setIsDesktopSlider] = useState(false)
+  // SSR-safe default: render header-bottom immediately to avoid CLS from late insertion.
+  const [isDesktopSlider, setIsDesktopSlider] = useState(true)
 
   // Состояние навигационных кнопок слайдера
   const [showPrev, setShowPrev] = useState(false)
@@ -589,7 +590,7 @@ export default function Header() {
 
       <MegaMenu isOpen={isMegaMenuOpen} onClose={() => setIsMegaMenuOpen(false)} />
 
-      {isMounted && isDesktopSlider && (
+      {isDesktopSlider && (
         <div className={`header-bottom${isSticky ? ' hidden' : ''}`}>
           <div className="container">
             <div className="row">
