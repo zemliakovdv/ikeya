@@ -85,7 +85,7 @@ export default function StartSlider({ slides = [], type = 'single' }) {
       if (pagination) pagination.style.display = '';
 
       swiperRef.current = new window.Swiper(sliderEl, {
-        loop: slideCount > 2,
+        loop: false,
         slidesPerView: 1,
         speed: 600,
         watchOverflow: true,
@@ -99,24 +99,24 @@ export default function StartSlider({ slides = [], type = 'single' }) {
         },
         breakpoints: {
           320: {
-            slidesPerView: 1.06,
-            spaceBetween: 8,
+            slidesPerView: 1,
+            spaceBetween: 0,
           },
           360: {
-            slidesPerView: 1.06,
-            spaceBetween: 8,
+            slidesPerView: 1,
+            spaceBetween: 0,
           },
           576: {
-            slidesPerView: 1.05,
-            spaceBetween: 8,
+            slidesPerView: 1,
+            spaceBetween: 0,
           },
           768: {
-            slidesPerView: 1.04,
-            spaceBetween: 8,
+            slidesPerView: 1,
+            spaceBetween: 0,
           },
           992: {
-            slidesPerView: 1.02,
-            spaceBetween: 8,
+            slidesPerView: 1,
+            spaceBetween: 0,
           },
           1200: {
             slidesPerView: 1,
@@ -176,7 +176,7 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                               priority={isLcpImage}
                               loading={isLcpImage ? undefined : 'lazy'}
                               fetchPriority={isLcpImage ? 'high' : undefined}
-                              style={{ width: '100%' }}
+                              style={{ width: '100%', height: 'auto' }}
                             />
                           </Link>
                         </div>
@@ -207,7 +207,7 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                                   priority={isLcpImage}
                                   loading={isLcpImage ? undefined : 'lazy'}
                                   fetchPriority={isLcpImage ? 'high' : undefined}
-                                  style={{ width: '100%' }}
+                                  style={{ width: '100%', height: 'auto' }}
                                 />
                               </Link>
                             );
