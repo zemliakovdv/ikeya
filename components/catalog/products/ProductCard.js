@@ -193,6 +193,8 @@ export default function ProductCard({ product, priority = false }) {
             src={mainImage}
             alt={productTitle}
             className="product-card__img product-card__img--main"
+            width="262"
+            height="262"
             loading={priority ? 'eager' : 'lazy'}
             onError={(e) => {
               e.currentTarget.src = PLACEHOLDER_IMAGE;
@@ -214,6 +216,8 @@ export default function ProductCard({ product, priority = false }) {
               alt=""
               aria-hidden="true"
               className="product-card__img product-card__img--hover"
+              width="262"
+              height="262"
               loading="lazy"
               onError={(e) => {
                 e.currentTarget.src = PLACEHOLDER_IMAGE;

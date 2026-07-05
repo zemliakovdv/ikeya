@@ -2004,12 +2004,15 @@ main {
 
 .footer-logo {
     display: inline-block;
+    width: 124px;
+    height: 22px;
 }
 
 .footer-logo img {
     display: block;
-    max-width: 124px;
-    height: auto;
+    width: 124px;
+    height: 22px;
+    max-width: none;
     margin-bottom: 24px;
 }
 

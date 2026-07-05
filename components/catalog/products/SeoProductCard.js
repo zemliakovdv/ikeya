@@ -121,6 +121,8 @@ export default function SeoProductCard({ product }) {
             src={imageUrl}
             alt={title}
             className="product-card__img product-card__img--main"
+            width="262"
+            height="262"
             loading="lazy"
           />
         </Link>

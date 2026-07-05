@@ -88,6 +88,8 @@ export default function FavoriteProductCard({ product, onRemoved }) {
           <img
             src={mainImage}
             alt={title}
+            width="262"
+            height="262"
             onError={(e) => { e.target.src = PLACEHOLDER; }}
             style={{
               width: '100%',
@@ -103,6 +105,8 @@ export default function FavoriteProductCard({ product, onRemoved }) {
             <img
               src={hoverImage}
               alt={title}
+              width="262"
+              height="262"
               onError={(e) => { e.target.src = PLACEHOLDER; }}
               style={{
                 width: '100%',
