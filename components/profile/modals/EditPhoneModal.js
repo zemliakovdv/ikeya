@@ -108,7 +108,7 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
                       type="tel" className="form-control" id="phone"
                       placeholder="+375 (__) ___-__-__"
                       inputMode="numeric"
-                      maxLength={19}
+                      maxLength={32}
                       value={formatBelarusPhoneFullMask(phoneDigits)}
                       onChange={e => {
                         setTouched(true);
