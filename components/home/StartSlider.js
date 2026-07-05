@@ -176,7 +176,7 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                               priority={isLcpImage}
                               loading={isLcpImage ? undefined : 'lazy'}
                               fetchPriority={isLcpImage ? 'high' : undefined}
-                              style={{ width: '100%', height: 'auto' }}
+                              style={{ width: '100%' }}
                             />
                           </Link>
                         </div>
@@ -207,7 +207,7 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                                   priority={isLcpImage}
                                   loading={isLcpImage ? undefined : 'lazy'}
                                   fetchPriority={isLcpImage ? 'high' : undefined}
-                                  style={{ width: '100%', height: 'auto' }}
+                                  style={{ width: '100%' }}
                                 />
                               </Link>
                             );
