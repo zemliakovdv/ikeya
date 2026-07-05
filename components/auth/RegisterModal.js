@@ -2,6 +2,11 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  extractBelarusPhoneDigits,
+  formatBelarusPhoneLocalMask,
+  isBelarusPhoneComplete,
+} from '@/lib/utils/phone';
 
 export default function RegisterModal({
   isOpen,
@@ -27,12 +32,17 @@ export default function RegisterModal({
 }) {
   const [emailTouched, setEmailTouched] = useState(false);
 
-  const isPhoneComplete = (phoneDigits || '').replace(/\D/g, '').length === 9;
+  const isPhoneComplete = isBelarusPhoneComplete(phoneDigits);
   const isNameFilled = !!username?.trim();
   const isEmailValid = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const showEmailError = emailTouched && email && !isEmailValid;
 
-  const hasPhoneError = !!errorText;
+  const localPhoneError =
+    phoneDigits && !isBelarusPhoneComplete(phoneDigits)
+      ? 'Введите номер в формате +375 (__) ___-__-__.'
+      : '';
+  const shownPhoneError = localPhoneError || errorText;
+  const hasPhoneError = !!shownPhoneError;
   const canSubmit = isPhoneComplete && isNameFilled && !!consentPersonal && !loading && isEmailValid;
 
   return (
@@ -97,19 +107,24 @@ export default function RegisterModal({
                 type="tel"
                 className="phone-input"
                 id="phoneInput"
-                placeholder="Введите номер"
+                placeholder="(__) ___-__-__"
                 inputMode="numeric"
-                maxLength={9}
+                maxLength={15}
                 required
-                value={phoneDigits}
+                value={formatBelarusPhoneLocalMask(phoneDigits)}
                 readOnly={isPhoneLocked}
                 onChange={(e) => {
                   if (isPhoneLocked) return;
-                  const v = (e.target.value || '').replace(/\D/g, '').slice(0, 9);
+                  const v = extractBelarusPhoneDigits(e.target.value || '');
                   setPhoneDigits?.(v);
                 }}
               />
             </div>
+            {!!shownPhoneError && (
+              <p style={{ color: '#B71C1C', fontSize: 13, marginTop: 4 }}>
+                {shownPhoneError}
+              </p>
+            )}
 
             {/* Email */}
             <div className="form-floating the-mail">
@@ -162,7 +177,7 @@ export default function RegisterModal({
                 </label>
               </div>
 
-              {!!errorText && (
+              {!!errorText && !shownPhoneError && (
                 <p style={{ color: '#B71C1C', marginTop: 8, fontSize: 14 }}>{errorText}</p>
               )}
 

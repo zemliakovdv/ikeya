@@ -11,6 +11,7 @@ import LoginModal from '@/components/auth/LoginModal';
 import CodeModal from '@/components/auth/CodeModal';
 import RegisterModal from '@/components/auth/RegisterModal';
 import SuccessModal from '@/components/auth/SuccessModal';
+import { isBelarusPhoneComplete, toBelarusPhoneApiValue } from '@/lib/utils/phone';
 
 const AuthModalsContext = createContext(null);
 
@@ -106,7 +107,12 @@ export function AuthModalsProvider({ children }) {
   function openSuccess() { resetUi(); setActive('success'); }
 
   function fullPhone() {
-    return `375${(phoneDigits || '').replace(/\D/g, '').slice(0, 9)}`;
+    return toBelarusPhoneApiValue(phoneDigits);
+  }
+
+  function handlePhoneDigitsChange(value) {
+    setPhoneDigits(value);
+    if (errorText) setErrorText('');
   }
 
   const isNewUser = authMode === 'register' && userExists === false;
@@ -126,7 +132,7 @@ export function AuthModalsProvider({ children }) {
     setNeedsConsentRetry(false);
 
     const phone = fullPhone();
-    if (!/^375\d{9}$/.test(phone)) {
+    if (!isBelarusPhoneComplete(phoneDigits) || !phone) {
       setErrorText('Введите корректный номер (9 цифр после +375).');
       return;
     }
@@ -154,7 +160,7 @@ export function AuthModalsProvider({ children }) {
     resetUi();
 
     const phone = fullPhone();
-    if (!/^375\d{9}$/.test(phone)) {
+    if (!isBelarusPhoneComplete(phoneDigits) || !phone) {
       setErrorText('Введите корректный номер (9 цифр после +375).');
       return;
     }
@@ -311,7 +317,7 @@ export function AuthModalsProvider({ children }) {
           onOpenCode={submitPhone}
           onOpenRegister={switchToRegister}
           phoneDigits={phoneDigits}
-          setPhoneDigits={setPhoneDigits}
+          setPhoneDigits={handlePhoneDigitsChange}
           loading={loading}
           errorText={errorText}
         />
@@ -326,7 +332,7 @@ export function AuthModalsProvider({ children }) {
           username={username}
           setUsername={setUsername}
           phoneDigits={phoneDigits}
-          setPhoneDigits={setPhoneDigits}
+          setPhoneDigits={handlePhoneDigitsChange}
           email={email}
           setEmail={setEmail}
           consentPersonal={consentPersonal}

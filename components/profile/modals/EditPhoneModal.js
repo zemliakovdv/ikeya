@@ -4,23 +4,41 @@
 import { useState } from 'react';
 import { requestPhoneChange, verifyPhoneChange } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
+import {
+  extractBelarusPhoneDigits,
+  formatBelarusPhoneFullMask,
+  isBelarusPhoneComplete,
+  toBelarusPhoneApiValue,
+} from '@/lib/utils/phone';
 
 const STEPS = { PHONE: 'phone', CODE: 'code', SUCCESS: 'success' };
 
 export default function EditPhoneModal({ profile, onClose, onSave }) {
   const [step,         setStep]         = useState(STEPS.PHONE);
-  const [phone,        setPhone]        = useState('');
+  const [phoneDigits,  setPhoneDigits]  = useState('');
   const [callerMasked, setCallerMasked] = useState('');
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState('');
+  const [touched,      setTouched]      = useState(false);
+
+  const isPhoneValid = isBelarusPhoneComplete(phoneDigits);
+  const phoneForApi = toBelarusPhoneApiValue(phoneDigits);
+  const localPhoneError = touched && !isPhoneValid
+    ? 'Введите номер в формате +375 (__) ___-__-__.'
+    : '';
 
   // Шаг 1 — запрашиваем звонок
   const handleRequestCall = async (e) => {
     e.preventDefault();
+    setTouched(true);
+    if (!isPhoneValid || !phoneForApi) {
+      setError('Введите корректный номер в формате +375 (__) ___-__-__.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      const resp = await requestPhoneChange(phone);
+      const resp = await requestPhoneChange(phoneForApi);
       setCallerMasked(resp?.caller_number_masked || '');
       setStep(STEPS.CODE);
     } catch (err) {
@@ -34,7 +52,7 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
   const handleResend = async () => {
     setError('');
     try {
-      const resp = await requestPhoneChange(phone);
+      const resp = await requestPhoneChange(phoneForApi);
       setCallerMasked(resp?.caller_number_masked || '');
     } catch (err) {
       setError(err.message || 'Ошибка повторного запроса');
@@ -46,7 +64,7 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
     setLoading(true);
     setError('');
     try {
-      const updated = await verifyPhoneChange(phone, code);
+      const updated = await verifyPhoneChange(phoneForApi, code);
       onSave?.(updated);
       setStep(STEPS.SUCCESS);
     } catch (err) {
@@ -60,7 +78,7 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
   if (step === STEPS.CODE) {
     return (
       <SmsVerifyModal
-        userPhone={phone}
+        userPhone={formatBelarusPhoneFullMask(phoneDigits)}
         callerNumber={callerMasked}
         onVerify={handleVerify}
         onResend={handleResend}
@@ -88,24 +106,35 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
                   <div className="form-group form-floating">
                     <input
                       type="tel" className="form-control" id="phone"
-                      placeholder="375291112233"
-                      value={phone}
-                      onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
+                      placeholder="+375 (__) ___-__-__"
+                      inputMode="numeric"
+                      maxLength={19}
+                      value={formatBelarusPhoneFullMask(phoneDigits)}
+                      onChange={e => {
+                        setTouched(true);
+                        setPhoneDigits(extractBelarusPhoneDigits(e.target.value));
+                        if (error) setError('');
+                      }}
                       required
                     />
                     <label htmlFor="phone">Новый номер телефона</label>
                   </div>
+                  {localPhoneError && (
+                    <p style={{ color: '#b71c1c', fontSize: '14px', marginBottom: '12px' }}>{localPhoneError}</p>
+                  )}
                   <div className="form-info">
                     <p className="info-text">
                       Подробнее об <a href="#" className="info-link">условиях обработки и правах, связанных с обработкой</a>
                     </p>
                   </div>
-                  {error && <p style={{ color: '#b71c1c', fontSize: '14px', marginBottom: '12px' }}>{error}</p>}
+                  {error && !localPhoneError && (
+                    <p style={{ color: '#b71c1c', fontSize: '14px', marginBottom: '12px' }}>{error}</p>
+                  )}
                   <div className="modal-footer-buttons">
                     <button type="button" className="btn btn-outline" onClick={onClose} disabled={loading}>
                       Отмена
                     </button>
-                    <button type="submit" className="btn btn-primary" disabled={loading || !phone}>
+                    <button type="submit" className="btn btn-primary" disabled={loading || !isPhoneValid}>
                       {loading ? 'Отправляем…' : 'Получить звонок'}
                     </button>
                   </div>
@@ -123,7 +152,7 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
               </div>
               <div className="modal-body">
                 <p className="confirmation-text">
-                  Ваш номер телефона успешно изменён на <strong>{phone}</strong>
+                  Ваш номер телефона успешно изменён на <strong>{formatBelarusPhoneFullMask(phoneDigits)}</strong>
                 </p>
                 <div className="modal-footer-single">
                   <button type="button" className="btn btn-primary btn-full" onClick={onClose}>

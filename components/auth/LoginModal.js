@@ -1,6 +1,12 @@
 // src/components/auth/LoginModal.js
 'use client';
 
+import {
+  extractBelarusPhoneDigits,
+  formatBelarusPhoneLocalMask,
+  isBelarusPhoneComplete,
+} from '@/lib/utils/phone';
+
 export default function LoginModal({
   isOpen,
   onClose,
@@ -11,8 +17,13 @@ export default function LoginModal({
   loading = false,
   errorText = '',
 }) {
-  const isPhoneComplete = (phoneDigits || '').replace(/\D/g, '').length === 9;
-  const hasError = !!errorText;
+  const localPhoneError =
+    phoneDigits && !isBelarusPhoneComplete(phoneDigits)
+      ? 'Введите номер в формате +375 (__) ___-__-__.'
+      : '';
+  const shownError = localPhoneError || errorText;
+  const isPhoneComplete = isBelarusPhoneComplete(phoneDigits);
+  const hasError = !!shownError;
 
   return (
     <div
@@ -63,20 +74,20 @@ export default function LoginModal({
                         type="tel"
                         className="phone-input"
                         id="phoneInput"
-                        placeholder="Введите номер"
+                        placeholder="(__) ___-__-__"
                         inputMode="numeric"
-                        maxLength={9}
-                        value={phoneDigits}
+                        maxLength={15}
+                        value={formatBelarusPhoneLocalMask(phoneDigits)}
                         onChange={(e) => {
-                          const v = (e.target.value || '').replace(/\D/g, '').slice(0, 9);
+                          const v = extractBelarusPhoneDigits(e.target.value || '');
                           setPhoneDigits?.(v);
                         }}
                       />
                     </div>
                   </div>
 
-                  {!!errorText && (
-                    <p style={{ color: '#B71C1C', marginTop: 8, fontSize: 14 }}>{errorText}</p>
+                  {!!shownError && (
+                    <p style={{ color: '#B71C1C', marginTop: 8, fontSize: 14 }}>{shownError}</p>
                   )}
 
                   <button
