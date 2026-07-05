@@ -1904,6 +1904,12 @@ main {
     padding-bottom: 32px;
 }
 
+@media (min-width: 1200px) {
+    .seo {
+        min-height: 760px;
+    }
+}
+
 .seo-inner {
     width: 100%;
 }
