@@ -257,6 +257,8 @@ export default function ProductCard({ product, priority = false }) {
                   <img
                     src={variantImg}
                     alt={variant.color || ''}
+                    width="34"
+                    height="34"
                     onError={(e) => {
                       e.currentTarget.src = PLACEHOLDER_IMAGE;
                     }}
