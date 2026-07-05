@@ -167,17 +167,18 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                       return (
                         <div className="swiper-slide" key={banner.id || idx}>
                           <Link href={getLinkUrl(banner)}>
-                            <Image
-                              src={src}
-                              alt={`Баннер ${idx + 1}`}
-                              width={1500}
-                              height={516}
-                              sizes="(max-width: 768px) 100vw, 1500px"
-                              priority={isLcpImage}
-                              loading={isLcpImage ? undefined : 'lazy'}
-                              fetchPriority={isLcpImage ? 'high' : undefined}
-                              style={{ width: '100%', height: 'auto' }}
-                            />
+                            <div className="start-slider__media">
+                              <Image
+                                src={src}
+                                alt={`Баннер ${idx + 1}`}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 1500px"
+                                priority={isLcpImage}
+                                loading={isLcpImage ? undefined : 'lazy'}
+                                fetchPriority={isLcpImage ? 'high' : undefined}
+                                style={{ objectFit: 'cover' }}
+                              />
+                            </div>
                           </Link>
                         </div>
                       );
