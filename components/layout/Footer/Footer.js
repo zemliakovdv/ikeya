@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CookieSettingsModal from '@/components/cookie/CookieSettingsModal';
 
 const STORAGE_KEY = 'ikeya_cookie_consent';
@@ -16,6 +16,23 @@ const LEGAL_TEXT = [
 export default function Footer({ categoryLinks = [] }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [savedPrefs, setSavedPrefs] = useState(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const media = window.matchMedia('(max-width: 1199px)');
+    const syncViewport = () => setIsMobileViewport(media.matches);
+    syncViewport();
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', syncViewport);
+      return () => media.removeEventListener('change', syncViewport);
+    }
+
+    media.addListener(syncViewport);
+    return () => media.removeListener(syncViewport);
+  }, []);
 
   const saveConsent = (prefs) => {
     try {
@@ -51,7 +68,8 @@ export default function Footer({ categoryLinks = [] }) {
     <footer>
 
       {/* ===== ДЕСКТОП (≥992px) ===== */}
-      <div className="footer d-none d-xl-block" aria-hidden="false">
+      {!isMobileViewport && (
+      <div className="footer" aria-hidden="false">
         <div className="container">
           <div className="row">
             <div className="col-12">
@@ -111,9 +129,11 @@ export default function Footer({ categoryLinks = [] }) {
           </div>
         </div>
       </div>
+      )}
 
       {/* ===== МОБИЛЬНЫЙ (<992px) ===== */}
-      <div className="footer-mobile d-xl-none" aria-hidden="false">
+      {isMobileViewport && (
+      <div className="footer-mobile" aria-hidden="false">
         <div className="container">
           <div className="row">
             <div className="col-12">
@@ -200,6 +220,7 @@ export default function Footer({ categoryLinks = [] }) {
           </div>
         </div>
       </div>
+      )}
 
       {modalOpen && (
         <CookieSettingsModal
