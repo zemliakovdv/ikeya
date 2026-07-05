@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { updateProfile } from '@/lib/api/account';
+import { isEmailFormatValid } from '@/lib/utils/email';
 
 const STEPS = { EMAIL: 'email', SENT: 'sent' };
 
@@ -20,11 +21,17 @@ export default function EditEmailModal({ profile, onClose, onSave, verifyOnly = 
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const normalizedEmail = email.trim();
+    if (!isEmailFormatValid(normalizedEmail)) {
+      setError('Введите корректный email');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
-      const updated = await updateProfile({ email, email_marketing: consent });
+      const updated = await updateProfile({ email: normalizedEmail, email_marketing: consent });
       onSave?.(updated);
       setStep(STEPS.SENT);
     } catch (err) {
@@ -55,6 +62,9 @@ export default function EditEmailModal({ profile, onClose, onSave, verifyOnly = 
                       placeholder="Электронная почта"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      inputMode="email"
+                      autoComplete="email"
+                      spellCheck={false}
                       required
                     />
                     <label htmlFor="email">Электронная почта</label>

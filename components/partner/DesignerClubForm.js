@@ -4,6 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 import { buildApiUrl } from '@/lib/config/api';
+import { hasCyrillicChars, isEmailFormatValid } from '@/lib/utils/email';
 
 const CITIES = ['Минск', 'Брест', 'Витебск', 'Гомель', 'Гродно', 'Могилёв'];
 const DESIGNER_TYPES = ['Частный дизайнер', 'Юридическое лицо', 'Индивидуальный предприниматель'];
@@ -58,13 +59,11 @@ function validate(form) {
   if (!form.comment.trim()) errors.comment = 'Введите комментарий';
   if (!form.consentPersonal) errors.consentPersonal = 'Необходимо согласие';
 
-  const cyrillicPattern = /[а-яёА-ЯЁ]/;
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!form.email.trim()) {
     errors.email = 'Введите email';
-  } else if (cyrillicPattern.test(form.email)) {
+  } else if (hasCyrillicChars(form.email)) {
     errors.email = 'Email не должен содержать кириллицу';
-  } else if (!emailPattern.test(form.email)) {
+  } else if (!isEmailFormatValid(form.email)) {
     errors.email = 'Введите корректный email';
   }
 
@@ -211,6 +210,7 @@ export default function DesignerClubForm() {
       <div className="designer-form__row">
         <div className="designer-form__group">
           <input type="email" className={`form-control${errors.email ? ' is-invalid' : ''}`} placeholder="Email"
+            inputMode="email" autoComplete="email" spellCheck={false}
             value={form.email} onChange={e => set('email', e.target.value)} />
           {errors.email && <div className="designer-form__error">{errors.email}</div>}
         </div>

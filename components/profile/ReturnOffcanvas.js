@@ -4,6 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createReturn, getProfile } from '@/lib/api/account';
 import { useAuth } from '@/contexts/AuthContext';
+import { isEmailFormatValid } from '@/lib/utils/email';
 
 const RETURN_REASONS = [
   { value: 'damaged', label: 'Товар повреждён при доставке' },
@@ -47,8 +48,6 @@ const EMPTY_ERRORS = {
 };
 
 const LETTERS_RE = /^[a-zA-Zа-яА-ЯёЁ\s-]+$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 function normalizePhone(phone) {
   const digits = phone.replace(/\D/g, '');
   if (digits.startsWith('375') && digits.length === 12) return `+${digits}`;
@@ -90,7 +89,7 @@ function validateForm(form) {
 
   if (!form.email.trim()) {
     errors.email = 'Обязательное поле'; valid = false;
-  } else if (!EMAIL_RE.test(form.email.trim())) {
+  } else if (!isEmailFormatValid(form.email)) {
     errors.email = 'Некорректный email'; valid = false;
   }
 
@@ -344,6 +343,9 @@ export default function ReturnOffcanvas({ isOpen, onClose }) {
                   id="email"
                   name="email"
                   placeholder="Электронная почта"
+                  inputMode="email"
+                  autoComplete="email"
+                  spellCheck={false}
                   value={form.email}
                   onChange={handleChange}
                 />

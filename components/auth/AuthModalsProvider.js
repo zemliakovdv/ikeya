@@ -6,6 +6,7 @@ import { a1Request, a1Verify, phoneVerify } from '@/lib/api/auth';
 import { getCartToken } from '@/lib/api/cart';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
+import { isEmailFormatValid } from '@/lib/utils/email';
 
 const AuthModalsContext = createContext(null);
 
@@ -118,6 +119,10 @@ export function AuthModalsProvider({ children }) {
       }
       if (!consent1) {
         setErrorText('Нужно согласие на обработку персональных данных.');
+        return;
+      }
+      if (email.trim() && !isEmailFormatValid(email)) {
+        setErrorText('Введите корректный email.');
         return;
       }
       // consent2 опционально
@@ -353,6 +358,9 @@ export function AuthModalsProvider({ children }) {
               placeholder="Электронная почта"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              inputMode="email"
+              autoComplete="email"
+              spellCheck={false}
             />
             <label>Электронная почта</label>
           </div>
