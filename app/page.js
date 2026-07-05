@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import StartSliderServer from '@/components/home/StartSliderServer';
 import PopularCategoriesSection from '@/components/home/PopularCategoriesSection';
 import BestsellersSection from '@/components/home/BestsellersSection';
@@ -62,27 +61,6 @@ export async function generateMetadata() {
   }
 }
 
-function SectionSkeleton({ title, minHeight = 520 }) {
-  return (
-    <section style={{ padding: '40px 0', minHeight }}>
-      <div className="container">
-        <div className="row">
-          <div className="col-12">
-            {title && (
-              <div style={{ width: 200, height: 32, background: '#f0f0f0', borderRadius: 6, marginBottom: 24 }} />
-            )}
-            <div style={{ display: 'flex', gap: 16 }}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} style={{ flex: 1, height: 280, background: '#f0f0f0', borderRadius: 8 }} />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default async function Home() {
   let seoText = null;
   try {
@@ -93,22 +71,12 @@ export default async function Home() {
   return (
     <main className="main">
       <StartSliderServer />
-      <Suspense fallback={<SectionSkeleton minHeight={420} />}>
-        <PopularCategoriesSection />
-      </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Хиты продаж" minHeight={620} />}>
-        <BestsellersSection />
-      </Suspense>
-      <Suspense fallback={<div style={{ minHeight: 460 }} />}>
-        <PromoBlockServer />
-      </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Рекомендованные товары" minHeight={620} />}>
-        <RecommendedSection />
-      </Suspense>
+      <PopularCategoriesSection />
+      <BestsellersSection />
+      <PromoBlockServer />
+      <RecommendedSection />
       <AdsBanner />
-      <Suspense fallback={<SectionSkeleton title="Новинки" minHeight={620} />}>
-        <NewArrivalsSection />
-      </Suspense>
+      <NewArrivalsSection />
       <BlogSection />
       <SeoSection seoText={seoText} />
     </main>
