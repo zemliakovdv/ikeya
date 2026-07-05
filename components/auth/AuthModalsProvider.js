@@ -7,6 +7,7 @@ import { getCartToken } from '@/lib/api/cart';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { isEmailFormatValid } from '@/lib/utils/email';
+import { extractBelarusPhoneDigits, formatBelarusPhoneLocalMask } from '@/lib/utils/phone';
 
 const AuthModalsContext = createContext(null);
 
@@ -276,11 +277,11 @@ export function AuthModalsProvider({ children }) {
                   <input
                     type="tel"
                     className="phone-input"
-                    placeholder="25 895 26 84"
+                    placeholder="(__) ___-__-__"
                     inputMode="numeric"
-                    maxLength={9}
-                    value={phoneDigits}
-                    onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, '').slice(0, 9))}
+                    maxLength={15}
+                    value={formatBelarusPhoneLocalMask(phoneDigits)}
+                    onChange={(e) => setPhoneDigits(extractBelarusPhoneDigits(e.target.value || ''))}
                   />
                 </div>
               </div>
@@ -342,12 +343,12 @@ export function AuthModalsProvider({ children }) {
             <input
               type="tel"
               className="phone-input"
-              placeholder="25 895 26 84"
+              placeholder="(__) ___-__-__"
               inputMode="numeric"
-              maxLength={9}
+              maxLength={15}
               required
-              value={phoneDigits}
-              onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, '').slice(0, 9))}
+              value={formatBelarusPhoneLocalMask(phoneDigits)}
+              onChange={(e) => setPhoneDigits(extractBelarusPhoneDigits(e.target.value || ''))}
             />
           </div>
 
