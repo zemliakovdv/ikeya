@@ -14,6 +14,7 @@ import { ProfileCountsProvider } from '@/components/profile/ProfileCountsContext
 import { Suspense } from 'react'
 import './globals.css'
 import Script from 'next/script'
+import { Inter } from 'next/font/google'
 
 // export const viewport = {
 //   width: 1200,
@@ -25,6 +26,11 @@ export const metadata = {
   description: 'Интернет-магазин мебели и товаров для дома',
 }
 
+const inter = Inter({
+  subsets: ['latin', 'cyrillic'],
+  display: 'swap',
+})
+
 
 
 export default function RootLayout({ children }) {
@@ -32,17 +38,13 @@ export default function RootLayout({ children }) {
     <html lang="ru">
       <head>
         <link rel="stylesheet" href="/assets/css/bootstrap.min.css" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-          rel="stylesheet"
-        />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-        <link rel="stylesheet" href="/assets/css/profile.css" />
-        <link rel="stylesheet" href="/assets/css/pvz.css" />
-        <link rel="stylesheet" href="/assets/css/article.css" />
-        <link rel="stylesheet" href="/assets/css/content-pages.css" />
-        <link rel="stylesheet" href="/assets/css/help.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" media="print" onLoad={(event) => { event.currentTarget.media = 'all' }} />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" media="print" onLoad={(event) => { event.currentTarget.media = 'all' }} />
+        <link rel="stylesheet" href="/assets/css/profile.css" media="print" onLoad={(event) => { event.currentTarget.media = 'all' }} />
+        <link rel="stylesheet" href="/assets/css/pvz.css" media="print" onLoad={(event) => { event.currentTarget.media = 'all' }} />
+        <link rel="stylesheet" href="/assets/css/article.css" media="print" onLoad={(event) => { event.currentTarget.media = 'all' }} />
+        <link rel="stylesheet" href="/assets/css/content-pages.css" media="print" onLoad={(event) => { event.currentTarget.media = 'all' }} />
+        <link rel="stylesheet" href="/assets/css/help.css" media="print" onLoad={(event) => { event.currentTarget.media = 'all' }} />
         <link rel="stylesheet" href="/assets/css/main.css" />
         <link rel="stylesheet" href="/assets/css/responsive.css" />
 
@@ -75,7 +77,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body>
+      <body className={inter.className}>
         <AuthProvider>
           <ProfileCountsProvider>
             <CartProvider>

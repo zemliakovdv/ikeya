@@ -59,7 +59,7 @@ export default function Footer({ categoryLinks = [] }) {
                 <div className="footer-top">
                   <div className="footer-links">
                     <a href="/" className="footer-logo">
-                      <img src="/assets/img/logo.svg" alt="Логотип" />
+                      <img src="/assets/img/logo.svg" alt="Логотип" width="163" height="40" />
                     </a>
                     <p>Мы в социальных сетях:</p>
                     <div className="footer-links__social">

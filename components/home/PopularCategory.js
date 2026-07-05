@@ -38,12 +38,13 @@ function CategoryCard({ category, isPriority = false }) {
           alt={category.name}
           width={120}
           height={120}
+          sizes="120px"
           priority={isPriority}
           loading={isPriority ? undefined : 'lazy'}
           onError={(e) => {
             e.currentTarget.src = PLACEHOLDER_IMAGE;
           }}
-          style={{ width: '100%', height: 'auto' }}
+          style={{ width: 120, height: 120, objectFit: 'cover' }}
         />
       </div>
 

@@ -172,11 +172,11 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                               alt={`Баннер ${idx + 1}`}
                               width={1500}
                               height={516}
+                              sizes="(max-width: 768px) 100vw, 1500px"
                               priority={isLcpImage}
-                              loading={isLcpImage ? undefined : 'eager'}
+                              loading={isLcpImage ? undefined : 'lazy'}
                               fetchPriority={isLcpImage ? 'high' : undefined}
-                              unoptimized
-                              style={{ width: '100%', height: '100%' }}
+                              style={{ width: '100%', height: 'auto' }}
                             />
                           </Link>
                         </div>
@@ -203,11 +203,11 @@ export default function StartSlider({ slides = [], type = 'single' }) {
                                   alt={`Баннер ${groupIdx * 3 + i + 1}`}
                                   width={572}
                                   height={594}
+                                  sizes="(max-width: 768px) 100vw, 572px"
                                   priority={isLcpImage}
-                                  loading={isLcpImage ? undefined : 'eager'}
+                                  loading={isLcpImage ? undefined : 'lazy'}
                                   fetchPriority={isLcpImage ? 'high' : undefined}
-                                  unoptimized
-                                  style={{ width: '100%', height: '100%' }}
+                                  style={{ width: '100%', height: 'auto' }}
                                 />
                               </Link>
                             );

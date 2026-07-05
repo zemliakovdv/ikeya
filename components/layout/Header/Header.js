@@ -379,7 +379,7 @@ export default function Header() {
               <div className="header-middle-inner">
                 <div className="header-middle-start">
                   <Link href="/" className="logo">
-                    <img src="/assets/img/logo.svg" alt="IKEYA — главная" />
+                    <img src="/assets/img/logo.svg" alt="IKEYA — главная" width="163" height="40" />
                   </Link>
 
                   <div className="header-middle-phone--mobile">

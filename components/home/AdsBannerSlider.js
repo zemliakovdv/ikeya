@@ -202,8 +202,8 @@ export default function AdsBannerSlider({ slides = [] }) {
                             <img
                               src={banner.image}
                               alt="Рекламный баннер"
-                              loading={index === 0 ? 'eager' : 'lazy'}
-                              fetchPriority={index === 0 ? undefined : 'low'}
+                              loading="lazy"
+                              fetchPriority="low"
                             />
                           </Link>
                         ))}
@@ -261,8 +261,8 @@ export default function AdsBannerSlider({ slides = [] }) {
                         <img
                           src={banner.image}
                           alt="Рекламный баннер"
-                          loading={index === 0 ? 'eager' : 'lazy'}
-                          fetchPriority={index === 0 ? undefined : 'low'}
+                          loading="lazy"
+                          fetchPriority="low"
                         />
                       </Link>
                     </div>
