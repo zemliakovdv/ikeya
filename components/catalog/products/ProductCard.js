@@ -306,7 +306,7 @@ export default function ProductCard({ product, priority = false }) {
               disabled={!currentSku}
               aria-disabled={!currentSku}
             >
-              <img src="/assets/img/icons/shopping-cart.svg" alt="" aria-hidden="true" />
+              <img src="/assets/img/icons/shopping-cart.svg" alt="" aria-hidden="true" width="20" height="20" />
               <p>В корзину</p>
             </button>
           )}

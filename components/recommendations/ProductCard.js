@@ -114,7 +114,7 @@ export default function ProductCard({ product, galleryId }) {
             disabled={!sku}
             aria-disabled={!sku}
           >
-            <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
+            <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" width="20" height="20" />
             <p>В корзину</p>
           </button>
         )}

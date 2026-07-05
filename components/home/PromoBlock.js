@@ -188,7 +188,7 @@ export default function PromoBlock({ bannerImage, bannerUrl, categoryName, produ
                                       disabled={!hasSku}
                                       aria-disabled={!hasSku}
                                     >
-                                      <img src="/assets/img/icons/shopping-cart.svg" alt="" />
+                                      <img src="/assets/img/icons/shopping-cart.svg" alt="" width="20" height="20" />
                                       <p>В корзину</p>
                                     </button>
                                   )}

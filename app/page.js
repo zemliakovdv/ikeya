@@ -109,10 +109,10 @@ export default async function Home() {
       <Suspense fallback={<SectionSkeleton title="Новинки" />}>
         <NewArrivalsSection />
       </Suspense>
-      <Suspense fallback={null}>
+      <Suspense fallback={<SectionSkeleton title="Советы и идеи" />}>
         <BlogSection />
       </Suspense>
-      <Suspense fallback={null}>
+      <Suspense fallback={<section style={{ minHeight: 280 }} />}>
         <SeoSection seoText={seoText} />
       </Suspense>
     </main>

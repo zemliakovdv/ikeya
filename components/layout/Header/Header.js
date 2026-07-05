@@ -399,7 +399,7 @@ export default function Header() {
                         <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                       </svg>
                     ) : (
-                      <img src="/assets/img/icons/catalog-button.svg" alt="" aria-hidden="true" />
+                      <img src="/assets/img/icons/catalog-button.svg" alt="" aria-hidden="true" width="20" height="20" />
                     )}
                     <p>Каталог</p>
                   </button>

@@ -139,7 +139,7 @@ export default function FavoriteProductCard({ product, onRemoved }) {
             </div>
           ) : (
             <button className="shop_button" onClick={handleAddToCart} type="button">
-              <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" />
+              <img src="/assets/img/icons/shopping-cart.svg" alt="В корзину" width="20" height="20" />
               <p>В корзину</p>
             </button>
           )}
