@@ -1905,6 +1905,30 @@ main {
 }
 
 @media (min-width: 1200px) {
+    .popular-category {
+        min-height: 420px;
+    }
+
+    .bestsellers-tabs {
+        min-height: 740px;
+    }
+
+    .recommended-tabs {
+        min-height: 740px;
+    }
+
+    .new-tabs {
+        min-height: 740px;
+    }
+
+    .ads-banner {
+        min-height: 320px;
+    }
+
+    .blog {
+        min-height: 560px;
+    }
+
     .seo {
         min-height: 760px;
     }
