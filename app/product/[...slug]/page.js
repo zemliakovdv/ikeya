@@ -105,9 +105,33 @@ function buildBreadcrumbs(tree, attr, product, productName) {
 async function getProduct(sku) {
   try {
     const res = await fetch(buildApiUrl(`/products/${sku}`), { next: { revalidate: 60 } });
-    return res.ok ? await res.json() : null;
+    const payload = await res.json().catch(() => null);
+
+    if (res.ok) {
+      return {
+        status: res.status,
+        data: payload?.data || null,
+        code: null,
+      };
+    }
+
+    const code =
+      payload?.code ||
+      payload?.error?.code ||
+      payload?.errors?.[0]?.code ||
+      null;
+
+    return {
+      status: res.status,
+      data: null,
+      code,
+    };
   } catch {
-    return null;
+    return {
+      status: 500,
+      data: null,
+      code: null,
+    };
   }
 }
 
@@ -244,8 +268,23 @@ export async function generateMetadata({ params }) {
   }
 
   const sku = extractSKU(lastSlugPart);
-  const productData = await getProduct(sku);
-  const attr = productData?.data?.attributes || {};
+  const productResponse = await getProduct(sku);
+
+  if (
+    productResponse?.status === 404 &&
+    (productResponse?.code === 'product_not_found' || productResponse?.code === 'product_unavailable')
+  ) {
+    notFound();
+  }
+
+  if (!productResponse?.data) {
+    return {
+      title: 'Товар | IKEYA',
+      description: 'Карточка товара в интернет-магазине IKEYA.',
+    };
+  }
+
+  const attr = productResponse.data.attributes || {};
 
   const productTitle = getProductTitle(attr);
   const seo = attr.seo || {};
@@ -291,15 +330,20 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductPage({ params }) {
   const sku = extractSKU(params.slug[params.slug.length - 1]);
+  const productResponse = await getProduct(sku);
 
-  const [productData, tree] = await Promise.all([
-    getProduct(sku),
-    getCachedCategoriesTree(),
-  ]);
+  if (
+    productResponse?.status === 404 &&
+    (productResponse?.code === 'product_not_found' || productResponse?.code === 'product_unavailable')
+  ) {
+    notFound();
+  }
 
-  if (!productData?.data) notFound();
+  if (!productResponse?.data) notFound();
 
-  const product = productData.data;
+  const tree = await getCachedCategoriesTree();
+
+  const product = productResponse.data;
   const attr = product.attributes;
 
   const currentSlugStr = params.slug[params.slug.length - 1];
