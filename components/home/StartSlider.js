@@ -37,6 +37,8 @@ export default function StartSlider({ slides = [], type = 'single' }) {
     let raf1 = 0;
     let raf2 = 0;
     let retryTimer = 0;
+    let idleId = 0;
+    let deferTimer = 0;
     let cancelled = false;
 
     const init = () => {
@@ -120,14 +122,38 @@ export default function StartSlider({ slides = [], type = 'single' }) {
       });
     };
 
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(init);
-    });
+    const scheduleInit = () => {
+      if (cancelled) return;
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(init);
+      });
+    };
+
+    const scheduleDeferredInit = () => {
+      if (cancelled) return;
+
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(scheduleInit, { timeout: 2000 });
+      } else {
+        deferTimer = window.setTimeout(scheduleInit, 300);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleDeferredInit();
+    } else {
+      window.addEventListener('load', scheduleDeferredInit, { once: true });
+    }
 
     return () => {
       cancelled = true;
 
+      window.removeEventListener('load', scheduleDeferredInit);
       if (retryTimer) window.clearTimeout(retryTimer);
+      if (deferTimer) window.clearTimeout(deferTimer);
+      if (idleId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
       if (raf1) cancelAnimationFrame(raf1);
       if (raf2) cancelAnimationFrame(raf2);
 
