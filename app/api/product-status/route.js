@@ -87,7 +87,7 @@ export async function GET(request) {
     const payload = await response.json().catch(() => null);
     const code = extractErrorCode(payload);
 
-    if (response.status !== 404 || code !== 'product_unavailable') {
+    if (code !== 'product_unavailable') {
       return NextResponse.json({
         code,
         similar_products: [],

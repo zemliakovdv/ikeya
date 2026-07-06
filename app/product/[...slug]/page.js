@@ -269,11 +269,13 @@ export async function generateMetadata({ params }) {
 
   const sku = extractSKU(lastSlugPart);
   const productResponse = await getProduct(sku);
+  const isKnownProduct404Code =
+    productResponse?.code === 'product_not_found' ||
+    productResponse?.code === 'product_unavailable';
 
-  if (
-    productResponse?.status === 404 &&
-    (productResponse?.code === 'product_not_found' || productResponse?.code === 'product_unavailable')
-  ) {
+  // Важно: 404 должен выбрасываться на этапе metadata до stream/flush.
+  // Некоторые бэкенд-ответы могут приходить с code без HTTP 404.
+  if (isKnownProduct404Code) {
     notFound();
   }
 
@@ -331,11 +333,11 @@ export async function generateMetadata({ params }) {
 export default async function ProductPage({ params }) {
   const sku = extractSKU(params.slug[params.slug.length - 1]);
   const productResponse = await getProduct(sku);
+  const isKnownProduct404Code =
+    productResponse?.code === 'product_not_found' ||
+    productResponse?.code === 'product_unavailable';
 
-  if (
-    productResponse?.status === 404 &&
-    (productResponse?.code === 'product_not_found' || productResponse?.code === 'product_unavailable')
-  ) {
+  if (isKnownProduct404Code) {
     notFound();
   }
 
