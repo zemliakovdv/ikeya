@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import OrderSuccessPage from '@/components/order/OrderSuccessPage';
 
 export default function OrderSuccess() {
-  return <OrderSuccessPage />;
+  return (
+    <Suspense fallback={null}>
+      <OrderSuccessPage />
+    </Suspense>
+  );
 }
