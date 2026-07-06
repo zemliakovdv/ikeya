@@ -9574,6 +9574,11 @@ main {
 
 /* ─── Page Loader ───────────────────────────────────────────────────────────── */
 
+.page-loading-space {
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
 .page-loader {
     position: fixed;
     left: 0;
