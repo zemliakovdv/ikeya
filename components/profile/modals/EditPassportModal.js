@@ -33,6 +33,8 @@ const CYRILLIC_CHARS    = /^[а-яёА-ЯЁ]$/;
 const LATIN_IN_STRING   = /[A-Za-z]/;
 const DIGIT_CHARS       = /^[0-9]$/;
 const HOUSE_CHARS       = /^[0-9/А-ЯЁа-яёA-Za-z]$/;
+const CYRILLIC_ONLY_FIELDS = new Set(['first_name', 'last_name', 'middle_name']);
+const CYRILLIC_LOCATION_FIELDS = new Set(['city', 'street']);
 
 function isValidIsoCalendarDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
@@ -214,6 +216,13 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
       const hasCyrillic = rawValue.split('').some(c => CYRILLIC_CHARS.test(c));
       if (hasCyrillic) { showWarning('identification_number', 'Только латиница'); warned = true; }
       value = rawValue.split('').filter(c => LATIN_DIGIT_CHARS.test(c)).join('').toUpperCase();
+    } else if (CYRILLIC_ONLY_FIELDS.has(key) || CYRILLIC_LOCATION_FIELDS.has(key)) {
+      const hasLatin = LATIN_IN_STRING.test(rawValue);
+      const warningText = CYRILLIC_LOCATION_FIELDS.has(key)
+        ? 'Только кириллица и дефис'
+        : 'Только кириллица';
+      if (hasLatin) { showWarning(key, warningText); warned = true; }
+      value = rawValue.split('').filter(c => !LATIN_CHARS.test(c)).join('');
     } else if (key === 'issued_by') {
       const hasLatin = LATIN_IN_STRING.test(rawValue);
       if (hasLatin) { showWarning('issued_by', 'Только кириллица'); warned = true; }
@@ -374,6 +383,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                       onBlur={() => handleBlur('first_name')}
                     />
                     <label>Имя <span className="req">*</span></label>
+                    <FieldWarning warning={inputWarnings.first_name} />
                     <FieldError error={fieldErrors.first_name} />
                   </div>
                   <div className="form-group form-floating">
@@ -386,6 +396,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                       onBlur={() => handleBlur('last_name')}
                     />
                     <label>Фамилия <span className="req">*</span></label>
+                    <FieldWarning warning={inputWarnings.last_name} />
                     <FieldError error={fieldErrors.last_name} />
                   </div>
                   <div className="form-group form-floating">
@@ -398,6 +409,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                       onBlur={() => handleBlur('middle_name')}
                     />
                     <label>Отчество <span className="req">*</span></label>
+                    <FieldWarning warning={inputWarnings.middle_name} />
                     <FieldError error={fieldErrors.middle_name} />
                   </div>
                 </div>
@@ -525,6 +537,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                       onBlur={() => handleBlur('city')}
                     />
                     <label>Город <span className="req">*</span></label>
+                    <FieldWarning warning={inputWarnings.city} />
                     <FieldError error={fieldErrors.city} />
                   </div>
                   <div className="form-group form-floating">
@@ -554,6 +567,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                       onBlur={() => handleBlur('street')}
                     />
                     <label>Улица <span className="req">*</span></label>
+                    <FieldWarning warning={inputWarnings.street} />
                     <FieldError error={fieldErrors.street} />
                   </div>
                   <div className="form-group form-floating">
