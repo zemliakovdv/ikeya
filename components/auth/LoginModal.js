@@ -2,10 +2,9 @@
 'use client';
 
 import {
-  extractBelarusPhoneDigits,
-  formatBelarusPhoneLocalMask,
   isBelarusPhoneComplete,
 } from '@/lib/utils/phone';
+import PhoneInput from '@/components/auth/PhoneInput';
 
 export default function LoginModal({
   isOpen,
@@ -70,24 +69,18 @@ export default function LoginModal({
                         <span>+375</span>
                       </div>
 
-                      <input
-                        type="tel"
-                        className="phone-input"
+                      <PhoneInput
                         id="phoneInput"
-                        placeholder="(__) ___-__-__"
-                        inputMode="numeric"
-                        maxLength={15}
-                        value={formatBelarusPhoneLocalMask(phoneDigits)}
-                        onChange={(e) => {
-                          const v = extractBelarusPhoneDigits(e.target.value || '');
-                          setPhoneDigits?.(v);
-                        }}
+                        value={phoneDigits}
+                        onChange={setPhoneDigits}
+                        error={hasError}
+                        aria-describedby={hasError ? 'loginPhoneError' : undefined}
                       />
                     </div>
                   </div>
 
                   {!!shownError && (
-                    <p style={{ color: '#B71C1C', marginTop: 8, fontSize: 14 }}>{shownError}</p>
+                    <p id="loginPhoneError" style={{ color: '#B71C1C', marginTop: 8, fontSize: 14 }}>{shownError}</p>
                   )}
 
                   <button

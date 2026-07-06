@@ -74,6 +74,8 @@ export default function CartSummary({
   cart,
   customsDuty = 0,
   checkoutLoading = false,
+  checkoutInteractionDisabled = false,
+  allowInvalidCheckoutAttempt = false,
 }) {
   const { applyPromo, removePromo, loading } = useCart();
 
@@ -102,7 +104,11 @@ export default function CartSummary({
     ? toNumber(finalTotal)
     : calculatedTotal;
 
-  const isCheckoutDisabled = !canCheckout || checkoutLoading || loading;
+  const isCheckoutDisabled =
+    checkoutLoading ||
+    loading ||
+    checkoutInteractionDisabled ||
+    (!allowInvalidCheckoutAttempt && !canCheckout);
 
   const show = (type, msg) => {
     setToastType(type);

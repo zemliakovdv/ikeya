@@ -34,6 +34,28 @@ const LATIN_IN_STRING   = /[A-Za-z]/;
 const DIGIT_CHARS       = /^[0-9]$/;
 const HOUSE_CHARS       = /^[0-9/А-ЯЁа-яёA-Za-z]$/;
 
+function isValidIsoCalendarDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return false;
+
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+}
+
+function getTodayIsoDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
 // ─── Валидатор одного поля ───────────────────────────────────────────────────
 function validateField(name, value) {
   switch (name) {
@@ -57,6 +79,11 @@ function validateField(name, value) {
       if (!value.trim()) return 'Введите номер паспорта';
       if (!RE_DIGITS_ONLY.test(value.trim()) || value.trim().length !== 7) return 'Номер - 7 цифр';
       return '';
+    case 'issue_date':
+      if (!value) return 'Укажите дату выдачи паспорта';
+      if (!isValidIsoCalendarDate(value)) return 'Укажите дату выдачи паспорта';
+      if (value > getTodayIsoDate()) return 'Дата выдачи не может быть в будущем';
+      return '';
     case 'identification_number':
       if (!value.trim()) return 'Введите идентификационный номер';
       if (!RE_ALPHANUMERIC_LATIN.test(value.trim()) || value.trim().length !== 14) return '14 символов латиница и цифры';
@@ -75,6 +102,9 @@ function validateField(name, value) {
       if (!value.trim()) return 'Введите город';
       if (!RE_CYRILLIC_CITY.test(value.trim())) return 'Только кириллица и дефис';
       return '';
+    case 'region':
+      if (!value?.trim()) return 'Выберите область';
+      return '';
     case 'postcode':
       if (!value.trim()) return 'Введите индекс';
       if (!RE_DIGITS_ONLY.test(value.trim())) return 'Только цифры';
@@ -85,6 +115,7 @@ function validateField(name, value) {
       return '';
     case 'street':
       if (!value.trim()) return 'Введите улицу';
+      if (!RE_CYRILLIC_CITY.test(value.trim())) return 'Только кириллица и дефис';
       return '';
     case 'issued_by':
       if (!value.trim()) return 'Введите кем выдан';
@@ -98,8 +129,8 @@ function validateField(name, value) {
 function validateAll(form) {
   const fields = [
     'first_name', 'last_name', 'middle_name',
-    'series', 'number', 'identification_number',
-    'dob', 'city', 'postcode', 'house', 'street', 'issued_by',
+    'series', 'number', 'issue_date', 'identification_number',
+    'dob', 'region', 'city', 'postcode', 'house', 'street', 'issued_by',
   ];
   const errors = {};
   fields.forEach(f => {
@@ -216,8 +247,8 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
 
     const allFields = [
       'first_name', 'last_name', 'middle_name',
-      'series', 'number', 'identification_number',
-      'dob', 'city', 'postcode', 'house', 'street', 'issued_by',
+      'series', 'number', 'issue_date', 'identification_number',
+      'dob', 'region', 'city', 'postcode', 'house', 'street', 'issued_by',
     ];
     const allTouched = Object.fromEntries(allFields.map(f => [f, true]));
     setTouched(allTouched);
@@ -402,10 +433,18 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                   </div>
                   <DatePicker
                     value={form.issue_date}
-                    onChange={val => set('issue_date', val)}
+                    onChange={val => {
+                      set('issue_date', val);
+                      setTouched(prev => ({ ...prev, issue_date: true }));
+                      setFieldErrors(prev => ({
+                        ...prev,
+                        issue_date: validateField('issue_date', val),
+                      }));
+                    }}
                     label="Дата выдачи"
                     required
                   />
+                  <FieldError error={fieldErrors.issue_date} />
                 </div>
 
                 {/* Кем выдан */}
@@ -462,9 +501,10 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                 <div className="form-row passport-row passport-row--address1">
                   <div className="form-group form-floating">
                     <select
-                      className="form-control form-select"
+                      className={`form-control form-select${fieldErrors.region ? ' is-invalid' : ''}`}
                       value={form.region}
                       onChange={e => set('region', e.target.value)}
+                      onBlur={() => handleBlur('region')}
                       required
                     >
                       <option value="" disabled>Область</option>
@@ -473,6 +513,7 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
                       ))}
                     </select>
                     <label>Область <span className="req">*</span></label>
+                    <FieldError error={fieldErrors.region} />
                   </div>
                   <div className="form-group form-floating">
                     <input

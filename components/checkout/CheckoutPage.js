@@ -596,6 +596,7 @@ function CheckoutPageInner() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [checkoutAttempted, setCheckoutAttempted] = useState(false);
 
   const [a1Modal, setA1Modal] = useState(false);
   const [a1VerificationId, setA1VerificationId] = useState(null);
@@ -1226,17 +1227,72 @@ function CheckoutPageInner() {
     : hasSelectedDeliveryAddressPayload;
   const hasFreshPickupCalculation = isPickup ? Boolean(freshPvzCalcResult) : true;
   const hasFreshAddressCalculation = isPickup ? true : Boolean(freshAddrCalcResult);
+  const hasPersonalData = Boolean(fullName && profile?.phone);
+  const hasPaymentMethod = Boolean(paymentMethod);
+  const hasValidReceiveMethod = receiveMethod === 'pickup' || receiveMethod === 'delivery';
 
-  const canCheckout = !!(
-    fullName &&
-    profile?.phone &&
-    hasValidDeliveryAddress &&
-    hasFreshPickupCalculation &&
-    hasFreshAddressCalculation &&
+  const checkoutValidationMessage = useMemo(() => {
+    if (!hasValidReceiveMethod) {
+      return 'Выберите способ получения для оформления заказа';
+    }
+
+    if (isPickup) {
+      if (!europostPickupAvailable || !hasValidDeliveryAddress || !hasFreshPickupCalculation) {
+        return 'Выберите способ получения для оформления заказа';
+      }
+    } else if (
+      !hasValidDeliveryAddress ||
+      !hasFreshAddressCalculation ||
+      !methodIsAvailable(addrDeliveryType)
+    ) {
+      return 'Выберите способ получения для оформления заказа';
+    }
+
+    if (!hasPersonalData) {
+      return 'Укажите личные данные для оформления заказа';
+    }
+
+    if (!hasPassport) {
+      return 'Укажите паспортные данные для оформления заказа';
+    }
+
+    if (!hasPaymentMethod) {
+      return 'Выберите способ оплаты для получения заказа';
+    }
+
+    return '';
+  }, [
+    addrDeliveryType,
+    europostPickupAvailable,
+    hasFreshAddressCalculation,
+    hasFreshPickupCalculation,
+    hasPassport,
+    hasPaymentMethod,
+    hasPersonalData,
+    hasValidDeliveryAddress,
+    hasValidReceiveMethod,
+    isPickup,
+    methodIsAvailable,
+  ]);
+
+  const checkoutFormReady = !checkoutValidationMessage;
+  const checkoutTechnicallyReady = Boolean(
     itemCount > 0 &&
-    (!draftId || (draftResolved && !draftLoadFailed && draftItems.length > 0)) &&
+    draftId &&
+    draftResolved &&
+    !draftLoadFailed &&
+    draftItems.length > 0 &&
     !submitting
   );
+  const canCheckout = checkoutFormReady && checkoutTechnicallyReady;
+
+  const validationNotification = checkoutAttempted ? checkoutValidationMessage : '';
+  const businessPickupNotification = !pickupEligible &&
+    !(receiveMethod === 'delivery' && hasSelectedDeliveryAddressPayload)
+    ? 'Самовывоз недоступен из-за превышения весогабаритных характеристик заказа'
+    : '';
+  const pickupSectionNotification = validationNotification || businessPickupNotification;
+  const showPickupBusinessDetails = Boolean(businessPickupNotification && !validationNotification);
 
   const saveDeliveryToDraft = useCallback(async ({
     deliveryType,
@@ -1711,19 +1767,13 @@ function CheckoutPageInner() {
   }
 
   async function handleCheckout() {
-    if (!canCheckout) {
-      if (receiveMethod === 'delivery' && !freshAddrCalcResult) {
-        setError('\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435\u0020\u0430\u0434\u0440\u0435\u0441\u0020\u0438\u0020\u043f\u0435\u0440\u0435\u0441\u0447\u0438\u0442\u0430\u0439\u0442\u0435\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0443\u0020\u0434\u043b\u044f\u0020\u0442\u0435\u043a\u0443\u0449\u0435\u0439\u0020\u043a\u043e\u0440\u0437\u0438\u043d\u044b\u002e');
-        return;
-      }
+    setCheckoutAttempted(true);
 
-      if (receiveMethod === 'pickup' && !freshPvzCalcResult) {
-        setError('\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435\u0020\u041f\u0412\u0417\u0020\u0438\u0020\u043f\u0435\u0440\u0435\u0441\u0447\u0438\u0442\u0430\u0439\u0442\u0435\u0020\u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0443\u0020\u0434\u043b\u044f\u0020\u0442\u0435\u043a\u0443\u0449\u0435\u0439\u0020\u043a\u043e\u0440\u0437\u0438\u043d\u044b\u002e');
-        return;
-      }
-      if (receiveMethod === 'delivery' && selectedAddr && !selectedAddr.house) {
-        setError('Укажите номер дома для доставки.');
-      }
+    if (checkoutValidationMessage) {
+      return;
+    }
+
+    if (!checkoutTechnicallyReady) {
       return;
     }
 
@@ -1985,17 +2035,18 @@ function CheckoutPageInner() {
                           <section className="checkout-section pickup-section">
                             <h2 className="section-title">Способ получения</h2>
 
-                            {!pickupEligible &&
-                              !(receiveMethod === 'delivery' && hasSelectedDeliveryAddressPayload) && (
+                            {pickupSectionNotification && (
                               <div className="alert alert-danger" style={{ marginBottom: 16 }}>
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                                   <path d="M10 1.66666C5.40002 1.66666 1.66669 5.39999 1.66669 9.99999C1.66669 14.6 5.40002 18.3333 10 18.3333C14.6 18.3333 18.3334 14.6 18.3334 9.99999C18.3334 5.39999 14.6 1.66666 10 1.66666ZM9.37502 6.66666C9.37502 6.32499 9.65835 6.04166 10 6.04166C10.3417 6.04166 10.625 6.32499 10.625 6.66666V10.8333C10.625 11.175 10.3417 11.4583 10 11.4583C9.65835 11.4583 9.37502 11.175 9.37502 10.8333V6.66666ZM10.7667 13.65C10.725 13.7583 10.6584 13.8583 10.575 13.9417C10.4917 14.025 10.3917 14.0917 10.2834 14.1333C10.175 14.175 10.0584 14.2 9.93335 14.2C9.81669 14.2 9.70002 14.175 9.58335 14.1333C9.47502 14.0917 9.37502 14.025 9.29169 13.9417C9.20835 13.8583 9.14169 13.7583 9.10002 13.65C9.05835 13.5417 9.03335 13.425 9.03335 13.3083C9.03335 13.1917 9.05835 13.075 9.10002 12.9667C9.14169 12.8583 9.20835 12.7583 9.29169 12.675C9.37502 12.5917 9.47502 12.525 9.58335 12.4833C9.80002 12.4 10.0667 12.4 10.2834 12.4833C10.3917 12.525 10.4917 12.5917 10.575 12.675C10.6584 12.7583 10.725 12.8583 10.7667 12.9667C10.8084 13.075 10.8334 13.1917 10.8334 13.3083C10.8334 13.425 10.8084 13.5417 10.7667 13.65Z" fill="#B71C1C" />
                                 </svg>
                                 <div>
-                                  <span>Самовывоз недоступен из-за превышения весогабаритных характеристик заказа</span>
-                                  <button type="button" className="vgh-details-link" onClick={() => setShowVghModal(true)}>
-                                    Подробнее
-                                  </button>
+                                  <span>{pickupSectionNotification}</span>
+                                  {showPickupBusinessDetails && (
+                                    <button type="button" className="vgh-details-link" onClick={() => setShowVghModal(true)}>
+                                      Подробнее
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -2420,6 +2471,8 @@ function CheckoutPageInner() {
                         totalWeight={totalWeight}
                         customsDuty={customsDuty}
                         canCheckout={canCheckout}
+                        allowInvalidCheckoutAttempt
+                        checkoutInteractionDisabled={!checkoutTechnicallyReady}
                         onCheckout={handleCheckout}
                         checkoutLoading={submitting}
                         checkoutButtonText={submitting ? 'Оформляем...' : 'Оформить заказ'}

@@ -5,6 +5,12 @@ import Link from 'next/link'
 import { IMAGES_BASE_URL, getCachedCategoriesTree } from '@/lib/api/ikea'
 
 let cachedTree = null
+let treeRequestPromise = null
+let desktopPreparationPromise = null
+let isMegaMenuReady = false
+const preloadedIcons = new Map()
+const ICON_PRELOAD_TIMEOUT = 5000
+const ICON_DECODE_TIMEOUT = 1500
 const VISIBLE_CHILDREN_LIMIT = 4
 
 function getCategoryName(cat) {
@@ -38,6 +44,175 @@ function getCategoryImage(cat) {
     attrs.local_image_path ||
     attrs.remote_image_url
   )
+}
+
+function collectDesktopIconUrls(tree) {
+  const urls = new Set()
+
+  ;(tree || []).forEach((root) => {
+    const rootAttrs = root?.attributes || {}
+    const rootIcon = resolveIcon(rootAttrs.pictogram_url || rootAttrs.icon_url)
+
+    if (rootIcon) urls.add(rootIcon)
+
+    ;(root?.children || []).forEach((section) => {
+      const sectionIcon = resolveIcon(section?.attributes?.icon_url)
+
+      if (sectionIcon) urls.add(sectionIcon)
+    })
+  })
+
+  return urls
+}
+
+function decodeImageWithTimeout(image) {
+  if (typeof window === 'undefined' || typeof image?.decode !== 'function') {
+    return Promise.resolve()
+  }
+
+  return new Promise((resolve) => {
+    let settled = false
+    let timeoutId = null
+
+    const finish = () => {
+      if (settled) return
+      settled = true
+
+      if (timeoutId) {
+        window.clearTimeout(timeoutId)
+        timeoutId = null
+      }
+
+      resolve()
+    }
+
+    timeoutId = window.setTimeout(finish, ICON_DECODE_TIMEOUT)
+    image.decode().then(finish).catch(finish)
+  })
+}
+
+function prepareDesktopIcon(url) {
+  if (!url) return Promise.resolve()
+
+  const cachedIcon = preloadedIcons.get(url)
+  if (cachedIcon) return cachedIcon.promise
+
+  let image = null
+
+  const promise = new Promise((resolve) => {
+    if (typeof window === 'undefined' || typeof Image === 'undefined') {
+      resolve()
+      return
+    }
+
+    let settled = false
+    let timeoutId = null
+
+    const finish = async (shouldDecode) => {
+      if (settled) return
+      settled = true
+
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+        timeoutId = null
+      }
+
+      if (image) {
+        image.onload = null
+        image.onerror = null
+      }
+
+      if (shouldDecode) {
+        await decodeImageWithTimeout(image)
+      }
+
+      resolve()
+    }
+
+    try {
+      image = new Image()
+      image.onload = () => {
+        void finish(true)
+      }
+      image.onerror = () => {
+        void finish(false)
+      }
+      timeoutId = window.setTimeout(() => {
+        void finish(false)
+      }, ICON_PRELOAD_TIMEOUT)
+      image.src = url
+
+      if (image.complete) {
+        void finish(true)
+      }
+    } catch {
+      void finish(false)
+    }
+  })
+
+  preloadedIcons.set(url, { image, promise })
+
+  return promise
+}
+
+function preloadDesktopIcons(tree) {
+  if (typeof window === 'undefined' || typeof Image === 'undefined') {
+    return Promise.resolve()
+  }
+
+  const iconPromises = Array.from(collectDesktopIconUrls(tree), prepareDesktopIcon)
+
+  return Promise.allSettled(iconPromises).then(() => undefined)
+}
+
+function loadMegaMenuTree() {
+  if (cachedTree) return Promise.resolve(cachedTree)
+  if (treeRequestPromise) return treeRequestPromise
+
+  treeRequestPromise = getCachedCategoriesTree()
+    .then((roots) => {
+      const tree = Array.isArray(roots) ? roots : []
+
+      if (tree.length === 0) {
+        throw new Error('Mega menu categories tree is empty')
+      }
+
+      cachedTree = tree
+
+      return tree
+    })
+    .catch((error) => {
+      cachedTree = null
+      isMegaMenuReady = false
+      throw error
+    })
+    .finally(() => {
+      treeRequestPromise = null
+    })
+
+  return treeRequestPromise
+}
+
+export function prefetchMegaMenu() {
+  if (isMegaMenuReady && cachedTree) return Promise.resolve(cachedTree)
+  if (desktopPreparationPromise) return desktopPreparationPromise
+
+  desktopPreparationPromise = loadMegaMenuTree()
+    .then(async (tree) => {
+      await preloadDesktopIcons(tree)
+      isMegaMenuReady = true
+
+      return tree
+    })
+    .catch((error) => {
+      isMegaMenuReady = false
+      throw error
+    })
+    .finally(() => {
+      desktopPreparationPromise = null
+    })
+
+  return desktopPreparationPromise
 }
 
 function hasChildren(cat) {
@@ -332,42 +507,74 @@ function MegaMenuMobile({ tree, mobileStack, setMobileStack, onClose }) {
   )
 }
 
+function MegaMenuDesktopSkeleton() {
+  const sidebarItems = Array.from({ length: 12 })
+  const groups = Array.from({ length: 9 })
+
+  return (
+    <div className="mega-menu-desktop mega-menu-desktop-skeleton" aria-hidden="true">
+      <aside className="mega-menu-sidebar mega-menu-skeleton-sidebar">
+        {sidebarItems.map((_, index) => (
+          <div className="mega-menu-skeleton-root" key={`root-${index}`}>
+            <span className="mega-menu-skeleton-icon" />
+            <span className="mega-menu-skeleton-line mega-menu-skeleton-line--root" />
+          </div>
+        ))}
+      </aside>
+
+      <div className="mega-menu-content mega-menu-skeleton-content">
+        <div className="mega-menu-columns">
+          {groups.map((_, index) => (
+            <div className="mega-menu-skeleton-group" key={`group-${index}`}>
+              <div className="mega-menu-skeleton-title-row">
+                <span className="mega-menu-skeleton-icon mega-menu-skeleton-icon--large" />
+                <span className="mega-menu-skeleton-line mega-menu-skeleton-line--title" />
+              </div>
+              <span className="mega-menu-skeleton-line mega-menu-skeleton-line--child" />
+              <span className="mega-menu-skeleton-line mega-menu-skeleton-line--child short" />
+              <span className="mega-menu-skeleton-line mega-menu-skeleton-line--child" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MegaMenu({ isOpen, onClose }) {
-  const [tree, setTree] = useState([])
+  const [tree, setTree] = useState(() => cachedTree || [])
   const [activeRootId, setActiveRootId] = useState(null)
   const [mobileStack, setMobileStack] = useState([])
-  const [hasLoaded, setHasLoaded] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [desktopReady, setDesktopReady] = useState(() => isMegaMenuReady && Boolean(cachedTree))
   const [loadError, setLoadError] = useState(null)
 
   useEffect(() => {
-    if (!isOpen || hasLoaded) return
-
-    if (cachedTree) {
-      setTree(cachedTree)
-      setHasLoaded(true)
-      setIsLoading(false)
-      return
-    }
+    if (!isOpen) return
 
     let cancelled = false
 
     async function load() {
-      setIsLoading(true)
       setLoadError(null)
 
       try {
-        const roots = await getCachedCategoriesTree()
+        const roots = await loadMegaMenuTree()
         if (cancelled) return
 
-        cachedTree = roots || []
-        setTree(cachedTree)
-        setHasLoaded(true)
-      } catch (error) {
+        setTree(roots)
+
+        try {
+          await prefetchMegaMenu()
+          if (!cancelled) setDesktopReady(true)
+        } catch {
+          if (!cancelled) {
+            setDesktopReady(false)
+            setLoadError('Не удалось загрузить категории. Попробуйте открыть каталог еще раз.')
+          }
+        }
+      } catch {
         if (cancelled) return
+        setDesktopReady(false)
         setLoadError('Не удалось загрузить категории. Попробуйте открыть каталог еще раз.')
-      } finally {
-        if (!cancelled) setIsLoading(false)
       }
     }
 
@@ -376,7 +583,7 @@ export default function MegaMenu({ isOpen, onClose }) {
     return () => {
       cancelled = true
     }
-  }, [isOpen, hasLoaded])
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -407,44 +614,52 @@ export default function MegaMenu({ isOpen, onClose }) {
 
   if (!isOpen) return null
 
+  const effectiveTree = tree.length > 0 ? tree : cachedTree || []
+  const treeReady = effectiveTree.length > 0
+  const currentDesktopReady = (desktopReady || isMegaMenuReady) && treeReady
   const activeRoot = activeRootId
-    ? tree.find((cat) => cat.id === activeRootId) || tree[0]
-    : tree[0]
+    ? effectiveTree.find((cat) => cat.id === activeRootId) || effectiveTree[0]
+    : effectiveTree[0]
 
-  const topItems = tree.slice(0, 2)
-  const mainItems = tree.slice(2)
-  const showLoader = isLoading && tree.length === 0
+  const topItems = effectiveTree.slice(0, 2)
+  const mainItems = effectiveTree.slice(2)
 
   return (
     <div className="mega-menu-overlay" onClick={(e) => e.stopPropagation()}>
       <div className="container-menu">
-        {showLoader ? (
-          <div className="mega-menu-loader" role="status" aria-live="polite" aria-label="Загрузка каталога">
-            <div className="page-loader__spinner" />
-          </div>
-        ) : loadError ? (
+        {loadError ? (
           <div className="mega-menu-error" role="alert">{loadError}</div>
         ) : (
           <>
-            <MegaMenuMobile tree={tree} mobileStack={mobileStack} setMobileStack={setMobileStack} onClose={onClose} />
-
-            <div className="mega-menu-desktop">
-              <MegaMenuSidebar
-                topItems={topItems}
-                mainItems={mainItems}
-                activeRootId={activeRoot?.id || null}
-                setActiveRootId={setActiveRootId}
-                onClose={onClose}
-              />
-
-              <div className="mega-menu-content">
-                {activeRoot ? (
-                  <MegaMenuColumns activeRoot={activeRoot} onClose={onClose} />
-                ) : (
-                  <div className="mega-menu-empty">Категории не найдены</div>
-                )}
+            {treeReady ? (
+              <MegaMenuMobile tree={effectiveTree} mobileStack={mobileStack} setMobileStack={setMobileStack} onClose={onClose} />
+            ) : (
+              <div className="mega-menu-loader" role="status" aria-live="polite" aria-label="Загрузка каталога">
+                <div className="page-loader__spinner" />
               </div>
-            </div>
+            )}
+
+            {currentDesktopReady ? (
+              <div className="mega-menu-desktop">
+                <MegaMenuSidebar
+                  topItems={topItems}
+                  mainItems={mainItems}
+                  activeRootId={activeRoot?.id || null}
+                  setActiveRootId={setActiveRootId}
+                  onClose={onClose}
+                />
+
+                <div className="mega-menu-content">
+                  {activeRoot ? (
+                    <MegaMenuColumns activeRoot={activeRoot} onClose={onClose} />
+                  ) : (
+                    <div className="mega-menu-empty">Категории не найдены</div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <MegaMenuDesktopSkeleton />
+            )}
           </>
         )}
       </div>

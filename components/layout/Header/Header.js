@@ -10,7 +10,7 @@ import { useAuthModals } from '@/components/auth/AuthModalsHost'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { useProfileCounts } from '@/components/profile/ProfileCountsContext'
 import { getTopCategories } from '@/lib/api/ikea'
-import MegaMenu from './MegaMenu'
+import MegaMenu, { prefetchMegaMenu } from './MegaMenu'
 import SearchBox from './SearchBox'
 import PhoneDropdown from './PhoneDropdown'
 import MobilePhoneDropdown from './MobilePhoneDropdown'
@@ -325,6 +325,16 @@ export default function Header() {
     setIsMegaMenuOpen((value) => !value)
   }
 
+  function handleCatalogIntent() {
+    void prefetchMegaMenu().catch(() => {})
+  }
+
+  function handleCatalogEarlyIntent() {
+    if (typeof document !== 'undefined' && document.readyState === 'complete') {
+      handleCatalogIntent()
+    }
+  }
+
   function handleProfileToggle() {
     setIsMegaMenuOpen(false)
     setIsProfileOpen((value) => !value)
@@ -405,6 +415,9 @@ export default function Header() {
                     type="button"
                     aria-label={isMegaMenuOpen ? 'Закрыть каталог' : 'Открыть каталог'}
                     aria-expanded={isMegaMenuOpen}
+                    onPointerEnter={handleCatalogEarlyIntent}
+                    onFocus={handleCatalogEarlyIntent}
+                    onPointerDown={handleCatalogIntent}
                     onClick={handleCatalogToggle}
                   >
                     {isMegaMenuOpen ? (

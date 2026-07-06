@@ -3,10 +3,9 @@
 
 import { useState } from 'react';
 import {
-  extractBelarusPhoneDigits,
-  formatBelarusPhoneLocalMask,
   isBelarusPhoneComplete,
 } from '@/lib/utils/phone';
+import PhoneInput from '@/components/auth/PhoneInput';
 import { isEmailFormatValid } from '@/lib/utils/email';
 import { isValidPersonName, normalizePersonName } from '@/lib/utils/personName';
 
@@ -117,25 +116,18 @@ export default function RegisterModal({
                 <span>+375</span>
               </div>
 
-              <input
-                type="tel"
-                className="phone-input"
+              <PhoneInput
                 id="phoneInput"
-                placeholder="(__) ___-__-__"
-                inputMode="numeric"
-                maxLength={15}
                 required
-                value={formatBelarusPhoneLocalMask(phoneDigits)}
+                value={phoneDigits}
+                onChange={setPhoneDigits}
+                error={hasPhoneError}
+                aria-describedby={hasPhoneError ? 'registerPhoneError' : undefined}
                 readOnly={isPhoneLocked}
-                onChange={(e) => {
-                  if (isPhoneLocked) return;
-                  const v = extractBelarusPhoneDigits(e.target.value || '');
-                  setPhoneDigits?.(v);
-                }}
               />
             </div>
             {!!shownPhoneError && (
-              <p style={{ color: '#B71C1C', fontSize: 13, marginTop: 4 }}>
+              <p id="registerPhoneError" style={{ color: '#B71C1C', fontSize: 13, marginTop: 4 }}>
                 {shownPhoneError}
               </p>
             )}

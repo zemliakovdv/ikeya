@@ -8685,6 +8685,106 @@ main {
     color: #0058A3;
 }
 
+.mega-menu-overlay .mega-menu-desktop-skeleton {
+    background: #FFFFFF;
+}
+
+.mega-menu-overlay .mega-menu-loader {
+    display: none;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-sidebar {
+    pointer-events: none;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-content {
+    pointer-events: none;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-root {
+    min-height: 48px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-icon {
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    flex: 0 0 24px;
+    border-radius: 6px;
+    background: #F1F3F5;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-icon--large {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    border-radius: 8px;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-line {
+    display: block;
+    height: 12px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #F1F3F5 0%, #E6EAF0 50%, #F1F3F5 100%);
+    background-size: 220% 100%;
+    animation: mega-menu-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-line--root {
+    width: 68%;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-line--title {
+    width: 62%;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-line--child {
+    width: calc(100% - 56px);
+    margin: 12px 0 0 56px;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-line--child.short {
+    width: calc(72% - 56px);
+}
+
+.mega-menu-overlay .mega-menu-skeleton-group {
+    width: 100%;
+    min-height: 160px;
+    margin-bottom: 18px;
+}
+
+.mega-menu-overlay .mega-menu-skeleton-title-row {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+@keyframes mega-menu-skeleton-pulse {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .mega-menu-overlay .mega-menu-loader {
+        display: flex;
+    }
+
+    .mega-menu-overlay .mega-menu-desktop-skeleton {
+        display: none !important;
+    }
+}
+
 .mega-menu-overlay .mega-menu-empty,
 .mega-menu-overlay .mega-menu-error {
     padding: 24px;
@@ -9958,5 +10058,10 @@ main {
     .mega-menu-mobile-back:active,
     .mega-menu-mobile-list-item:active {
         transform: none;
+    }
+
+    .mega-menu-overlay .mega-menu-skeleton-line {
+        animation: none;
+        background-size: 100% 100%;
     }
 }
