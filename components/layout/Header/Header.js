@@ -345,10 +345,22 @@ export default function Header() {
     }
   }
 
+  function handleHeaderClickCapture(event) {
+    if (!isMegaMenuOpen) return
+
+    const target = event.target
+
+    if (!(target instanceof Element)) return
+    if (target.closest('.mega-menu-overlay')) return
+    if (target.closest('#catalogButton')) return
+
+    setIsMegaMenuOpen(false)
+  }
+
   const profileLabel = user?.first_name || user?.username || 'РџСЂРѕС„РёР»СЊ'
 
   return (
-    <header className={`header${isSticky ? ' sticky' : ''}`}>
+    <header className={`header${isSticky ? ' sticky' : ''}`} onClickCapture={handleHeaderClickCapture}>
 
       <div className="header-top" style={isSticky ? { display: 'none' } : {}}>
         <div className="container">
