@@ -1297,7 +1297,7 @@ main {
 
 .product-card__img-wrap img {
     min-height: fit-content;
-    max-height: fit-content;
+    max-height: 274px;
     object-fit: contain;
 }
 
