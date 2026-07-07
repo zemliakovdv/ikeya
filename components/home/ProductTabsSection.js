@@ -44,6 +44,7 @@ export default function ProductTabsSection({
     moved: false,
   });
   const suppressClickRef = useRef(false);
+  const suppressClickTimerRef = useRef(0);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -195,6 +196,22 @@ export default function ProductTabsSection({
     const tabsNav = tabsNavRef.current;
     const dragThreshold = 6;
 
+    const clearSuppressClickTimer = () => {
+      if (!suppressClickTimerRef.current) return;
+
+      window.clearTimeout(suppressClickTimerRef.current);
+      suppressClickTimerRef.current = 0;
+    };
+
+    const scheduleSuppressClickReset = () => {
+      clearSuppressClickTimer();
+
+      suppressClickTimerRef.current = window.setTimeout(() => {
+        suppressClickRef.current = false;
+        suppressClickTimerRef.current = 0;
+      }, 150);
+    };
+
     const resetDragState = () => {
       dragStateRef.current = {
         pointerId: null,
@@ -207,6 +224,9 @@ export default function ProductTabsSection({
 
     const handlePointerDown = (event) => {
       if (event.pointerType !== 'mouse' || event.button !== 0 || !tabsNav) return;
+
+      clearSuppressClickTimer();
+      suppressClickRef.current = false;
 
       dragStateRef.current = {
         pointerId: event.pointerId,
@@ -230,6 +250,7 @@ export default function ProductTabsSection({
 
       if (!dragState.moved) {
         dragState.moved = true;
+        suppressClickRef.current = true;
         tabsNav.classList.add('is-dragging');
       }
 
@@ -242,10 +263,6 @@ export default function ProductTabsSection({
 
       if (!tabsNav || !dragState.pointerDown || dragState.pointerId !== event.pointerId) return;
 
-      if (dragState.moved) {
-        suppressClickRef.current = true;
-      }
-
       tabsNav.classList.remove('is-dragging');
 
       if (
@@ -255,14 +272,23 @@ export default function ProductTabsSection({
         tabsNav.releasePointerCapture(event.pointerId);
       }
 
+      if (dragState.moved) {
+        scheduleSuppressClickReset();
+      } else {
+        clearSuppressClickTimer();
+        suppressClickRef.current = false;
+      }
+
       resetDragState();
     };
 
     const handleClickCapture = (event) => {
+      if (event.detail === 0) return;
       if (!suppressClickRef.current) return;
 
       event.preventDefault();
       event.stopPropagation();
+      clearSuppressClickTimer();
       suppressClickRef.current = false;
     };
 
@@ -306,6 +332,7 @@ export default function ProductTabsSection({
         tabsNav.classList.remove('is-dragging');
       }
 
+      clearSuppressClickTimer();
       resetDragState();
       suppressClickRef.current = false;
       destroySwipers();
