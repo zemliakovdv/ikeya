@@ -235,8 +235,6 @@ export default function ProductTabsSection({
         startScrollLeft: tabsNav.scrollLeft,
         moved: false,
       };
-
-      tabsNav.setPointerCapture?.(event.pointerId);
     };
 
     const handlePointerMove = (event) => {
@@ -246,11 +244,16 @@ export default function ProductTabsSection({
 
       const deltaX = event.clientX - dragState.startX;
 
-      if (!dragState.moved && Math.abs(deltaX) < dragThreshold) return;
+      if (!dragState.moved && Math.abs(deltaX) <= dragThreshold) return;
 
       if (!dragState.moved) {
         dragState.moved = true;
         suppressClickRef.current = true;
+
+        if (!tabsNav.hasPointerCapture?.(event.pointerId)) {
+          tabsNav.setPointerCapture?.(event.pointerId);
+        }
+
         tabsNav.classList.add('is-dragging');
       }
 
