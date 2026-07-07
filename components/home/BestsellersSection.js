@@ -34,6 +34,7 @@ function mapProductToCard(product) {
   return {
     id: product.id,
     sku,
+    slug: slug || null,
     title: attr.small_desc_name || 'Товар IKEA',
     description: attr.name_ru || 'Без названия',
     price: attr.price_byn || '0.00',

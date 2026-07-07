@@ -405,6 +405,7 @@ export default function ProductTabsSection({
                                     id: product.id,
                                     attributes: {
                                       sku: product.sku,
+                                      slug: product.slug || null,
                                       small_desc_name: product.title,
                                       name_ru: product.description,
                                       price_byn: product.price,
