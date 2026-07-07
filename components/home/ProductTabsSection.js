@@ -31,10 +31,19 @@ export default function ProductTabsSection({
   showNewBadge = false,
 }) {
   const sectionRef = useRef(null);
+  const tabsNavRef = useRef(null);
   const swipersRef = useRef({});
   const retryTimerRef = useRef(0);
   const raf1Ref = useRef(0);
   const raf2Ref = useRef(0);
+  const dragStateRef = useRef({
+    pointerId: null,
+    pointerDown: false,
+    startX: 0,
+    startScrollLeft: 0,
+    moved: false,
+  });
+  const suppressClickRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -139,7 +148,31 @@ export default function ProductTabsSection({
       });
     };
 
-    const updateVisibleSwiper = () => {
+    const scrollActiveTabIntoView = (button) => {
+      const nav = tabsNavRef.current;
+
+      if (!nav || !button || !nav.contains(button)) return;
+
+      const navRect = nav.getBoundingClientRect();
+      const buttonRect = button.getBoundingClientRect();
+      const inset = 16;
+      let offset = 0;
+
+      if (buttonRect.left < navRect.left + inset) {
+        offset = buttonRect.left - navRect.left - inset;
+      } else if (buttonRect.right > navRect.right - inset) {
+        offset = buttonRect.right - navRect.right + inset;
+      }
+
+      if (offset !== 0) {
+        nav.scrollBy({
+          left: offset,
+          behavior: 'smooth',
+        });
+      }
+    };
+
+    const updateVisibleSwiper = (event) => {
       if (!sectionRef.current) return;
 
       requestAnimationFrame(() => {
@@ -150,10 +183,99 @@ export default function ProductTabsSection({
         if (activeSliderId && swipersRef.current[activeSliderId]) {
           swipersRef.current[activeSliderId].update();
         }
+
+        const activeButton = event?.target?.matches?.('[data-bs-toggle="tab"]')
+          ? event.target
+          : tabsNavRef.current?.querySelector('[data-bs-toggle="tab"].active');
+
+        scrollActiveTabIntoView(activeButton);
       });
     };
 
+    const tabsNav = tabsNavRef.current;
+    const dragThreshold = 6;
+
+    const resetDragState = () => {
+      dragStateRef.current = {
+        pointerId: null,
+        pointerDown: false,
+        startX: 0,
+        startScrollLeft: 0,
+        moved: false,
+      };
+    };
+
+    const handlePointerDown = (event) => {
+      if (event.pointerType !== 'mouse' || event.button !== 0 || !tabsNav) return;
+
+      dragStateRef.current = {
+        pointerId: event.pointerId,
+        pointerDown: true,
+        startX: event.clientX,
+        startScrollLeft: tabsNav.scrollLeft,
+        moved: false,
+      };
+
+      tabsNav.setPointerCapture?.(event.pointerId);
+    };
+
+    const handlePointerMove = (event) => {
+      const dragState = dragStateRef.current;
+
+      if (!tabsNav || !dragState.pointerDown || dragState.pointerId !== event.pointerId) return;
+
+      const deltaX = event.clientX - dragState.startX;
+
+      if (!dragState.moved && Math.abs(deltaX) < dragThreshold) return;
+
+      if (!dragState.moved) {
+        dragState.moved = true;
+        tabsNav.classList.add('is-dragging');
+      }
+
+      tabsNav.scrollLeft = dragState.startScrollLeft - deltaX;
+      event.preventDefault();
+    };
+
+    const finishPointerDrag = (event) => {
+      const dragState = dragStateRef.current;
+
+      if (!tabsNav || !dragState.pointerDown || dragState.pointerId !== event.pointerId) return;
+
+      if (dragState.moved) {
+        suppressClickRef.current = true;
+      }
+
+      tabsNav.classList.remove('is-dragging');
+
+      if (
+        event.type !== 'lostpointercapture'
+        && tabsNav.hasPointerCapture?.(event.pointerId)
+      ) {
+        tabsNav.releasePointerCapture(event.pointerId);
+      }
+
+      resetDragState();
+    };
+
+    const handleClickCapture = (event) => {
+      if (!suppressClickRef.current) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClickRef.current = false;
+    };
+
     const tabButtons = sectionRef.current.querySelectorAll('[data-bs-toggle="tab"]');
+
+    if (tabsNav) {
+      tabsNav.addEventListener('pointerdown', handlePointerDown);
+      tabsNav.addEventListener('pointermove', handlePointerMove);
+      tabsNav.addEventListener('pointerup', finishPointerDrag);
+      tabsNav.addEventListener('pointercancel', finishPointerDrag);
+      tabsNav.addEventListener('lostpointercapture', finishPointerDrag);
+      tabsNav.addEventListener('click', handleClickCapture, true);
+    }
 
     tabButtons.forEach((button) => {
       button.addEventListener('shown.bs.tab', updateVisibleSwiper);
@@ -174,6 +296,18 @@ export default function ProductTabsSection({
         button.removeEventListener('shown.bs.tab', updateVisibleSwiper);
       });
 
+      if (tabsNav) {
+        tabsNav.removeEventListener('pointerdown', handlePointerDown);
+        tabsNav.removeEventListener('pointermove', handlePointerMove);
+        tabsNav.removeEventListener('pointerup', finishPointerDrag);
+        tabsNav.removeEventListener('pointercancel', finishPointerDrag);
+        tabsNav.removeEventListener('lostpointercapture', finishPointerDrag);
+        tabsNav.removeEventListener('click', handleClickCapture, true);
+        tabsNav.classList.remove('is-dragging');
+      }
+
+      resetDragState();
+      suppressClickRef.current = false;
       destroySwipers();
     };
   }, [tabs, tabProducts]);
@@ -189,7 +323,12 @@ export default function ProductTabsSection({
           <div className="col-12">
             <h2>{title}</h2>
 
-            <ul className="nav products-tabs__nav" id={`${sectionClass}-tabs`} role="tablist">
+            <ul
+              ref={tabsNavRef}
+              className="nav products-tabs__nav"
+              id={`${sectionClass}-tabs`}
+              role="tablist"
+            >
               {tabs.map((tab, index) => (
                 <li key={tab.id} className="nav-item" role="presentation">
                   <button

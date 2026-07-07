@@ -31,11 +31,17 @@
 .products-tabs__nav {
     display: flex;
     flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    white-space: nowrap;
     border-bottom: 1px solid #E0E0E0;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    cursor: grab;
 }
 
 .products-tabs__nav::-webkit-scrollbar {
@@ -44,6 +50,11 @@
 
 .products-tabs__nav .nav-item {
     flex: 0 0 auto;
+}
+
+.products-tabs__nav.is-dragging {
+    cursor: grabbing;
+    user-select: none;
 }
 
 .products-tabs__link {

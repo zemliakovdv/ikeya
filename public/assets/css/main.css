@@ -950,16 +950,33 @@ main {
 
 /* Навигация табов */
 .products-tabs__nav {
+    display: flex;
     gap: 0;
     flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
     -ms-overflow-style: none;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    cursor: grab;
     border-bottom: 2px solid #EEEEEE;
 }
 
 .products-tabs__nav::-webkit-scrollbar {
     display: none;
+}
+
+.products-tabs__nav .nav-item {
+    flex: 0 0 auto;
+}
+
+.products-tabs__nav.is-dragging {
+    cursor: grabbing;
+    user-select: none;
 }
 
 .products-tabs__link {
