@@ -283,6 +283,10 @@
   background: #004a8c;
 }
 
+.pvz-select-fullwidt{
+  max-width: 100%;
+}
+
 /* ── Карта ── */
 .pvz-map-wrap {
   position: relative;

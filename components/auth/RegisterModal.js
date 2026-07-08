@@ -40,6 +40,7 @@ export default function RegisterModal({
   const showNameError = nameTouched && !isNameValid;
   const isEmailValid = !email || isEmailFormatValid(email);
   const showEmailError = emailTouched && email && !isEmailValid;
+  const showPersonalConsentNotice = !consentPersonal;
 
   const localPhoneError =
     phoneDigits && !isBelarusPhoneComplete(phoneDigits)
@@ -166,12 +167,18 @@ export default function RegisterModal({
                   id="gridCheckPersonal"
                   checked={!!consentPersonal}
                   onChange={(e) => setConsentPersonal?.(e.target.checked)}
+                  aria-describedby={showPersonalConsentNotice ? 'registerPersonalConsentError' : undefined}
                 />
                 <label className="form-check-label" htmlFor="gridCheckPersonal">
                   Даю согласие на обработку персональных данных в соответствии с{' '}
                   <a href="/help/privacy-policy-clients-ikeya-by/">Политикой обработки персональных данных</a> и <a href="/help/public-offer-commission-ikeya/">Договором-офертой</a>
                 </label>
               </div>
+              {showPersonalConsentNotice && (
+                <p id="registerPersonalConsentError" style={{ color: '#B71C1C', fontSize: 13, marginTop: 4 }}>
+                  Для регистрации и оформления заказа нужно согласие на обработку персональных данных.
+                </p>
+              )}
 
               <div className="form-check">
                 <input

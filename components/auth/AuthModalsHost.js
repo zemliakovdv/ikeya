@@ -27,7 +27,7 @@ export function AuthModalsProvider({ children }) {
   const [phoneDigits, setPhoneDigits] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [consentPersonal, setConsentPersonal] = useState(false);
+  const [consentPersonal, setConsentPersonal] = useState(true);
   const [consentMarketing, setConsentMarketing] = useState(true);
 
   // code modal
@@ -51,7 +51,7 @@ export function AuthModalsProvider({ children }) {
     setAuthMode('login');
     setUsername('');
     setEmail('');
-    setConsentPersonal(false);
+    setConsentPersonal(true);
     setConsentMarketing(true);
     setCodeDigits(['', '', '', '']);
     setSendMessage('');

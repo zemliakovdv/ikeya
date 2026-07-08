@@ -520,11 +520,11 @@ export default function DeliveryTab({
             <div className="pvz-detail__footer">
               <button
                 type="button"
-                className="pvz-select-btn"
+                className="pvz-select-btn pvz-select-fullwidt"
                 onClick={handleSubmit}
                 disabled={!form.fullAddress.trim() || calcLoading}
               >
-                {calcLoading ? 'Расчёт...' : 'Добавить'}
+                {calcLoading ? 'Расчёт...' : 'Выбрать'}
               </button>
             </div>
           </>

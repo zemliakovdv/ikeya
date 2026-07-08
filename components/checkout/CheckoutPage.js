@@ -12,7 +12,7 @@ import EditPassportModal from '@/components/profile/modals/EditPassportModal';
 import { getProfile, getDraft, finalizeDraft, normalizeCheckoutItems, updateCheckoutDraft } from '@/lib/api/cart';
 import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import { formatBelarusPhone } from '@/lib/utils/phone';
-import { requestA1Verification, verifyA1Code } from '@/lib/api/account';
+import { requestA1Verification, updateProfile, verifyA1Code } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 import {
   calculateDelivery,
@@ -32,6 +32,50 @@ const LS_SELECTED_ADDR = 'checkout_selected_addr';
 const LS_PVZ_CALC = 'checkout_pvz_calc';
 const LS_ADDR_CALC = 'checkout_addr_calc';
 const CHECKOUT_DELIVERY_SIGNATURE_KEY = 'checkout_delivery_signature';
+const PERSONAL_DATA_CONSENT_REQUIRED_MESSAGE = 'Для оформления заказа нужно дать согласие на обработку персональных данных.';
+
+function isTruthyConsent(value) {
+  if (value === true || value === 1) return true;
+  if (typeof value === 'string') {
+    return value.trim().toLowerCase() === 'true' || value.trim() === '1';
+  }
+
+  return false;
+}
+
+function hasRequiredPersonalDataConsent(profile) {
+  if (!profile || typeof profile !== 'object') return false;
+
+  return [
+    profile.personal_data_consent,
+    profile.personalDataConsent,
+    profile.personal_data_processing_consent,
+    profile.consent_personal,
+    profile.consents?.personal_data,
+  ].some(isTruthyConsent);
+}
+
+function isPersonalDataConsentRequiredError(error) {
+  const payload = error?.payload || {};
+  const codeCandidates = [
+    error?.code,
+    payload?.code,
+    payload?.error?.code,
+  ];
+
+  if (codeCandidates.includes('personal_data_consent_required')) {
+    return true;
+  }
+
+  const searchable = JSON.stringify({
+    errors: payload?.errors,
+    message: error?.message || payload?.message || payload?.error,
+  }).toLowerCase();
+
+  return searchable.includes('personal_data_consent_required') ||
+    searchable.includes('personal data consent') ||
+    searchable.includes('согласие');
+}
 
 function mask(str, visible = 2) {
   if (!str) return '—';
@@ -597,6 +641,7 @@ function CheckoutPageInner() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [checkoutAttempted, setCheckoutAttempted] = useState(false);
+  const [consentUpdating, setConsentUpdating] = useState(false);
 
   const [a1Modal, setA1Modal] = useState(false);
   const [a1VerificationId, setA1VerificationId] = useState(null);
@@ -1228,6 +1273,7 @@ function CheckoutPageInner() {
   const hasFreshPickupCalculation = isPickup ? Boolean(freshPvzCalcResult) : true;
   const hasFreshAddressCalculation = isPickup ? true : Boolean(freshAddrCalcResult);
   const hasPersonalData = Boolean(fullName && profile?.phone);
+  const hasPersonalDataConsent = hasRequiredPersonalDataConsent(profile);
   const hasPaymentMethod = Boolean(paymentMethod);
   const hasValidReceiveMethod = receiveMethod === 'pickup' || receiveMethod === 'delivery';
 
@@ -1252,6 +1298,10 @@ function CheckoutPageInner() {
       return 'Укажите личные данные для оформления заказа';
     }
 
+    if (!hasPersonalDataConsent) {
+      return PERSONAL_DATA_CONSENT_REQUIRED_MESSAGE;
+    }
+
     if (!hasPassport) {
       return 'Укажите паспортные данные для оформления заказа';
     }
@@ -1269,6 +1319,7 @@ function CheckoutPageInner() {
     hasPassport,
     hasPaymentMethod,
     hasPersonalData,
+    hasPersonalDataConsent,
     hasValidDeliveryAddress,
     hasValidReceiveMethod,
     isPickup,
@@ -1287,6 +1338,7 @@ function CheckoutPageInner() {
   const canCheckout = checkoutFormReady && checkoutTechnicallyReady;
 
   const validationNotification = checkoutAttempted ? checkoutValidationMessage : '';
+  const showPersonalDataConsentAction = validationNotification === PERSONAL_DATA_CONSENT_REQUIRED_MESSAGE;
   const businessPickupNotification = !pickupEligible &&
     !(receiveMethod === 'delivery' && hasSelectedDeliveryAddressPayload)
     ? 'Самовывоз недоступен из-за превышения весогабаритных характеристик заказа'
@@ -1766,6 +1818,22 @@ function CheckoutPageInner() {
     );
   }
 
+  async function handleGivePersonalDataConsent() {
+    setConsentUpdating(true);
+    setError(null);
+
+    try {
+      await updateProfile({ personal_data_consent: true });
+      const updatedProfile = await getProfile(token);
+      setProfile(updatedProfile);
+      setCheckoutAttempted(false);
+    } catch (err) {
+      setError(err.message || 'Не удалось сохранить согласие на обработку персональных данных.');
+    } finally {
+      setConsentUpdating(false);
+    }
+  }
+
   async function handleCheckout() {
     setCheckoutAttempted(true);
 
@@ -1821,7 +1889,11 @@ function CheckoutPageInner() {
       setA1CallerNumber(res.caller_number_masked || null);
       setA1Modal(true);
     } catch (err) {
-      setError('Не удалось запросить верификацию: ' + (err.message || ''));
+      if (isPersonalDataConsentRequiredError(err)) {
+        setError(PERSONAL_DATA_CONSENT_REQUIRED_MESSAGE);
+      } else {
+        setError('Не удалось запросить верификацию: ' + (err.message || ''));
+      }
     } finally {
       setA1Loading(false);
     }
@@ -1991,7 +2063,13 @@ function CheckoutPageInner() {
 
       router.push(`/order-success?order_id=${orderId}`);
     } catch (err) {
-      setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
+      if (isPersonalDataConsentRequiredError(err)) {
+        setCheckoutAttempted(true);
+        setError(PERSONAL_DATA_CONSENT_REQUIRED_MESSAGE);
+        setA1Error(PERSONAL_DATA_CONSENT_REQUIRED_MESSAGE);
+      } else {
+        setA1Error(err.message || 'Неверный код, попробуйте ещё раз');
+      }
     } finally {
       setA1Loading(false);
       setSubmitting(false);
@@ -2042,6 +2120,16 @@ function CheckoutPageInner() {
                                 </svg>
                                 <div>
                                   <span>{pickupSectionNotification}</span>
+                                  {showPersonalDataConsentAction && (
+                                    <button
+                                      type="button"
+                                      className="vgh-details-link"
+                                      onClick={handleGivePersonalDataConsent}
+                                      disabled={consentUpdating}
+                                    >
+                                      {consentUpdating ? 'Сохраняем...' : 'Дать согласие'}
+                                    </button>
+                                  )}
                                   {showPickupBusinessDetails && (
                                     <button type="button" className="vgh-details-link" onClick={() => setShowVghModal(true)}>
                                       Подробнее
