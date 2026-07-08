@@ -1,11 +1,11 @@
 // components/recommendations/NotFoundRecommendations.js
 
 import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
-import { getRecommendedProducts } from '@/lib/api/ikea';
+import { getHomepageRecommendations } from '@/lib/api/ikea';
 
 async function getRecommended() {
   try {
-    const data = await getRecommendedProducts({ page: 1, per_page: 10 });
+    const data = await getHomepageRecommendations({ page: 1, per_page: 10 });
     return data.data || [];
   } catch {
     return [];

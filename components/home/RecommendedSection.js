@@ -1,5 +1,5 @@
 // components/home/RecommendedSection.js
-import { getHomepageRecommendations, getCachedCategoriesTree, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import { getRecommendedProducts, getCachedCategoriesTree, IMAGES_BASE_URL } from '@/lib/api/ikea';
 import { flattenCategoriesTree } from '@/lib/utils/categoryHelpers';
 import ProductTabsSection from '@/components/home/ProductTabsSection';
 
@@ -47,7 +47,7 @@ function mapProductToCard(product) {
 export default async function RecommendedSection() {
   const [productsResponse, tree] = await Promise.all([
     // Используем правильный эндпоинт для рекомендаций
-    getHomepageRecommendations({ page: 1, per_page: FETCH_LIMIT }),
+    getRecommendedProducts({ page: 1, per_page: FETCH_LIMIT }),
     getCachedCategoriesTree(),
   ]);
 
