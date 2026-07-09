@@ -160,9 +160,24 @@ export default function ProductCard({ product, priority = false }) {
     }
   }, [addToCart, currentSku]);
 
-  const handleCardClick = useCallback(() => {
-    if (productUrl === '#') return;
+  const handleProductLinkClick = useCallback((e) => {
+    if (productUrl === '#') {
+      e.preventDefault();
+      return;
+    }
 
+    if (
+      e.defaultPrevented ||
+      e.button !== 0 ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey
+    ) {
+      return;
+    }
+
+    e.preventDefault();
     router.push(productUrl);
   }, [router, productUrl]);
 
@@ -178,47 +193,27 @@ export default function ProductCard({ product, priority = false }) {
 
   return (
     <div className="col product-card-inner">
-      <div
-        className="product-card"
-        onClick={handleCardClick}
-        style={{ cursor: productUrl === '#' ? 'default' : 'pointer' }}
-      >
-        <div
-          className="product-card__img-wrap"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          style={{ position: 'relative', overflow: 'hidden' }}
+      <div className="product-card">
+        <a
+          className="product-card__image-link"
+          href={productUrl}
+          aria-label={`Открыть товар ${productTitle}`}
+          onClick={handleProductLinkClick}
+          style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}
         >
-          <img
-            src={mainImage}
-            alt={productTitle}
-            className="product-card__img product-card__img--main"
-            width="262"
-            height="262"
-            loading={priority ? 'eager' : 'lazy'}
-            onError={(e) => {
-              e.currentTarget.src = PLACEHOLDER_IMAGE;
-            }}
-            style={{
-              width: '100%',
-              height: 'auto',
-              display: 'block',
-              opacity: isHovered && hoverImage !== mainImage ? 0 : 1,
-              transition: 'opacity 0.3s ease',
-              position: 'relative',
-              zIndex: 1,
-            }}
-          />
-
-          {hoverImage !== mainImage && (
+          <div
+            className="product-card__img-wrap"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            style={{ position: 'relative', overflow: 'hidden' }}
+          >
             <img
-              src={hoverImage}
-              alt=""
-              aria-hidden="true"
-              className="product-card__img product-card__img--hover"
+              src={mainImage}
+              alt={productTitle}
+              className="product-card__img product-card__img--main"
               width="262"
               height="262"
-              loading="lazy"
+              loading={priority ? 'eager' : 'lazy'}
               onError={(e) => {
                 e.currentTarget.src = PLACEHOLDER_IMAGE;
               }}
@@ -226,16 +221,40 @@ export default function ProductCard({ product, priority = false }) {
                 width: '100%',
                 height: 'auto',
                 display: 'block',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                opacity: isHovered ? 1 : 0,
+                opacity: isHovered && hoverImage !== mainImage ? 0 : 1,
                 transition: 'opacity 0.3s ease',
-                zIndex: 0,
+                position: 'relative',
+                zIndex: 1,
               }}
             />
-          )}
-        </div>
+
+            {hoverImage !== mainImage && (
+              <img
+                src={hoverImage}
+                alt=""
+                aria-hidden="true"
+                className="product-card__img product-card__img--hover"
+                width="262"
+                height="262"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = PLACEHOLDER_IMAGE;
+                }}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  opacity: isHovered ? 1 : 0,
+                  transition: 'opacity 0.3s ease',
+                  zIndex: 0,
+                }}
+              />
+            )}
+          </div>
+        </a>
 
         <div className="product-card__info">
           <div className="product-card__variants" onClick={(e) => e.stopPropagation()}>
@@ -281,18 +300,25 @@ export default function ProductCard({ product, priority = false }) {
             )}
           </div>
 
-          <div className="product-card__header">
-            <h3 className="product-card__title">{productTitle}</h3>
+          <a
+            className="product-card__title-link"
+            href={productUrl}
+            onClick={handleProductLinkClick}
+            style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}
+          >
+            <div className="product-card__header">
+              <h3 className="product-card__title">{productTitle}</h3>
 
-            {productSubtitle && (
-              <p className="product-card__description">{productSubtitle}</p>
-            )}
-          </div>
+              {productSubtitle && (
+                <p className="product-card__description">{productSubtitle}</p>
+              )}
+            </div>
 
-          <p className="product-card__price">
-            {price}
-            <span>.{priceDecimal} р.</span>
-          </p>
+            <p className="product-card__price">
+              {price}
+              <span>.{priceDecimal} р.</span>
+            </p>
+          </a>
 
           {quantity > 0 ? (
             <div onClick={(e) => e.stopPropagation()}>
