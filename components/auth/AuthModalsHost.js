@@ -14,6 +14,7 @@ import SuccessModal from '@/components/auth/SuccessModal';
 import { isBelarusPhoneComplete, toBelarusPhoneApiValue } from '@/lib/utils/phone';
 
 const AuthModalsContext = createContext(null);
+const PROFILE_PERSONAL_DATA_PATH = '/profile/personal-data';
 
 export function AuthModalsProvider({ children }) {
   const { setAuth } = useAuth();
@@ -105,6 +106,12 @@ export function AuthModalsProvider({ children }) {
 
   function openCode() { resetUi(); setActive('code'); }
   function openSuccess() { resetUi(); setActive('success'); }
+
+  function resetCodeWithError(message) {
+    setCodeDigits(['', '', '', '']);
+    setActive('code');
+    setErrorText(message);
+  }
 
   function fullPhone() {
     return toBelarusPhoneApiValue(phoneDigits);
@@ -235,13 +242,18 @@ export function AuthModalsProvider({ children }) {
       });
 
       // ✅ Пишем auth_token в localStorage — addToCart уже уйдёт авторизованным
-      const authUser = isNewUser && resp.user
+      const hasToken = Boolean(resp?.token);
+      if (!hasToken) {
+        throw new Error('Не удалось завершить авторизацию. Попробуйте запросить код ещё раз.');
+      }
+
+      const authUser = isNewUser
         ? {
-            ...resp.user,
-            username: resp.user.username || normalizedUsername || undefined,
-            first_name: resp.user.first_name || normalizedUsername || undefined,
-            email: resp.user.email || normalizedEmail || undefined,
-            phone: resp.user.phone || phone || undefined,
+            ...(resp.user || {}),
+            username: resp.user?.username || normalizedUsername || undefined,
+            first_name: resp.user?.first_name || normalizedUsername || undefined,
+            email: resp.user?.email || normalizedEmail || undefined,
+            phone: resp.user?.phone || phone || undefined,
           }
         : resp.user || null;
       setAuth({ token: resp.token, user: authUser });
@@ -263,11 +275,23 @@ export function AuthModalsProvider({ children }) {
         return;
       }
 
-      if (resp.is_new) {
-        openSuccess();
-      } else {
-        closeAll('success');
-        if (redirectAfterAuth.current) { router.push(redirectAfterAuth.current); redirectAfterAuth.current = null; }
+      const registeredNewUser =
+        isNewUser ||
+        resp?.is_new === true ||
+        resp?.is_new === 'true' ||
+        resp?.new_user === true ||
+        resp?.user?.is_new === true;
+
+      closeAll('success');
+
+      if (registeredNewUser) {
+        router.push(PROFILE_PERSONAL_DATA_PATH);
+        return;
+      }
+
+      if (redirectAfterAuth.current) {
+        router.push(redirectAfterAuth.current);
+        redirectAfterAuth.current = null;
       }
     } catch (e) {
       const msg = e.message || 'Ошибка подтверждения.';
@@ -280,21 +304,20 @@ export function AuthModalsProvider({ children }) {
         setActive('register');
         setErrorText('Для завершения регистрации нужно согласие на обработку персональных данных.');
       } else if (e.status === 401) {
-        setActive('code');
-        setErrorText('Неверный или просроченный код. Попробуйте ещё раз.');
+        resetCodeWithError('Неверный или просроченный код. Попробуйте ещё раз.');
       } else if (!isNewUser) {
         if (e.status === 422 || /не зарегистрирован/i.test(msg)) {
           setActive('login');
           setErrorText('Данный номер не зарегистрирован. Проверьте номер или продолжите регистрацию.');
         } else {
-          setErrorText(msg);
+          resetCodeWithError(msg);
         }
       } else {
-        if (e.status === 422 || /уже используется|already/i.test(msg)) {
+        if (/уже используется|already/i.test(msg)) {
           setActive('register');
           setErrorText('Этот номер уже используется. Проверьте номер и попробуйте войти.');
         } else {
-          setErrorText(msg);
+          resetCodeWithError(msg);
         }
       }
     } finally {
