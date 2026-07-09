@@ -24,11 +24,16 @@ export default function ProfileLayout({ children, breadcrumbs, mainClassName = '
 
   // Загружаем first_name из профиля один раз — если его ещё нет в контексте
   useEffect(() => {
-    if (!isHydrated || !isAuth || user?.first_name) return;
+    if (!isHydrated || !isAuth || user?.first_name || user?.username) return;
     getProfile()
       .then(data => {
-        if (data?.first_name) {
-          setUser({ ...user, first_name: data.first_name });
+        const profileName = data?.first_name || data?.username;
+        if (profileName) {
+          setUser({
+            ...user,
+            first_name: data?.first_name || user?.first_name,
+            username: data?.username || user?.username || profileName,
+          });
         }
       })
       .catch(() => {});

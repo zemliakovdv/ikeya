@@ -16,11 +16,7 @@ export default function LoginModal({
   loading = false,
   errorText = '',
 }) {
-  const localPhoneError =
-    phoneDigits && !isBelarusPhoneComplete(phoneDigits)
-      ? 'Введите номер в формате +375 (__) ___-__-__.'
-      : '';
-  const shownError = localPhoneError || errorText;
+  const shownError = errorText;
   const isPhoneComplete = isBelarusPhoneComplete(phoneDigits);
   const hasError = !!shownError;
 

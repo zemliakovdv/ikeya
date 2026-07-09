@@ -220,19 +220,31 @@ export function AuthModalsProvider({ children }) {
       // Повторно переносить эти товары после phoneVerify нельзя: бэк уже мержит корзину по cart_token.
       await getCart();
 
+      const normalizedUsername = username.trim();
+      const normalizedEmail = email.trim();
       const resp = await phoneVerify({
         phone,
         code,
         cart_token: getCartToken(),
         ...(isNewUser && {
-          username: username.trim() || undefined,
-          email: email.trim() || undefined,
+          username: normalizedUsername || undefined,
+          first_name: normalizedUsername || undefined,
+          email: normalizedEmail || undefined,
           personal_data_consent: true,
         }),
       });
 
       // ✅ Пишем auth_token в localStorage — addToCart уже уйдёт авторизованным
-      setAuth({ token: resp.token, user: resp.user || null });
+      const authUser = isNewUser && resp.user
+        ? {
+            ...resp.user,
+            username: resp.user.username || normalizedUsername || undefined,
+            first_name: resp.user.first_name || normalizedUsername || undefined,
+            email: resp.user.email || normalizedEmail || undefined,
+            phone: resp.user.phone || phone || undefined,
+          }
+        : resp.user || null;
+      setAuth({ token: resp.token, user: authUser });
 
       if (resp.cart_token) {
         setCartToken(resp.cart_token);

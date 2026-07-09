@@ -143,14 +143,20 @@ export default function PersonalData() {
   }
 
   function formatFullName() {
-    const parts = [profile?.last_name, profile?.first_name, profile?.middle_name].filter(Boolean);
+    const parts = [profile?.last_name, profile?.first_name || profile?.username, profile?.middle_name].filter(Boolean);
     return parts.length ? parts.join(' ') : null;
   }
 
   // Определяем заполненность данных
-  const hasPersonalData = !!(profile?.last_name || profile?.first_name);
+  const profileFirstName = profile?.first_name || profile?.username || '';
+  const hasPersonalData = !!(profile?.last_name || profileFirstName);
   const hasEmail = !!profile?.email;
-  const hasEmailVerified = !!profile?.email_verified;
+  const hasEmailVerified = Boolean(
+    profile?.email_verified ||
+    profile?.email_verified_at ||
+    profile?.is_email_verified ||
+    profile?.email_confirmed
+  );
   const hasPassport = !!profile?.passport_data?.series;
   const hasAddress = addresses.length > 0;
 

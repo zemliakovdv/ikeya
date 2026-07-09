@@ -42,11 +42,7 @@ export default function RegisterModal({
   const showEmailError = emailTouched && email && !isEmailValid;
   const showPersonalConsentNotice = !consentPersonal;
 
-  const localPhoneError =
-    phoneDigits && !isBelarusPhoneComplete(phoneDigits)
-      ? 'Введите номер в формате +375 (__) ___-__-__.'
-      : '';
-  const shownPhoneError = localPhoneError || errorText;
+  const shownPhoneError = errorText;
   const hasPhoneError = !!shownPhoneError;
   const canSubmit = isPhoneComplete && isNameValid && !!consentPersonal && !loading && isEmailValid;
 
