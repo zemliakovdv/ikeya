@@ -65,6 +65,7 @@ export default async function BestsellersSection() {
   });
 
   const groupedByCategory = {};
+  const categoryOrder = [];
 
   products.forEach(product => {
     const catId = product.categoryId;
@@ -76,6 +77,7 @@ export default async function BestsellersSection() {
         categoryName: categoryMap.get(catId),
         products: [],
       };
+      categoryOrder.push(catId);
     }
 
     if (groupedByCategory[catId].products.length < PRODUCTS_PER_TAB) {
@@ -83,13 +85,12 @@ export default async function BestsellersSection() {
     }
   });
 
-  const tabs = Object.entries(groupedByCategory)
-    .filter(([_, { products }]) => products.length > 0)
-    .map(([catId, { categoryName }]) => ({
+  const tabs = categoryOrder
+    .filter(catId => groupedByCategory[catId].products.length > 0)
+    .map(catId => ({
       id: catId,
-      label: categoryName,
+      label: groupedByCategory[catId].categoryName,
     }))
-    .sort((a, b) => a.label.localeCompare(b.label, 'ru'))
     .slice(0, MAX_TABS);
 
   if (tabs.length === 0) return null;

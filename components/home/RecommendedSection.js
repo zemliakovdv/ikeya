@@ -64,6 +64,8 @@ export default async function RecommendedSection() {
   });
 
   const groupedByCategory = {};
+  const categoryOrder = [];
+
   products.forEach(product => {
     const catId = product.categoryId;
     if (!catId || !categoryMap.has(catId)) return;
@@ -73,6 +75,7 @@ export default async function RecommendedSection() {
         categoryName: categoryMap.get(catId),
         products: []
       };
+      categoryOrder.push(catId);
     }
 
     if (groupedByCategory[catId].products.length < PRODUCTS_PER_TAB) {
@@ -80,9 +83,9 @@ export default async function RecommendedSection() {
     }
   });
 
-  let tabs = Object.entries(groupedByCategory)
-    .map(([id, data]) => ({ id, label: data.categoryName }))
-    .sort((a, b) => a.label.localeCompare(b.label, 'ru'))
+  const tabs = categoryOrder
+    .filter(catId => groupedByCategory[catId].products.length > 0)
+    .map(catId => ({ id: catId, label: groupedByCategory[catId].categoryName }))
     .slice(0, MAX_TABS);
 
   if (!tabs.length) return null;
