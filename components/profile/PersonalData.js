@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getProfile, updateProfile } from '@/lib/api/account';
+import { getProfile } from '@/lib/api/account';
 
 import EditPersonalDataModal from './modals/EditPersonalDataModal';
 import DeliveryModal from '@/components/delivery/modal/DeliveryModal';
@@ -34,6 +34,7 @@ export default function PersonalData() {
   const [loading, setLoading] = useState(true);
   const [showPassportData, setShowPassportData] = useState(false);
   const [modal, setModal] = useState(null);
+  const [emailVerificationNotice, setEmailVerificationNotice] = useState(null);
   const [ymapsReady, setYmapsReady] = useState(
     typeof window !== 'undefined' && !!window.ymaps
   );
@@ -105,12 +106,43 @@ export default function PersonalData() {
 
   useEffect(() => {
     if (!isHydrated || !isAuth) return;
+
+    const searchParams = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : null;
+    const emailVerifiedParam = searchParams?.get('email_verified');
+    const errorParam = searchParams?.get('error');
+
+    if (emailVerifiedParam === '1') {
+      setEmailVerificationNotice({
+        type: 'success',
+        message: 'Почта успешно подтверждена.',
+      });
+    } else if (emailVerifiedParam === '0') {
+      setEmailVerificationNotice({
+        type: 'error',
+        message: 'Не удалось подтвердить почту. Ссылка недействительна или устарела.',
+        detail: errorParam || '',
+      });
+    }
+
     getProfile()
       .then(data => {
         setProfile(data);
       })
       .catch(e => console.error('PersonalData: ошибка загрузки профиля', e))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (searchParams && searchParams.has('email_verified')) {
+          searchParams.delete('email_verified');
+          searchParams.delete('error');
+
+          const query = searchParams.toString();
+          const nextUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+          window.history.replaceState(window.history.state, '', nextUrl);
+        }
+
+        setLoading(false);
+      });
   }, [isHydrated, isAuth]);
 
   // onSave вызывается из EditPersonalDataModal с (updatedProfile, firstName)
@@ -151,12 +183,7 @@ export default function PersonalData() {
   const profileFirstName = profile?.first_name || profile?.username || '';
   const hasPersonalData = !!(profile?.last_name || profileFirstName);
   const hasEmail = !!profile?.email;
-  const hasEmailVerified = Boolean(
-    profile?.email_verified ||
-    profile?.email_verified_at ||
-    profile?.is_email_verified ||
-    profile?.email_confirmed
-  );
+  const hasEmailVerified = profile?.email_verified === true;
   const hasPassport = !!profile?.passport_data?.series;
   const hasAddress = addresses.length > 0;
 
@@ -180,6 +207,18 @@ export default function PersonalData() {
         <span className="profile-mobile-topbar__title">Личные данные</span>
       </div>
       {/* Баннер-предупреждение — над основным блоком */}
+      {emailVerificationNotice && (
+        <div
+          className={`alert ${emailVerificationNotice.type === 'success' ? 'alert-success' : 'alert-danger'}`}
+          role={emailVerificationNotice.type === 'success' ? 'status' : 'alert'}
+        >
+          <p className="mb-0">{emailVerificationNotice.message}</p>
+          {emailVerificationNotice.detail && (
+            <p className="mb-0">{emailVerificationNotice.detail}</p>
+          )}
+        </div>
+      )}
+
       {showBanner && (
         <div className="profile-warning-banner">
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
