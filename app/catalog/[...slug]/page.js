@@ -25,7 +25,20 @@ export async function generateMetadata({ params }) {
 
   try {
     const tree = await getCachedCategoriesTree();
-    const { node: category } = findNodeInTree(tree, slug);
+    let categoryMatch = null;
+
+    if (slug.length === 1) {
+      const matches = findCategoryMatchesBySlug(tree, currentSlug);
+      if (matches.length > 1) return {};
+      categoryMatch = matches.length === 1 ? matches[0] : null;
+    } else {
+      categoryMatch = resolveCategoryMatch(tree, slug);
+    }
+
+    const category = categoryMatch?.node;
+    const canonicalSlugChain = categoryMatch
+      ? buildSlugChainFromMatch(categoryMatch)
+      : slug;
 
     if (!category) {
       if (slug.length === 1) {
@@ -45,7 +58,7 @@ export async function generateMetadata({ params }) {
 
 const title = seo.title || `${name} — купить в Беларуси | IKEYA`;
     const description = seo.description || `Купить ${name.toLowerCase()} в интернет-магазине IKEYA. Большой выбор, доступные цены, доставка по Беларуси. Заказывайте онлайн!`;
-    const canonicalUrl = `https://ikeya.by/catalog/${slug.join('/')}`;
+    const canonicalUrl = `https://ikeya.by/catalog/${canonicalSlugChain.join('/')}`;
     const imageUrl = attrs.icon_url
       ? `https://ikeya.by${attrs.icon_url.startsWith('/') ? attrs.icon_url : `/${attrs.icon_url}`}`
       : (attrs.local_image_path
@@ -118,6 +131,76 @@ function toCategoryNavNode(node) {
 
 function getNodeSlug(node) {
   return node?.attributes?.slug || node?.id || '';
+}
+
+function buildSlugChainFromMatch(match) {
+  return [...(match?.ancestors || []), match?.node]
+    .map(getNodeSlug)
+    .filter(Boolean);
+}
+
+function findCategoryMatchesBySlug(tree, targetSlug) {
+  const roots = Array.isArray(tree) ? tree : [];
+  const matches = [];
+
+  if (!targetSlug) return matches;
+
+  function walk(nodes, ancestors = []) {
+    (nodes || []).forEach((node) => {
+      if (!node) return;
+
+      if (getNodeSlug(node) === targetSlug) {
+        matches.push({ node, ancestors });
+      }
+
+      const children = Array.isArray(node.children) ? node.children : [];
+      if (children.length > 0) {
+        walk(children, [...ancestors, node]);
+      }
+    });
+  }
+
+  walk(roots);
+
+  return matches;
+}
+
+function resolveCategoryMatch(tree, slugChain = []) {
+  const chain = Array.isArray(slugChain) ? slugChain.filter(Boolean) : [];
+
+  if (chain.length === 0) return null;
+
+  if (chain.length === 1) {
+    const matches = findCategoryMatchesBySlug(tree, chain[0]);
+    return matches.length === 1 ? matches[0] : null;
+  }
+
+  const { node, ancestors } = findNodeInTree(tree, chain);
+  return node ? { node, ancestors } : null;
+}
+
+function searchParamsToURLSearchParams(searchParams = {}) {
+  const params = new URLSearchParams();
+
+  Object.entries(searchParams || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+
+    const values = Array.isArray(value) ? value : [value];
+    values.forEach((item) => {
+      if (item !== undefined && item !== null) {
+        params.append(key, String(item));
+      }
+    });
+  });
+
+  return params;
+}
+
+function appendQueryString(path, searchParams) {
+  const params = searchParamsToURLSearchParams(searchParams);
+  const qs = params.toString();
+
+  return qs ? `${path}?${qs}` : path;
 }
 
 function buildPrunedCategoryNavTree(tree, slugChain = []) {
@@ -194,7 +277,31 @@ export default async function CategoryPage({ params, searchParams }) {
     const currentPage = Math.max(1, Number(sp?.page) || 1);
 
     const tree = await getCachedCategoriesTree();
-    const { node: currentNode, ancestors: currentNodeAncestors } = findNodeInTree(tree, slug);
+    let currentNode = null;
+    let currentNodeAncestors = [];
+
+    if (slug.length === 1) {
+      const matches = findCategoryMatchesBySlug(tree, currentSlug);
+
+      if (matches.length === 1) {
+        const [match] = matches;
+        const canonicalSlugChain = buildSlugChainFromMatch(match);
+
+        if (match.ancestors.length > 0) {
+          redirect(appendQueryString(`/catalog/${canonicalSlugChain.join('/')}`, sp));
+        }
+
+        currentNode = match.node;
+        currentNodeAncestors = match.ancestors;
+      } else if (matches.length > 1) {
+        redirect('/catalog');
+      }
+    } else {
+      const resolved = findNodeInTree(tree, slug);
+      currentNode = resolved.node;
+      currentNodeAncestors = resolved.ancestors;
+    }
+
     const currentCategory = currentNode;
 
     if (!currentCategory) {
