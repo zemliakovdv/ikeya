@@ -13,9 +13,6 @@ import { getCachedCategoriesTree, getCategoryWithFilters, getCategoryProducts } 
 import { getSeoCatalogPageBySlug } from '@/lib/api/seoCatalogPages';
 import { buildSeoCatalogMetadata, isPublishedSeoCatalogPage } from '@/lib/seoCatalogPage';
 import {
-  flattenCategoriesTree,
-  findCategoryBySlug,
-  buildCategoryChain,
   buildBreadcrumbsFromTree,
   findNodeInTree,
 } from '@/lib/utils/categoryHelpers';
@@ -28,8 +25,7 @@ export async function generateMetadata({ params }) {
 
   try {
     const tree = await getCachedCategoriesTree();
-    const allCategories = flattenCategoriesTree(tree);
-    const category = findCategoryBySlug(allCategories, currentSlug);
+    const { node: category } = findNodeInTree(tree, slug);
 
     if (!category) {
       if (slug.length === 1) {
@@ -198,8 +194,8 @@ export default async function CategoryPage({ params, searchParams }) {
     const currentPage = Math.max(1, Number(sp?.page) || 1);
 
     const tree = await getCachedCategoriesTree();
-    const allCategories = flattenCategoriesTree(tree);
-    const currentCategory = findCategoryBySlug(allCategories, currentSlug);
+    const { node: currentNode, ancestors: currentNodeAncestors } = findNodeInTree(tree, slug);
+    const currentCategory = currentNode;
 
     if (!currentCategory) {
       if (slug.length === 1) {
@@ -237,10 +233,8 @@ export default async function CategoryPage({ params, searchParams }) {
       });
     });
 
-    const { node: currentNode, ancestors: currentNodeAncestors } = findNodeInTree(tree, slug);
     const childCategories = currentNode?.children || [];
     const categoryNavTree = buildPrunedCategoryNavTree(tree, slug);
-    const categoryChain = buildCategoryChain(allCategories, currentCategory);
     const breadcrumbs = buildBreadcrumbsFromTree(tree, slug);
     const parentBreadcrumb = breadcrumbs.length > 1 ? breadcrumbs[breadcrumbs.length - 2] : null;
     const mobileBackItem = parentBreadcrumb?.href
@@ -275,7 +269,7 @@ export default async function CategoryPage({ params, searchParams }) {
     }
 
     const productsQueryString = queryParams.toString();
-    const basePath = `/catalog/${categoryChain.map((c) => c.attributes.slug).join('/')}`;
+    const basePath = `/catalog/${slug.join('/')}`;
 
     const prevUrl = currentPage > 1
       ? buildPaginationUrl(basePath, queryParams, currentPage - 1)
