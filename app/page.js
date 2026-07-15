@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import StartSliderServer from '@/components/home/StartSliderServer';
 import PopularCategoriesSection from '@/components/home/PopularCategoriesSection';
 import BestsellersSection from '@/components/home/BestsellersSection';
@@ -7,6 +8,7 @@ import BlogSection from '@/components/home/BlogSection';
 import SeoSection from '@/components/home/SeoSection';
 import NewArrivalsSection from '@/components/home/NewArrivalsSection';
 import RecommendedSection from '@/components/home/RecommendedSection';
+import UnsubscribeResultModal from '@/components/marketing/UnsubscribeResultModal';
 import { getMainSliderBanners } from '@/lib/api/ikea';
 
 export const dynamic = 'force-dynamic';
@@ -70,6 +72,9 @@ export default async function Home() {
 
   return (
     <main className="main">
+      <Suspense fallback={null}>
+        <UnsubscribeResultModal />
+      </Suspense>
       <StartSliderServer />
       <PopularCategoriesSection />
       <BestsellersSection />
