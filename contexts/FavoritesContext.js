@@ -26,6 +26,11 @@ function saveFavToken(token) {
   localStorage.setItem(FAV_TOKEN_KEY, token);
 }
 
+function removeFavToken() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(FAV_TOKEN_KEY);
+}
+
 async function fetchProductBySku(sku) {
   try {
     const data = await getProductBySku(sku);
@@ -66,7 +71,8 @@ export function FavoritesProvider({ children }) {
 
     // Переход: авторизован → гость
     if (prev === true && curr === false) {
-      saveCurrentToGuest();
+      removeFavToken();
+      setItems([]);
       prevIsAuth.current = curr;
       loadGuestFavorites();
       return;
@@ -77,6 +83,7 @@ export function FavoritesProvider({ children }) {
     if (curr) {
       load();
     } else {
+      removeFavToken();
       loadGuestFavorites();
     }
   }, [isAuth, isHydrated]);
@@ -85,6 +92,7 @@ export function FavoritesProvider({ children }) {
   async function load() {
     try {
       setLoading(true);
+      setItems([]);
       const favToken = getFavToken();
       const data = await getFavorites(favToken);
 
@@ -130,14 +138,31 @@ export function FavoritesProvider({ children }) {
   // При авторизации: переносим гостевые SKU в API с favorite_token
   async function mergeGuestToApi() {
     setLoading(true);
+    setItems([]);
     try {
+      removeFavToken();
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
       if (stored.length > 0) {
-        const favToken = getFavToken();
-        await Promise.allSettled(
-          stored.map(({ sku }) => addFavorite(sku, favToken))
+        const results = await Promise.allSettled(
+          stored.map(({ sku }) => addFavorite(sku, null))
         );
-        localStorage.removeItem(STORAGE_KEY);
+
+        const failed = [];
+        results.forEach((result, index) => {
+          if (result.status === 'fulfilled') {
+            const token = result.value?.favorite?.token;
+            if (token) saveFavToken(token);
+          } else {
+            failed.push(stored[index]);
+          }
+        });
+
+        if (failed.length > 0) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(failed));
+        } else {
+          localStorage.removeItem(STORAGE_KEY);
+        }
       }
       await load();
     } catch (e) {
@@ -146,16 +171,6 @@ export function FavoritesProvider({ children }) {
     }
   }
 
-  function saveCurrentToGuest() {
-    try {
-      const skus = items
-        .map(item => ({ sku: item.sku || item.product?.sku }))
-        .filter(({ sku }) => sku);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(skus));
-    } catch (e) {
-      console.error('FavoritesContext: ошибка сохранения в localStorage', e);
-    }
-  }
 
   async function add(sku) {
     if (isAuth) {

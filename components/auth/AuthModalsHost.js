@@ -14,7 +14,6 @@ import SuccessModal from '@/components/auth/SuccessModal';
 import { isBelarusPhoneComplete, toBelarusPhoneApiValue } from '@/lib/utils/phone';
 
 const AuthModalsContext = createContext(null);
-const PROFILE_PERSONAL_DATA_PATH = '/profile/personal-data';
 
 export function AuthModalsProvider({ children }) {
   const { setAuth } = useAuth();
@@ -282,12 +281,22 @@ export function AuthModalsProvider({ children }) {
         resp?.new_user === true ||
         resp?.user?.is_new === true;
 
-      closeAll('success');
-
       if (registeredNewUser) {
-        router.push(PROFILE_PERSONAL_DATA_PATH);
+        const hasRegistrationEmail = Boolean(normalizedEmail);
+
+        redirectAfterAuth.current = null;
+        router.replace('/');
+
+        if (hasRegistrationEmail) {
+          openSuccess();
+        } else {
+          closeAll('success');
+        }
+
         return;
       }
+
+      closeAll('success');
 
       if (redirectAfterAuth.current) {
         router.push(redirectAfterAuth.current);
