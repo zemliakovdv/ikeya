@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getHomepageRecommendations } from '@/lib/api/ikea';
+import { getCartRecommendations } from '@/lib/api/ikea';
 import RecommendationsSection from '@/components/recommendations/RecommendationsSection';
 
 function mapProduct(item) {
@@ -29,7 +29,7 @@ export default function CartRecommendationsClient() {
 
     async function loadRecommendations() {
       try {
-        const data = await getHomepageRecommendations({ page: 1, per_page: 10 });
+        const data = await getCartRecommendations({ page: 1, per_page: 8 });
         const nextProducts = (data.data || []).map(mapProduct);
 
         if (!cancelled) {
