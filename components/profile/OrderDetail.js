@@ -94,7 +94,10 @@ function HelpIcon() {
 
 function formatMoney(value) {
   if (value === undefined || value === null || value === '') return null;
-  const num = Number(value);
+  const normalized = typeof value === 'string'
+    ? value.replace(/\s/g, '').replace(',', '.')
+    : value;
+  const num = Number.parseFloat(normalized);
   if (!Number.isFinite(num)) return null;
   return `${num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} р.`;
 }
@@ -114,8 +117,49 @@ function getItemsCount(order) {
   return (order.items || []).reduce((sum, item) => sum + Number(item?.quantity || 0), 0);
 }
 
+function normalizeCode(value) {
+  return String(value || '').trim().toLowerCase().replace(/[-\s]+/g, '_');
+}
+
+function looksLikeSystemCode(value) {
+  const text = String(value || '').trim();
+  return Boolean(text) && /^[a-z0-9_-]+$/i.test(text) && text === text.toLowerCase();
+}
+
+function humanizeCode(value) {
+  const text = String(value || '').trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  if (!text) return null;
+
+  return text
+    .split(' ')
+    .map((word) => (word ? `${word[0].toUpperCase()}${word.slice(1).toLowerCase()}` : ''))
+    .join(' ');
+}
+
+const DELIVERY_LABELS = {
+  europost: 'Европочта',
+  euro_post: 'Европочта',
+  evropochta: 'Европочта',
+  courier: 'Курьерская доставка',
+  courier_delivery: 'Курьерская доставка',
+  pickup: 'Самовывоз',
+  self_pickup: 'Самовывоз',
+  pvz: 'Пункт выдачи',
+};
+
+function getDeliveryLabel(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+
+  const code = normalizeCode(text);
+  if (DELIVERY_LABELS[code]) return DELIVERY_LABELS[code];
+  if (looksLikeSystemCode(text)) return humanizeCode(text);
+
+  return text;
+}
+
 function getDeliveryTitle(order) {
-  const values = [
+  const source = [
     order.deliveryName,
     order.deliveryProvider,
     order.deliveryMethod,
@@ -123,25 +167,72 @@ function getDeliveryTitle(order) {
   ]
     .filter(Boolean)
     .map((value) => String(value).trim())
-    .filter(Boolean);
+    .filter(Boolean)[0];
+  const label = getDeliveryLabel(source);
+  if (!label) return null;
 
-  const unique = [...new Set(values)];
-  if (unique.length === 0) return null;
-
-  const first = unique[0];
-  return first.toLowerCase().startsWith('доставка') ? first : `Доставка ${first}`;
+  const normalized = label.toLowerCase();
+  if (normalized.startsWith('доставка')) return label;
+  if (normalized === 'самовывоз') return 'Самовывоз';
+  if (normalized === 'курьерская доставка') return 'Курьерская доставка';
+  if (normalized === 'пункт выдачи') return 'Доставка в пункт выдачи';
+  if (normalized === 'европочта') return 'Доставка Европочта';
+  return `Доставка ${label}`;
 }
 
 function getLocalDeliveryLabel(order) {
   const source = order.deliveryName || order.deliveryProvider || order.deliveryMethod || order.deliveryType;
   if (!source) return 'Доставка';
 
-  const value = String(source).trim();
+  const value = getDeliveryLabel(source);
   if (!value) return 'Доставка';
   if (/самовывоз/i.test(value)) return 'Самовывоз';
-  if (/курьер/i.test(value)) return 'Доставка курьером';
+  if (/курьер/i.test(value)) return 'Курьерская доставка';
   if (/европочт/i.test(value)) return 'Европочта';
+  if (/пункт выдачи/i.test(value)) return 'Пункт выдачи';
   return value.toLowerCase().startsWith('доставка') ? value : `Доставка ${value}`;
+}
+
+const PAYMENT_METHOD_LABELS = {
+  card: 'Оплата картой онлайн',
+  online_card: 'Оплата картой онлайн',
+  card_online: 'Оплата картой онлайн',
+  online: 'Оплата онлайн',
+  cash: 'Оплата наличными',
+  cash_on_delivery: 'Оплата при получении',
+  cod: 'Оплата при получении',
+  terminal: 'Оплата картой при получении',
+  bank_transfer: 'Банковский перевод',
+  invoice: 'Оплата по счёту',
+};
+
+function getPaymentMethodTitle(value) {
+  const text = String(value || '').trim();
+  if (!text) return null;
+
+  const code = normalizeCode(text);
+  if (PAYMENT_METHOD_LABELS[code]) return PAYMENT_METHOD_LABELS[code];
+  if (looksLikeSystemCode(text)) return null;
+
+  return text;
+}
+
+function getPaymentStatusMeta(order) {
+  if (order.paymentStatusLabel) {
+    const normalized = order.paymentStatusLabel.toLowerCase();
+    if (normalized === 'оплачено') return { label: order.paymentStatusLabel, state: 'paid' };
+    if (normalized === 'ожидает оплаты') return { label: order.paymentStatusLabel, state: 'pending' };
+    if (
+      normalized === 'не оплачено' ||
+      normalized === 'ошибка оплаты' ||
+      normalized === 'оплата отменена'
+    ) {
+      return { label: order.paymentStatusLabel, state: 'error' };
+    }
+  }
+
+  if (order.isPaid) return { label: 'оплачено', state: 'paid' };
+  return null;
 }
 
 function SummaryRow({ label, value }) {
@@ -171,6 +262,7 @@ function InfoRow({ icon, title, subtitle, children }) {
 }
 
 function ProductItem({ item, index }) {
+  const price = formatMoney(item.priceAmount ?? item.price);
   const content = (
     <>
       <img
@@ -189,7 +281,7 @@ function ProductItem({ item, index }) {
       </div>
       <div className="order-detail__product-meta">
         <span>{item.quantity || 1} шт.</span>
-        {item.price && <span>{item.price} р.</span>}
+        {price && <span>{price}</span>}
       </div>
     </>
   );
@@ -225,13 +317,16 @@ export default function OrderDetail({ order, onBack, onReorder }) {
     ? `${itemsCount} ${pluralizeProduct(itemsCount)}${order.totalWeight ? ` (${String(order.totalWeight).replace('.', ',')} кг)` : ''}`
     : null;
   const canRepeatOrder = !order.isDraft && order.statusConfig?.repeatAllowed === true;
-  const hasPaymentInfo = Boolean(order.paymentMethodLabel || order.paymentStatusLabel);
+  const paymentMethodTitle = getPaymentMethodTitle(order.paymentMethodLabel);
+  const paymentStatusMeta = getPaymentStatusMeta(order);
+  const hasPaymentInfo = Boolean(paymentMethodTitle || paymentStatusMeta);
   const hasProducts = Array.isArray(order.items) && order.items.length > 0;
   const hasServices = Array.isArray(order.services) && order.services.length > 0;
+  const trackingDeliveryLabel = getDeliveryLabel(order.deliveryProvider || order.deliveryName);
   const totalDisplay = order.totalAmount !== null && order.totalAmount !== undefined
     ? formatMoney(order.totalAmount)
     : order.price && order.price !== '0,00'
-      ? `${order.price} р.`
+      ? formatMoney(order.price)
       : null;
 
   const summaryRows = useMemo(() => {
@@ -267,22 +362,24 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                 <ArrowLeftIcon />
               </button>
               <div className="order-detail__header-text">
-                <h1>{orderTitle}</h1>
-                <button
-                  className="order-detail__copy-number"
-                  type="button"
-                  aria-label="Скопировать номер заказа"
-                  onClick={() => copyValue(order.id, setOrderCopied)}
-                >
-                  <CopyIcon />
-                  <span>{orderCopied ? 'Скопировано' : 'Скопировать номер'}</span>
-                </button>
+                <div className="order-detail__title-row">
+                  <h1>{orderTitle}</h1>
+                  <button
+                    className="order-detail__copy-number"
+                    type="button"
+                    aria-label="Скопировать номер заказа"
+                    onClick={() => copyValue(order.id, setOrderCopied)}
+                  >
+                    <CopyIcon />
+                    {orderCopied && <span>Скопировано</span>}
+                  </button>
+                </div>
               </div>
             </div>
 
             <div className="order-detail__status">
               <span>Статус заказа:</span>
-              <span className={`order-detail__badge ${order.statusConfig?.badgeClass || ''}`}>
+              <span className={`order-detail__status-badge order-detail__badge ${order.statusConfig?.badgeClass || ''}`}>
                 {order.statusDescription || order.status || '—'}
               </span>
             </div>
@@ -314,9 +411,9 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                     >
                       <div>
                         <div className="order-detail__track-value">Отследить</div>
-                        {order.deliveryProvider || order.deliveryName ? (
+                        {trackingDeliveryLabel ? (
                           <div className="order-detail__track-label">
-                            {order.deliveryProvider || order.deliveryName}
+                            {trackingDeliveryLabel}
                           </div>
                         ) : null}
                       </div>
@@ -326,9 +423,9 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                     <div className="order-detail__track-card">
                       <div>
                         <div className="order-detail__track-value">Отследить</div>
-                        {order.deliveryProvider || order.deliveryName ? (
+                        {trackingDeliveryLabel ? (
                           <div className="order-detail__track-label">
-                            {order.deliveryProvider || order.deliveryName}
+                            {trackingDeliveryLabel}
                           </div>
                         ) : null}
                       </div>
@@ -353,11 +450,11 @@ export default function OrderDetail({ order, onBack, onReorder }) {
               {hasPaymentInfo && (
                 <InfoRow
                   icon={<CardIcon />}
-                  title={order.paymentMethodLabel}
+                  title={paymentMethodTitle}
                 >
-                  {order.paymentStatusLabel && (
-                    <span className={`order-detail__payment-status ${order.isPaid ? 'order-detail__payment-status--paid' : ''}`}>
-                      {order.paymentStatusLabel}
+                  {paymentStatusMeta && (
+                    <span className={`order-detail__payment-status order-detail__payment-status--${paymentStatusMeta.state}`}>
+                      {paymentStatusMeta.label}
                     </span>
                   )}
                 </InfoRow>

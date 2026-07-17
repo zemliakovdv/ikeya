@@ -7005,6 +7005,11 @@
         min-width: 0;
     }
 
+    .order-detail__aside {
+        width: 360px;
+        max-width: 100%;
+    }
+
     .order-detail__info-card,
     .order-detail__products-card,
     .order-detail__summary-card,
@@ -7072,6 +7077,13 @@
         padding-top: 2px;
     }
 
+    .order-detail__title-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        min-width: 0;
+    }
+
     .order-detail__header-text h1 {
         margin: 0;
         color: #181818;
@@ -7082,10 +7094,15 @@
     }
 
     .order-detail__copy-number {
+        position: relative;
         display: inline-flex;
+        width: 28px;
+        min-width: 28px;
+        min-height: 28px;
         align-items: center;
+        justify-content: center;
         gap: 6px;
-        margin-top: 6px;
+        margin-top: -2px;
         padding: 0;
         border: 0;
         background: transparent;
@@ -7093,6 +7110,16 @@
         font-size: 12px;
         line-height: 16px;
         cursor: pointer;
+    }
+
+    .order-detail__copy-number span {
+        position: absolute;
+        margin-top: 42px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #181818;
+        color: #fff;
+        white-space: nowrap;
     }
 
     .order-detail__status {
@@ -7115,6 +7142,11 @@
         font-size: 12px;
         font-weight: 600;
         line-height: 16px;
+    }
+
+    .zakazi .order-detail__status-badge,
+    .zakazi .order-detail__status-badge * {
+        color: #fff;
     }
 
     .order-detail__tracking {
@@ -7242,6 +7274,14 @@
 
     .order-detail__payment-status--paid {
         color: #00910a;
+    }
+
+    .order-detail__payment-status--pending {
+        color: #757575;
+    }
+
+    .order-detail__payment-status--error {
+        color: #b71c1c;
     }
 
     .order-detail__services {
@@ -7436,6 +7476,10 @@
             grid-template-columns: minmax(0, 1fr) 320px;
         }
 
+        .order-detail__aside {
+            width: 320px;
+        }
+
         .order-detail__tracking {
             grid-template-columns: 1fr;
         }
@@ -7444,6 +7488,10 @@
     @media (max-width: 991px) {
         .order-detail__layout {
             grid-template-columns: 1fr;
+        }
+
+        .order-detail__aside {
+            width: 100%;
         }
     }
 

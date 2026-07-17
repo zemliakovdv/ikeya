@@ -130,70 +130,6 @@ function getPaymentSecondsLeft(attr = {}, rawStatus) {
   return diff > 0 ? diff : null;
 }
 
-function collectAddressParts(source) {
-  if (!source || typeof source !== 'object') return [];
-
-  const delivery = source.delivery && typeof source.delivery === 'object'
-    ? source.delivery
-    : {};
-
-  return [
-    source.city,
-    source.locality,
-    source.settlement,
-    source.street,
-    source.street_name,
-    source.house,
-    source.house_number,
-    source.building,
-    source.corpus,
-    source.block,
-    source.entrance,
-    source.floor,
-    source.apartment,
-    source.flat,
-    source.pickup_point,
-    source.pickupPoint,
-    source.point_name,
-    source.pvz_name,
-    delivery.pickup_point,
-    delivery.point_name,
-    delivery.address,
-  ];
-}
-
-function formatAddress(attr = {}) {
-  const direct = firstDefined(
-    attr.address?.full_address,
-    attr.address?.formatted,
-    attr.address?.address,
-    attr.delivery_address,
-    attr.deliveryAddress,
-    attr.address_text
-  );
-
-  if (typeof direct === 'string' && direct.trim()) {
-    return direct.trim();
-  }
-
-  if (direct && typeof direct === 'object') {
-    const nested = formatAddress({ address: direct });
-    if (nested) return nested;
-  }
-
-  const address = attr.address && typeof attr.address === 'object'
-    ? attr.address
-    : null;
-
-  if (!address) return null;
-
-  const parts = collectAddressParts(address)
-    .filter((part) => part !== undefined && part !== null && String(part).trim())
-    .map((part) => String(part).trim());
-
-  return [...new Set(parts)].join(', ') || null;
-}
-
 function parsePossibleJson(value) {
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
@@ -204,6 +140,165 @@ function parsePossibleJson(value) {
   } catch {
     return value;
   }
+}
+
+const ADDRESS_STRING_FIELDS = [
+  'full_address',
+  'fullAddress',
+  'formatted',
+  'formatted_address',
+  'address_text',
+  'address',
+  'value',
+  'label',
+  'name',
+];
+
+const ADDRESS_PART_FIELDS = [
+  'country',
+  'region',
+  'area',
+  'district',
+  'city',
+  'locality',
+  'settlement',
+  'postal_code',
+  'postcode',
+  'zip',
+  'street',
+  'street_name',
+  'avenue',
+  'building',
+  'building_number',
+  'house',
+  'house_number',
+  'corpus',
+  'block',
+  'entrance',
+  'porch',
+  'floor',
+  'apartment',
+  'flat',
+  'office',
+  'pickup_point',
+  'pvz',
+];
+
+const ADDRESS_NESTED_FIELDS = ['delivery', 'recipient', 'location', 'details'];
+
+function cleanAddressString(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : null;
+  if (typeof value !== 'string') return null;
+
+  const text = value.trim().replace(/\s+/g, ' ');
+  if (!text) return null;
+
+  const normalized = text.toLowerCase();
+  if (
+    normalized === '[object object]' ||
+    normalized === 'undefined' ||
+    normalized === 'null' ||
+    normalized === 'nan' ||
+    /^,+$/.test(text.replace(/\s/g, ''))
+  ) {
+    return null;
+  }
+
+  return text;
+}
+
+function uniqueAddressParts(parts) {
+  const seen = new Set();
+  const result = [];
+
+  parts.forEach((part) => {
+    const text = cleanAddressString(part);
+    if (!text) return;
+
+    const key = text.toLowerCase();
+    if (seen.has(key)) return;
+
+    seen.add(key);
+    result.push(text);
+  });
+
+  return result;
+}
+
+function normalizeAddressValue(value, depth = 0) {
+  if (depth > 6 || value === undefined || value === null) return null;
+
+  const parsed = parsePossibleJson(value);
+  if (parsed !== value) return normalizeAddressValue(parsed, depth + 1);
+
+  if (typeof value === 'string' || typeof value === 'number') {
+    return cleanAddressString(value);
+  }
+
+  if (Array.isArray(value)) {
+    const parts = uniqueAddressParts(
+      value
+        .map((item) => normalizeAddressValue(item, depth + 1))
+        .filter(Boolean)
+    );
+    return parts.join(', ') || null;
+  }
+
+  if (typeof value !== 'object') return null;
+
+  for (const field of ADDRESS_STRING_FIELDS) {
+    const fieldValue = value[field];
+    if (typeof fieldValue === 'string') {
+      const text = cleanAddressString(fieldValue);
+      if (text) return text;
+    }
+
+    if (fieldValue && typeof fieldValue === 'object') {
+      const nested = normalizeAddressValue(fieldValue, depth + 1);
+      if (nested) return nested;
+    }
+  }
+
+  const parts = [];
+
+  ADDRESS_PART_FIELDS.forEach((field) => {
+    const part = normalizeAddressValue(value[field], depth + 1);
+    if (part) parts.push(part);
+  });
+
+  ADDRESS_NESTED_FIELDS.forEach((field) => {
+    const nested = value[field];
+    if (!nested || typeof nested !== 'object') return;
+
+    ADDRESS_PART_FIELDS.forEach((partField) => {
+      const part = normalizeAddressValue(nested[partField], depth + 1);
+      if (part) parts.push(part);
+    });
+  });
+
+  const unique = uniqueAddressParts(parts);
+  return unique.join(', ') || null;
+}
+
+function formatAddress(attr = {}) {
+  const candidates = [
+    attr.delivery_address,
+    attr.deliveryAddress,
+    attr.address_text,
+    attr.address,
+    attr.delivery?.address,
+    attr.recipient?.address,
+    attr.location,
+    attr.details,
+  ];
+
+  for (const candidate of candidates) {
+    const address = normalizeAddressValue(candidate);
+    if (address) return address;
+  }
+
+  return null;
 }
 
 function normalizeServices(value) {
@@ -251,19 +346,19 @@ function getPaymentStatusLabel(status) {
     success: 'оплачено',
     succeeded: 'оплачено',
     completed: 'оплачено',
-    unpaid: 'ожидает оплаты',
+    unpaid: 'не оплачено',
     pending: 'ожидает оплаты',
     created: 'ожидает оплаты',
     processing: 'ожидает оплаты',
     awaiting: 'ожидает оплаты',
     awaiting_payment: 'ожидает оплаты',
-    failed: 'не оплачено',
-    cancelled: 'не оплачено',
-    canceled: 'не оплачено',
+    failed: 'ошибка оплаты',
+    cancelled: 'оплата отменена',
+    canceled: 'оплата отменена',
     expired: 'не оплачено',
   };
 
-  return labels[normalized] || value;
+  return labels[normalized] || null;
 }
 
 function isPaidStatus(status) {
@@ -325,6 +420,12 @@ export function parseOrders(data) {
       .map((id) => itemsMap[id])
       .filter(Boolean)
       .map((item) => {
+        const priceAmount = toFiniteNumber(firstDefined(
+          item.price_byn,
+          item.price,
+          item.unit_price_byn,
+          item.total_byn
+        ));
         const image =
           resolveImage(item.image_url) ||
           resolveImage(item.image) ||
@@ -342,6 +443,7 @@ export function parseOrders(data) {
           product_sku: item.product_sku || null,
           quantity: item.quantity || 1,
           price: Number.parseFloat(item.price_byn || 0).toFixed(2),
+          priceAmount,
           image,
           image_url: item.image_url || null,
           local_image: item.local_image || null,
