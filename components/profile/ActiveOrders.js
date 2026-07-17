@@ -558,7 +558,12 @@ const OrderCard = ({ order }) => {
         <div className="odrer-header_inner">
           <div className="order-header_top">
             <div className="order-title">
-              {TEXT.orderPrefix} {order.id}
+              <Link
+                href={`/profile/orders/${encodeURIComponent(order.id)}`}
+                style={{ color: 'inherit', textDecoration: 'none' }}
+              >
+                {TEXT.orderPrefix} {order.id}
+              </Link>
 
               <button
                 className="btn-copy-order"

@@ -1107,7 +1107,7 @@ export default function CartPageClient() {
   const hasAvailableItems = (availableItems?.length || 0) > 0;
   const hasUnavailableItems = (unavailableItems?.length || 0) > 0;
 
-  if (checkoutLoading || isPreparingCheckout) {
+  if (isInitialLoading || checkoutLoading || isPreparingCheckout) {
     return <PageLoader />;
   }
 

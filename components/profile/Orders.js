@@ -117,7 +117,7 @@ function getPaymentSecondsLeft(attr = {}, rawStatus) {
   return diff > 0 ? diff : null;
 }
 
-function parseOrders(data) {
+export function parseOrders(data) {
   const included = data?.included || [];
   const itemsMap = {};
   included.forEach((inc) => {

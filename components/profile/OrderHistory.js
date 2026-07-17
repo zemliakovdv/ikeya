@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import RangeDatePicker from '@/components/ui/RangeDatePicker';
 
-export default function OrderHistory({ orders, onReorder }) {
+export default function OrderHistory({ orders, onReorder, showDateFilter = true }) {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -12,6 +12,7 @@ export default function OrderHistory({ orders, onReorder }) {
   if (!orders || orders.length === 0) return null;
 
   const filteredOrders = orders.filter((order) => {
+    if (!showDateFilter) return true;
     if (!dateFrom && !dateTo) return true;
     const orderDate = order.rawDate ? new Date(order.rawDate) : null;
     if (!orderDate) return true;
@@ -28,14 +29,16 @@ export default function OrderHistory({ orders, onReorder }) {
     <>
       <div className="orders-hisrory_wrapper">
         <div className="orders-hisrory">
-          <div className="date-picker-wrapper">
-            <RangeDatePicker
-              from={dateFrom}
-              to={dateTo}
-              onChange={({ from, to }) => { setDateFrom(from); setDateTo(to); }}
-              placeholder="Выберите период"
-            />
-          </div>
+          {showDateFilter && (
+            <div className="date-picker-wrapper">
+              <RangeDatePicker
+                from={dateFrom}
+                to={dateTo}
+                onChange={({ from, to }) => { setDateFrom(from); setDateTo(to); }}
+                placeholder="Выберите период"
+              />
+            </div>
+          )}
 
           {filteredOrders.length === 0 ? (
             <div className="empty">
@@ -56,7 +59,14 @@ export default function OrderHistory({ orders, onReorder }) {
                 <div className="order-header">
                   <div className="odrer-header_inner">
                     <div className="order-header_top">
-                      <div className="order-title">Заказ № {order.id} от {order.date}</div>
+                      <div className="order-title">
+                        <Link
+                          href={`/profile/orders/${encodeURIComponent(order.id)}`}
+                          style={{ color: 'inherit', textDecoration: 'none' }}
+                        >
+                          Заказ № {order.id} от {order.date}
+                        </Link>
+                      </div>
                       <div className={`order-badge ${badgeClass}`}>{badgeText}</div>
                     </div>
                   </div>
