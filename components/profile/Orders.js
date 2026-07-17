@@ -336,10 +336,134 @@ function getPaymentMethodLabel(attr = {}) {
   return method ? String(method).trim() : null;
 }
 
+function parseOptionalBoolean(value) {
+  if (value === true || value === 1 || value === '1') return true;
+  if (value === false || value === 0 || value === '0') return false;
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return null;
+
+    if (['true', 'yes', 'paid', 'success', 'completed'].includes(normalized)) {
+      return true;
+    }
+
+    if (['false', 'no', 'unpaid', 'pending', 'not_paid'].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return null;
+}
+
+function normalizePaymentStatus(value) {
+  if (value === undefined || value === null || value === '') return null;
+
+  const bool = parseOptionalBoolean(value);
+  if (bool === true) return 'paid';
+  if (bool === false) return 'unpaid';
+
+  if (typeof value === 'object') {
+    return normalizePaymentStatus(firstDefined(
+      value.status,
+      value.state,
+      value.code,
+      value.status_code,
+      value.value,
+      value.name,
+      value.label
+    ));
+  }
+
+  if (typeof value !== 'string') return null;
+
+  const normalized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return normalized || null;
+}
+
+const PAID_PAYMENT_STATUSES = new Set([
+  'paid',
+  'completed',
+  'success',
+  'succeeded',
+  'successful',
+  'captured',
+  'processed',
+  'approved',
+  'оплачено',
+]);
+
+const WAITING_PAYMENT_STATUSES = new Set([
+  'pending',
+  'unpaid',
+  'waiting',
+  'awaiting',
+  'awaiting_payment',
+  'not_paid',
+  'created',
+  'processing',
+  'не_оплачено',
+  'ожидает_оплаты',
+]);
+
+const FAILED_PAYMENT_STATUSES = new Set([
+  'failed',
+  'cancelled',
+  'canceled',
+  'expired',
+  'declined',
+  'rejected',
+  'refunded',
+]);
+
+function firstNonNullOptionalBoolean(values) {
+  for (const value of values) {
+    const parsed = parseOptionalBoolean(value);
+    if (parsed !== null) return parsed;
+  }
+
+  return null;
+}
+
+function firstNonEmptyNormalizedStatus(values) {
+  for (const value of values) {
+    const status = normalizePaymentStatus(value);
+    if (status) return status;
+  }
+
+  return null;
+}
+
+function normalizePaidAt(value) {
+  if (value === undefined || value === null || value === '') return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value.toISOString();
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+
+    const timestamp = Date.parse(trimmed);
+    return Number.isNaN(timestamp) ? null : trimmed;
+  }
+
+  return null;
+}
+
+function firstValidPaidAt(values) {
+  for (const value of values) {
+    const paidAt = normalizePaidAt(value);
+    if (paidAt) return paidAt;
+  }
+
+  return null;
+}
+
 function getPaymentStatusLabel(status) {
-  if (!status) return null;
-  const value = String(status).trim();
-  const normalized = value.toLowerCase();
+  const normalized = normalizePaymentStatus(status);
+  if (!normalized) return null;
 
   const labels = {
     paid: 'оплачено',
@@ -361,11 +485,6 @@ function getPaymentStatusLabel(status) {
   return labels[normalized] || null;
 }
 
-function isPaidStatus(status) {
-  if (!status) return false;
-  return ['paid', 'success', 'succeeded', 'completed'].includes(String(status).toLowerCase());
-}
-
 export function parseOrders(data) {
   const included = data?.included || [];
   const itemsMap = {};
@@ -385,18 +504,48 @@ export function parseOrders(data) {
     const paymentExpired = isPaymentExpired(attr, rawStatus);
     const paymentSecondsLeft = getPaymentSecondsLeft(attr, rawStatus);
     const isExpiredUnpaid = isProfileExpiredUnpaidOrder(order);
-    const paymentStatus = firstDefined(attr.payment_status, attr.payment?.status);
+    const payment = attr.payment && typeof attr.payment === 'object'
+      ? attr.payment
+      : {};
+    const explicitPaid = firstNonNullOptionalBoolean([
+      attr.is_paid,
+      attr.paid,
+      payment.is_paid,
+      payment.paid,
+    ]);
+    const paymentStatus = firstNonEmptyNormalizedStatus([
+      attr.payment_status,
+      attr.payment_state,
+      attr.payment_status_code,
+      payment.status,
+      payment.state,
+      payment.status_code,
+      payment.code,
+    ]);
+    const paidAt = firstValidPaidAt([
+      attr.paid_at,
+      payment.paid_at,
+      payment.completed_at,
+      payment.captured_at,
+    ]);
     const paymentMethodLabel = getPaymentMethodLabel(attr);
     const paymentStatusLabel = getPaymentStatusLabel(paymentStatus);
-    const explicitPaid = firstDefined(
-      typeof attr.is_paid === 'boolean' ? attr.is_paid : null,
-      typeof attr.paid === 'boolean' ? attr.paid : null,
-      typeof attr.payment?.is_paid === 'boolean' ? attr.payment.is_paid : null,
-      typeof attr.payment?.paid === 'boolean' ? attr.payment.paid : null
-    );
-    const isPaid = typeof explicitPaid === 'boolean'
-      ? explicitPaid
-      : isPaidStatus(paymentStatus) || null;
+    let isPaid = null;
+
+    if (FAILED_PAYMENT_STATUSES.has(paymentStatus)) {
+      isPaid = null;
+    } else if (
+      explicitPaid === true ||
+      PAID_PAYMENT_STATUSES.has(paymentStatus) ||
+      Boolean(paidAt)
+    ) {
+      isPaid = true;
+    } else if (
+      explicitPaid === false ||
+      WAITING_PAYMENT_STATUSES.has(paymentStatus)
+    ) {
+      isPaid = false;
+    }
 
     const isAwaitingPayment =
       !isDraft &&
@@ -522,6 +671,7 @@ export function parseOrders(data) {
       paymentMethodLabel,
       paymentStatusLabel,
       isPaid,
+      paidAt,
       price: formatPrice(attr.total_amount),
       itemsCount,
       totalWeight,

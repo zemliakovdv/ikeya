@@ -271,58 +271,12 @@ function getPaymentMethodTitle(value) {
   return text;
 }
 
-function normalizePaymentStatus(value) {
-  return String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
-}
-
 function resolvePaymentState(order) {
-  const statuses = [order.paymentStatus, order.paymentStatusLabel]
-    .map(normalizePaymentStatus)
-    .filter(Boolean);
-
-  if (
-    order.isPaid === true ||
-    statuses.some((status) => [
-      'paid',
-      'completed',
-      'success',
-      'succeeded',
-      'successful',
-      'captured',
-      'processed',
-      'оплачено',
-    ].includes(status))
-  ) {
+  if (order?.isPaid === true) {
     return { key: 'paid', label: 'Оплачено' };
   }
 
-  if (statuses.some((status) => [
-    'failed',
-    'cancelled',
-    'canceled',
-    'expired',
-    'ошибка_оплаты',
-    'оплата_отменена',
-  ].includes(status))) {
-    return { key: null, label: null };
-  }
-
-  if (
-    order.isPaid === false ||
-    order.isAwaitingPayment === true ||
-    statuses.some((status) => [
-      'pending',
-      'unpaid',
-      'waiting',
-      'awaiting',
-      'awaiting_payment',
-      'not_paid',
-      'created',
-      'processing',
-      'не_оплачено',
-      'ожидает_оплаты',
-    ].includes(status))
-  ) {
+  if (order?.isPaid === false || order?.isAwaitingPayment === true) {
     return { key: 'waiting', label: 'Ждет оплаты' };
   }
 
