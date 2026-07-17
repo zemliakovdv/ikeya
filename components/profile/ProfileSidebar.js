@@ -11,7 +11,15 @@ export default function ProfileSidebar() {
   const { user, logout } = useAuth();
   const { activeOrdersCount } = useProfileCounts();
 
-  const isActive = (path) => pathname.replace(/\/$/, '') === path;
+  const isActive = (path) => {
+    const normalized = pathname.replace(/\/$/, '');
+
+    if (path === '/profile/orders') {
+      return normalized === path || normalized.startsWith(`${path}/`);
+    }
+
+    return normalized === path;
+  };
 
   function handleLogout() {
     logout();

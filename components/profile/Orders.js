@@ -54,6 +54,19 @@ function formatPrice(value) {
     : '0,00';
 }
 
+function firstDefined(...values) {
+  return values.find((value) => value !== undefined && value !== null && value !== '');
+}
+
+function toFiniteNumber(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const normalized = typeof value === 'string'
+    ? value.replace(/\s/g, '').replace(',', '.')
+    : value;
+  const num = Number.parseFloat(normalized);
+  return Number.isFinite(num) ? num : null;
+}
+
 function resolveImage(imageUrl) {
   if (!imageUrl) return null;
 
@@ -117,6 +130,147 @@ function getPaymentSecondsLeft(attr = {}, rawStatus) {
   return diff > 0 ? diff : null;
 }
 
+function collectAddressParts(source) {
+  if (!source || typeof source !== 'object') return [];
+
+  const delivery = source.delivery && typeof source.delivery === 'object'
+    ? source.delivery
+    : {};
+
+  return [
+    source.city,
+    source.locality,
+    source.settlement,
+    source.street,
+    source.street_name,
+    source.house,
+    source.house_number,
+    source.building,
+    source.corpus,
+    source.block,
+    source.entrance,
+    source.floor,
+    source.apartment,
+    source.flat,
+    source.pickup_point,
+    source.pickupPoint,
+    source.point_name,
+    source.pvz_name,
+    delivery.pickup_point,
+    delivery.point_name,
+    delivery.address,
+  ];
+}
+
+function formatAddress(attr = {}) {
+  const direct = firstDefined(
+    attr.address?.full_address,
+    attr.address?.formatted,
+    attr.address?.address,
+    attr.delivery_address,
+    attr.deliveryAddress,
+    attr.address_text
+  );
+
+  if (typeof direct === 'string' && direct.trim()) {
+    return direct.trim();
+  }
+
+  if (direct && typeof direct === 'object') {
+    const nested = formatAddress({ address: direct });
+    if (nested) return nested;
+  }
+
+  const address = attr.address && typeof attr.address === 'object'
+    ? attr.address
+    : null;
+
+  if (!address) return null;
+
+  const parts = collectAddressParts(address)
+    .filter((part) => part !== undefined && part !== null && String(part).trim())
+    .map((part) => String(part).trim());
+
+  return [...new Set(parts)].join(', ') || null;
+}
+
+function parsePossibleJson(value) {
+  if (typeof value !== 'string') return value;
+  const trimmed = value.trim();
+  if (!trimmed || (!trimmed.startsWith('[') && !trimmed.startsWith('{'))) return value;
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+}
+
+function normalizeServices(value) {
+  const parsed = parsePossibleJson(value);
+  const values = Array.isArray(parsed) ? parsed : parsed ? [parsed] : [];
+
+  const services = values
+    .map((service) => {
+      if (typeof service === 'string') return service;
+      if (!service || typeof service !== 'object') return '';
+      return firstDefined(
+        service.name,
+        service.title,
+        service.label,
+        service.service_name,
+        service.description
+      ) || '';
+    })
+    .map((service) => String(service).trim())
+    .filter(Boolean);
+
+  return [...new Set(services)];
+}
+
+function getPaymentMethodLabel(attr = {}) {
+  const method = firstDefined(
+    attr.payment_method_name,
+    attr.payment_method,
+    attr.payment_type,
+    attr.payment?.method_name,
+    attr.payment?.method,
+    attr.payment?.type
+  );
+
+  return method ? String(method).trim() : null;
+}
+
+function getPaymentStatusLabel(status) {
+  if (!status) return null;
+  const value = String(status).trim();
+  const normalized = value.toLowerCase();
+
+  const labels = {
+    paid: 'оплачено',
+    success: 'оплачено',
+    succeeded: 'оплачено',
+    completed: 'оплачено',
+    unpaid: 'ожидает оплаты',
+    pending: 'ожидает оплаты',
+    created: 'ожидает оплаты',
+    processing: 'ожидает оплаты',
+    awaiting: 'ожидает оплаты',
+    awaiting_payment: 'ожидает оплаты',
+    failed: 'не оплачено',
+    cancelled: 'не оплачено',
+    canceled: 'не оплачено',
+    expired: 'не оплачено',
+  };
+
+  return labels[normalized] || value;
+}
+
+function isPaidStatus(status) {
+  if (!status) return false;
+  return ['paid', 'success', 'succeeded', 'completed'].includes(String(status).toLowerCase());
+}
+
 export function parseOrders(data) {
   const included = data?.included || [];
   const itemsMap = {};
@@ -136,6 +290,15 @@ export function parseOrders(data) {
     const paymentExpired = isPaymentExpired(attr, rawStatus);
     const paymentSecondsLeft = getPaymentSecondsLeft(attr, rawStatus);
     const isExpiredUnpaid = isProfileExpiredUnpaidOrder(order);
+    const paymentStatus = firstDefined(attr.payment_status, attr.payment?.status);
+    const paymentMethodLabel = getPaymentMethodLabel(attr);
+    const paymentStatusLabel = getPaymentStatusLabel(paymentStatus);
+    const isPaid =
+      attr.is_paid === true ||
+      attr.paid === true ||
+      attr.payment?.is_paid === true ||
+      attr.payment?.paid === true ||
+      isPaidStatus(paymentStatus);
 
     const isAwaitingPayment =
       !isDraft &&
@@ -188,6 +351,40 @@ export function parseOrders(data) {
         };
       });
 
+    const itemsCount = toFiniteNumber(firstDefined(attr.items_count, attr.items?.length));
+    const totalWeight = toFiniteNumber(firstDefined(
+      attr.total_weight_kg,
+      attr.weight_kg,
+      attr.total_weight,
+      attr.weight,
+      attr.delivery?.total_weight_kg
+    ));
+    const totalAmount = toFiniteNumber(firstDefined(
+      attr.total_amount,
+      attr.total_byn,
+      attr.final_total_byn
+    ));
+    const deliveryName = firstDefined(
+      attr.address?.delivery?.provider,
+      attr.delivery_name,
+      attr.delivery_provider,
+      attr.delivery_method,
+      attr.delivery?.name,
+      attr.delivery?.provider,
+      attr.delivery?.method
+    );
+    const deliveryProvider = firstDefined(
+      attr.address?.delivery?.provider,
+      attr.delivery_provider,
+      attr.delivery_name,
+      attr.delivery?.provider,
+      attr.delivery?.name
+    );
+    const deliveryMethod = firstDefined(
+      attr.delivery_method,
+      attr.delivery?.method
+    );
+
     return {
       id: String(attr.public_uid || attr.id || order.id),
       draftId: String(attr.id || order.id),
@@ -199,33 +396,55 @@ export function parseOrders(data) {
       rawStatus,
       canonicalStatus,
       deliveryType: attr.delivery_type || null,
-      deliveryName:
-        attr.address?.delivery?.provider ||
-        attr.delivery_name ||
-        attr.delivery_provider ||
-        attr.delivery_method ||
-        attr.delivery?.name ||
-        attr.delivery?.provider ||
-        attr.delivery?.method ||
-        null,
-      deliveryProvider:
-        attr.address?.delivery?.provider ||
-        attr.delivery_provider ||
-        attr.delivery_name ||
-        attr.delivery?.provider ||
-        attr.delivery?.name ||
-        null,
-      deliveryMethod:
-        attr.delivery_method ||
-        attr.delivery?.method ||
-        null,
+      deliveryName: deliveryName || null,
+      deliveryProvider: deliveryProvider || null,
+      deliveryMethod: deliveryMethod || null,
+      deliveryAddress: formatAddress(attr),
       status: mappedStatus,
       statusConfig,
       statusDescription: isExpiredUnpaid
         ? ORDER_STATUS_FALLBACK_LABELS.cancelled
         : getOrderStatusLabel(order),
-      paymentStatus: attr.payment_status || null,
+      paymentStatus: paymentStatus || null,
+      paymentMethodLabel,
+      paymentStatusLabel,
+      isPaid,
       price: formatPrice(attr.total_amount),
+      itemsCount,
+      totalWeight,
+      itemsSubtotal: toFiniteNumber(firstDefined(
+        attr.items_total_byn,
+        attr.subtotal_byn,
+        attr.subtotal,
+        attr.products_total_byn,
+        attr.goods_total_byn
+      )),
+      deliveryToBelarus: toFiniteNumber(firstDefined(
+        attr.delivery_to_belarus_byn,
+        attr.international_delivery_byn,
+        attr.delivery?.delivery_to_belarus_byn
+      )),
+      localDeliveryCost: toFiniteNumber(firstDefined(
+        attr.delivery_total_byn,
+        attr.local_delivery_byn,
+        attr.courier_delivery_byn,
+        attr.delivery_cost_byn,
+        attr.delivery?.total_byn,
+        attr.delivery?.cost_byn
+      )),
+      customsDuty: toFiniteNumber(firstDefined(
+        attr.customs_total_byn,
+        attr.customs_duty_byn,
+        attr.customsDuty,
+        attr.customs?.duty_byn,
+        attr.customs?.total_byn
+      )),
+      customsDutyApprox: Boolean(
+        attr.customs_estimated ||
+        attr.customs_duty_estimated ||
+        attr.customs?.estimated
+      ),
+      totalAmount,
       trackNumber: attr.track_number || null,
       canShowTrackNumber: canShowOrderTrackNumber(order),
       canShowWhereIsOrderButton: canShowWhereIsOrderButton(order),
@@ -240,6 +459,12 @@ export function parseOrders(data) {
       paymentSecondsLeft,
       paymentExpired,
       isAwaitingPayment,
+      services: normalizeServices(firstDefined(
+        attr.services,
+        attr.order_services,
+        attr.additional_services,
+        attr.service_items
+      )),
       dateRange: (() => {
         const raw = attr.address?.delivery?.delivery_date || attr.delivery_eta?.delivery_date || attr.delivery_date;
         if (raw) {

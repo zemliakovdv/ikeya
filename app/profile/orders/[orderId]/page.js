@@ -3,14 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ProfileLayout from '@/components/profile/ProfileLayout';
-import ActiveOrders from '@/components/profile/ActiveOrders';
-import OrderHistory from '@/components/profile/OrderHistory';
+import OrderDetail from '@/components/profile/OrderDetail';
 import { parseOrders } from '@/components/profile/Orders';
 import PageLoader from '@/components/ui/PageLoader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { useAuthModals } from '@/components/auth/AuthModalsHost';
-import { getOrderById, isProfileHistoryOrder, reorder } from '@/lib/api/account';
+import { getOrderById, reorder } from '@/lib/api/account';
 
 function decodeOrderId(value) {
   if (!value) return '';
@@ -58,15 +57,6 @@ export default function OrderDetailPage() {
     [orderId]
   );
 
-  const breadcrumbs = useMemo(
-    () => [
-      { label: 'Профиль', href: '/profile' },
-      { label: 'Заказы', href: '/profile/orders' },
-      { label: `Заказ № ${orderId || ''}`.trim(), href: null },
-    ],
-    [orderId]
-  );
-
   const loginOpenedRef = useRef(false);
   const requestIdRef = useRef(0);
 
@@ -74,6 +64,20 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState('');
+
+  const breadcrumbs = useMemo(() => {
+    const orderLabel = order
+      ? order.date && order.date !== '—'
+        ? `Заказ № ${order.id} от ${order.date}`
+        : `Заказ № ${order.id}`
+      : `Заказ № ${orderId || ''}`.trim();
+
+    return [
+      { label: 'Профиль', href: '/profile' },
+      { label: 'Заказы', href: '/profile/orders' },
+      { label: orderLabel, href: null },
+    ];
+  }, [order, orderId]);
 
   useEffect(() => {
     if (!isHydrated) return;
@@ -156,10 +160,10 @@ export default function OrderDetailPage() {
 
   function renderNotFound() {
     return (
-      <div className="orders-lists">
-        <div className="empty" style={{ padding: '32px 0', textAlign: 'center' }}>
+      <div className="order-detail">
+        <div className="order-detail__state-card">
           <div className="empty-title">Заказ не найден</div>
-          <button className="empty-btn" type="button" onClick={() => router.push('/profile/orders')}>
+          <button className="order-detail__secondary-action" type="button" onClick={() => router.push('/profile/orders')}>
             Вернуться к заказам
           </button>
         </div>
@@ -169,10 +173,10 @@ export default function OrderDetailPage() {
 
   function renderError() {
     return (
-      <div className="orders-lists">
-        <div className="empty" style={{ padding: '32px 0', textAlign: 'center' }}>
+      <div className="order-detail">
+        <div className="order-detail__state-card">
           <div className="empty-title">Не удалось загрузить заказ</div>
-          <button className="empty-btn" type="button" onClick={loadOrder}>
+          <button className="order-detail__secondary-action" type="button" onClick={loadOrder}>
             Повторить
           </button>
         </div>
@@ -184,17 +188,11 @@ export default function OrderDetailPage() {
     if (!order) return renderNotFound();
 
     return (
-      <div className="orders-lists">
-        {isProfileHistoryOrder(order) ? (
-          <OrderHistory
-            orders={[order]}
-            onReorder={handleReorder}
-            showDateFilter={false}
-          />
-        ) : (
-          <ActiveOrders orders={[order]} />
-        )}
-      </div>
+      <OrderDetail
+        order={order}
+        onBack={() => router.push('/profile/orders')}
+        onReorder={handleReorder}
+      />
     );
   }
 
