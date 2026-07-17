@@ -7243,6 +7243,17 @@
         color: #757575;
     }
 
+    .order-detail__delivery-logo {
+        width: 28px;
+        height: 24px;
+        object-fit: contain;
+        flex: 0 0 auto;
+    }
+
+    .order-detail__delivery-logo--ikeya {
+        width: 36px;
+    }
+
     .order-detail__info-body {
         min-width: 0;
         flex: 1 1 auto;
@@ -7281,6 +7292,21 @@
     }
 
     .order-detail__payment-status--error {
+        color: #b71c1c;
+    }
+
+    .order-detail__payment-state {
+        margin-top: 2px;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 20px;
+    }
+
+    .order-detail__payment-state--paid {
+        color: #00910a;
+    }
+
+    .order-detail__payment-state--waiting {
         color: #b71c1c;
     }
 

@@ -6,6 +6,8 @@ import Link from 'next/link';
 const CUSTOMS_HELP_HREF = '/help/customs';
 const ORDER_HELP_HREF = '/help/how-to-order';
 const PRODUCT_IMAGE_FALLBACK = '/assets/img/profile/active_1.png';
+const EUROPOST_LOGO_SRC = '/assets/img/cart/evropochta-logo.png';
+const IKEYA_LOGO_SRC = '/assets/img/logo.svg';
 
 function ArrowLeftIcon() {
   return (
@@ -121,6 +123,10 @@ function normalizeCode(value) {
   return String(value || '').trim().toLowerCase().replace(/[-\s]+/g, '_');
 }
 
+function normalizeDeliveryCode(value) {
+  return String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
 function looksLikeSystemCode(value) {
   const text = String(value || '').trim();
   return Boolean(text) && /^[a-z0-9_-]+$/i.test(text) && text === text.toLowerCase();
@@ -156,6 +162,54 @@ function getDeliveryLabel(value) {
   if (looksLikeSystemCode(text)) return humanizeCode(text);
 
   return text;
+}
+
+function getDeliveryCodes(order) {
+  return [
+    order.deliveryProvider,
+    order.deliveryName,
+    order.deliveryMethod,
+    order.deliveryType,
+    order.rawDeliveryType,
+  ]
+    .map(normalizeDeliveryCode)
+    .filter(Boolean);
+}
+
+function isEuropostDelivery(order) {
+  return getDeliveryCodes(order).some((code) => (
+    code.includes('europost') || code.includes('evropochta')
+  ));
+}
+
+function isIkeyaDelivery(order) {
+  return getDeliveryCodes(order).some((code) => code.includes('ikeya'));
+}
+
+function renderDeliveryIcon(order) {
+  if (isEuropostDelivery(order)) {
+    return (
+      <img
+        src={EUROPOST_LOGO_SRC}
+        alt=""
+        className="order-detail__delivery-logo order-detail__delivery-logo--europost"
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (isIkeyaDelivery(order)) {
+    return (
+      <img
+        src={IKEYA_LOGO_SRC}
+        alt=""
+        className="order-detail__delivery-logo order-detail__delivery-logo--ikeya"
+        aria-hidden="true"
+      />
+    );
+  }
+
+  return <DeliveryIcon />;
 }
 
 function getDeliveryTitle(order) {
@@ -217,22 +271,62 @@ function getPaymentMethodTitle(value) {
   return text;
 }
 
-function getPaymentStatusMeta(order) {
-  if (order.paymentStatusLabel) {
-    const normalized = order.paymentStatusLabel.toLowerCase();
-    if (normalized === 'оплачено') return { label: order.paymentStatusLabel, state: 'paid' };
-    if (normalized === 'ожидает оплаты') return { label: order.paymentStatusLabel, state: 'pending' };
-    if (
-      normalized === 'не оплачено' ||
-      normalized === 'ошибка оплаты' ||
-      normalized === 'оплата отменена'
-    ) {
-      return { label: order.paymentStatusLabel, state: 'error' };
-    }
+function normalizePaymentStatus(value) {
+  return String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+function resolvePaymentState(order) {
+  const statuses = [order.paymentStatus, order.paymentStatusLabel]
+    .map(normalizePaymentStatus)
+    .filter(Boolean);
+
+  if (
+    order.isPaid === true ||
+    statuses.some((status) => [
+      'paid',
+      'completed',
+      'success',
+      'succeeded',
+      'successful',
+      'captured',
+      'processed',
+      'оплачено',
+    ].includes(status))
+  ) {
+    return { key: 'paid', label: 'Оплачено' };
   }
 
-  if (order.isPaid) return { label: 'оплачено', state: 'paid' };
-  return null;
+  if (statuses.some((status) => [
+    'failed',
+    'cancelled',
+    'canceled',
+    'expired',
+    'ошибка_оплаты',
+    'оплата_отменена',
+  ].includes(status))) {
+    return { key: null, label: null };
+  }
+
+  if (
+    order.isPaid === false ||
+    order.isAwaitingPayment === true ||
+    statuses.some((status) => [
+      'pending',
+      'unpaid',
+      'waiting',
+      'awaiting',
+      'awaiting_payment',
+      'not_paid',
+      'created',
+      'processing',
+      'не_оплачено',
+      'ожидает_оплаты',
+    ].includes(status))
+  ) {
+    return { key: 'waiting', label: 'Ждет оплаты' };
+  }
+
+  return { key: null, label: null };
 }
 
 function SummaryRow({ label, value }) {
@@ -318,8 +412,8 @@ export default function OrderDetail({ order, onBack, onReorder }) {
     : null;
   const canRepeatOrder = !order.isDraft && order.statusConfig?.repeatAllowed === true;
   const paymentMethodTitle = getPaymentMethodTitle(order.paymentMethodLabel);
-  const paymentStatusMeta = getPaymentStatusMeta(order);
-  const hasPaymentInfo = Boolean(paymentMethodTitle || paymentStatusMeta);
+  const paymentState = resolvePaymentState(order);
+  const hasPaymentInfo = Boolean(paymentMethodTitle || paymentState.label);
   const hasProducts = Array.isArray(order.items) && order.items.length > 0;
   const hasServices = Array.isArray(order.services) && order.services.length > 0;
   const trackingDeliveryLabel = getDeliveryLabel(order.deliveryProvider || order.deliveryName);
@@ -441,7 +535,7 @@ export default function OrderDetail({ order, onBack, onReorder }) {
             )}
 
             <div className="order-detail__info-list">
-              <InfoRow icon={<DeliveryIcon />} title={deliveryTitle} subtitle={order.deliveryAddress} />
+              <InfoRow icon={renderDeliveryIcon(order)} title={deliveryTitle} subtitle={order.deliveryAddress} />
               <InfoRow
                 icon={<ClockIcon />}
                 title={order.dateRange && order.dateRange !== '—' ? order.dateRange : null}
@@ -452,9 +546,9 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                   icon={<CardIcon />}
                   title={paymentMethodTitle}
                 >
-                  {paymentStatusMeta && (
-                    <span className={`order-detail__payment-status order-detail__payment-status--${paymentStatusMeta.state}`}>
-                      {paymentStatusMeta.label}
+                  {paymentState.label && (
+                    <span className={`order-detail__payment-state order-detail__payment-state--${paymentState.key}`}>
+                      {paymentState.label}
                     </span>
                   )}
                 </InfoRow>

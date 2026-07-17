@@ -388,12 +388,15 @@ export function parseOrders(data) {
     const paymentStatus = firstDefined(attr.payment_status, attr.payment?.status);
     const paymentMethodLabel = getPaymentMethodLabel(attr);
     const paymentStatusLabel = getPaymentStatusLabel(paymentStatus);
-    const isPaid =
-      attr.is_paid === true ||
-      attr.paid === true ||
-      attr.payment?.is_paid === true ||
-      attr.payment?.paid === true ||
-      isPaidStatus(paymentStatus);
+    const explicitPaid = firstDefined(
+      typeof attr.is_paid === 'boolean' ? attr.is_paid : null,
+      typeof attr.paid === 'boolean' ? attr.paid : null,
+      typeof attr.payment?.is_paid === 'boolean' ? attr.payment.is_paid : null,
+      typeof attr.payment?.paid === 'boolean' ? attr.payment.paid : null
+    );
+    const isPaid = typeof explicitPaid === 'boolean'
+      ? explicitPaid
+      : isPaidStatus(paymentStatus) || null;
 
     const isAwaitingPayment =
       !isDraft &&
@@ -486,6 +489,13 @@ export function parseOrders(data) {
       attr.delivery_method,
       attr.delivery?.method
     );
+    const rawDeliveryType = firstDefined(
+      attr.delivery_type,
+      attr.delivery?.type,
+      attr.delivery?.code,
+      attr.address?.delivery?.type,
+      attr.address?.delivery?.code
+    );
 
     return {
       id: String(attr.public_uid || attr.id || order.id),
@@ -498,6 +508,7 @@ export function parseOrders(data) {
       rawStatus,
       canonicalStatus,
       deliveryType: attr.delivery_type || null,
+      rawDeliveryType: rawDeliveryType || null,
       deliveryName: deliveryName || null,
       deliveryProvider: deliveryProvider || null,
       deliveryMethod: deliveryMethod || null,
