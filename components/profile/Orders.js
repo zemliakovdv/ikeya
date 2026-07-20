@@ -58,6 +58,37 @@ function firstDefined(...values) {
   return values.find((value) => value !== undefined && value !== null && value !== '');
 }
 
+function normalizePlainText(value) {
+  if (!['string', 'number'].includes(typeof value)) return null;
+
+  const text = String(value).trim();
+
+  if (!text || ['undefined', 'null', '[object Object]'].includes(text)) {
+    return null;
+  }
+
+  return text;
+}
+
+function extractTrackNumberValue(value) {
+  if (!value || typeof value !== 'object') return value;
+
+  return firstDefined(
+    value.track_number,
+    value.tracking_number,
+    value.number
+  );
+}
+
+function normalizeTrackNumber(...values) {
+  for (const value of values) {
+    const normalized = normalizePlainText(extractTrackNumberValue(value));
+    if (normalized) return normalized;
+  }
+
+  return null;
+}
+
 function toFiniteNumber(value) {
   if (value === undefined || value === null || value === '') return null;
   const normalized = typeof value === 'string'
@@ -552,6 +583,23 @@ export function parseOrders(data) {
       !paymentExpired &&
       Boolean(paymentUrl) &&
       UNPAID_STATUSES.includes(rawStatus);
+    const normalizedTrackNumber = normalizeTrackNumber(
+      attr.track_number,
+      attr.tracking_number,
+      attr.tracking_info?.track_number,
+      attr.tracking_info?.tracking_number,
+      attr.tracking?.number,
+      attr.tracking?.track_number,
+      attr.delivery?.track_number,
+      attr.address?.delivery?.track_number
+    );
+    const normalizedTrackingUrl = normalizePlainText(firstDefined(
+      attr.tracking_info?.tracking_url,
+      attr.tracking_url,
+      attr.tracking?.url,
+      attr.delivery?.tracking_url,
+      attr.address?.delivery?.tracking_url
+    ));
 
     const statusConfig = getOrderStatusConfig({
       ...order,
@@ -559,8 +607,17 @@ export function parseOrders(data) {
       canonicalStatus,
       isDraft,
       isExpiredUnpaid,
-      trackNumber: attr.track_number || null,
+      trackNumber: normalizedTrackNumber,
     });
+    const statusOrder = {
+      ...order,
+      rawStatus,
+      canonicalStatus,
+      isDraft,
+      isExpiredUnpaid,
+      trackNumber: normalizedTrackNumber,
+      statusConfig,
+    };
     const mappedStatus = isDraft
       ? 'draft'
       : (statusConfig?.frontendStatus || canonicalStatus || rawStatus || 'unknown');
@@ -708,15 +765,10 @@ export function parseOrders(data) {
         attr.customs?.estimated
       ),
       totalAmount,
-      trackNumber: attr.track_number || null,
-      canShowTrackNumber: canShowOrderTrackNumber(order),
-      canShowWhereIsOrderButton: canShowWhereIsOrderButton(order),
-      trackingUrl:
-        attr.tracking_info?.tracking_url ||
-        attr.tracking_url ||
-        attr.tracking?.url ||
-        attr.delivery?.tracking_url ||
-        null,
+      trackNumber: normalizedTrackNumber,
+      canShowTrackNumber: canShowOrderTrackNumber(statusOrder),
+      canShowWhereIsOrderButton: canShowWhereIsOrderButton(statusOrder),
+      trackingUrl: normalizedTrackingUrl,
       trackingInfo: attr.tracking_info || null,
       paymentUrl,
       paymentSecondsLeft,

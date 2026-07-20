@@ -17,6 +17,8 @@ const TEXT = {
     '\u0412\u044b\u0434\u0430\u0447\u0430 \u0437\u0430\u043a\u0430\u0437\u043e\u0432 \u043e\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u043f\u043e \u0442\u0440\u0435\u043a-\u043d\u043e\u043c\u0435\u0440\u0443 \u0438 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0443, \u0443\u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u044f\u044e\u0449\u0435\u043c\u0443 \u043b\u0438\u0447\u043d\u043e\u0441\u0442\u044c.',
   orderInfo:
     '\u0412\u044b\u0434\u0430\u0447\u0430 \u0437\u0430\u043a\u0430\u0437\u043e\u0432 \u043e\u0441\u0443\u0449\u0435\u0441\u0442\u0432\u043b\u044f\u0435\u0442\u0441\u044f \u043f\u043e \u043d\u043e\u043c\u0435\u0440\u0443 \u0437\u0430\u043a\u0430\u0437\u0430 \u0438 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0443, \u0443\u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u044f\u044e\u0449\u0435\u043c\u0443 \u043b\u0438\u0447\u043d\u043e\u0441\u0442\u044c.',
+  ikeyaCourierInfo:
+    '\u0421 \u0432\u0430\u043c\u0438 \u0441\u0432\u044f\u0436\u0435\u0442\u0441\u044f \u0441\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a \u043a\u043e\u043b\u043b-\u0446\u0435\u043d\u0442\u0440\u0430 IKEYA \u0434\u043b\u044f \u0441\u043e\u0433\u043b\u0430\u0441\u043e\u0432\u0430\u043d\u0438\u044f \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438.',
   draftInfo:
     '\u0417\u0430\u043a\u0430\u0437 \u043e\u0436\u0438\u0434\u0430\u0435\u0442 \u043e\u0444\u043e\u0440\u043c\u043b\u0435\u043d\u0438\u044f. \u0412\u044b \u043c\u043e\u0436\u0435\u0442\u0435 \u043f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u0432 \u043b\u044e\u0431\u043e\u0439 \u043c\u043e\u043c\u0435\u043d\u0442.',
   continueCheckout: '\u041f\u0440\u043e\u0434\u043e\u043b\u0436\u0438\u0442\u044c \u043e\u0444\u043e\u0440\u043c\u043b\u0435\u043d\u0438\u0435',
@@ -280,8 +282,19 @@ function getDeliveryProvider(order = {}) {
     order.deliveryName ||
     order.deliveryMethod ||
     order.deliveryType ||
+    order.rawDeliveryType ||
     ''
   );
+}
+
+function getDeliveryProviderValues(order = {}) {
+  return [
+    order.deliveryProvider,
+    order.deliveryName,
+    order.deliveryMethod,
+    order.deliveryType,
+    order.rawDeliveryType,
+  ].filter((value) => value !== undefined && value !== null && value !== '');
 }
 
 function isEuropochtaDelivery(value) {
@@ -293,21 +306,40 @@ function isEuropochtaDelivery(value) {
   );
 }
 
+function hasEuropochtaDelivery(order = {}) {
+  return getDeliveryProviderValues(order).some(isEuropochtaDelivery);
+}
+
+function isIkeyaDelivery(value) {
+  return String(value || '').toLowerCase().includes('ikeya');
+}
+
+function isIkeyaCourierOrder(order = {}) {
+  return (
+    order.canonicalStatus === 'handed_to_courier_ikeya' ||
+    order.rawStatus === 'handed_to_courier_ikeya' ||
+    (
+      order.canonicalStatus === 'handed_to_courier' &&
+      getDeliveryProviderValues(order).some(isIkeyaDelivery)
+    )
+  );
+}
+
 function getDeliveryProviderLabel(order = {}) {
   const provider = getDeliveryProvider(order);
-  return isEuropochtaDelivery(provider) ? 'Европочта' : (provider || TEXT.delivery);
+  return hasEuropochtaDelivery(order) ? 'Европочта' : (provider || TEXT.delivery);
 }
 
 function getTrackingUrl(order = {}) {
-  const provider = getDeliveryProvider(order);
+  if (order.trackingUrl) return order.trackingUrl;
 
-  if (isEuropochtaDelivery(provider)) return 'https://evropochta.by/';
+  if (hasEuropochtaDelivery(order)) return 'https://evropochta.by/';
 
   return '';
 }
 
 function renderTrackingIcon(order = {}) {
-  if (isEuropochtaDelivery(getDeliveryProvider(order))) {
+  if (hasEuropochtaDelivery(order)) {
     return <EvropochtaIcon />;
   }
 
@@ -315,13 +347,17 @@ function renderTrackingIcon(order = {}) {
 }
 
 function shouldShowWhereIsMyOrder(order = {}) {
-  return order.statusConfig?.whereIsVisible === true;
+  return (
+    order.statusConfig?.whereIsVisible === true &&
+    !isIkeyaCourierOrder(order)
+  );
 }
 
 function shouldShowTrackingBlock(order = {}) {
   return Boolean(
     order.trackNumber &&
-    order.statusConfig?.trackingVisible === true
+    order.statusConfig?.trackingVisible === true &&
+    !isIkeyaCourierOrder(order)
   );
 }
 
@@ -453,6 +489,19 @@ const OrderCard = ({ order }) => {
     );
   }
 
+  function renderIkeyaCourierInfoCard() {
+    if (!isIkeyaCourierOrder(order)) return null;
+
+    return (
+      <div style={serviceStyles.row}>
+        <div style={{ ...serviceStyles.infoCard, ...serviceStyles.fullWidthInfoCard }}>
+          <InfoIcon />
+          <div style={serviceStyles.infoText}>{TEXT.ikeyaCourierInfo}</div>
+        </div>
+      </div>
+    );
+  }
+
   function renderWhereIsMyOrderCard() {
     if (!shouldShowWhereIsMyOrder(order)) return null;
 
@@ -469,10 +518,17 @@ const OrderCard = ({ order }) => {
 
   function renderOrderServiceBlocks() {
     const hasTrackingBlock = shouldShowTrackingBlock(order);
-    const hasOrderNumberInfo = shouldShowOrderNumberInfo(order);
-    const hasWhereIsMyOrder = !hasTrackingBlock && shouldShowWhereIsMyOrder(order);
+    const isIkeyaCourier = isIkeyaCourierOrder(order);
+    const hasOrderNumberInfo =
+      !hasTrackingBlock &&
+      !isIkeyaCourier &&
+      shouldShowOrderNumberInfo(order);
+    const hasWhereIsMyOrder =
+      !hasTrackingBlock &&
+      !isIkeyaCourier &&
+      shouldShowWhereIsMyOrder(order);
 
-    if (!hasTrackingBlock && !hasOrderNumberInfo && !hasWhereIsMyOrder) {
+    if (!hasTrackingBlock && !isIkeyaCourier && !hasOrderNumberInfo && !hasWhereIsMyOrder) {
       return null;
     }
 
@@ -487,6 +543,7 @@ const OrderCard = ({ order }) => {
             {renderTrackInfoCard()}
           </div>
         ) : null}
+        {isIkeyaCourier ? renderIkeyaCourierInfoCard() : null}
         {hasOrderNumberInfo ? renderOrderNumberInfoCard() : null}
         {hasWhereIsMyOrder ? renderWhereIsMyOrderCard() : null}
       </>

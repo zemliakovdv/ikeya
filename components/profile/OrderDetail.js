@@ -8,6 +8,7 @@ const ORDER_HELP_HREF = '/help/how-to-order';
 const PRODUCT_IMAGE_FALLBACK = '/assets/img/profile/active_1.png';
 const EUROPOST_LOGO_SRC = '/assets/img/cart/evropochta-logo.png';
 const IKEYA_LOGO_SRC = '/assets/img/logo.svg';
+const IKEYA_COURIER_INFO = 'С вами свяжется сотрудник колл-центра IKEYA для согласования доставки.';
 
 function ArrowLeftIcon() {
   return (
@@ -178,12 +179,25 @@ function getDeliveryCodes(order) {
 
 function isEuropostDelivery(order) {
   return getDeliveryCodes(order).some((code) => (
-    code.includes('europost') || code.includes('evropochta')
+    code.includes('европочт') ||
+    code.includes('europost') ||
+    code.includes('evropochta')
   ));
 }
 
 function isIkeyaDelivery(order) {
   return getDeliveryCodes(order).some((code) => code.includes('ikeya'));
+}
+
+function isIkeyaCourierOrder(order = {}) {
+  return (
+    order.canonicalStatus === 'handed_to_courier_ikeya' ||
+    order.rawStatus === 'handed_to_courier_ikeya' ||
+    (
+      order.canonicalStatus === 'handed_to_courier' &&
+      isIkeyaDelivery(order)
+    )
+  );
 }
 
 function renderDeliveryIcon(order) {
@@ -371,6 +385,15 @@ export default function OrderDetail({ order, onBack, onReorder }) {
   const hasProducts = Array.isArray(order.items) && order.items.length > 0;
   const hasServices = Array.isArray(order.services) && order.services.length > 0;
   const trackingDeliveryLabel = getDeliveryLabel(order.deliveryProvider || order.deliveryName);
+  const isIkeyaCourier = isIkeyaCourierOrder(order);
+  const canShowTracking = Boolean(
+    order.trackNumber &&
+    order.statusConfig?.trackingVisible === true &&
+    !isIkeyaCourier
+  );
+  const effectiveTrackingUrl =
+    order.trackingUrl ||
+    (isEuropostDelivery(order) ? 'https://evropochta.by/' : null);
   const totalDisplay = order.totalAmount !== null && order.totalAmount !== undefined
     ? formatMoney(order.totalAmount)
     : order.price && order.price !== '0,00'
@@ -432,7 +455,7 @@ export default function OrderDetail({ order, onBack, onReorder }) {
               </span>
             </div>
 
-            {order.trackNumber && (
+            {canShowTracking && (
               <>
                 <div className="order-detail__tracking">
                   <div className="order-detail__track-card">
@@ -450,10 +473,10 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                     </button>
                   </div>
 
-                  {order.trackingUrl ? (
+                  {effectiveTrackingUrl ? (
                     <a
                       className="order-detail__track-card order-detail__track-card--link"
-                      href={order.trackingUrl}
+                      href={effectiveTrackingUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -467,18 +490,7 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                       </div>
                       <ArrowRightIcon />
                     </a>
-                  ) : (
-                    <div className="order-detail__track-card">
-                      <div>
-                        <div className="order-detail__track-value">Отследить</div>
-                        {trackingDeliveryLabel ? (
-                          <div className="order-detail__track-label">
-                            {trackingDeliveryLabel}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="order-detail__notice">
@@ -486,6 +498,13 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                   <span>Выдача заказов осуществляется по трек-номеру и документу, удостоверяющему личность.</span>
                 </div>
               </>
+            )}
+
+            {isIkeyaCourier && (
+              <div className="order-detail__notice">
+                <InfoIcon />
+                <span>{IKEYA_COURIER_INFO}</span>
+              </div>
             )}
 
             <div className="order-detail__info-list">
