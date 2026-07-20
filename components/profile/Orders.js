@@ -14,6 +14,7 @@ import {
   getOrderStatusLabel,
   ORDER_STATUS_FALLBACK_LABELS,
   getOrderStatusConfig,
+  getOrderById,
   isProfileActiveOrder,
   isProfileDraftOrder,
   isProfileExpiredUnpaidOrder,
@@ -70,23 +71,43 @@ function normalizePlainText(value) {
   return text;
 }
 
-function extractTrackNumberValue(value) {
-  if (!value || typeof value !== 'object') return value;
+function normalizeTrackNumber(value) {
+  if (value === undefined || value === null) return null;
 
-  return firstDefined(
-    value.track_number,
-    value.tracking_number,
-    value.number
-  );
-}
-
-function normalizeTrackNumber(...values) {
-  for (const value of values) {
-    const normalized = normalizePlainText(extractTrackNumberValue(value));
-    if (normalized) return normalized;
+  if (typeof value === 'object') {
+    return normalizeTrackNumber(firstDefined(
+      value.track_number,
+      value.tracking_number,
+      value.number,
+      value.code,
+      value.value
+    ));
   }
 
-  return null;
+  return normalizePlainText(value);
+}
+
+function isIkeyaCourierOrder(order = {}) {
+  const deliveryValues = [
+    order.deliveryProvider,
+    order.deliveryName,
+    order.deliveryMethod,
+    order.deliveryType,
+    order.rawDeliveryType,
+  ];
+
+  const isIkeya = deliveryValues.some((value) =>
+    String(value || '').toLowerCase().includes('ikeya')
+  );
+
+  return (
+    order.canonicalStatus === 'handed_to_courier_ikeya' ||
+    order.rawStatus === 'handed_to_courier_ikeya' ||
+    (
+      order.canonicalStatus === 'handed_to_courier' &&
+      isIkeya
+    )
+  );
 }
 
 function toFiniteNumber(value) {
@@ -583,16 +604,22 @@ export function parseOrders(data) {
       !paymentExpired &&
       Boolean(paymentUrl) &&
       UNPAID_STATUSES.includes(rawStatus);
-    const normalizedTrackNumber = normalizeTrackNumber(
+    const normalizedTrackNumber = normalizeTrackNumber(firstDefined(
       attr.track_number,
       attr.tracking_number,
       attr.tracking_info?.track_number,
       attr.tracking_info?.tracking_number,
+      attr.tracking_info?.number,
       attr.tracking?.number,
       attr.tracking?.track_number,
+      attr.tracking?.tracking_number,
       attr.delivery?.track_number,
-      attr.address?.delivery?.track_number
-    );
+      attr.delivery?.tracking_number,
+      attr.delivery?.tracking?.number,
+      attr.address?.delivery?.track_number,
+      attr.address?.delivery?.tracking_number,
+      attr.address?.delivery?.tracking?.number
+    ));
     const normalizedTrackingUrl = normalizePlainText(firstDefined(
       attr.tracking_info?.tracking_url,
       attr.tracking_url,
@@ -797,6 +824,64 @@ export function parseOrders(data) {
         return `${fallback.getDate()} ${months[fallback.getMonth()]}`;
       })(),
       items,
+    };
+  });
+}
+
+async function enrichOrdersWithTrackingDetails(parsedOrders) {
+  const trackingCandidates = parsedOrders.filter((order) => (
+    order.statusConfig?.trackingVisible === true &&
+    !order.trackNumber &&
+    !isIkeyaCourierOrder(order)
+  ));
+
+  if (trackingCandidates.length === 0) {
+    return parsedOrders;
+  }
+
+  const settled = await Promise.allSettled(
+    trackingCandidates.map(async (order) => {
+      const response = await getOrderById(order.id);
+
+      const normalizedResponse = Array.isArray(response?.data)
+        ? response
+        : response?.data
+          ? { ...response, data: [response.data] }
+          : null;
+
+      if (!normalizedResponse) return null;
+
+      const [detailOrder] = parseOrders(normalizedResponse);
+      return detailOrder || null;
+    })
+  );
+
+  const detailById = new Map();
+
+  settled.forEach((result) => {
+    if (result.status !== 'fulfilled' || !result.value?.id) return;
+    detailById.set(String(result.value.id), result.value);
+  });
+
+  if (detailById.size === 0) {
+    return parsedOrders;
+  }
+
+  return parsedOrders.map((order) => {
+    const detail = detailById.get(String(order.id));
+
+    if (!detail) return order;
+
+    return {
+      ...order,
+      trackNumber: detail.trackNumber || order.trackNumber,
+      trackingUrl: detail.trackingUrl || order.trackingUrl,
+      trackingInfo: detail.trackingInfo || order.trackingInfo,
+      deliveryProvider: detail.deliveryProvider || order.deliveryProvider,
+      deliveryName: detail.deliveryName || order.deliveryName,
+      deliveryMethod: detail.deliveryMethod || order.deliveryMethod,
+      deliveryType: detail.deliveryType || order.deliveryType,
+      rawDeliveryType: detail.rawDeliveryType || order.rawDeliveryType,
     };
   });
 }
@@ -1032,7 +1117,18 @@ export default function Orders() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setAllOrders(parseOrders(data));
+      const parsedOrders = parseOrders(data);
+      setAllOrders(parsedOrders);
+      setOrdersLoading(false);
+
+      try {
+        const enrichedOrders = await enrichOrdersWithTrackingDetails(parsedOrders);
+        if (enrichedOrders !== parsedOrders) {
+          setAllOrders(enrichedOrders);
+        }
+      } catch {
+        // Detail enrichment is optional; the list response remains authoritative.
+      }
     } catch {
       setError('Не удалось загрузить заказы');
     } finally {
