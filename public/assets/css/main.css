@@ -1661,6 +1661,7 @@ main {
     height: auto;
     display: block;
     border-radius: 8px;
+    min-height: 256px;
 }
 
 /* Навигационные кнопки */
