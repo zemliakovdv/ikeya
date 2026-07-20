@@ -1427,6 +1427,35 @@ main {
     border-radius: 4px !important;
 }
 
+.promo-category-banner {
+    margin: 32px 0 48px;
+}
+
+.promo-category-banner__link {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.promo-category-banner__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1500 / 256;
+    object-fit: cover;
+}
+
+@media (max-width: 767px) {
+    .promo-category-banner {
+        margin: 20px 0 32px;
+    }
+
+    .promo-category-banner__link {
+        border-radius: 6px;
+    }
+}
+
 .promo-block {
     margin-bottom: 48px;
 }
@@ -1614,23 +1643,15 @@ main {
     padding-bottom: 40px;
 }
 
-.ads-banner-slider--mobile {
-    display: none;
-}
-
-.ads-banner-slider--desktop {
-    display: block;
-}
-
 /* Секция рекламных баннеров */
 .ads-banner {
-    padding: 40px 0;
+    margin: 32px 0 48px;
 }
 
 /* Контейнер слайдера */
 .ads-banner-slider {
     position: relative;
-    padding-bottom: 30px;
+    width: 100%;
 }
 
 /* Обертка Swiper */
@@ -1639,35 +1660,26 @@ main {
 }
 
 /* Элемент слайда */
-.ads-banner-item {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.ads-banner-item a {
-    flex: 1;
+.ads-banner-item,
+.ads-banner-item a,
+.ads-banner-item picture {
     display: block;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.ads-banner-item a:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
 }
 
 .ads-banner-item img {
+    display: block;
     width: 100%;
     height: auto;
-    display: block;
+    aspect-ratio: 1500 / 256;
+    object-fit: cover;
     border-radius: 8px;
-    min-height: 256px;
 }
 
 /* Навигационные кнопки */
 .ads-banner-slider__nav {
     position: absolute;
-    top: 41%;
+    top: 50%;
     transform: translateY(-50%);
     z-index: 10;
     width: 32px;
@@ -1715,7 +1727,7 @@ main {
 /* Пагинация (дотсы) */
 .ads-banner-slider__pagination {
     position: absolute;
-    bottom: 0 !important;
+    bottom: -28px !important;
     left: 50% !important;
     transform: translateX(-50%);
     display: flex;
@@ -1741,6 +1753,20 @@ main {
     height: 8px;
     background: #181818;
     border-radius: 4px;
+}
+
+@media (max-width: 767px) {
+    .ads-banner {
+        margin: 20px 0 32px;
+    }
+
+    .ads-banner-item img {
+        border-radius: 6px;
+    }
+
+    .ads-banner-slider__pagination {
+        bottom: -24px !important;
+    }
 }
 
 .new-tabs {
