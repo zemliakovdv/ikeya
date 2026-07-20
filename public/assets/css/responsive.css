@@ -19729,14 +19729,6 @@ body.mobile-phone-open .mobile-phone-sheet {
     }
 }
 
-/* Home performance stability: reserve media boxes before images load. */
-.start-slider--single .start-slider__swiper {
-    height: clamp(176px, 34.4vw, 516px);
-}
-
-.start-slider--triple .start-slider__swiper {
-    height: clamp(360px, 39.6vw, 594px);
-}
 
 .start-slider__swiper .swiper-wrapper,
 .start-slider__swiper .swiper-slide,
