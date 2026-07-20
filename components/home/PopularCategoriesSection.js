@@ -1,7 +1,15 @@
 // components/home/PopularCategoriesSection.js
 
-import { getPopularCategories, IMAGES_BASE_URL } from '@/lib/api/ikea';
+import {
+  getCachedCategoriesTree,
+  getPopularCategories,
+  IMAGES_BASE_URL,
+} from '@/lib/api/ikea';
 import PopularCategory from '@/components/home/PopularCategory';
+import {
+  buildCategoryUrl,
+  findCategoryPathByIkeaId,
+} from '@/lib/utils/categoryHelpers';
 
 const PLACEHOLDER_IMAGE = '/assets/img/main-page/popular-categories/popular-categories-1.png';
 
@@ -22,16 +30,34 @@ function resolveImageUrl(attr) {
   return PLACEHOLDER_IMAGE;
 }
 
+function buildFallbackCategoryUrl(item) {
+  const attr = item?.attributes || {};
+  const rawSegment = attr.slug || item?.id;
+  const segment = ['string', 'number'].includes(typeof rawSegment)
+    ? String(rawSegment).trim()
+    : '';
+
+  return segment && !['undefined', 'null'].includes(segment)
+    ? `/catalog/${segment}`
+    : '/catalog';
+}
+
 export default async function PopularCategoriesSection() {
-  const response = await getPopularCategories();
+  const [response, categoryTree] = await Promise.all([
+    getPopularCategories(),
+    getCachedCategoriesTree(),
+  ]);
 
   const categories = (response.data || []).map((item) => {
-    const attr = item.attributes;
+    const attr = item?.attributes || {};
+    const categoryPath = findCategoryPathByIkeaId(categoryTree, item?.id);
     return {
-      id:    item.id,
+      id:    item?.id,
       name:  attr.translated_name || attr.name || 'Категория',
       image: resolveImageUrl(attr),
-      url:   `/catalog/${attr.slug}`,
+      url:   categoryPath.length > 0
+        ? buildCategoryUrl(categoryPath)
+        : buildFallbackCategoryUrl(item),
     };
   });
 
