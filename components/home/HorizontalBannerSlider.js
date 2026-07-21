@@ -57,7 +57,7 @@ export default function HorizontalBannerSlider({ slides = [] }) {
 
       swiperRef.current = new window.Swiper(sliderEl, {
         slidesPerView: 1,
-        spaceBetween: 0,
+        spaceBetween: 12,
         loop: hasMultipleSlides,
         speed: 600,
         watchOverflow: true,
@@ -73,6 +73,11 @@ export default function HorizontalBannerSlider({ slides = [] }) {
               clickable: true,
             }
           : false,
+        breakpoints: {
+          993: {
+            spaceBetween: 0,
+          },
+        },
       });
     };
 
