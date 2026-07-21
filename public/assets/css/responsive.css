@@ -19823,3 +19823,62 @@ body.mobile-phone-open .mobile-phone-sheet {
         aspect-ratio: 358 / 160;
     }
 }
+
+.start-slider__swiper,
+.start-slider__swiper .swiper-wrapper,
+.start-slider__swiper .swiper-slide,
+.start-slider__media,
+.start-slider__media a,
+.start-slider__media picture {
+    height: auto;
+}
+
+.start-slider__media,
+.start-slider__media a,
+.start-slider__media picture,
+.horizontal-banner-item,
+.horizontal-banner-item a,
+.horizontal-banner-item picture,
+.advertising-banner-item,
+.advertising-banner-item a {
+    display: block;
+    width: 100%;
+}
+
+.start-slider__swiper img,
+.start-slider__media img,
+.horizontal-banner-item img,
+.advertising-banner-item img {
+    display: block;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    max-height: none;
+}
+
+.start-slider__swiper img,
+.start-slider__media img,
+.horizontal-banner-item img {
+    object-fit: initial;
+}
+
+.advertising-banner-item img {
+    aspect-ratio: 742 / 256;
+    object-fit: cover;
+}
+
+@media (max-width: 767.98px) {
+    .start-slider__swiper {
+        height: auto;
+    }
+
+    .horizontal-banner,
+    .advertising-banners {
+        margin: 20px 0 32px;
+    }
+
+    .horizontal-banner__pagination,
+    .advertising-banners__pagination {
+        bottom: -24px !important;
+    }
+}

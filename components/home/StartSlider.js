@@ -1,38 +1,31 @@
 'use client';
 
-// components/home/StartSlider.js
-
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 
-function getImageUrl(banner) {
-  const url = banner.attributes.image_url;
-  if (!url) return null;
+function isExternalHref(href) {
+  return /^https:\/\//i.test(String(href || ''));
+}
 
-  if (url.startsWith('http')) {
-    return url.replace(/^https?:\/\/[^/]+/, IMAGES_BASE_URL);
+function BannerLink({ href, children }) {
+  const safeHref = href || '/catalog';
+
+  if (isExternalHref(safeHref)) {
+    return <a href={safeHref}>{children}</a>;
   }
 
-  return `${IMAGES_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+  return <Link href={safeHref}>{children}</Link>;
 }
 
-function getLinkUrl(banner) {
-  if (banner.attributes.link_url) return banner.attributes.link_url;
-
-  const categoryId = banner.relationships?.category?.data?.id;
-  return categoryId ? `/catalog/${categoryId}` : '#';
-}
-
-export default function StartSlider({ slides = [], type = 'single' }) {
+export default function StartSlider({ slides = [] }) {
   const sliderRef = useRef(null);
   const swiperRef = useRef(null);
+  const hasMultipleSlides = slides.length > 1;
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!sliderRef.current) return;
-    if (!slides.length) return;
+    if (typeof window === 'undefined') return undefined;
+    if (!sliderRef.current) return undefined;
+    if (!slides.length) return undefined;
 
     let raf1 = 0;
     let raf2 = 0;
@@ -55,7 +48,6 @@ export default function StartSlider({ slides = [], type = 'single' }) {
       const wrapper = sliderEl.closest('.start-slider-inner');
       if (!wrapper) return;
 
-      const slideCount = sliderEl.querySelectorAll('.swiper-slide').length;
       const prevBtn = wrapper.querySelector('.start-slider__nav-prev');
       const nextBtn = wrapper.querySelector('.start-slider__nav-next');
       const pagination = wrapper.querySelector('.start-slider__pagination');
@@ -65,60 +57,24 @@ export default function StartSlider({ slides = [], type = 'single' }) {
         swiperRef.current = null;
       }
 
-      if (slideCount <= 1) {
-        if (prevBtn) prevBtn.style.display = 'none';
-        if (nextBtn) nextBtn.style.display = 'none';
-        if (pagination) pagination.style.display = 'none';
-        return;
-      }
-
-      if (prevBtn) prevBtn.style.display = '';
-      if (nextBtn) nextBtn.style.display = '';
-      if (pagination) pagination.style.display = '';
-
       swiperRef.current = new window.Swiper(sliderEl, {
-        loop: false,
         slidesPerView: 1,
+        spaceBetween: 0,
+        loop: hasMultipleSlides,
         speed: 600,
         watchOverflow: true,
-        navigation: {
-          nextEl: nextBtn,
-          prevEl: prevBtn,
-        },
-        pagination: {
-          el: pagination,
-          clickable: true,
-        },
-        breakpoints: {
-          320: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-          360: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-          576: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-          768: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-          992: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-          1200: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-          1400: {
-            slidesPerView: 1,
-            spaceBetween: 0,
-          },
-        },
+        navigation: hasMultipleSlides
+          ? {
+              nextEl: nextBtn,
+              prevEl: prevBtn,
+            }
+          : false,
+        pagination: hasMultipleSlides
+          ? {
+              el: pagination,
+              clickable: true,
+            }
+          : false,
       });
     };
 
@@ -162,80 +118,46 @@ export default function StartSlider({ slides = [], type = 'single' }) {
         swiperRef.current = null;
       }
     };
-  }, [slides.length, type]);
+  }, [hasMultipleSlides, slides.length]);
 
   if (!slides.length) return null;
 
   return (
-    <section className={`start-slider start-slider--${type}`}>
+    <section className="start-slider">
       <div className="container">
         <div className="row">
           <div className="col-12">
             <div className="start-slider-inner">
               <div ref={sliderRef} className="swiper start-slider__swiper">
                 <div className="swiper-wrapper">
-                  {type === 'single' &&
-                    slides.map((banner, idx) => {
-                      const src = getImageUrl(banner);
-                      if (!src) return null;
-                      const isLcpImage = idx === 0;
+                  {slides.map((slide, index) => {
+                    const isLcpImage = index === 0;
 
-                      return (
-                        <div className="swiper-slide" key={banner.id || idx}>
-                          <Link href={getLinkUrl(banner)}>
-                            <div className="start-slider__media">
-                              <Image
-                                src={src}
-                                alt={`Баннер ${idx + 1}`}
-                                fill
-                                sizes="(max-width: 768px) 100vw, 1500px"
-                                priority={isLcpImage}
-                                loading={isLcpImage ? undefined : 'lazy'}
-                                fetchPriority={isLcpImage ? 'high' : undefined}
-                                style={{ objectFit: 'cover' }}
+                    return (
+                      <div className="swiper-slide" key={slide.slotKey || slide.id || index}>
+                        <div className="start-slider__media">
+                          <BannerLink href={slide.link}>
+                            <picture>
+                              <source media="(max-width: 767px)" srcSet={slide.mobileImage} />
+                              <source media="(max-width: 1199px)" srcSet={slide.tabletImage} />
+                              <img
+                                src={slide.desktopImage}
+                                alt={`Баннер ${index + 1}`}
+                                width="1500"
+                                height="516"
+                                loading={isLcpImage ? 'eager' : 'lazy'}
+                                fetchPriority={isLcpImage ? 'high' : 'low'}
                               />
-                            </div>
-                          </Link>
-                        </div>
-                      );
-                    })}
-
-                  {type === 'triple' &&
-                    slides.map((group, groupIdx) => (
-                      <div className="swiper-slide" key={groupIdx}>
-                        <div className="triple-banners">
-                          {group.map((banner, i) => {
-                            const src = getImageUrl(banner);
-                            if (!src) return null;
-                            const isLcpImage = groupIdx === 0 && i === 0;
-
-                            return (
-                              <Link
-                                key={banner.id || i}
-                                href={getLinkUrl(banner)}
-                                className="triple-banner-item"
-                              >
-                                <Image
-                                  src={src}
-                                  alt={`Баннер ${groupIdx * 3 + i + 1}`}
-                                  width={572}
-                                  height={594}
-                                  sizes="(max-width: 768px) 100vw, 572px"
-                                  priority={isLcpImage}
-                                  loading={isLcpImage ? undefined : 'lazy'}
-                                  fetchPriority={isLcpImage ? 'high' : undefined}
-                                  style={{ width: '100%', height: 'auto' }}
-                                />
-                              </Link>
-                            );
-                          })}
+                            </picture>
+                          </BannerLink>
                         </div>
                       </div>
-                    ))}
+                    );
+                  })}
                 </div>
               </div>
 
-              {slides.length > 1 && (
+              {hasMultipleSlides && (
                 <>
                   <div className="start-slider__pagination" />
 

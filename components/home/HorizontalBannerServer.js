@@ -1,20 +1,20 @@
-import StartSlider from '@/components/home/StartSlider';
+import HorizontalBannerSlider from '@/components/home/HorizontalBannerSlider';
 import {
   groupResponsiveBanners,
   normalizeBannerRecord,
   pickResponsiveImages,
 } from '@/components/home/bannerUtils';
-import { getMainSliderBanners } from '@/lib/api/ikea';
+import { getHorizontalBanners } from '@/lib/api/ikea';
 
-const MAIN_SIZES = {
-  desktop: { width: 1500, height: 516 },
-  tablet: { width: 960, height: 516 },
-  mobile: { width: 572, height: 594 },
+const HORIZONTAL_SIZES = {
+  desktop: { width: 1500, height: 256 },
+  tablet: { width: 960, height: 256 },
+  mobile: { width: 742, height: 256 },
 };
 
 function mapGroupToSlide(group) {
   const first = group[0];
-  const images = pickResponsiveImages(group, MAIN_SIZES);
+  const images = pickResponsiveImages(group, HORIZONTAL_SIZES);
 
   if (!first || !images) return null;
 
@@ -29,16 +29,16 @@ function mapGroupToSlide(group) {
   };
 }
 
-export default async function StartSliderServer() {
+export default async function HorizontalBannerServer() {
   try {
-    const { data } = await getMainSliderBanners();
+    const { data } = await getHorizontalBanners();
 
     if (!data?.length) return null;
 
     const banners = data
       .map(normalizeBannerRecord)
       .filter((banner) => banner.image)
-      .filter((banner) => !banner.section || banner.section === 'main');
+      .filter((banner) => !banner.section || banner.section === 'horizontal');
 
     const slides = groupResponsiveBanners(banners)
       .map(mapGroupToSlide)
@@ -46,9 +46,9 @@ export default async function StartSliderServer() {
 
     if (!slides.length) return null;
 
-    return <StartSlider slides={slides} />;
+    return <HorizontalBannerSlider slides={slides} />;
   } catch (e) {
-    console.error('Error loading main slider:', e);
+    console.error('Error loading horizontal banners:', e);
     return null;
   }
 }

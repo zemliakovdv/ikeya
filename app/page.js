@@ -2,7 +2,8 @@ import { Suspense } from 'react';
 import StartSliderServer from '@/components/home/StartSliderServer';
 import PopularCategoriesSection from '@/components/home/PopularCategoriesSection';
 import BestsellersSection from '@/components/home/BestsellersSection';
-import AdsBanner from '@/components/home/AdsBanner';
+import HorizontalBannerServer from '@/components/home/HorizontalBannerServer';
+import AdvertisingBannersServer from '@/components/home/AdvertisingBannersServer';
 import BlogSection from '@/components/home/BlogSection';
 import SeoSection from '@/components/home/SeoSection';
 import NewArrivalsSection from '@/components/home/NewArrivalsSection';
@@ -77,8 +78,9 @@ export default async function Home() {
       <StartSliderServer />
       <PopularCategoriesSection />
       <BestsellersSection />
-      <AdsBanner />
+      <HorizontalBannerServer />
       <RecommendedSection />
+      <AdvertisingBannersServer />
       <NewArrivalsSection />
       <BlogSection />
       <SeoSection seoText={seoText} />
