@@ -2,7 +2,7 @@ import AdvertisingBannerSlider from '@/components/home/AdvertisingBannerSlider';
 import { getAdvertisingBanners } from '@/lib/api/ikea';
 import {
   groupResponsiveBanners,
-  mapResponsiveBannerGroup,
+  mapAdvertisingBannerGroup,
   normalizeBannerRecord,
 } from '@/components/home/bannerUtils';
 
@@ -18,7 +18,7 @@ export default async function AdvertisingBannersServer() {
       .filter((banner) => !banner.section || banner.section === 'advertising');
 
     const slides = groupResponsiveBanners(banners)
-      .map(mapResponsiveBannerGroup)
+      .map(mapAdvertisingBannerGroup)
       .filter(Boolean);
 
     if (!slides.length) return null;

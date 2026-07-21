@@ -10154,7 +10154,8 @@ main {
 }
 
 .advertising-banner-item,
-.advertising-banner-item a {
+.advertising-banner-item a,
+.advertising-banner-item picture {
     display: block;
     width: 100%;
 }
@@ -10163,8 +10164,7 @@ main {
     display: block;
     width: 100%;
     height: auto;
-    aspect-ratio: 742 / 256;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 8px;
 }
 

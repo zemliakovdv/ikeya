@@ -105,6 +105,69 @@ export function mapResponsiveBannerGroup(group) {
   };
 }
 
+function hasSize(record, width, height) {
+  return record?.width === width && record?.height === height;
+}
+
+function pickAdvertisingImage(group, candidates) {
+  for (const candidate of candidates) {
+    const match = group.find((record) => {
+      if (!record?.image) return false;
+      if (candidate.breakpoint && record.breakpoint !== candidate.breakpoint) return false;
+      if (!candidate.size) return true;
+
+      return hasSize(record, candidate.size.width, candidate.size.height);
+    });
+
+    if (match) return match;
+  }
+
+  return null;
+}
+
+export function mapAdvertisingBannerGroup(group) {
+  if (!group?.length) return null;
+
+  const desktop = pickAdvertisingImage(group, [
+    { breakpoint: 'desktop', size: { width: 742, height: 256 } },
+    { breakpoint: 'all' },
+    { breakpoint: 'tablet', size: { width: 960, height: 256 } },
+    { breakpoint: 'mobile', size: { width: 960, height: 256 } },
+    { breakpoint: 'desktop' },
+    {},
+  ]);
+  const tablet = pickAdvertisingImage(group, [
+    { breakpoint: 'tablet', size: { width: 960, height: 256 } },
+    { breakpoint: 'mobile', size: { width: 960, height: 256 } },
+    { breakpoint: 'all' },
+    { breakpoint: 'desktop' },
+  ]);
+  const mobile = pickAdvertisingImage(group, [
+    { breakpoint: 'mobile', size: { width: 960, height: 256 } },
+    { breakpoint: 'tablet', size: { width: 960, height: 256 } },
+    { breakpoint: 'all' },
+    { breakpoint: 'desktop' },
+  ]);
+
+  if (!desktop?.image || !tablet?.image || !mobile?.image) return null;
+
+  const sortedGroup = [...group].sort((a, b) => (a.position || 0) - (b.position || 0));
+  const first = sortedGroup[0];
+  const linkRecord = sortedGroup.find((record) => record.linkUrl);
+  const linkUrl = linkRecord?.linkUrl || '/catalog';
+
+  return {
+    id: first.id || first.slotKey,
+    slotKey: first.slotKey,
+    position: first.position,
+    link: linkUrl,
+    linkUrl,
+    desktopImage: desktop.image,
+    tabletImage: tablet.image,
+    mobileImage: mobile.image,
+  };
+}
+
 export function isExternalLink(url) {
   return /^https:\/\//i.test(String(url || ''));
 }

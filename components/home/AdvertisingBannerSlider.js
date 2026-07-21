@@ -134,9 +134,10 @@ export default function AdvertisingBannerSlider({ slides = [] }) {
                         <img
                           src={slide.desktopImage}
                           alt={`Рекламный баннер ${index + 1}`}
-                          width="1500"
+                          width="742"
                           height="256"
                           loading="lazy"
+                          decoding="async"
                           fetchPriority="low"
                         />
                       </picture>
