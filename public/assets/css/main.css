@@ -10259,18 +10259,11 @@ main {
 
     .start-slider-inner:hover .start-slider__nav-prev:not(.swiper-button-disabled),
     .start-slider-inner:hover .start-slider__nav-next:not(.swiper-button-disabled),
-    .start-slider-inner:focus-within .start-slider__nav-prev:not(.swiper-button-disabled),
-    .start-slider-inner:focus-within .start-slider__nav-next:not(.swiper-button-disabled),
     .horizontal-banner-slider:hover .horizontal-banner__nav:not(.swiper-button-disabled),
-    .horizontal-banner-slider:focus-within .horizontal-banner__nav:not(.swiper-button-disabled),
     .advertising-banners-slider:hover .advertising-banners__nav:not(.swiper-button-disabled),
-    .advertising-banners-slider:focus-within .advertising-banners__nav:not(.swiper-button-disabled),
     .popular-categories-desktop:hover .popular-categories__nav:not(.swiper-button-disabled),
-    .popular-categories-desktop:focus-within .popular-categories__nav:not(.swiper-button-disabled),
     .products-slider:hover .products-slider__nav:not(.swiper-button-disabled),
-    .products-slider:focus-within .products-slider__nav:not(.swiper-button-disabled),
-    .blog-slider--desktop:hover .blog-slider__nav:not(.swiper-button-disabled),
-    .blog-slider--desktop:focus-within .blog-slider__nav:not(.swiper-button-disabled) {
+    .blog-slider--desktop:hover .blog-slider__nav:not(.swiper-button-disabled) {
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
@@ -10278,18 +10271,11 @@ main {
 
     .start-slider-inner:hover .start-slider__nav-prev.swiper-button-disabled,
     .start-slider-inner:hover .start-slider__nav-next.swiper-button-disabled,
-    .start-slider-inner:focus-within .start-slider__nav-prev.swiper-button-disabled,
-    .start-slider-inner:focus-within .start-slider__nav-next.swiper-button-disabled,
     .horizontal-banner-slider:hover .horizontal-banner__nav.swiper-button-disabled,
-    .horizontal-banner-slider:focus-within .horizontal-banner__nav.swiper-button-disabled,
     .advertising-banners-slider:hover .advertising-banners__nav.swiper-button-disabled,
-    .advertising-banners-slider:focus-within .advertising-banners__nav.swiper-button-disabled,
     .popular-categories-desktop:hover .popular-categories__nav.swiper-button-disabled,
-    .popular-categories-desktop:focus-within .popular-categories__nav.swiper-button-disabled,
     .products-slider:hover .products-slider__nav.swiper-button-disabled,
-    .products-slider:focus-within .products-slider__nav.swiper-button-disabled,
-    .blog-slider--desktop:hover .blog-slider__nav.swiper-button-disabled,
-    .blog-slider--desktop:focus-within .blog-slider__nav.swiper-button-disabled {
+    .blog-slider--desktop:hover .blog-slider__nav.swiper-button-disabled {
         opacity: 0.3;
         visibility: visible;
         pointer-events: none;
