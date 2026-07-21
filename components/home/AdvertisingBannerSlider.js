@@ -128,14 +128,18 @@ export default function AdvertisingBannerSlider({ slides = [] }) {
                 <div key={slide.id || `${slide.position}-${index}`} className="swiper-slide">
                   <div className="advertising-banner-item">
                     <BannerLink href={slide.link}>
-                      <img
-                        src={slide.image}
-                        alt={`Рекламный баннер ${index + 1}`}
-                        width="742"
-                        height="256"
-                        loading="lazy"
-                        fetchPriority="low"
-                      />
+                      <picture>
+                        <source media="(max-width: 767px)" srcSet={slide.mobileImage} />
+                        <source media="(max-width: 1199px)" srcSet={slide.tabletImage} />
+                        <img
+                          src={slide.desktopImage}
+                          alt={`Рекламный баннер ${index + 1}`}
+                          width="1500"
+                          height="256"
+                          loading="lazy"
+                          fetchPriority="low"
+                        />
+                      </picture>
                     </BannerLink>
                   </div>
                 </div>

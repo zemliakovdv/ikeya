@@ -16,15 +16,16 @@ export function normalizeBannerRecord(record) {
   const position = Number(attr.position) || 0;
 
   return {
-    id: record?.id ?? attr.id ?? `${position}::${link}`,
+    id: record?.id ?? attr.id ?? null,
     section: attr.section || null,
-    slotKey: attr.slot_key || attr.banner_group_id || `${position}::${link}`,
-    breakpoint: attr.breakpoint || null,
+    slotKey: attr.slot_key || null,
+    breakpoint: attr.breakpoint ? String(attr.breakpoint).trim().toLowerCase() : null,
     variant: attr.variant || null,
     width: Number(attr.width) || 0,
     height: Number(attr.height) || 0,
     position,
     image: resolveBannerImageUrl(attr.image_url),
+    linkUrl: attr.link_url || null,
     link,
     updatedAt: attr.updated_at || null,
   };
@@ -48,35 +49,27 @@ export function groupResponsiveBanners(records) {
   });
 }
 
-function matchesSize(record, size) {
-  return record?.width === size.width && record?.height === size.height;
-}
+function pickByBreakpoint(group, breakpoint) {
+  const seen = new Set();
+  const priorities = [breakpoint, 'all', 'tablet', 'desktop', 'mobile'];
 
-function pickBySizes(group, sizes) {
-  for (const size of sizes) {
-    const match = group.find((record) => matchesSize(record, size));
+  for (const currentBreakpoint of priorities) {
+    if (seen.has(currentBreakpoint)) continue;
+    seen.add(currentBreakpoint);
+
+    const match = group.find(
+      (record) => record?.image && record.breakpoint === currentBreakpoint,
+    );
     if (match) return match;
   }
 
-  return group.find((record) => record?.image) || null;
+  return null;
 }
 
-export function pickResponsiveImages(group, expectedSizes) {
-  const desktop = pickBySizes(group, [
-    expectedSizes.desktop,
-    expectedSizes.tablet,
-    expectedSizes.mobile,
-  ]);
-  const tablet = pickBySizes(group, [
-    expectedSizes.tablet,
-    expectedSizes.desktop,
-    expectedSizes.mobile,
-  ]);
-  const mobile = pickBySizes(group, [
-    expectedSizes.mobile,
-    expectedSizes.tablet,
-    expectedSizes.desktop,
-  ]);
+export function pickResponsiveImages(group) {
+  const desktop = pickByBreakpoint(group, 'desktop');
+  const tablet = pickByBreakpoint(group, 'tablet');
+  const mobile = pickByBreakpoint(group, 'mobile');
 
   if (!desktop?.image || !tablet?.image || !mobile?.image) return null;
 
@@ -87,6 +80,28 @@ export function pickResponsiveImages(group, expectedSizes) {
     desktopImage: desktop.image,
     tabletImage: tablet.image,
     mobileImage: mobile.image,
+  };
+}
+
+export function mapResponsiveBannerGroup(group) {
+  const images = pickResponsiveImages(group);
+
+  if (!group?.length || !images) return null;
+
+  const sortedGroup = [...group].sort((a, b) => (a.position || 0) - (b.position || 0));
+  const first = sortedGroup[0];
+  const linkRecord = sortedGroup.find((record) => record.linkUrl);
+  const linkUrl = linkRecord?.linkUrl || '/catalog';
+
+  return {
+    id: first.id || first.slotKey,
+    slotKey: first.slotKey,
+    position: first.position,
+    link: linkUrl,
+    linkUrl,
+    desktopImage: images.desktopImage,
+    tabletImage: images.tabletImage,
+    mobileImage: images.mobileImage,
   };
 }
 

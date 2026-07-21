@@ -1,33 +1,10 @@
 import StartSlider from '@/components/home/StartSlider';
 import {
   groupResponsiveBanners,
+  mapResponsiveBannerGroup,
   normalizeBannerRecord,
-  pickResponsiveImages,
 } from '@/components/home/bannerUtils';
 import { getMainSliderBanners } from '@/lib/api/ikea';
-
-const MAIN_SIZES = {
-  desktop: { width: 1500, height: 516 },
-  tablet: { width: 960, height: 516 },
-  mobile: { width: 572, height: 594 },
-};
-
-function mapGroupToSlide(group) {
-  const first = group[0];
-  const images = pickResponsiveImages(group, MAIN_SIZES);
-
-  if (!first || !images) return null;
-
-  return {
-    id: first.id,
-    slotKey: first.slotKey,
-    position: first.position,
-    link: first.link || '/catalog',
-    desktopImage: images.desktopImage,
-    tabletImage: images.tabletImage,
-    mobileImage: images.mobileImage,
-  };
-}
 
 export default async function StartSliderServer() {
   try {
@@ -41,7 +18,7 @@ export default async function StartSliderServer() {
       .filter((banner) => !banner.section || banner.section === 'main');
 
     const slides = groupResponsiveBanners(banners)
-      .map(mapGroupToSlide)
+      .map(mapResponsiveBannerGroup)
       .filter(Boolean);
 
     if (!slides.length) return null;
