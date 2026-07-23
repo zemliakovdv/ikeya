@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthModals } from '@/components/auth/AuthModalsHost';
 import CartSummary from '@/components/cart/CartSummary';
 import DeliveryModal from '@/components/delivery/modal/DeliveryModal';
 import SavedAddressesModal from '@/components/delivery/modal/SavedAddressesModal';
@@ -594,8 +595,33 @@ function CheckoutPageInner() {
     setDraftId(storedDraftId || '');
   }, [searchParams]);
 
-  const { token } = useAuth();
+  const { token, isAuth, isHydrated } = useAuth();
+  const { openLogin } = useAuthModals();
+  const loginOpenedRef = useRef(false);
   const { cart, totals, items, refreshCart, loading: cartLoading } = useCart();
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    if (isAuth) {
+      loginOpenedRef.current = false;
+      return;
+    }
+
+    if (loginOpenedRef.current) return;
+
+    loginOpenedRef.current = true;
+
+    const queryDraftId = searchParams.get('draft_id');
+    const storedDraftId = readSessionValue('checkoutDraftId', '');
+    const draftForReturn = queryDraftId || storedDraftId;
+    const checkoutPath = draftForReturn
+      ? `/checkout/?draft_id=${encodeURIComponent(String(draftForReturn))}`
+      : null;
+
+    openLogin(checkoutPath);
+    router.replace('/cart');
+  }, [isAuth, isHydrated, openLogin, router, searchParams]);
 
   const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -2074,6 +2100,18 @@ function CheckoutPageInner() {
       setA1Loading(false);
       setSubmitting(false);
     }
+  }
+
+  if (!isHydrated || !isAuth) {
+    return (
+      <main className="korzina">
+        <section className="zakaz">
+          <div className="container">
+            <div style={{ padding: '40px 0', textAlign: 'center', color: '#9e9e9e' }}>Загрузка...</div>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   if (draftLoading) {
