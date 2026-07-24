@@ -1026,7 +1026,7 @@ main {
 
 .products-slider .swiper-wrapper {
     display: flex;
-    gap: 0px 12px;
+    gap: 0;
 }
 
 /* Карточка товара */
@@ -1252,6 +1252,11 @@ main {
     transition: all .3s;
     width: 100%;
     max-width: 132px;
+    box-sizing: border-box;
+}
+
+.products-card-slider .shop_button {
+    max-width: 100%;
 }
 
 .shop_button:hover {
@@ -4948,7 +4953,7 @@ main {
 
 .products-card-slider .swiper-slide {
     height: auto;
-    max-width: fit-content !important;
+    max-width: none;
     margin-right: 0 !important;
 }
 
@@ -4957,7 +4962,7 @@ main {
 }
 
 .more-inner .products-slider .swiper-wrapper {
-    gap: 0px 16px;
+    gap: 0;
 }
 
 

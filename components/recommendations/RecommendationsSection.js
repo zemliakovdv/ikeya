@@ -52,15 +52,15 @@ export default function RecommendationsSection({ products = [] }) {
       spaceBetween: 8,
     },
     576: {
-      slidesPerView: 3.2,
+      slidesPerView: 3,
       spaceBetween: 8,
     },
     768: {
-      slidesPerView: 3.4,
+      slidesPerView: 3,
       spaceBetween: 12,
     },
     992: {
-      slidesPerView: 4.4,
+      slidesPerView: 4,
       spaceBetween: 12,
     },
   };
@@ -80,6 +80,7 @@ export default function RecommendationsSection({ products = [] }) {
                     spaceBetween={desktopMode ? 0 : 8}
                     slidesPerView={desktopMode ? 1 : 2}
                     breakpoints={desktopMode ? undefined : mobileBreakpoints}
+                    roundLengths
                     loop={desktopMode ? groupedProducts.length > 1 : products.length > 1}
                     onBeforeInit={(swiper) => {
                       swiper.params.navigation.prevEl = prevRef.current;

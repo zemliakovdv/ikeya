@@ -74,6 +74,7 @@ export default function ItemsTab({ includedProducts = [] }) {
             992: { slidesPerView: 4, spaceBetween: 20 },
             1200: { slidesPerView: 5, spaceBetween: 20 },
           }}
+          roundLengths
           className="products-slider swiper"
         >
           {includedProducts.map((product) => (
