@@ -11,7 +11,7 @@ export default function AboutHero() {
           <div className="col-12">
             <div className="partner-start_inner">
               <h1>
-                Ikea.by <span>— из мечты об интерьере в реальность</span>
+                Ikeya.by <span>— из мечты об интерьере в реальность</span>
               </h1>
               <p>От мебели до мелочей для уюта — всё, что делает дом настоящим.</p>
             </div>
