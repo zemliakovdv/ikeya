@@ -59,7 +59,7 @@ export default function RootLayout({ children }) {
               url: "https://ikeya.by",
               logo: "https://ikeya.by/assets/img/logo.svg",
               image: "https://ikeya.by/assets/img/logo.svg",
-              email: "support@ikeya.by",
+              email: "info@ikeya.by",
               telephone: "+375445794444",
               sameAs: [
                 "https://www.instagram.com/shopbyshop_by?igsh=MWRoazFqbGE5ZHlibg%3D%3D",

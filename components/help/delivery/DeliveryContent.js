@@ -99,7 +99,7 @@ export default function DeliveryContent() {
         </div>
         <div className="help-support__text">
           <p><strong>Остались вопросы?</strong></p>
-          <p>Пишите в Telegram или на email: <strong>support@ikeya.by</strong></p>
+          <p>Пишите в Telegram или на email: <strong>info@ikeya.by</strong></p>
           <a href="#" className="help-support__link">Перейти в чат-бот</a>
         </div>
       </div>
