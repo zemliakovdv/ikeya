@@ -12,6 +12,7 @@ import {
   getCartSummary,
   normalizeCheckoutItems,
 } from '@/lib/api/cart';
+import { trackBeginCheckout } from '@/lib/analytics';
 
 import CartItemsSection from './CartItemsSection';
 import CartSummary from './CartSummary';
@@ -967,6 +968,8 @@ export default function CartPageClient() {
         return;
       }
 
+      trackBeginCheckout();
+
       if (checkoutRetryTimerRef.current) {
         clearTimeout(checkoutRetryTimerRef.current);
         checkoutRetryTimerRef.current = null;
@@ -979,6 +982,7 @@ export default function CartPageClient() {
       return;
     }
 
+    trackBeginCheckout();
     handleCheckoutAuthorized();
   }, [
     selectedAvailableItems,

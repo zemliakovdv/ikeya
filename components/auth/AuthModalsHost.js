@@ -4,6 +4,7 @@
 import { createContext, useContext, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { phoneSend, phoneVerify, phoneCheck } from '@/lib/api/auth';
+import { trackRegistrationCodeSent, trackLoginCodeSent } from '@/lib/analytics';
 import { useAuth } from '@/contexts/AuthContext';
 import { getCartToken, getCart, setCartToken } from '@/lib/api/cart';
 
@@ -151,6 +152,7 @@ export function AuthModalsProvider({ children }) {
 
       if (checkResp.exists) {
         await sendCode(phone);
+        trackLoginCodeSent();
         return;
       }
 
@@ -197,6 +199,7 @@ export function AuthModalsProvider({ children }) {
       }
 
       await sendCode(phone);
+      trackRegistrationCodeSent();
     } catch (e) {
       setErrorText(e.message || 'Не удалось запросить звонок.');
     } finally {

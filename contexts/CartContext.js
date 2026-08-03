@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import * as cartAPI from '@/lib/api/cart';
 import { getProductBySku } from '@/lib/api/ikea';
 import { useAuth } from '@/contexts/AuthContext';
+import { trackAddToCart } from '@/lib/analytics';
 
 const CartContext = createContext();
 
@@ -158,6 +159,7 @@ export function CartProvider({ children }) {
       }));
 
       setError(null);
+      trackAddToCart();
 
       return response;
     } catch (err) {
