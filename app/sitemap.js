@@ -1,52 +1,77 @@
-import { SITE_URL } from '@/lib/config/api';
-import { getSeoCatalogPages } from '@/lib/api/seoCatalogPages';
-import { normalizeSeoCatalogPath } from '@/lib/seoCatalogPage';
+import { BACKEND_ORIGIN, SITE_URL } from '@/lib/config/api';
 
-function normalizeDate(value) {
-  if (!value) return undefined;
+export const revalidate = 86400;
 
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+const FALLBACK_ENTRIES = [
+  { url: `${SITE_URL}/`, changeFrequency: 'daily', priority: 1 },
+  { url: `${SITE_URL}/catalog/`, changeFrequency: 'daily', priority: 0.9 },
+];
+
+function backendSitemapUrl() {
+  const origin = (BACKEND_ORIGIN || '').replace(/\/+$/, '');
+  if (!origin) return null;
+  return `${origin}/sitemap.xml`;
 }
 
-function shouldIncludeSeoPage(page) {
-  const hasProductsCount = page?.products_count !== undefined && page?.products_count !== null;
-  const productsCount = Number(page?.products_count);
+function parseSitemapXml(xml) {
+  if (!xml || typeof xml !== 'string') return [];
 
-  if (hasProductsCount && productsCount === 0 && page?.indexable !== true) {
-    return false;
+  const entries = [];
+  const urlBlocks = xml.match(/<url\b[^>]*>[\s\S]*?<\/url>/gi) || [];
+
+  for (const block of urlBlocks) {
+    const loc = block.match(/<loc>([\s\S]*?)<\/loc>/i)?.[1]?.trim();
+    if (!loc) continue;
+
+    const lastmod = block.match(/<lastmod>([\s\S]*?)<\/lastmod>/i)?.[1]?.trim();
+    const changeFrequency = block.match(/<changefreq>([\s\S]*?)<\/changefreq>/i)?.[1]?.trim();
+    const priorityRaw = block.match(/<priority>([\s\S]*?)<\/priority>/i)?.[1]?.trim();
+    const priority = priorityRaw !== undefined ? Number(priorityRaw) : undefined;
+
+    const entry = { url: loc };
+    if (lastmod) {
+      const parsed = new Date(lastmod);
+      if (!Number.isNaN(parsed.getTime())) entry.lastModified = parsed;
+    }
+    if (changeFrequency) entry.changeFrequency = changeFrequency;
+    if (Number.isFinite(priority)) entry.priority = priority;
+
+    entries.push(entry);
   }
 
-  return true;
-}
-
-function buildSeoPageEntry(page) {
-  const slug = typeof page?.slug === 'string' ? page.slug.trim() : '';
-  if (!slug) return null;
-
-  const lastModified = normalizeDate(page?.updated_at) || normalizeDate(page?.generated_at);
-  const path = normalizeSeoCatalogPath(page?.canonical_path || page?.path, slug);
-
-  return {
-    url: `${SITE_URL}${path}`,
-    ...(lastModified ? { lastModified } : {}),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  };
+  return entries;
 }
 
 export default async function sitemap() {
-  const seoPages = await getSeoCatalogPages({ sitemap: true });
+  const url = backendSitemapUrl();
 
-  const staticEntries = [
-    { url: `${SITE_URL}/` },
-    { url: `${SITE_URL}/catalog` },
-  ];
+  if (!url) {
+    console.error('sitemap: BACKEND_ORIGIN is empty, returning fallback entries');
+    return FALLBACK_ENTRIES;
+  }
 
-  const seoEntries = seoPages
-    .filter(shouldIncludeSeoPage)
-    .map(buildSeoPageEntry)
-    .filter(Boolean);
+  try {
+    const response = await fetch(url, {
+      headers: { Accept: 'application/xml,text/xml,*/*' },
+      next: { revalidate },
+    });
 
-  return [...staticEntries, ...seoEntries];
+    if (!response.ok) {
+      console.error(`sitemap: backend responded ${response.status} for ${url}`);
+      return FALLBACK_ENTRIES;
+    }
+
+    const xml = await response.text();
+    const entries = parseSitemapXml(xml);
+
+    if (!entries.length) {
+      console.error('sitemap: backend XML parsed to empty urlset');
+      return FALLBACK_ENTRIES;
+    }
+
+    return entries;
+  } catch (error) {
+    console.error('sitemap: failed to load backend sitemap:', error?.message || error);
+    return FALLBACK_ENTRIES;
+  }
 }
