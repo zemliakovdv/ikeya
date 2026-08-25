@@ -118,7 +118,7 @@ export default function Footer({ categoryLinks = [] }) {
                   </div>
                   <div className="footer-payment">
                     <h5>Платежные системы</h5>
-                    <img src="/assets/img/icons/payments.svg" alt="Платежные системы" width="288" height="32" />
+                    <img src="/assets/img/icons/payments.png" alt="Visa, Mastercard, БЕЛКАРТ, WebPay" width="287" height="59" />
                   </div>
                 </div>
                 <div className="footer-bottom">
@@ -208,7 +208,7 @@ export default function Footer({ categoryLinks = [] }) {
                     </div>
                     <div className="footer-payment">
                       <h5>Платежные системы</h5>
-                      <img src="/assets/img/icons/payments.svg" alt="Платежные системы" width="288" height="32" />
+                      <img src="/assets/img/icons/payments.png" alt="Visa, Mastercard, БЕЛКАРТ, WebPay" width="287" height="59" />
                     </div>
                   </div>
                 </div>

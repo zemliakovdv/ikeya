@@ -2188,7 +2188,8 @@ main {
 
 .footer-payment img {
     display: block;
-    max-width: fit-content;
+    max-width: 100%;
+    width: 100%;
     height: auto;
 }
 

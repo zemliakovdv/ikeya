@@ -173,12 +173,14 @@
   margin-bottom: 12px;
 }
 
-.help-accordion__body ul {
+.help-accordion__body ul,
+.help-accordion__body ol {
   padding-left: 20px;
   margin-bottom: 12px;
 }
 
-.help-accordion__body ul li {
+.help-accordion__body ul li,
+.help-accordion__body ol li {
   margin-bottom: 6px;
 }
 
@@ -471,11 +473,17 @@
 /* ========== ЛОГОТИПЫ ОПЛАТЫ ========== */
 .help-payment__logos {
   margin: 16px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
 }
 
 .help-payment__logos img {
   height: 40px;
   width: auto;
+  max-width: 140px;
+  object-fit: contain;
 }
 
 /* ========== ЕРИП дерево ========== */
