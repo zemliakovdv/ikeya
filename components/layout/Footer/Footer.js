@@ -93,7 +93,7 @@ export default function Footer({ categoryLinks = [] }) {
                         <li><a href="/about">О компании</a></li>
                         <li><a href="/blog">Советы и идеи</a></li>
                         <li><a href="/pvz">Пункты выдачи</a></li>
-                        <li><a href="#">Контакты</a></li>
+                        <li><a href="/contacts">Контакты</a></li>
                         <li><a href="/help">Помощь</a></li>
                       </ul>
                     </div>
@@ -155,7 +155,7 @@ export default function Footer({ categoryLinks = [] }) {
                                 <li><a href="/about">О компании</a></li>
                                 <li><a href="/blog">Советы и идеи</a></li>
                                 <li><a href="/pvz">Пункты выдачи</a></li>
-                                <li><a href="#">Контакты</a></li>
+                                <li><a href="/contacts">Контакты</a></li>
                                 <li><a href="/help">Помощь</a></li>
                               </ul>
                             </div>

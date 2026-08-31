@@ -741,3 +741,71 @@
     padding: 12px 14px 14px;
   }
 }
+
+/* ========== КОНТАКТЫ ========== */
+.contacts-page .help-content {
+  max-width: 800px;
+  padding: 24px 32px 32px;
+}
+
+.contacts__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 8px;
+}
+
+.contacts__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+  font: inherit;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.contacts__card:hover {
+  border-color: #0058A3;
+  background: #fafafa;
+}
+
+.contacts__label {
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 140%;
+  color: #757575;
+}
+
+.contacts__value {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  letter-spacing: 0.01em;
+  color: #0058A3;
+}
+
+.contacts__hint {
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 140%;
+  color: #757575;
+}
+
+@media (max-width: 767.98px) {
+  .contacts-page .help-content {
+    padding: 16px;
+  }
+
+  .contacts__grid {
+    grid-template-columns: 1fr;
+  }
+}
