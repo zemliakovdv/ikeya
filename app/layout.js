@@ -67,11 +67,11 @@ export default function RootLayout({ children }) {
               ],
               address: {
                 "@type": "PostalAddress",
-                streetAddress: "ул. Сухаревская, д.16, пом. 6",
+                streetAddress: "ул. Ваупшасова, д. 10, пом. 93",
                 addressLocality: "Минск",
                 addressRegion: "Минская область",
                 addressCountry: "BY",
-                postalCode: "220019",
+                postalCode: "220070",
               },
             }),
           }}
