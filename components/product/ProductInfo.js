@@ -30,17 +30,21 @@ function formatPriceParts(value) {
 }
 
 function formatCustomsDuty(attr) {
-  const total = attr?.customs_duty?.total_byn;
+  const total = attr?.customs_estimate_byn ?? attr?.customs_duty?.total_byn;
 
   if (total !== undefined && total !== null && total !== '') {
     return Math.floor(parsePrice(total)).toLocaleString('ru-RU');
   }
 
-  return Math.floor(parsePrice(attr?.price) * 0.2).toLocaleString('ru-RU');
+  return null;
 }
 
 function hasCustomsDuty(attr) {
-  const customsTotal = parsePrice(attr?.customs_duty?.total_byn);
+  if (attr?.customs_threshold_exceeded || attr?.customs_included_in_card_price) {
+    return true;
+  }
+
+  const customsTotal = parsePrice(attr?.customs_estimate_byn ?? attr?.customs_duty?.total_byn);
   const details = attr?.customs_duty?.details || {};
 
   return Boolean(
@@ -106,8 +110,10 @@ export default function ProductInfo({ product, includedGroups = [] }) {
 
   const customsDuty = formatCustomsDuty(attr);
   const shouldShowCustomsDuty = hasCustomsDuty(attr);
+  const pricingAvailable = attr.pricing_available !== false;
   const promo = attr.promo;
   const { price, priceInt, priceDec } = formatPriceParts(attr.price_byn);
+  const customsNotice = attr.customs_notice || 'Таможенный сбор рассчитывается в корзине, если заказ дороже 200 € или тяжелее 31 кг';
 
   return (
     <div className="goods-content">
@@ -146,7 +152,11 @@ export default function ProductInfo({ product, includedGroups = [] }) {
         )}
 
         <div className="goods-costs">
-          <p>{priceInt}<span>.{priceDec} р.</span> </p>
+          {pricingAvailable ? (
+            <p>{priceInt}<span>.{priceDec} р.</span> </p>
+          ) : (
+            <p>Цена уточняется</p>
+          )}
 
           <div className="goods-delivery">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -156,7 +166,7 @@ export default function ProductInfo({ product, includedGroups = [] }) {
           </div>
         </div>
 
-        {shouldShowCustomsDuty ? (
+        {shouldShowCustomsDuty && pricingAvailable ? (
           <div className="goods-poshlina">
             <div className="goods-poshlina_top">
               <button type="button" onClick={() => setCustomsModalOpen(true)}>
@@ -169,11 +179,23 @@ export default function ProductInfo({ product, includedGroups = [] }) {
               </button>
 
               <p>
-                <span>≈</span>
-                <span className="poshlina-number">{customsDuty}</span>
-                <span className="poshlina-valute">р.</span> пошлина не входит в цену
+                {attr.customs_included_in_card_price ? (
+                  <>
+                    <span>≈</span>
+                    <span className="poshlina-number">{customsDuty}</span>
+                    <span className="poshlina-valute">р.</span> в цену включён ориентировочный таможенный платёж для данного товара
+                  </>
+                ) : (
+                  <>
+                    <span>≈</span>
+                    <span className="poshlina-number">{customsDuty}</span>
+                    <span className="poshlina-valute">р.</span>
+                  </>
+                )}
               </p>
             </div>
+
+            <p className="poshlina-link" style={{ marginBottom: 8 }}>{customsNotice}</p>
 
             <button type="button" className="poshlina-link" onClick={() => setCustomsModalOpen(true)}>
               Правила оплаты и формирование таможенной пошлины
@@ -189,7 +211,7 @@ export default function ProductInfo({ product, includedGroups = [] }) {
             </svg>
 
             <div className="noposhlita-content">
-              <p>Таможенная пошлина исчисляется от суммы заказа более 200 евро и свыше 31 кг</p>
+              <p>{customsNotice}</p>
               <a href="/help/customs/">Подробнее</a>
             </div>
           </div>
@@ -202,7 +224,7 @@ export default function ProductInfo({ product, includedGroups = [] }) {
             className="goods-add__cart"
             onClick={handleAddToCart}
             type="button"
-            disabled={addToCartLoading || !sku}
+            disabled={addToCartLoading || !sku || !pricingAvailable}
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path

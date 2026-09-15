@@ -229,13 +229,15 @@ export default function CartSummary({
           </div>
         )}
 
-        <div className="cart-summary__row">
-          <p>Доставка в Беларусь</p>
-          <div />
-          <p className="summery-row__cost-delivery">
-            {formatMoney(delivery)}
-          </p>
-        </div>
+        {toNumber(delivery) > 0 && (
+          <div className="cart-summary__row">
+            <p>Доставка покупателю</p>
+            <div />
+            <p className="summery-row__cost-delivery">
+              {formatMoney(delivery)}
+            </p>
+          </div>
+        )}
 
         {(showPvzDelivery || toNumber(pvzDelivery) > 0) && (
           <div className="cart-summary__row">
@@ -294,11 +296,11 @@ export default function CartSummary({
             <p>
               {toNumber(customsDuty) > 0 ? (
                 <>
-                  <span>≈{formatMoney(customsDuty)}</span> пошлина не входит в цену
+                  <span>≈{formatMoney(customsDuty)}</span> таможенный платёж входит в итоговую сумму
                 </>
               ) : (
                 <>
-                  <span>0 р.</span> пошлина не входит в цену
+                  Таможенный сбор рассчитывается в корзине, если заказ дороже 200 € или тяжелее 31 кг
                 </>
               )}
             </p>

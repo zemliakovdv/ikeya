@@ -1200,11 +1200,11 @@ function CheckoutPageInner() {
     : null;
 
   const deliveryCost = toNumber(
-    pricingTotals?.delivery_to_belarus_byn ??
-    currentCalcTotals?.delivery_to_belarus_byn ??
-    pricingTotals?.delivery_to_belarus_price_byn ??
-    pricingDelivery?.delivery_to_belarus_price_byn ??
-    summaryDeliveryToBelarus
+    pricingTotals?.local_delivery_total_byn ??
+    pricingTotals?.delivery_method_byn ??
+    currentCalcTotals?.delivery_method_byn ??
+    pricingDelivery?.delivery_method_price_byn ??
+    0
   );
 
   const rawBackendSelectedDeliveryCost =
@@ -1234,7 +1234,11 @@ function CheckoutPageInner() {
     calculatedItemsTotalWeight ??
     0
   );
-  const customsDuty = isSummaryFreshForCurrentItems ? checkoutSummary?.customsDuty ?? 0 : 0;
+  const customsDuty = toNumber(
+    pricingTotals?.customs_total_byn ??
+    currentCalcTotals?.customs_total_byn ??
+    (isSummaryFreshForCurrentItems ? checkoutSummary?.customsDuty : null)
+  );
   const fallbackItemCount = cartItems.reduce(
     (acc, item) => acc + Number(item?.quantity || 0),
     0
@@ -2590,8 +2594,8 @@ function CheckoutPageInner() {
                         delivery={deliveryCost}
                         pvzDelivery={receiveMethod === 'pickup' ? backendSelectedDeliveryCost : 0}
                         showPvzDelivery={receiveMethod === 'pickup' && !!selectedPvz && !!freshPvzCalcResult && hasSeparateBackendSelectedDeliveryCost}
-                        courierDelivery={receiveMethod === 'delivery' && !isIkeyaDelivery ? backendSelectedDeliveryCost : 0}
-                        showCourierDelivery={receiveMethod === 'delivery' && !!selectedAddr && !!freshAddrCalcResult && !isIkeyaDelivery && hasSeparateBackendSelectedDeliveryCost}
+                        courierDelivery={receiveMethod === 'delivery' ? backendSelectedDeliveryCost : 0}
+                        showCourierDelivery={receiveMethod === 'delivery' && !!selectedAddr && hasSeparateBackendSelectedDeliveryCost}
                         finalTotal={finalTotal}
                         itemCount={itemCount}
                         totalWeight={totalWeight}

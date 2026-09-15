@@ -81,7 +81,8 @@ export default function ProductCard({ product, priority = false }) {
   const productTitle = activeVariant?.name_ru || attr.name_ru || 'Товар IKEA';
   const productSubtitle = activeVariant?.small_desc_name || attr.small_desc_name || '';
 
-  const currentPriceNum = parsePrice(attr.price_byn || attr.price);
+  const pricingAvailable = attr.pricing_available !== false && (activeVariant ? activeVariant.pricing_available !== false : true);
+  const currentPriceNum = parsePrice(activeVariant?.price_byn || attr.price_byn || attr.display_price_byn);
   const { floor: price, decimal: priceDecimal } = formatPrice(currentPriceNum);
 
   const baseImages = useMemo(() => {
@@ -315,8 +316,14 @@ export default function ProductCard({ product, priority = false }) {
             </div>
 
             <p className="product-card__price">
-              {price}
-              <span>.{priceDecimal} р.</span>
+              {pricingAvailable ? (
+                <>
+                  {price}
+                  <span>.{priceDecimal} р.</span>
+                </>
+              ) : (
+                'Цена уточняется'
+              )}
             </p>
           </a>
 
@@ -329,8 +336,8 @@ export default function ProductCard({ product, priority = false }) {
               className="shop_button"
               onClick={handleAddToCart}
               type="button"
-              disabled={!currentSku}
-              aria-disabled={!currentSku}
+              disabled={!currentSku || !pricingAvailable}
+              aria-disabled={!currentSku || !pricingAvailable}
             >
               <img src="/assets/img/icons/shopping-cart.svg" alt="" aria-hidden="true" width="20" height="20" />
               <p>В корзину</p>

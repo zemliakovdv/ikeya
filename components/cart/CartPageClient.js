@@ -637,45 +637,41 @@ export default function CartPageClient() {
     let promoDiscount = 0;
     let itemCount = 0;
     let totalWeight = 0;
-    let customsDuty = 0;
-  
+    let pricingUnavailable = false;
+
     selectedAvailableItems.forEach((item) => {
       const qty = Number(item?.quantity || 1);
-  
+
       const lineTotal = toNumber(item?.pricing?.line_total_new_byn);
       const unitPrice = toNumber(item?.pricing?.unit_price_new_byn || item?.product?.price_byn);
       const lineDiscount = toNumber(item?.pricing?.line_discount_byn);
       const unitDiscount = toNumber(item?.pricing?.unit_discount_byn);
       const itemWeight = toNumber(item?.weight);
-      const itemCustoms = toNumber(item?.pricing?.customs_total_byn);
-  
+
+      if (item?.pricing?.pricing_available === false || item?.product?.pricing_available === false) {
+        pricingUnavailable = true;
+      }
+
       subtotal += lineTotal > 0 ? lineTotal : unitPrice * qty;
       promoDiscount += lineDiscount > 0 ? lineDiscount : unitDiscount * qty;
       itemCount += qty;
-      customsDuty += itemCustoms;
-  
+
       if (itemWeight > 0) {
         totalWeight += itemWeight * qty;
       }
     });
-  
+
     return {
       subtotal: toNumber(subtotal),
       finalTotal: null,
       promoDiscount: toNumber(promoDiscount),
       itemCount,
       totalWeight: toNumber(totalWeight),
-      customsDuty: toNumber(customsDuty),
-      deliveryToBelarus: toNumber(
-        delivery?.delivery_to_belarus_byn ||
-        totals?.delivery_to_belarus_byn
-      ),
-      logisticsDelivery: toNumber(
-        delivery?.delivery_total_byn ||
-        totals?.delivery_total_byn
-      ),
-      checkoutAllowed: undefined,
-      minOrderError: '',
+      customsDuty: toNumber(totals?.customs_total_byn),
+      deliveryToBelarus: 0,
+      logisticsDelivery: 0,
+      checkoutAllowed: pricingUnavailable ? false : undefined,
+      minOrderError: pricingUnavailable ? 'Цена уточняется для одного или нескольких товаров. Оформление недоступно.' : '',
       delivery,
     };
   }, [selectedAvailableItems, delivery, totals]);
@@ -1197,7 +1193,7 @@ export default function CartPageClient() {
                         <CartSummary
                           subtotal={selectedData.subtotal}
                           promoDiscount={selectedData.promoDiscount}
-                          delivery={selectedData.deliveryToBelarus}
+                          delivery={0}
                           finalTotal={selectedData.finalTotal}
                           itemCount={selectedItemsCount}
                           totalWeight={selectedData.totalWeight}
