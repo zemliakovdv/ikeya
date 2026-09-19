@@ -296,9 +296,36 @@ function SimpleIcon({ children }) {
   );
 }
 
+function isOrderPaid(attrs = {}) {
+  if (attrs.webpay_paid_at) return true;
+
+  const status = String(attrs.status || '').toLowerCase();
+
+  return Boolean(status) && !['created', 'processing', 'awaiting', 'cancelled', 'canceled', 'draft'].includes(status);
+}
+
+function SuccessHeaderIcon({ variant }) {
+  if (variant === 'success') {
+    return (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+        <path d="M15.9998 2.66667C8.65317 2.66667 2.6665 8.65334 2.6665 16C2.6665 23.3467 8.65317 29.3333 15.9998 29.3333C23.3465 29.3333 29.3332 23.3467 29.3332 16C29.3332 8.65334 23.3465 2.66667 15.9998 2.66667ZM21.6532 12.9067L14.8265 20.3467C14.6532 20.5333 14.4132 20.64 14.1598 20.6533H14.1465C13.9065 20.6533 13.6665 20.56 13.4932 20.3867L10.3865 17.28C10.0265 16.92 10.0265 16.3333 10.3865 15.96C10.7465 15.6 11.3332 15.6 11.7065 15.96L14.1198 18.3733L20.2798 11.6533C20.6265 11.28 21.2132 11.2533 21.5998 11.6C21.9732 11.9467 21.9998 12.5333 21.6532 12.92V12.9067Z" fill="#00910A" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <path d="M16 2.66667C8.65334 2.66667 2.66667 8.65334 2.66667 16C2.66667 23.3467 8.65334 29.3333 16 29.3333C23.3467 29.3333 29.3333 23.3467 29.3333 16C29.3333 8.65334 23.3467 2.66667 16 2.66667ZM16 21.3333C15.2667 21.3333 14.6667 20.7333 14.6667 20C14.6667 19.2667 15.2667 18.6667 16 18.6667C16.7333 18.6667 17.3333 19.2667 17.3333 20C17.3333 20.7333 16.7333 21.3333 16 21.3333ZM17.3333 16C17.3333 16.7333 16.7333 17.3333 16 17.3333C15.2667 17.3333 14.6667 16.7333 14.6667 16V10.6667C14.6667 9.93334 15.2667 9.33334 16 9.33334C16.7333 9.33334 17.3333 9.93334 17.3333 10.6667V16Z" fill="#B71C1C" />
+    </svg>
+  );
+}
+
 export default function OrderSuccessPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('order_id');
+  const paymentResult = searchParams.get('payment');
+  const shouldAutoPay = searchParams.get('pay') === '1' && paymentResult !== 'failed';
+  const paymentFailed = paymentResult === 'failed';
   const { token } = useAuth();
 
   const [order, setOrder] = useState(null);
@@ -308,6 +335,7 @@ export default function OrderSuccessPage() {
   const [timeLeft, setTimeLeft] = useState(null);
   const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
   const timerRef = useRef(null);
+  const autoPayStartedRef = useRef(false);
 
   const [pvz, setPvz] = useState(null);
   const [deliveryAddr, setDeliveryAddr] = useState(null);
@@ -498,8 +526,20 @@ export default function OrderSuccessPage() {
     })
   ) || null;
   const paymentExpired = attrs.payment_expired === true;
+  const isPaid = isOrderPaid(attrs);
   const timerStr = timeLeft ? `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}` : null;
-  const showPaymentAlert = !loading && !paymentExpired && (timerStr || paymentUrl);
+  const awaitingPayment = !loading && !isPaid && !paymentExpired && Boolean(timerStr || paymentUrl);
+  const redirectingToPayment = shouldAutoPay && Boolean(paymentUrl) && !paymentExpired && !isPaid;
+  const waitingForAutoPay = shouldAutoPay && (loading || Boolean(paymentUrl));
+  const showPaymentAlert = awaitingPayment || waitingForAutoPay || isRedirectingToPayment;
+  const successTitle = waitingForAutoPay || isRedirectingToPayment
+    ? 'Переходим к оплате'
+    : paymentFailed
+      ? 'Оплата не прошла'
+      : awaitingPayment
+        ? 'Заказ создан. Осталось оплатить'
+        : 'Заказ успешно оформлен. Спасибо!';
+  const pendingHeader = awaitingPayment || paymentFailed || waitingForAutoPay || isRedirectingToPayment;
 
   const isIkeya = deliveryType === 'ikeya_delivery';
   const deliveryTypeLabel = DELIVERY_TYPE_LABELS[deliveryType] || deliveryType || '';
@@ -535,6 +575,13 @@ export default function OrderSuccessPage() {
     window.location.assign(paymentUrl);
   }
 
+  useEffect(() => {
+    if (loading || !redirectingToPayment || autoPayStartedRef.current) return;
+
+    autoPayStartedRef.current = true;
+    handlePaymentRedirect();
+  }, [loading, redirectingToPayment, paymentUrl]);
+
   return (
     <main className="orders-statused">
       <div className="container">
@@ -543,12 +590,10 @@ export default function OrderSuccessPage() {
             <div className="order-success-page">
               <div className="success-header">
                 <div className="success-icon-large">
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                    <path d="M15.9998 2.66667C8.65317 2.66667 2.6665 8.65334 2.6665 16C2.6665 23.3467 8.65317 29.3333 15.9998 29.3333C23.3465 29.3333 29.3332 23.3467 29.3332 16C29.3332 8.65334 23.3465 2.66667 15.9998 2.66667ZM21.6532 12.9067L14.8265 20.3467C14.6532 20.5333 14.4132 20.64 14.1598 20.6533H14.1465C13.9065 20.6533 13.6665 20.56 13.4932 20.3867L10.3865 17.28C10.0265 16.92 10.0265 16.3333 10.3865 15.96C10.7465 15.6 11.3332 15.6 11.7065 15.96L14.1198 18.3733L20.2798 11.6533C20.6265 11.28 21.2132 11.2533 21.5998 11.6C21.9732 11.9467 21.9998 12.5333 21.6532 12.92V12.9067Z" fill="#00910A" />
-                  </svg>
+                  <SuccessHeaderIcon variant={pendingHeader ? 'pending' : 'success'} />
                 </div>
 
-                <h1 className="success-title">Заказ успешно оформлен. Спасибо!</h1>
+                <h1 className="success-title">{successTitle}</h1>
               </div>
 
               {showPaymentAlert && (
@@ -558,11 +603,18 @@ export default function OrderSuccessPage() {
                   </svg>
 
                   <p>
-                    {timerStr && <>Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. </>}
-                    <strong>Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.</strong>
+                    {waitingForAutoPay || isRedirectingToPayment ? (
+                      <strong>Сейчас откроется защищённая страница оплаты WebPay.</strong>
+                    ) : (
+                      <>
+                        {paymentFailed && <>Платёж не завершён. Можно оплатить заказ ещё раз. </>}
+                        {timerStr && <>Заказ ожидает оплаты <strong className="timer-value">{timerStr}</strong>. </>}
+                        <strong>Скопируйте код заказа для удобства оплаты. Автоматическая отмена заказа происходит сразу после истечения срока оплаты.</strong>
+                      </>
+                    )}
                   </p>
 
-                  {paymentUrl && (
+                  {paymentUrl && !redirectingToPayment && (
                     <button
                       type="button"
                       className="btn-pay-order"
@@ -570,12 +622,14 @@ export default function OrderSuccessPage() {
                       disabled={isRedirectingToPayment}
                       aria-disabled={isRedirectingToPayment}
                     >
-                      Оплатить заказ
+                      {isRedirectingToPayment ? 'Переходим к оплате...' : 'Оплатить заказ'}
                     </button>
                   )}
                 </div>
               )}
 
+              {!(waitingForAutoPay || isRedirectingToPayment) && (
+              <>
               <section className="order-info-section">
                 <div className="order-number-block">
                   <div className="order-number-wrap">
@@ -613,7 +667,7 @@ export default function OrderSuccessPage() {
 
                   <div className="detail-content">
                     <h3 className="detail-title">{paymentLabel}</h3>
-                    <p className="detail-status">{paymentExpired ? 'Истёк срок оплаты' : 'Ждёт оплаты'}</p>
+                    <p className="detail-status">{isPaid ? 'Оплачено' : paymentExpired ? 'Истёк срок оплаты' : 'Ждёт оплаты'}</p>
                   </div>
                 </div>
 
@@ -774,7 +828,10 @@ export default function OrderSuccessPage() {
                 </div>
               )}
 
-              {loading && (
+              </>
+              )}
+
+              {loading && !waitingForAutoPay && (
                 <p style={{ textAlign: 'center', color: '#9e9e9e' }}>Загрузка...</p>
               )}
             </div>

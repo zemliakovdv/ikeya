@@ -2091,7 +2091,8 @@ function CheckoutPageInner() {
       removeLS(LS_RECEIVE_METHOD);
       removeLS(CHECKOUT_DELIVERY_SIGNATURE_KEY);
 
-      router.push(`/order-success?order_id=${orderId}`);
+      const payNow = Boolean(paymentUrl) && paymentMethod !== 'erip';
+      router.push(`/order-success?order_id=${orderId}${payNow ? '&pay=1' : ''}`);
     } catch (err) {
       if (isPersonalDataConsentRequiredError(err)) {
         setCheckoutAttempted(true);
