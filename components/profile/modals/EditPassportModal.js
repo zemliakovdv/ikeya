@@ -6,6 +6,7 @@ import { updateProfile, getProfile, requestA1Verification, verifyA1Code } from '
 import DatePicker from '@/components/ui/DatePicker';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
 import { formatBelarusPhone } from '@/lib/utils/phone';
+import { extractStaticVerificationCode } from '@/lib/utils/verificationCode';
 
 const REGIONS = [
   'Брестская',
@@ -280,6 +281,13 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
       const resp = await requestA1Verification(phone, 'passport_update');
       setVerificationId(resp.verification_id);
       setCallerNumberMasked(resp.caller_number_masked || '');
+
+      const staticCode = extractStaticVerificationCode(resp);
+      if (staticCode) {
+        await completePassportAfterVerify(resp.verification_id, staticCode);
+        return;
+      }
+
       setStep(STEPS.CODE);
     } catch (err) {
       setError(err.message || 'Ошибка запроса верификации');
@@ -295,31 +303,39 @@ export default function EditPassportModal({ profile, onClose, onSave }) {
       const resp = await requestA1Verification(phone, 'passport_update');
       setVerificationId(resp.verification_id);
       setCallerNumberMasked(resp.caller_number_masked || '');
+
+      const staticCode = extractStaticVerificationCode(resp);
+      if (staticCode) {
+        await completePassportAfterVerify(resp.verification_id, staticCode);
+      }
     } catch (err) {
       setError(err.message || 'Ошибка повторного запроса');
     }
   };
+
+  async function completePassportAfterVerify(verificationIdValue, code) {
+    const verifyResponse = await verifyA1Code(verificationIdValue, code);
+    if (verifyResponse?.success === false) {
+      throw new Error(verifyResponse?.message || 'Неверный код');
+    }
+
+    await updateProfile({
+      passport: { ...form },
+      verification_id: verificationIdValue,
+      code,
+    });
+
+    const updated = await getProfile();
+    onSave?.({ ...updated, passport_verified: true });
+    onClose?.();
+  }
 
   // Шаг 2: проверка кода → сохранение паспорта с verification_id и code
   const handleVerify = async (code) => {
     setLoading(true);
     setError('');
     try {
-      const verifyResponse = await verifyA1Code(verificationId, code);
-      if (verifyResponse?.success === false) {
-        throw new Error(verifyResponse?.message || 'Неверный код');
-      }
-
-      // Сохраняем паспорт только после успешной верификации
-      await updateProfile({
-        passport: { ...form },
-        verification_id: verificationId,
-        code,
-      });
-
-      const updated = await getProfile();
-      onSave?.({ ...updated, passport_verified: true });
-      onClose?.();
+      await completePassportAfterVerify(verificationId, code);
     } catch (err) {
       setError(err.message || 'Неверный код');
     } finally {

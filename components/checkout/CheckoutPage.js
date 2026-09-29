@@ -15,6 +15,7 @@ import { resolvePaymentUrl } from '@/lib/utils/paymentUrl';
 import { formatBelarusPhone } from '@/lib/utils/phone';
 import { requestA1Verification, updateProfile, verifyA1Code } from '@/lib/api/account';
 import SmsVerifyModal from '@/components/profile/modals/SmsVerifyModal';
+import { extractStaticVerificationCode } from '@/lib/utils/verificationCode';
 import {
   calculateDelivery,
   getSavedPickupPoints,
@@ -1917,6 +1918,14 @@ function CheckoutPageInner() {
       const res = await requestA1Verification(profile.phone, 'checkout');
       setA1VerificationId(res.verification_id);
       setA1CallerNumber(res.caller_number_masked || null);
+
+      const staticCode = extractStaticVerificationCode(res);
+      if (staticCode) {
+        setA1Loading(false);
+        await handleA1Verify(staticCode, res.verification_id);
+        return;
+      }
+
       setA1Modal(true);
     } catch (err) {
       if (isPersonalDataConsentRequiredError(err)) {
@@ -1929,12 +1938,13 @@ function CheckoutPageInner() {
     }
   }
 
-  async function handleA1Verify(code) {
+  async function handleA1Verify(code, verificationIdOverride = null) {
+    const verificationId = verificationIdOverride || a1VerificationId;
     setA1Loading(true);
     setA1Error(null);
 
     try {
-      const verifyResponse = await verifyA1Code(a1VerificationId, code);
+      const verifyResponse = await verifyA1Code(verificationId, code);
 
       if (verifyResponse?.success !== true) {
         throw new Error('Проверка не пройдена');
@@ -1968,7 +1978,7 @@ function CheckoutPageInner() {
         phone: profile.phone,
         delivery_type: deliveryType,
         payment_method: paymentMethod,
-        a1_verification_id: a1VerificationId,
+        a1_verification_id: verificationId,
         services: selectedServices,
         items: cartItems,
       };

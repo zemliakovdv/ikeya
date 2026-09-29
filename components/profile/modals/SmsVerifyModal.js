@@ -11,6 +11,7 @@ const RESEND_TIMEOUT = 30;
  * Props:
  *   userPhone     {string}   — номер пользователя (показываем в тексте "звоним на Ваш номер")
  *   callerNumber  {string}   — маскированный номер звонящего (не показываем пользователю)
+ *   initialCode   {string}   — опционально: сразу подставить и отправить (static mode)
  *   onVerify      {function} — (digits: string) => Promise<void>
  *   onResend      {function} — () => Promise<void>
  *   onClose       {function}
@@ -20,14 +21,19 @@ const RESEND_TIMEOUT = 30;
 export default function SmsVerifyModal({
   userPhone = '',
   callerNumber = '',
+  initialCode = '',
   onVerify,
   onResend,
   onClose,
   loading = false,
   error = '',
 }) {
-  const [digits,    setDigits]    = useState(['', '', '', '']);
+  const [digits,    setDigits]    = useState(() => {
+    if (/^\d{4}$/.test(initialCode)) return initialCode.split('');
+    return ['', '', '', ''];
+  });
   const [countdown, setCountdown] = useState(RESEND_TIMEOUT);
+  const autoSubmittedRef = useRef(false);
 
   const inputRefs = useRef([]);
   const timerRef  = useRef(null);
@@ -42,6 +48,14 @@ export default function SmsVerifyModal({
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, []);
+
+  // Автоподстановка статического кода из API (Asterisk выключен)
+  useEffect(() => {
+    if (!/^\d{4}$/.test(initialCode) || autoSubmittedRef.current) return;
+    autoSubmittedRef.current = true;
+    setDigits(initialCode.split(''));
+    onVerify?.(initialCode);
+  }, [initialCode, onVerify]);
 
   function formatCountdown(s) {
     const mm = String(Math.floor(s / 60)).padStart(2, '0');

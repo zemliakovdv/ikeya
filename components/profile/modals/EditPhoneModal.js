@@ -10,6 +10,7 @@ import {
   isBelarusPhoneComplete,
   toBelarusPhoneApiValue,
 } from '@/lib/utils/phone';
+import { extractStaticVerificationCode } from '@/lib/utils/verificationCode';
 
 const STEPS = { PHONE: 'phone', CODE: 'code', SUCCESS: 'success' };
 
@@ -39,6 +40,13 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
     setError('');
     try {
       const resp = await requestPhoneChange(phoneForApi);
+      const staticCode = extractStaticVerificationCode(resp);
+      if (staticCode) {
+        const updated = await verifyPhoneChange(phoneForApi, staticCode);
+        onSave?.(updated);
+        setStep(STEPS.SUCCESS);
+        return;
+      }
       setCallerMasked(resp?.caller_number_masked || '');
       setStep(STEPS.CODE);
     } catch (err) {
@@ -53,6 +61,11 @@ export default function EditPhoneModal({ profile, onClose, onSave }) {
     setError('');
     try {
       const resp = await requestPhoneChange(phoneForApi);
+      const staticCode = extractStaticVerificationCode(resp);
+      if (staticCode) {
+        await handleVerify(staticCode);
+        return;
+      }
       setCallerMasked(resp?.caller_number_masked || '');
     } catch (err) {
       setError(err.message || 'Ошибка повторного запроса');

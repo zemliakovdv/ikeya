@@ -13,6 +13,7 @@ import CodeModal from '@/components/auth/CodeModal';
 import RegisterModal from '@/components/auth/RegisterModal';
 import SuccessModal from '@/components/auth/SuccessModal';
 import { isBelarusPhoneComplete, toBelarusPhoneApiValue } from '@/lib/utils/phone';
+import { extractStaticVerificationCode } from '@/lib/utils/verificationCode';
 
 const AuthModalsContext = createContext(null);
 
@@ -127,8 +128,17 @@ export function AuthModalsProvider({ children }) {
   async function sendCode(phone) {
     const resp = await phoneSend({ phone });
     setSendMessage(resp.message || '');
-    setCodeDigits(['', '', '', '']);
     setNeedsConsentRetry(false);
+
+    const staticCode = extractStaticVerificationCode(resp);
+    if (staticCode) {
+      setCodeDigits(staticCode.split(''));
+      openCode();
+      await submitCode(staticCode);
+      return;
+    }
+
+    setCodeDigits(['', '', '', '']);
     openCode();
   }
 
