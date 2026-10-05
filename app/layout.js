@@ -105,15 +105,12 @@ export default function RootLayout({ children }) {
             ym(111125185, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
           `}
         </Script>
-        <noscript>
-          <div>
-            <img
-              src="https://mc.yandex.ru/watch/111125185"
-              style={{ position: 'absolute', left: '-9999px' }}
-              alt=""
-            />
-          </div>
-        </noscript>
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html:
+              '<div><img src="https://mc.yandex.ru/watch/111125185" style="position:absolute; left:-9999px;" alt="" /></div>',
+          }}
+        />
 
         <AuthProvider>
           <ProfileCountsProvider>
