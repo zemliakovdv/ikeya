@@ -296,7 +296,7 @@ export default function CartSummary({
             <p>
               {toNumber(customsDuty) > 0 ? (
                 <>
-                  <span>≈{formatMoney(customsDuty)}</span> таможенный платёж входит в итоговую сумму
+                  <span>≈{formatMoney(customsDuty)}</span> таможенный платёж оплачивается отдельно и не входит в итоговую сумму
                 </>
               ) : (
                 <>
