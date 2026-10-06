@@ -35,6 +35,8 @@ const LS_PVZ_CALC = 'checkout_pvz_calc';
 const LS_ADDR_CALC = 'checkout_addr_calc';
 const CHECKOUT_DELIVERY_SIGNATURE_KEY = 'checkout_delivery_signature';
 const PERSONAL_DATA_CONSENT_REQUIRED_MESSAGE = 'Для оформления заказа нужно дать согласие на обработку персональных данных.';
+/** Временно отключено: ЕРИП ещё не подключён. Включить, когда сервис будет готов. */
+const ERIP_PAYMENT_AVAILABLE = false;
 
 function isTruthyConsent(value) {
   if (value === true || value === 1) return true;
@@ -1041,7 +1043,13 @@ function CheckoutPageInner() {
           setCheckoutDeliveryOptions(deliveryOptions);
         }
 
-        if (attr.payment_method) setPaymentMethod(attr.payment_method);
+        if (attr.payment_method) {
+          const nextPaymentMethod =
+            attr.payment_method === 'erip' && !ERIP_PAYMENT_AVAILABLE
+              ? 'card'
+              : attr.payment_method;
+          setPaymentMethod(nextPaymentMethod);
+        }
         if (attr.address?.services?.length) setSelectedServices(attr.address.services);
 
         const subtotal = loadedDraftItems.reduce(
@@ -2430,16 +2438,20 @@ function CheckoutPageInner() {
                                 </div>
                               </label>
 
-                              <label className="payment-method">
+                              <label className={`payment-method${!ERIP_PAYMENT_AVAILABLE ? ' payment-method--disabled' : ''}`}>
                                 <input
                                   type="radio"
                                   name="payment_method"
                                   value="erip"
                                   checked={paymentMethod === 'erip'}
+                                  disabled={!ERIP_PAYMENT_AVAILABLE}
                                   onChange={(e) => setPaymentMethod(e.target.value)}
                                 />
                                 <div className="payment-card">
                                   <img src="/assets/img/cart/erip.png" alt="ЕРИП" width="89" height="49" />
+                                  {!ERIP_PAYMENT_AVAILABLE && (
+                                    <span className="payment-card__soon">Скоро</span>
+                                  )}
                                 </div>
                               </label>
                             </div>
