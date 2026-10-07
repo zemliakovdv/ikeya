@@ -11,6 +11,7 @@ import CookieBanner from '@/components/cookie/CookieBanner';
 import CatalogRouteLoader from '@/components/ui/CatalogRouteLoader';
 import BootstrapClient from '@/components/BootstrapClient'
 import { ProfileCountsProvider } from '@/components/profile/ProfileCountsContext';
+import EmailPromptHost from '@/components/profile/EmailPromptHost';
 import { Suspense } from 'react'
 import './globals.css'
 import Script from 'next/script'
@@ -124,6 +125,7 @@ export default function RootLayout({ children }) {
                   {children}
                   <Footer />
                   <MobileBottomNav />
+                  <EmailPromptHost />
                 </FavoritesProvider>
               </AuthModalsProvider>
             </CartProvider>
