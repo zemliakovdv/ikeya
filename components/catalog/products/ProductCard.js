@@ -6,7 +6,9 @@ import { IMAGES_BASE_URL } from '@/lib/api/ikea';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import CartCounter from '@/components/cart/CartCounter';
+import OutOfStockNotice from '@/components/product/OutOfStockNotice';
 import ProductBadge from './ProductBadge';
+import { isTemporarilyOutOfStock } from '@/lib/utils/stock';
 
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 const MAX_VISIBLE_VARIANTS = 3;
@@ -121,6 +123,11 @@ export default function ProductCard({ product, priority = false }) {
     return Number(found?.quantity || 0);
   }, [items, currentSku]);
 
+  const stockQuantity = activeVariant && Object.prototype.hasOwnProperty.call(activeVariant, 'quantity')
+    ? activeVariant.quantity
+    : attr.quantity;
+  const outOfStock = isTemporarilyOutOfStock(stockQuantity);
+
   const badges = useMemo(() => {
     const result = [];
 
@@ -151,7 +158,7 @@ export default function ProductCard({ product, priority = false }) {
   const handleAddToCart = useCallback(async (e) => {
     e.stopPropagation();
 
-    if (!currentSku) return;
+    if (!currentSku || outOfStock) return;
 
     try {
       await addToCart(currentSku, 1);
@@ -159,7 +166,7 @@ export default function ProductCard({ product, priority = false }) {
       console.error('Ошибка добавления в корзину:', error);
       alert('Не удалось добавить товар в корзину');
     }
-  }, [addToCart, currentSku]);
+  }, [addToCart, currentSku, outOfStock]);
 
   const handleProductLinkClick = useCallback((e) => {
     if (productUrl === '#') {
@@ -327,7 +334,9 @@ export default function ProductCard({ product, priority = false }) {
             </p>
           </a>
 
-          {quantity > 0 ? (
+          {outOfStock ? (
+            <OutOfStockNotice />
+          ) : quantity > 0 ? (
             <div onClick={(e) => e.stopPropagation()}>
               <CartCounter sku={currentSku} className="added-fullwidth" />
             </div>

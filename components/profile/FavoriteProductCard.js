@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { useCart } from '@/contexts/CartContext';
 import CartCounter from '@/components/cart/CartCounter';
+import OutOfStockNotice from '@/components/product/OutOfStockNotice';
+import { isTemporarilyOutOfStock } from '@/lib/utils/stock';
 
 import { buildAssetUrl } from '@/lib/config/api';
 const PLACEHOLDER = '/assets/img/no-image.jpg';
@@ -52,6 +54,7 @@ export default function FavoriteProductCard({ product, onRemoved }) {
     const found = (cartItems || []).find(it => it?.sku === sku);
     return Number(found?.quantity || 0);
   }, [cartItems, sku]);
+  const outOfStock = isTemporarilyOutOfStock(product.quantity);
 
   const handleRemove = useCallback(async (e) => {
     e.stopPropagation();
@@ -67,12 +70,14 @@ export default function FavoriteProductCard({ product, onRemoved }) {
 
   const handleAddToCart = useCallback(async (e) => {
     e.stopPropagation();
+    if (outOfStock) return;
+
     try {
       await addToCart(sku, 1);
     } catch (e) {
       console.error('Ошибка добавления в корзину', e);
     }
-  }, [addToCart, sku]);
+  }, [addToCart, outOfStock, sku]);
 
   return (
     <div className="col product-card-inner">
@@ -133,7 +138,9 @@ export default function FavoriteProductCard({ product, onRemoved }) {
             {int}<span>.{dec} р.</span>
           </p>
 
-          {quantity > 0 ? (
+          {outOfStock ? (
+            <OutOfStockNotice />
+          ) : quantity > 0 ? (
             <div onClick={(e) => e.stopPropagation()}>
               <CartCounter sku={sku} className="added-fullwidth" />
             </div>

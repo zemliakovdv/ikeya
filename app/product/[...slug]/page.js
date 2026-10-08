@@ -236,7 +236,9 @@ function buildStructuredData(attr, sku) {
           url: productUrl,
           priceCurrency: "BYN",
           price,
-          availability: "https://schema.org/InStock",
+          availability: Number(attr.quantity) > 0
+            ? "https://schema.org/InStock"
+            : "https://schema.org/OutOfStock",
           itemCondition: "https://schema.org/NewCondition",
         },
       };

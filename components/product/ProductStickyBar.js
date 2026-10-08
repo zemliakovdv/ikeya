@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
 import { resolveImageUrl } from '@/lib/api/ikea';
+import OutOfStockNotice from '@/components/product/OutOfStockNotice';
+import { isTemporarilyOutOfStock } from '@/lib/utils/stock';
 
 const PLACEHOLDER_IMAGE = '/assets/img/no-image.jpg';
 
@@ -81,8 +83,10 @@ export default function ProductStickyBar({ product }) {
     return Number(found?.quantity || 0);
   }, [items, sku]);
 
+  const outOfStock = isTemporarilyOutOfStock(attr.quantity);
+
   const handleAddToCart = useCallback(async () => {
-    if (!sku) return;
+    if (!sku || outOfStock) return;
 
     setAddToCartLoading(true);
 
@@ -93,7 +97,7 @@ export default function ProductStickyBar({ product }) {
     } finally {
       setAddToCartLoading(false);
     }
-  }, [addToCart, sku]);
+  }, [addToCart, outOfStock, sku]);
 
   const handleMinus = useCallback(() => {
     if (!sku || !currentQty) return;
@@ -173,7 +177,9 @@ export default function ProductStickyBar({ product }) {
                     <p>{pricingAvailable ? <>{priceInt}<span>.{priceDec} p.</span></> : 'Цена уточняется'}</p>
                   </div>
 
-                  {currentQty > 0 ? (
+                  {outOfStock ? (
+                    <OutOfStockNotice className="out-of-stock-notice--bar" />
+                  ) : currentQty > 0 ? (
                     <div className="goods-added goods-added--compact">
                       <div className="goods-added__counter">
                         <button

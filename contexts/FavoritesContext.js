@@ -34,7 +34,9 @@ function removeFavToken() {
 async function fetchProductBySku(sku) {
   try {
     const data = await getProductBySku(sku);
-    const attr = data?.data?.attributes || {};
+    const attr = data?.data?.attributes;
+    if (!attr) return null;
+
     return {
       sku: attr.sku || sku,
       small_desc_name: attr.small_desc_name || '',
@@ -44,6 +46,7 @@ async function fetchProductBySku(sku) {
       local_images: attr.local_images,
       images: { local_images: attr.local_images },
       is_bestseller: attr.is_bestseller,
+      quantity: attr.quantity,
       variants: attr.variants || null,
     };
   } catch {

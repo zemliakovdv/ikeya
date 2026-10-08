@@ -5,6 +5,8 @@ import { Navigation, Thumbs, FreeMode } from 'swiper/modules';
 import { useState, useCallback } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import CartCounter from '@/components/cart/CartCounter';
+import OutOfStockNotice from '@/components/product/OutOfStockNotice';
+import { isTemporarilyOutOfStock } from '@/lib/utils/stock';
 
 export default function ProductCard({ product, galleryId }) {
   const [thumbsSwiper, setThumbsSwiper] = useState(null);
@@ -19,12 +21,13 @@ export default function ProductCard({ product, galleryId }) {
   }, [items]);
 
   const quantity = getQtyBySku(sku);
+  const outOfStock = isTemporarilyOutOfStock(product?.quantity ?? product?.attributes?.quantity);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!sku) return;
+    if (!sku || outOfStock) return;
 
     try {
       await addToCart(sku, 1);
@@ -102,7 +105,9 @@ export default function ProductCard({ product, galleryId }) {
           <span>.{(product.price % 1).toFixed(2).split('.')[1]} р.</span>
         </p>
 
-        {quantity > 0 ? (
+        {outOfStock ? (
+          <OutOfStockNotice />
+        ) : quantity > 0 ? (
           <div style={{ marginBottom: 0 }}>
             <CartCounter sku={sku} className="added-fullwidth" />
           </div>

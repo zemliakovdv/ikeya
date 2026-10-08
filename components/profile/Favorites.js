@@ -111,6 +111,7 @@ export default function Favorites() {
                       price_byn: item.product.price_byn,
                       local_images: item.product.local_images || [],
                       variants: item.product.variants || null,
+                      quantity: item.product.quantity,
                       is_bestseller: item.product.is_bestseller,
                     }
                   }}

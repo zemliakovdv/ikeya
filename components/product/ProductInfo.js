@@ -11,6 +11,8 @@ import ProductParameters from './info/ProductParameters';
 import ProductDeliveryLink from './info/ProductDeliveryLink';
 import ProductConsultation from './info/ProductConsultation';
 import IncludedProductsBlock from '@/components/product/IncludedProductsBlock';
+import OutOfStockNotice from '@/components/product/OutOfStockNotice';
+import { isTemporarilyOutOfStock } from '@/lib/utils/stock';
 
 function parsePrice(value) {
   const normalized = String(value ?? 0)
@@ -70,8 +72,10 @@ export default function ProductInfo({ product, includedGroups = [] }) {
     return Number(found?.quantity || 0);
   }, [items, sku]);
 
+  const outOfStock = isTemporarilyOutOfStock(attr.quantity);
+
   const handleAddToCart = useCallback(async () => {
-    if (!sku) return;
+    if (!sku || outOfStock) return;
 
     setAddToCartLoading(true);
 
@@ -82,7 +86,7 @@ export default function ProductInfo({ product, includedGroups = [] }) {
     } finally {
       setAddToCartLoading(false);
     }
-  }, [addToCart, sku]);
+  }, [addToCart, outOfStock, sku]);
 
   const handleMinus = useCallback(() => {
     if (!sku || !currentQty) return;
@@ -217,7 +221,9 @@ export default function ProductInfo({ product, includedGroups = [] }) {
           </div>
         )}
 
-        {currentQty > 0 ? (
+        {outOfStock ? (
+          <OutOfStockNotice className="out-of-stock-notice--product" />
+        ) : currentQty > 0 ? (
           <GoodsAdded quantity={currentQty} onMinus={handleMinus} onPlus={handlePlus} />
         ) : (
           <button
