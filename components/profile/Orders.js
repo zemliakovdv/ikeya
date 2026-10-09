@@ -732,7 +732,8 @@ export function parseOrders(data) {
 
     return {
       id: String(attr.public_uid || attr.id || order.id),
-      draftId: String(attr.id || order.id),
+      // OrderSerializer set_id = public_uid; checkout API accepts public_uid or internal id.
+      draftId: String(attr.public_uid || order.id || attr.id),
       publicUid: attr.public_uid || null,
       isDraft,
       isExpiredUnpaid,
