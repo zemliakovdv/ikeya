@@ -98,7 +98,8 @@ export default function CartSummary({
     toNumber(promoDiscount) +
     toNumber(delivery) +
     toNumber(pvzDelivery) +
-    toNumber(courierDelivery);
+    toNumber(courierDelivery) +
+    toNumber(customsDuty);
 
   const displayTotal = finalTotal !== null && finalTotal !== undefined
     ? toNumber(finalTotal)
@@ -296,7 +297,7 @@ export default function CartSummary({
             <p>
               {toNumber(customsDuty) > 0 ? (
                 <>
-                  <span>≈{formatMoney(customsDuty)}</span> таможенный платёж оплачивается отдельно и не входит в итоговую сумму
+                  <span>≈{formatMoney(customsDuty)}</span> таможенный платёж включён в итоговую сумму и оплачивается вместе с заказом
                 </>
               ) : (
                 <>

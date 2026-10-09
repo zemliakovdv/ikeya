@@ -1,97 +1,18 @@
 // components/help/customs/CustomsContent.js
 
-const ERRORS = [
-  {
-    image: '/assets/img/help/customs/passport.png',
-    title: 'Ввод номера паспорта',
-    desc: <>В поле «Идентификационный номер» Вам нужен именно <strong>личный (идентификационный) номер</strong> из 14 символов (формат XXXXXXXXYXXXYYX, где X - цифры, Y – буквы)</>,
-  },
-  {
-    image: '/assets/img/help/customs/language.png',
-    title: 'Язык ввода',
-    desc: <>При вводе букв личного номера используйте <strong>ТОЛЬКО ЗАГЛАВНЫЕ ЛАТИНСКИЕ</strong> (АНГЛИЙСКИЕ) БУКВЫ 4. Из-за ошибки в написании таможня просто не увидит ваш платёж</>,
-  },
-  {
-    image: '/assets/img/help/customs/cheks.png',
-    title: 'Требования к чеку',
-    desc: <>В чеке, который вы отправляете менеджеру, <strong>обязательно</strong> должна быть видна <strong>дата оплаты</strong> и <strong>номер операции в ЕРИП</strong>. Без этой информации таможня чек <strong>НЕ ПРИМЕТ</strong></>,
-  },
-];
-
 export default function CustomsContent() {
   return (
     <div className="help-content__inner help-article">
 
-      <h1>Как быстро оплатить таможенную пошлину</h1>
+      <h1>Таможенная пошлина</h1>
       <p>
-        Когда ваш заказ сформирован в Польше и готов к отправке в Беларусь, наша служба поддержки напишет вам в{' '}
-        <span className="help-article_blue">Telegram</span> или <span className="help-article_blue">WhatsApp</span>
+        Ориентировочная таможенная пошлина и таможенный сбор входят в стоимость заказа.
+        Вы оплачиваете их вместе с товарами при оформлении, отдельный платёж на таможню не нужен.
       </p>
-      <ul>
-        <li><strong>Что мы сообщим:</strong> «Ваш заказ выезжает. Ориентировочная пошлина составит _____Сумма». <span className="help-content__grey">(Точная сумма формируется в день прибытия на таможню РБ).</span></li>
-        <li><strong>Что нужно от вас:</strong> Быть на связи в день прибытия машины на таможню. Ваш заказ едет в одной большой партии, и <span className="help-article_blue">неоплаченная пошлина задержит всю машину</span> и заказы других клиентов</li>
-      </ul>
-
-      {/* Оплата на таможне */}
-      <h2 className="help-section__title">Оплата на таможне</h2>
-      <div className="help-cards help-cards--2col">
-        <div className="help-card help-card--horizontal">
-          <div className="help-card__img">
-            {/* TODO: иконка квитанции */}
-            <img src="/assets/img/help/customs/kvitancia.png" alt="Квитанция" />
-          </div>
-          <p className="help-card__desc">Как только машина въезжает в зону таможенного контроля, менеджер пришлёт вам в мессенджер <strong>персональную квитанцию-файл</strong> с итоговой суммой и вашими данными</p>
-        </div>
-        <div className="help-card help-card--horizontal">
-          <div className="help-card__img">
-            {/* TODO: иконка таймера */}
-            <img src="/assets/img/help/customs/times.png" alt="Таймер" />
-          </div>
-          <p className="help-card__desc">У вас будет <strong>ровно 30 минут</strong>, чтобы совершить оплату и отправить чек (PDF или скриншот) менеджеру в ответном сообщении</p>
-        </div>
-      </div>
-
-      {/* ЕРИП */}
-      <h2 className="help-section__title">Как оплатить через систему ЕРИП (Инструкция)</h2>
-      <p>Вам необходимо будет совершить <strong>две операции</strong> в дереве ЕРИП, так как в квитанции указаны два кода платежа.</p>
-
-      <p><strong>Путь в дереве ЕРИП:</strong></p>
-      <div className="help-erip-tree">
-        <p>↳ Система «Расчет» (ЕРИП)</p>
-        <p className="indent-1">↳ Таможенные платежи</p>
-        <p className="indent-2">↳ Товары для личного пользования (физ. лица)</p>
-        <p className="indent-3">↳ Задолженность, уплата без документа начисления</p>
-        <p className="indent-4">↳ Лица с паспортом РБ (видом на жительство)</p>
-      </div>
-
-      <ul className="payment-instr">
-        <li><strong>Платёж №1 Авансовый платёж:</strong> Выберите код <strong style={{ color: '#0058A3' }}>03135</strong> (сумма пошлины)</li>
-        <li><strong>Платёж №2 (Таможенный сбор):</strong> Выберите код <strong style={{ color: '#0058A3' }}>02204</strong> (Таможенный сбор — 10.00 BYN)</li>
-      </ul>
-
-      {/* Частые ошибки */}
-      <h2 className="help-section__title">Частые ошибки, которых нужно избежать!</h2>
-      <div className="help-cards">
-        {ERRORS.map((error, index) => (
-          <div key={index} className="help-card">
-            <div className="help-card__img">
-              <img src={error.image} alt={error.title} />
-            </div>
-            <p className="help-card__title">{error.title}</p>
-            <p className="help-card__desc">{error.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Справочная информация */}
-      <h2 className="help-section__title">Справочная информация: Реквизиты для оплаты через банк (если оплата не через ЕРИП)</h2>
-      <ul className="help-lists__requisits">
-        <li><strong>Бенефициар:</strong> Министерство финансов Республики Беларусь (УНП 100691903)</li>
-        <li><strong>Фактический бенефициар:</strong> Минская центральная таможня (УНП 100420574)</li>
-        <li><strong>Банк-получатель:</strong> Национальный банк Республики Беларусь, г. Минск (код NBRBBY2X)</li>
-        <li><strong>Номер счета:</strong> BY12NBRB36009200000080000000 (белорусские рубли)</li>
-        <li><strong>Код платежа:</strong> 02204 (таможенные сборы за товары для личного пользования)</li>
-      </ul>
+      <p>
+        Сумма считается по заказу целиком: от стоимости товаров без польского НДС и от общего веса.
+        Это оценка по курсу на момент расчёта, поэтому в корзине она показана как приблизительная.
+      </p>
 
       {/* Нормы беспошлинного ввоза */}
       <h2 className="help-section__title">Нормы беспошлинного ввоза</h2>
@@ -122,7 +43,7 @@ export default function CustomsContent() {
       <p className="help-section__rules"><strong>Важное правило:</strong> Если превышены оба лимита (и вес, и стоимость), таможенная пошлина рассчитывается по обоим параметрам, но к оплате выбирается <strong>наибольшая</strong> из полученных сумм. Дополнительно всегда оплачивается таможенный сбор <strong>в размере 10 BYN</strong>.</p>
 
       {/* Законодательство */}
-      <h2 className="help-section__title">Как быстро оплатить таможенную пошлину</h2>
+      <h2 className="help-section__title">Как формируется таможенная пошлина</h2>
       <p>Мы работаем в строгом соответствии с законодательством Республики Беларусь и Евразийского экономического союза.</p>
       <p><strong>Порядок перемещения товаров регулируется:</strong></p>
       <ul className="help-lists__poriad">

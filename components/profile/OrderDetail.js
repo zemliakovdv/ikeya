@@ -591,7 +591,7 @@ export default function OrderDetail({ order, onBack, onReorder }) {
                 <InfoIcon />
                 <span>
                   <strong>{order.customsDutyApprox ? '≈' : ''}{formatMoney(order.customsDuty)}</strong>
-                  {' '}пошлина не входит в цену
+                  {' '}пошлина включена в стоимость заказа
                 </span>
               </div>
               <Link className="order-detail__text-link" href={CUSTOMS_HELP_HREF}>
