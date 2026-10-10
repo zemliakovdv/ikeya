@@ -77,8 +77,8 @@ function validateForm(form) {
 
   if (!form.orderNumber.trim()) {
     errors.orderNumber = 'Обязательное поле'; valid = false;
-  } else if (!/^\d{6}$/.test(form.orderNumber.trim())) {
-    errors.orderNumber = 'Некорректный номер заказа'; valid = false;
+  } else if (!/^\d{6,10}$/.test(form.orderNumber.trim())) {
+    errors.orderNumber = 'Укажите номер заказа из 6–10 цифр'; valid = false;
   }
 
   if (!form.phone.trim()) {
