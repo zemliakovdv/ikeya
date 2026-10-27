@@ -75,12 +75,6 @@ function normalizeProduct(product) {
   };
 }
 
-function hasValidPrice(product) {
-  const price = parsePrice(product.attributes?.price_byn || product.attributes?.price);
-
-  return price > 0;
-}
-
 export default function SearchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -230,8 +224,7 @@ export default function SearchPageContent() {
 
       const meta = data.meta || {};
       const rawProducts = (data.products?.data || [])
-        .map(normalizeProduct)
-        .filter(hasValidPrice);
+        .map(normalizeProduct);
 
       const pages = meta.total_pages || 1;
       const total = meta.total || rawProducts.length;
@@ -286,8 +279,7 @@ export default function SearchPageContent() {
 
       const meta = data.meta || {};
       const rawProducts = (data.products?.data || [])
-        .map(normalizeProduct)
-        .filter(hasValidPrice);
+        .map(normalizeProduct);
 
       const pages = meta.total_pages ?? totalPages;
       const more = page < pages;
