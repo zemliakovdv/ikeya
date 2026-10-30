@@ -9,7 +9,7 @@ import ProductSort from '@/components/catalog/ProductSort';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
 import SeoCatalogPage from '@/components/catalog/seo/SeoCatalogPage';
 import SeoSection from '@/components/home/SeoSection';
-import { getCachedCategoriesTree, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
+import { getCachedCategoriesTree, getCategory, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
 import { getSeoCatalogPageBySlug } from '@/lib/api/seoCatalogPages';
 import { buildSeoCatalogMetadata, isPublishedSeoCatalogPage } from '@/lib/seoCatalogPage';
 import {
@@ -53,10 +53,11 @@ export async function generateMetadata({ params }) {
     }
 
     const attrs = category.attributes || {};
-    const seo = attrs.seo || {};
+    const categoryDetails = await getCategory(category.id);
+    const seo = categoryDetails?.data?.attributes?.seo || {};
     const name = attrs.translated_name || attrs.name || 'Каталог';
 
-const title = seo.title || `${name} — купить в Беларуси | IKEYA`;
+    const title = seo.title || `${name} — купить в Беларуси | IKEYA`;
     const description = seo.description || `Купить ${name.toLowerCase()} в интернет-магазине IKEYA. Большой выбор, доступные цены, доставка по Беларуси. Заказывайте онлайн!`;
     const canonicalUrl = `https://ikeya.by/catalog/${canonicalSlugChain.join('/')}`;
     const imageUrl = attrs.icon_url

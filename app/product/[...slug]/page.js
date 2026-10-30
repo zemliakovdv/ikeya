@@ -214,8 +214,43 @@ function sanitizeLocalImages(images) {
   return images.filter((img) => img && (img.startsWith('/images/') || img.startsWith('http')));
 }
 
+const PUBLIC_SITE_ORIGIN = 'https://ikeya.by';
+
+function toPublicPageUrl(value, fallbackUrl) {
+  const fallback = fallbackUrl || PUBLIC_SITE_ORIGIN;
+  if (typeof value !== 'string' || !value.trim()) return fallback;
+
+  const raw = value.trim();
+  if (raw.startsWith('/')) return `${PUBLIC_SITE_ORIGIN}${raw}`;
+
+  try {
+    const parsed = new URL(raw);
+    return `${PUBLIC_SITE_ORIGIN}${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return fallback;
+  }
+}
+
+function withPublicOfferUrls(offers, pageUrl) {
+  if (Array.isArray(offers)) {
+    return offers.map((offer) => withPublicOfferUrls(offer, pageUrl));
+  }
+
+  if (!offers || typeof offers !== 'object') return offers;
+
+  const next = { ...offers };
+  const type = typeof next['@type'] === 'string' ? next['@type'] : '';
+  if (type.includes('Offer') || typeof next.url === 'string') {
+    next.url = toPublicPageUrl(next.url, pageUrl);
+  }
+  if (next.offers) {
+    next.offers = withPublicOfferUrls(next.offers, pageUrl);
+  }
+  return next;
+}
+
 function buildStructuredData(attr, sku) {
-  const productUrl = `https://ikeya.by/product/${attr.slug ? `${attr.slug}-${sku}` : sku}`;
+  const productUrl = `https://ikeya.by/product/${attr.slug ? `${attr.slug}-${sku}` : sku}/`;
   const price = parsePrice(attr.price_byn);
 
   const structuredData = attr.structured_data
@@ -242,6 +277,11 @@ function buildStructuredData(attr, sku) {
           itemCondition: "https://schema.org/NewCondition",
         },
       };
+
+  structuredData.url = toPublicPageUrl(structuredData.url, productUrl);
+  if (structuredData.offers) {
+    structuredData.offers = withPublicOfferUrls(structuredData.offers, structuredData.url);
+  }
 
   const ratingCount = Number(attr.rating_count || 0);
   const ratingAvg = parseFloat(attr.rating_weighted ?? attr.rating_avg ?? 0);
