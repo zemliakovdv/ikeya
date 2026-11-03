@@ -62,6 +62,14 @@ function removeFromHistory(query) {
   setHistoryStorage(history)
 }
 
+function buildSearchHref(query) {
+  return `/search/?q=${encodeURIComponent(query)}`
+}
+
+function isSearchPath(pathname) {
+  return String(pathname || '').replace(/\/+$/, '') === '/search'
+}
+
 function resolveImageUrl(url) {
   if (!url) return null
 
@@ -90,6 +98,22 @@ export default function SearchBox() {
   const abortRef = useRef(null)
 
   const router = useRouter()
+
+  function navigateToSearch(nextQuery) {
+    const href = buildSearchHref(nextQuery)
+
+    // Повторный поиск на /search меняет только query. Мягкая навигация
+    // App Router в этом случае остаётся на предыдущей выдаче.
+    if (typeof window !== 'undefined' && isSearchPath(window.location.pathname)) {
+      const currentQuery = new URLSearchParams(window.location.search).get('q') || ''
+      if (currentQuery === nextQuery) return
+
+      window.location.assign(href)
+      return
+    }
+
+    router.push(href)
+  }
 
   useEffect(() => {
     setHistory(getHistory())
@@ -218,7 +242,7 @@ export default function SearchBox() {
     setHistory(getHistory())
     setIsOpen(false)
 
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
+    navigateToSearch(trimmed)
   }
 
   function handleSuggestionClick(suggestion) {
@@ -232,7 +256,7 @@ export default function SearchBox() {
     setQuery(trimmed)
     setIsOpen(false)
 
-    router.push(`/search?q=${encodeURIComponent(trimmed)}`)
+    navigateToSearch(trimmed)
   }
 
   function handleRemoveHistory(e, item) {

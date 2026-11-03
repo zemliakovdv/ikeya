@@ -2,9 +2,16 @@ import { Suspense } from 'react';
 import SearchPageContent from './SearchPageContent';
 import PageLoader from '@/components/ui/PageLoader';
 
-export default function SearchPage() {
+// Страница читает запрос только на клиенте. Без dynamic статический кэш
+// сохраняет router tree первого запроса и следующие поиски не сменяют выдачу.
+export const dynamic = 'force-dynamic';
+
+export default function SearchPage({ searchParams }) {
+  const rawQuery = searchParams?.q;
+  const query = Array.isArray(rawQuery) ? rawQuery[0] || '' : rawQuery || '';
+
   return (
-    <Suspense fallback={<PageLoader />}>
+    <Suspense key={query} fallback={<PageLoader />}>
       <SearchPageContent />
     </Suspense>
   );
