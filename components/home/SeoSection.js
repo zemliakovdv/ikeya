@@ -2,12 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+function promoteFirstH2ToH1(html) {
+  if (!html || /<h1[\s>]/i.test(html)) return html
+
+  // Первый заголовок SEO-блока на главной должен быть H1.
+  return html.replace(/<h2(\b[^>]*)>([\s\S]*?)<\/h2>/i, '<h1$1>$2</h1>')
+}
+
 export default function SeoSection({ seoText }) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [needsToggle, setNeedsToggle] = useState(false)
   const contentRef = useRef(null)
 
-  const html = typeof seoText === 'string' ? seoText.trim() : ''
+  const html = promoteFirstH2ToH1(typeof seoText === 'string' ? seoText.trim() : '')
 
   useEffect(() => {
     const el = contentRef.current

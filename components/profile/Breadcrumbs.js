@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { toBreadcrumbListItemUrl } from '@/lib/seo/breadcrumbUrl';
 
 export default function Breadcrumbs({ items }) {
   const breadcrumbItems = Array.isArray(items) ? items : [];
@@ -24,9 +25,7 @@ export default function Breadcrumbs({ items }) {
               "@type": "ListItem",
               position: index + 1,
               name: item.label,
-              item: item.href 
-                ? `https://ikey.by${item.href}`  // ← Замени на свой домен
-                : undefined
+              item: toBreadcrumbListItemUrl(item.href),
             }))
           })
         }}

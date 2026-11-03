@@ -1,5 +1,6 @@
 // components/catalog/Breadcrumbs.js
 import Link from 'next/link';
+import { toBreadcrumbListItemUrl } from '@/lib/seo/breadcrumbUrl';
 
 export default function Breadcrumbs({ items, mobileBackItem = null }) {
   if (!items || items.length === 0) {
@@ -24,9 +25,7 @@ export default function Breadcrumbs({ items, mobileBackItem = null }) {
                 "@type": "ListItem",
                 position: index + 1,
                 name: item.name || item.label,
-                item: item.href
-                  ? `https://ikeya.by${item.href}`
-                  : undefined,
+                item: toBreadcrumbListItemUrl(item.href),
               })),
           }),
         }}
