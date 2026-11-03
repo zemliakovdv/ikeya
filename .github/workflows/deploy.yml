@@ -12,13 +12,13 @@ jobs:
   build-check:
     runs-on: ubuntu-latest
     env:
-      NODE_ENV: production
       NEXT_PUBLIC_SITE_URL: https://ikeya.by
       NEXT_PUBLIC_BACKEND_ORIGIN: https://ikeya.by
       NEXT_PUBLIC_API_BASE_URL: https://ikeya.by/api/v1
       NEXT_PUBLIC_IMAGE_URL: https://ikeya.by
       BACKEND_ORIGIN: https://ikeya.by
       BACKEND_API_BASE_URL: https://ikeya.by/api/v1
+      SERVER_FETCH_TIMEOUT_MS: "10000"
 
     steps:
       - name: Checkout code
@@ -29,6 +29,7 @@ jobs:
         with:
           node-version: "20"
 
+      # Keep NODE_ENV unset here so npm ci installs eslint from devDependencies.
       - name: Install dependencies
         run: npm ci
 
@@ -38,6 +39,8 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          NODE_ENV: production
 
   deploy-prod:
     runs-on: ubuntu-latest

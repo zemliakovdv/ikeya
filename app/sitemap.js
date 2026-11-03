@@ -1,4 +1,5 @@
 import { BACKEND_ORIGIN, SITE_URL } from '@/lib/config/api';
+import { serverFetch } from '@/lib/http/serverFetch';
 
 export const revalidate = 86400;
 
@@ -51,9 +52,10 @@ export default async function sitemap() {
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await serverFetch(url, {
       headers: { Accept: 'application/xml,text/xml,*/*' },
       next: { revalidate },
+      timeoutMs: 15000,
     });
 
     if (!response.ok) {

@@ -2,12 +2,13 @@
 import Footer from './Footer';
 
 import { buildApiUrl } from '@/lib/config/api';
+import { serverFetch } from '@/lib/http/serverFetch';
 
 export default async function FooterServer() {
   let categoryLinks = [];
 
   try {
-    const res = await fetch(buildApiUrl('/categories/tree'), {
+    const res = await serverFetch(buildApiUrl('/categories/tree'), {
       next: { revalidate: 300 },
     });
 
