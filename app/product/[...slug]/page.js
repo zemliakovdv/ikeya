@@ -216,6 +216,37 @@ function sanitizeLocalImages(images) {
 
 const PUBLIC_SITE_ORIGIN = 'https://ikeya.by';
 
+function toAbsoluteProductImageUrl(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+
+  const raw = value.trim();
+  if (raw.startsWith('/')) return `${PUBLIC_SITE_ORIGIN}${raw}`;
+  if (raw.startsWith('//')) return `https:${raw}`;
+
+  try {
+    const parsed = new URL(raw);
+    if (parsed.pathname.startsWith('/images/')) {
+      return `${PUBLIC_SITE_ORIGIN}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+    return raw;
+  } catch {
+    return `${PUBLIC_SITE_ORIGIN}/${raw.replace(/^\/+/, '')}`;
+  }
+}
+
+function withAbsoluteProductImages(image) {
+  if (Array.isArray(image)) {
+    const images = image.map(toAbsoluteProductImageUrl).filter(Boolean);
+    return images.length ? images : image;
+  }
+
+  if (typeof image === 'string') {
+    return toAbsoluteProductImageUrl(image) || image;
+  }
+
+  return image;
+}
+
 function toPublicPageUrl(value, fallbackUrl) {
   const fallback = fallbackUrl || PUBLIC_SITE_ORIGIN;
   if (typeof value !== 'string' || !value.trim()) return fallback;
@@ -262,9 +293,7 @@ function buildStructuredData(attr, sku) {
         description: attr.seo?.description || getProductTitle(attr),
         sku,
         mpn: sku,
-        image: sanitizeLocalImages(attr.local_images).map(
-          (img) => img.startsWith('http') ? img : `https://ikeya.by${img}`
-        ),
+        image: withAbsoluteProductImages(sanitizeLocalImages(attr.local_images)),
         url: productUrl,
         offers: {
           "@type": "Offer",
@@ -279,6 +308,9 @@ function buildStructuredData(attr, sku) {
       };
 
   structuredData.url = toPublicPageUrl(structuredData.url, productUrl);
+  if (structuredData.image) {
+    structuredData.image = withAbsoluteProductImages(structuredData.image);
+  }
   if (structuredData.offers) {
     structuredData.offers = withPublicOfferUrls(structuredData.offers, structuredData.url);
   }
