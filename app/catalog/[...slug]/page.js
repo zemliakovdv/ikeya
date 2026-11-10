@@ -16,6 +16,7 @@ import {
   buildBreadcrumbsFromTree,
   findNodeInTree,
 } from '@/lib/utils/categoryHelpers';
+import { buildPaginationUrl } from '@/lib/catalog/paginationUrl';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -99,17 +100,6 @@ function toPositiveInt(value, fallback = 1) {
 function toNonNegativeInt(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
-}
-
-function buildPaginationUrl(basePath, queryParams, page) {
-  const params = new URLSearchParams(queryParams);
-  if (page > 1) {
-    params.set('page', String(page));
-  } else {
-    params.delete('page');
-  }
-  const qs = params.toString();
-  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 function toCategoryNavNode(node) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ProductCard from './ProductCard';
+import { withTrailingSlash } from '@/lib/catalog/paginationUrl';
 
 const ITEMS_PER_PAGE = 20;
 const API_BASE_URL = '/api/v1';
@@ -131,10 +132,9 @@ export default function InfiniteProductGrid({
 
       const params = new URLSearchParams(queryString);
       params.set('page', String(page));
-
-      const nextUrl = params.toString()
-        ? `${basePath}?${params.toString()}`
-        : basePath;
+      const path = withTrailingSlash(basePath);
+      const qs = params.toString();
+      const nextUrl = qs ? `${path}?${qs}` : path;
 
       window.history.replaceState(null, '', nextUrl);
       onPageChange?.(page);

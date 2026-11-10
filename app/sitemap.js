@@ -37,10 +37,22 @@ function parseSitemapXml(xml) {
     if (changeFrequency) entry.changeFrequency = changeFrequency;
     if (Number.isFinite(priority)) entry.priority = priority;
 
+    if (isInternalSearchUrl(loc)) continue;
+
     entries.push(entry);
   }
 
   return entries;
+}
+
+function isInternalSearchUrl(url) {
+  try {
+    const pathname = new URL(url).pathname;
+    const withSlash = pathname.endsWith('/') ? pathname : `${pathname}/`;
+    return withSlash === '/search/' || withSlash.startsWith('/search/');
+  } catch {
+    return false;
+  }
 }
 
 export default async function sitemap() {

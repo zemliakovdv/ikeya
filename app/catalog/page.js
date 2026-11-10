@@ -12,6 +12,7 @@ import FilterChips from '@/components/catalog/FilterChips';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
 import SeoSection from '@/components/home/SeoSection';
 import { getCachedCatalogSeo, getCachedCategoriesTree, getProducts } from '@/lib/api/ikea';
+import { buildPaginationUrl } from '@/lib/catalog/paginationUrl';
 
 const FALLBACK_METADATA_TITLE = 'Каталог товаров — мебель и товары для дома | IKEYA';
 const FALLBACK_METADATA_DESCRIPTION = 'Широкий выбор мебели и товаров для дома в интернет-магазине IKEYA. Диваны, кровати, столы, стулья, текстиль, освещение и многое другое с доставкой по Беларуси.';
@@ -41,17 +42,6 @@ export async function generateMetadata() {
       url: 'https://ikeya.by/catalog',
     },
   };
-}
-
-function buildPaginationUrl(basePath, queryParams, page) {
-  const params = new URLSearchParams(queryParams);
-  if (page > 1) {
-    params.set('page', String(page));
-  } else {
-    params.delete('page');
-  }
-  const qs = params.toString();
-  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 export default async function CatalogPage({ searchParams }) {

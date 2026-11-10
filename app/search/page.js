@@ -6,6 +6,14 @@ import PageLoader from '@/components/ui/PageLoader';
 // сохраняет router tree первого запроса и следующие поиски не сменяют выдачу.
 export const dynamic = 'force-dynamic';
 
+// Один маршрут на пустую форму, выдачу, пустой результат, пагинацию, сортировку и фильтры.
+export const metadata = {
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
+
 export default function SearchPage({ searchParams }) {
   const rawQuery = searchParams?.q;
   const query = Array.isArray(rawQuery) ? rawQuery[0] || '' : rawQuery || '';

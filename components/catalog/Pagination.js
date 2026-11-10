@@ -1,5 +1,7 @@
 // components/catalog/Pagination.js
 
+import { buildPaginationUrl } from '@/lib/catalog/paginationUrl';
+
 function toPositiveInt(value, fallback = 1) {
   const n = Number(value);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
@@ -26,19 +28,7 @@ export default function Pagination({
     Math.max(safeTotalPages, 1)
   );
 
-  const buildHref = (page) => {
-    const safePage = toPositiveInt(page, 1);
-    const params = new URLSearchParams(queryString);
-
-    if (safePage === 1) {
-      params.delete('page');
-    } else {
-      params.set('page', String(safePage));
-    }
-
-    const qs = params.toString();
-    return qs ? `${basePath}?${qs}` : basePath;
-  };
+  const buildHref = (page) => buildPaginationUrl(basePath, queryString, toPositiveInt(page, 1));
 
   const getVisiblePages = () => {
     const pages = [];
