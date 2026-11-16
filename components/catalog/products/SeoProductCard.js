@@ -129,9 +129,9 @@ export default function SeoProductCard({ product }) {
 
         <div className="product-card__info">
           <div className="product-card__header">
-            <h3 className="product-card__title">
+            <div className="product-card__title">
               <Link href={productUrl}>{title}</Link>
-            </h3>
+            </div>
           </div>
 
           {price ? (

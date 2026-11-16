@@ -16,6 +16,30 @@ import {
 
 import { buildApiUrl, SITE_URL } from '@/lib/config/api';
 
+function isMissingProductResponse(productResponse) {
+  if (!productResponse || productResponse.status >= 500) return false;
+
+  if (
+    productResponse.code === 'product_not_found' ||
+    productResponse.code === 'product_unavailable' ||
+    productResponse.status === 404
+  ) {
+    return true;
+  }
+
+  return !productResponse.data;
+}
+
+function rejectMissingProduct(productResponse) {
+  if (isMissingProductResponse(productResponse)) {
+    notFound();
+  }
+
+  if (!productResponse?.data) {
+    throw new Error('Product API unavailable');
+  }
+}
+
 function cleanSkuArray(rawArray) {
   if (!rawArray || !Array.isArray(rawArray)) return [];
 
@@ -332,33 +356,18 @@ function buildStructuredData(attr, sku) {
 }
 
 export async function generateMetadata({ params }) {
-  const lastSlugPart = params?.slug?.[params.slug.length - 1];
+  const resolvedParams = await params;
+  const lastSlugPart = resolvedParams?.slug?.[resolvedParams.slug.length - 1];
 
   if (!lastSlugPart) {
-    return {
-      title: 'Товар | IKEYA',
-      description: 'Карточка товара в интернет-магазине IKEYA.',
-    };
+    notFound();
   }
 
   const sku = extractSKU(lastSlugPart);
   const productResponse = await getProduct(sku);
-  const isKnownProduct404Code =
-    productResponse?.code === 'product_not_found' ||
-    productResponse?.code === 'product_unavailable';
 
-  // Важно: 404 должен выбрасываться на этапе metadata до stream/flush.
-  // Некоторые бэкенд-ответы могут приходить с code без HTTP 404.
-  if (isKnownProduct404Code) {
-    notFound();
-  }
-
-  if (!productResponse?.data) {
-    return {
-      title: 'Товар | IKEYA',
-      description: 'Карточка товара в интернет-магазине IKEYA.',
-    };
-  }
+  // 404 до начала стрима: иначе отсутствующий товар уходит как HTTP 200.
+  rejectMissingProduct(productResponse);
 
   const attr = productResponse.data.attributes || {};
 
@@ -405,24 +414,24 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function ProductPage({ params }) {
-  const sku = extractSKU(params.slug[params.slug.length - 1]);
-  const productResponse = await getProduct(sku);
-  const isKnownProduct404Code =
-    productResponse?.code === 'product_not_found' ||
-    productResponse?.code === 'product_unavailable';
+  const resolvedParams = await params;
+  const lastSlugPart = resolvedParams?.slug?.[resolvedParams.slug.length - 1];
 
-  if (isKnownProduct404Code) {
+  if (!lastSlugPart) {
     notFound();
   }
 
-  if (!productResponse?.data) notFound();
+  const sku = extractSKU(lastSlugPart);
+  const productResponse = await getProduct(sku);
+
+  rejectMissingProduct(productResponse);
 
   const tree = await getCachedCategoriesTree();
 
   const product = productResponse.data;
   const attr = product.attributes;
 
-  const currentSlugStr = params.slug[params.slug.length - 1];
+  const currentSlugStr = lastSlugPart;
   const expectedSlug = attr.slug ? `${attr.slug}-${sku}` : sku;
 
   if (currentSlugStr !== expectedSlug) {

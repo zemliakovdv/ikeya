@@ -9,7 +9,7 @@ import ProductSort from '@/components/catalog/ProductSort';
 import ProductGridWithPagination from '@/components/catalog/products/ProductGridWithPagination';
 import SeoCatalogPage from '@/components/catalog/seo/SeoCatalogPage';
 import SeoSection from '@/components/home/SeoSection';
-import { getCachedCategoriesTree, getCategory, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
+import { getCachedCategoriesTreeState, getCategory, getCategoryWithFilters, getCategoryProducts } from '@/lib/api/ikea';
 import { getSeoCatalogPageBySlug } from '@/lib/api/seoCatalogPages';
 import { buildSeoCatalogMetadata, isPublishedSeoCatalogPage } from '@/lib/seoCatalogPage';
 import {
@@ -17,15 +17,35 @@ import {
   findNodeInTree,
 } from '@/lib/utils/categoryHelpers';
 import { buildPaginationUrl } from '@/lib/catalog/paginationUrl';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
+
+function isNavigationError(error) {
+  const digest = typeof error?.digest === 'string' ? error.digest : '';
+
+  return (
+    digest === 'NEXT_NOT_FOUND' ||
+    digest.startsWith('NEXT_REDIRECT') ||
+    digest.startsWith('NEXT_HTTP_ERROR_FALLBACK')
+  );
+}
+
+async function loadCategoryTree() {
+  const treeState = await getCachedCategoriesTreeState();
+
+  if (treeState.unavailable) {
+    throw new Error('Categories tree unavailable');
+  }
+
+  return treeState.categories;
+}
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
   const currentSlug = slug[slug.length - 1];
 
   try {
-    const tree = await getCachedCategoriesTree();
+    const tree = await loadCategoryTree();
     let categoryMatch = null;
 
     if (slug.length === 1) {
@@ -50,7 +70,7 @@ export async function generateMetadata({ params }) {
         }
       }
 
-      return {};
+      notFound();
     }
 
     const attrs = category.attributes || {};
@@ -87,7 +107,9 @@ export async function generateMetadata({ params }) {
         url: canonicalUrl,
       },
     };
-  } catch {
+  } catch (error) {
+    if (isNavigationError(error)) throw error;
+    if (error?.message === 'Categories tree unavailable') throw error;
     return {};
   }
 }
@@ -267,7 +289,7 @@ export default async function CategoryPage({ params, searchParams }) {
 
     const currentPage = Math.max(1, Number(sp?.page) || 1);
 
-    const tree = await getCachedCategoriesTree();
+    const tree = await loadCategoryTree();
     let currentNode = null;
     let currentNodeAncestors = [];
 
@@ -304,7 +326,7 @@ export default async function CategoryPage({ params, searchParams }) {
         }
       }
 
-      redirect('/catalog');
+      notFound();
     }
 
     const [categoryWithFilters, productsResponse] = await Promise.all([
@@ -456,7 +478,8 @@ export default async function CategoryPage({ params, searchParams }) {
       </main>
     );
   } catch (error) {
-    if (error?.digest?.startsWith('NEXT_REDIRECT')) throw error;
+    if (isNavigationError(error)) throw error;
+    if (error?.message === 'Categories tree unavailable') throw error;
 
     console.error('Error loading category:', error);
     redirect('/catalog');

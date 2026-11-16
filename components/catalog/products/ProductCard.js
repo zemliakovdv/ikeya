@@ -315,7 +315,7 @@ export default function ProductCard({ product, priority = false }) {
             style={{ display: 'block', color: 'inherit', textDecoration: 'none' }}
           >
             <div className="product-card__header">
-              <h3 className="product-card__title">{productTitle}</h3>
+              <div className="product-card__title">{productTitle}</div>
 
               {productSubtitle && (
                 <p className="product-card__description">{productSubtitle}</p>
