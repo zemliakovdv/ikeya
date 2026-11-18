@@ -2110,7 +2110,14 @@ function CheckoutPageInner() {
       removeLS(CHECKOUT_DELIVERY_SIGNATURE_KEY);
 
       const payNow = Boolean(paymentUrl) && paymentMethod !== 'erip';
-      router.push(`/order-success?order_id=${orderId}${payNow ? '&pay=1' : ''}`);
+      const successPath = `/order-success?order_id=${orderId}${payNow ? '&pay=1' : ''}`;
+      // Карта уходит на WebPay. replace убирает checkout из истории, чтобы «Назад»
+      // с оплаты не возвращал на уже завершённое оформление.
+      if (payNow) {
+        router.replace(successPath);
+      } else {
+        router.push(successPath);
+      }
     } catch (err) {
       if (isPersonalDataConsentRequiredError(err)) {
         setCheckoutAttempted(true);

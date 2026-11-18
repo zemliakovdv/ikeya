@@ -296,6 +296,17 @@ function SimpleIcon({ children }) {
   );
 }
 
+function isHistoryRestore() {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const nav = performance.getEntriesByType('navigation')[0];
+    return nav?.type === 'back_forward';
+  } catch {
+    return false;
+  }
+}
+
 function isOrderPaid(attrs = {}) {
   if (attrs.webpay_paid_at) return true;
 
@@ -334,6 +345,7 @@ export default function OrderSuccessPage() {
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState(null);
   const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
+  const [skipAutoPay, setSkipAutoPay] = useState(false);
   const timerRef = useRef(null);
   const autoPayStartedRef = useRef(false);
 
@@ -529,8 +541,8 @@ export default function OrderSuccessPage() {
   const isPaid = isOrderPaid(attrs);
   const timerStr = timeLeft ? `${pad(Math.floor(timeLeft / 60))}:${pad(timeLeft % 60)}` : null;
   const awaitingPayment = !loading && !isPaid && !paymentExpired && Boolean(timerStr || paymentUrl);
-  const redirectingToPayment = shouldAutoPay && Boolean(paymentUrl) && !paymentExpired && !isPaid;
-  const waitingForAutoPay = shouldAutoPay && (loading || Boolean(paymentUrl));
+  const redirectingToPayment = shouldAutoPay && !skipAutoPay && Boolean(paymentUrl) && !paymentExpired && !isPaid;
+  const waitingForAutoPay = shouldAutoPay && !skipAutoPay && (loading || Boolean(paymentUrl));
   const showPaymentAlert = awaitingPayment || waitingForAutoPay || isRedirectingToPayment;
   const successTitle = waitingForAutoPay || isRedirectingToPayment
     ? 'Переходим к оплате'
@@ -572,11 +584,29 @@ export default function OrderSuccessPage() {
     if (!paymentUrl || isRedirectingToPayment) return;
 
     setIsRedirectingToPayment(true);
-    window.location.assign(paymentUrl);
+    window.location.replace(paymentUrl);
   }
 
   useEffect(() => {
+    function onPageShow(event) {
+      if (!event.persisted) return;
+
+      setSkipAutoPay(true);
+      setIsRedirectingToPayment(false);
+    }
+
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, []);
+
+  useEffect(() => {
     if (loading || !redirectingToPayment || autoPayStartedRef.current) return;
+
+    if (isHistoryRestore()) {
+      setSkipAutoPay(true);
+      setIsRedirectingToPayment(false);
+      return;
+    }
 
     autoPayStartedRef.current = true;
     handlePaymentRedirect();
@@ -624,6 +654,10 @@ export default function OrderSuccessPage() {
                     >
                       {isRedirectingToPayment ? 'Переходим к оплате...' : 'Оплатить заказ'}
                     </button>
+                  )}
+
+                  {(awaitingPayment || paymentFailed) && !redirectingToPayment && (
+                    <a href="/cart" className="tracking-link">Вернуться в корзину</a>
                   )}
                 </div>
               )}
