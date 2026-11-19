@@ -13,6 +13,13 @@ import { getMainSliderBanners } from '@/lib/api/ikea';
 
 export const dynamic = 'force-dynamic';
 
+const HOME_OG_IMAGE = {
+  url: 'https://ikeya.by/assets/img/og-image.png',
+  width: 1200,
+  height: 630,
+  alt: 'Логотип интернет-магазина IKEYA',
+};
+
 export async function generateMetadata() {
   try {
     const { meta } = await getMainSliderBanners();
@@ -28,14 +35,14 @@ export async function generateMetadata() {
         description: seo.description || 'Купить мебель в Минске с доставкой по Беларуси',
         url: 'https://ikeya.by',
         siteName: 'IKEYA',
-        images: [{ url: 'https://ikeya.by/assets/img/no-image.jpg', width: 1200, height: 630, alt: 'IKEYA' }],
+        images: [HOME_OG_IMAGE],
         type: 'website',
       },
       twitter: {
         card: 'summary_large_image',
         title: seo.title || 'IKEYA – интернет-магазин мебели и товаров для дома',
         description: seo.description || 'Купить мебель в Минске с доставкой по Беларуси',
-        images: ['https://ikeya.by/assets/img/no-image.jpg'],
+        images: [HOME_OG_IMAGE.url],
         url: 'https://ikeya.by',
       },
     };
@@ -49,14 +56,14 @@ export async function generateMetadata() {
         description: 'Купить мебель в Минске с доставкой по Беларуси',
         url: 'https://ikeya.by',
         siteName: 'IKEYA',
-        images: [{ url: 'https://ikeya.by/assets/img/no-image.jpg', width: 1200, height: 630, alt: 'IKEYA' }],
+        images: [HOME_OG_IMAGE],
         type: 'website',
       },
       twitter: {
         card: 'summary_large_image',
         title: 'IKEYA – интернет-магазин мебели и товаров для дома',
         description: 'Купить мебель в Минске с доставкой по Беларуси',
-        images: ['https://ikeya.by/assets/img/no-image.jpg'],
+        images: [HOME_OG_IMAGE.url],
         url: 'https://ikeya.by',
       },
     };
